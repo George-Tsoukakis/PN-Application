@@ -1,0 +1,481 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PharmacyNeeds — Live Preview (EN)</title>
+  <meta name="description" content="PharmacyNeeds login — live preview" />
+  <meta name="theme-color" content="#0b1220" />
+  <style>
+    :root{
+      --bg:#070b14; --card:rgba(255,255,255,.08); --card2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.14); --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.68);
+      --dim:rgba(255,255,255,.56); --a:#07b3d3; --a2:#6d5efc; --danger:#ff4d6d; --ok:#55f2c1;
+      --shadow:0 20px 70px rgba(0,0,0,.55); --r:22px; --r2:16px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .shell{
+      min-height:100%;
+      display:grid;
+      grid-template-columns: 420px minmax(0,1fr);
+      gap: 16px;
+      padding: 14px;
+      align-items: start;
+    }
+    @media (max-width: 980px){
+      .shell{ grid-template-columns: 1fr; }
+    }
+
+    /* LEFT: controls */
+    .panel{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      position: sticky;
+      top: 12px;
+    }
+    @media (max-width: 980px){
+      .panel{ position: relative; top: auto; }
+    }
+    .panel h1{
+      margin: 0 0 8px;
+      font-size: 16px;
+      letter-spacing: .2px;
+    }
+    .panel p{
+      margin: 0 0 12px;
+      color: rgba(255,255,255,.65);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+    .row{ display:flex; flex-wrap:wrap; gap: 10px; align-items:center; }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight: 800;
+      letter-spacing:.3px;
+    }
+    .btn:hover{ background: rgba(255,255,255,.09); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(7,179,211,1), rgba(109,94,252,1));
+      border-color: rgba(255,255,255,.10);
+      color:#06121a;
+    }
+    .btn[aria-pressed="true"]{ outline: 2px solid rgba(7,179,211,.7); outline-offset: 2px; }
+    .select{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10,15,28,.55);
+      color: rgba(255,255,255,.92);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 700;
+      min-width: 160px;
+    }
+    .hint{
+      margin-top: 10px;
+      color: rgba(255,255,255,.55);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    /* RIGHT: device preview */
+    .preview{
+      display:grid;
+      place-items:center;
+      min-height: calc(100vh - 28px);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 18px;
+      overflow:hidden;
+      position: relative;
+    }
+    .device{
+      width: 360px;
+      height: 740px;
+      border-radius: 34px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      box-shadow: 0 26px 80px rgba(0,0,0,.60);
+      overflow:hidden;
+      position: relative;
+    }
+    .device:before{
+      content:"";
+      position:absolute;
+      left: 50%;
+      top: 10px;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 22px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.10);
+      z-index: 3;
+    }
+    iframe{
+      width:100%; height:100%;
+      border:0; background: var(--bg);
+    }
+
+    @media (max-width: 980px){
+      .preview{ min-height: 0; padding: 14px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <h1>Live Preview Controls</h1>
+      <p>Pick device size. Language starts in EN by default.</p>
+
+      <div class="row" style="margin-bottom:10px;">
+        <button class="btn" id="langEN" aria-pressed="true">EN</button>
+        <button class="btn" id="langEL" aria-pressed="false">EL</button>
+      </div>
+
+      <div class="row" style="margin-bottom:10px;">
+        <select class="select" id="deviceSize" aria-label="Device size">
+          <option value="360x740" selected>Phone (360×740)</option>
+          <option value="390x844">iPhone-ish (390×844)</option>
+          <option value="414x896">Large phone (414×896)</option>
+          <option value="768x900">Tablet (768×900)</option>
+        </select>
+        <button class="btn primary" id="refresh">Refresh Preview</button>
+      </div>
+
+      <div class="hint">
+        Logo file: <b>pn-logo.webp</b> in the same folder.<br/>
+        If you want a different path/URL, edit <code>LOGO_SRC</code> in the script.
+      </div>
+    </aside>
+
+    <section class="preview" aria-label="Live preview">
+      <div class="device" id="device">
+        <iframe id="frame" title="PharmacyNeeds live preview"></iframe>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function(){
+      // === CONFIG ===
+      const LOGO_SRC = "pn-logo.webp";
+      const DEFAULT_LANG = "en"; // hard default EN
+
+      const $ = (s, r=document) => r.querySelector(s);
+
+      const frame = $("#frame");
+      const device = $("#device");
+      const langEN = $("#langEN");
+      const langEL = $("#langEL");
+      const deviceSize = $("#deviceSize");
+      const refresh = $("#refresh");
+
+      const dict = {
+        en: {
+          subtitle: "Sign in to continue",
+          phoneLabel: "Phone number",
+          phoneHelp: "Use the phone number registered to your account.",
+          passLabel: "Password",
+          forgot: "Forgot password?",
+          loginBtn: "Login",
+          noAccount: "Don't have an account?",
+          signup: "Sign up",
+          toggleShow: "Show password",
+          toggleHide: "Hide password",
+          capsOn: "Caps Lock is on",
+          errFill: "Please enter a valid phone & password.",
+          okDemo: "Demo: Logged in (no backend)."
+        },
+        el: {
+          subtitle: "Συνδέσου για να συνεχίσεις",
+          phoneLabel: "Αριθμός τηλεφώνου",
+          phoneHelp: "Χρησιμοποίησε τον αριθμό που έχεις δηλώσει.",
+          passLabel: "Κωδικός",
+          forgot: "Ξέχασες τον κωδικό;",
+          loginBtn: "Σύνδεση",
+          noAccount: "Δεν έχεις λογαριασμό;",
+          signup: "Εγγραφή",
+          toggleShow: "Εμφάνιση κωδικού",
+          toggleHide: "Απόκρυψη κωδικού",
+          capsOn: "Caps Lock ενεργό",
+          errFill: "Συμπλήρωσε σωστά τηλέφωνο & κωδικό.",
+          okDemo: "Demo: Σύνδεση (χωρίς backend)."
+        }
+      };
+
+      function buildAppHTML(lang){
+        const t = dict[lang] || dict.en;
+
+        return <!doctype html>
+<html lang="${lang}">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PharmacyNeeds Login</title>
+<meta name="theme-color" content="#0b1220"/>
+<style>
+  :root{
+    --pn-bg:#070b14; --pn-card:rgba(255,255,255,.08); --pn-card2:rgba(255,255,255,.06);
+    --pn-border:rgba(255,255,255,.14); --pn-text:rgba(255,255,255,.92); --pn-muted:rgba(255,255,255,.68);
+    --pn-dim:rgba(255,255,255,.56); --pn-accent:#07b3d3; --pn-accent2:#6d5efc;
+    --pn-danger:#ff4d6d; --pn-ok:#55f2c1; --pn-shadow:0 20px 70px rgba(0,0,0,.55);
+    --pn-radius:22px; --pn-radius2:16px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--pn-bg); color:var(--pn-text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+  .pn{ min-height:100%; position:relative; isolation:isolate; overflow-x:clip; }
+  .pn__bg{ position:absolute; inset:0; z-index:-1; overflow:hidden; }
+  .pn__blob{ position:absolute; width:520px; height:520px; filter:blur(30px); opacity:.55; will-change:transform; pointer-events:none; }
+  .pn__blob--a{
+    left:-140px; top:-180px;
+    background: radial-gradient(circle at 30% 30%, var(--pn-accent), transparent 60%),
+                radial-gradient(circle at 70% 70%, var(--pn-accent2), transparent 55%);
+    border-radius: 42% 58% 55% 45% / 48% 42% 58% 52%;
+    animation: pnFloatA 12s ease-in-out infinite;
+  }
+  .pn__blob--b{
+    right:-180px; bottom:-220px;
+    background: radial-gradient(circle at 30% 30%, #ff3d81, transparent 62%),
+                radial-gradient(circle at 70% 70%, var(--pn-accent), transparent 55%);
+    border-radius: 55% 45% 52% 48% / 44% 58% 42% 56%;
+    animation: pnFloatB 14s ease-in-out infinite;
+    opacity:.42;
+  }
+  .pn__grid{
+    position:absolute; inset:0;
+    background: radial-gradient(transparent 0, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size:18px 18px; opacity:.35;
+    mask-image: radial-gradient(circle at 50% 40%, #000 0, #000 40%, transparent 75%);
+    pointer-events:none;
+  }
+  @keyframes pnFloatA{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(70px,40px) scale(1.04);} }
+  @keyframes pnFloatB{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-60px,-30px) scale(1.05);} }
+  @media (prefers-reduced-motion: reduce){
+    .pn__blob--a,.pn__blob--b{ animation:none; }
+    *{ transition:none !important; }
+  }
+  .pn__wrap{ min-height:100vh; display:grid; place-items:center; padding: 26px 14px; }
+  .pn__card{
+    width:min(420px,100%);
+    background: linear-gradient(180deg, var(--pn-card), var(--pn-card2));
+    border:1px solid var(--pn-border);
+    border-radius: var(--pn-radius);
+    box-shadow: var(--pn-shadow);
+    padding: 22px 18px 18px;
+    backdrop-filter: blur(10px);
+  }
+  .pn__header{ text-align:center; padding: 6px 6px 14px; }
+  .pn__logo{ display:block; margin:0 auto 10px; border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.28); }
+  .pn__title{ margin:0; font-size:24px; letter-spacing:.2px; }
+  .pn__subtitle{ margin:6px 0 0; color:var(--pn-muted); font-size:13.5px; line-height:1.35; }
+  .pn__form{ display:grid; gap:14px; min-width:0; }
+  .pn__field{ display:grid; gap:7px; min-width:0; }
+  .pn__label{ font-size:13px; color:var(--pn-dim); }
+  .pn__control{
+    display:flex; align-items:center; gap:10px;
+    padding:12px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius: var(--pn-radius2);
+    background: rgba(10,15,28,.55);
+    min-width:0;
+  }
+  .pn__control:focus-within{ border-color: rgba(7,179,211,.7); box-shadow: 0 0 0 4px rgba(7,179,211,.14); }
+  .pn__icon{ color: rgba(255,255,255,.6); flex:0 0 auto; display:grid; place-items:center; }
+  .pn__input{
+    width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--pn-text);
+    font-size:15px; letter-spacing:.2px;
+  }
+  .pn__input::placeholder{ color: rgba(255,255,255,.38); }
+  .pn__ghost{
+    border:0; background:transparent; color: rgba(255,255,255,.65);
+    padding:6px 8px; border-radius:12px; cursor:pointer; flex:0 0 auto;
+  }
+  .pn__ghost:focus-visible{ outline:2px solid rgba(7,179,211,.9); outline-offset:2px; }
+  .pn__help{ color: rgba(255,255,255,.46); font-size:12px; line-height: 1.35; margin:0; }
+  .pn__row{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .pn__row--between{ justify-content: space-between; }
+  .pn__link{ color: rgba(7,179,211,.95); text-decoration:none; font-size:13px; white-space:normal; overflow-wrap:anywhere; }
+  .pn__link:hover{ text-decoration:underline; }
+  .pn__link--strong{ font-weight:800; }
+  .pn__caps{ font-size:12px; color: rgba(255,255,255,.52); overflow-wrap:anywhere; }
+  .pn__btn{
+    position:relative; border:0; cursor:pointer; border-radius:18px;
+    padding:14px; font-weight:800; font-size:15px; color:#06121a;
+    background: linear-gradient(135deg, rgba(7,179,211,1), rgba(109,94,252,1));
+    box-shadow: 0 14px 40px rgba(7,179,211,.18);
+    transition: transform .12s ease, filter .12s ease;
+  }
+  .pn__btn:active{ transform: translateY(1px) scale(.99); }
+  .pn__btn:focus-visible{ outline:2px solid rgba(255,255,255,.85); outline-offset:3px; }
+  .pn__btnGlow{
+    position:absolute; inset:-2px; border-radius:20px;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 45%);
+    pointer-events:none; mix-blend-mode: overlay;
+  }
+  .pn__fine{ margin:0; text-align:center; color: rgba(255,255,255,.64); font-size:13px; line-height:1.4; }
+  .pn__status{ min-height:18px; text-align:center; font-size:12.5px; color: rgba(255,255,255,.62); overflow-wrap:anywhere; }
+  .pn__status.is-error{ color: rgba(255,77,109,.95); }
+  .pn__status.is-ok{ color: rgba(85,242,193,.95); }
+  .pn__footer{ margin-top:14px; text-align:center; color: rgba(255,255,255,.42); font-size:12px; }
+</style>
+</head>
+<body>
+  <main class="pn" aria-label="PharmacyNeeds Login">
+    <div class="pn__bg" aria-hidden="true">
+      <span class="pn__blob pn__blob--a"></span>
+      <span class="pn__blob pn__blob--b"></span>
+      <span class="pn__grid"></span>
+    </div>
+
+    <section class="pn__wrap">
+      <div class="pn__card" role="region" aria-label="Login card">
+        <header class="pn__header">
+          <img class="pn__logo" src="${LOGO_SRC}" alt="PharmacyNeeds" width="84" height="84" loading="eager" decoding="async">
+          <h1 class="pn__title">PharmacyNeeds</h1>
+          <p class="pn__subtitle">${t.subtitle}</p>
+        </header>
+
+        <form class="pn__form" id="f" novalidate>
+          <div class="pn__field">
+            <label class="pn__label" for="p">${t.phoneLabel}</label>
+            <div class="pn__control">
+              <span class="pn__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.06a2 2 0 0 1 2.11-.45c.8.24 1.64.42 2.5.54A2 2 0 0 1 22 16.92z"/>
+                </svg>
+              </span>
+              <input id="p" class="pn__input" type="tel" inputmode="tel" autocomplete="tel" placeholder="69xxxxxxxx" required minlength="8"/>
+            </div>
+            <small class="pn__help">${t.phoneHelp}</small>
+          </div>
+
+          <div class="pn__field">
+            <label class="pn__label" for="pw">${t.passLabel}</label>
+            <div class="pn__control">
+              <span class="pn__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input id="pw" class="pn__input" type="password" autocomplete="current-password" placeholder="••••••••" required minlength="6"/>
+              <button class="pn__ghost" type="button" id="t" aria-label="${t.toggleShow}">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="pn__row pn__row--between">
+              <a class="pn__link" href="#" onclick="return false;">${t.forgot}</a>
+              <span class="pn__caps" id="c" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <button class="pn__btn" type="submit">
+            <span>${t.loginBtn}</span>
+            <span class="pn__btnGlow" aria-hidden="true"></span>
+          </button>
+
+          <p class="pn__fine">${t.noAccount} <a class="pn__link pn__link--strong" href="#" onclick="return false;">${t.signup}</a></p>
+          <div class="pn__status" id="s" aria-live="polite"></div>
+        </form>
+      </div>
+
+      <footer class="pn__footer">© <span id="y"></span> PharmacyNeeds</footer>
+    </section>
+  </main>
+
+<script>
+(function(){
+  const t = ${JSON.stringify(t)};
+  const f = document.getElementById('f');
+  const p = document.getElementById('p');
+  const pw = document.getElementById('pw');
+  const btn = document.getElementById('t');
+  const s = document.getElementById('s');
+  const c = document.getElementById('c');
+  document.getElementById('y').textContent = new Date().getFullYear();
+
+  btn.addEventListener('click', ()=>{
+    pw.type = (pw.type === 'password') ? 'text' : 'password';
+    btn.setAttribute('aria-label', (pw.type === 'password') ? t.toggleShow : t.toggleHide);
+    pw.focus();
+  });
+
+  function caps(e){
+    const on = e.getModifierState && e.getModifierState('CapsLock');
+    c.textContent = on ? t.capsOn : '';
+  }
+  pw.addEventListener('keydown', caps);
+  pw.addEventListener('keyup', caps);
+
+  f.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const clean = (p.value||'').replace(/[^\\d+]/g,'');
+    const ok = clean.length >= 8 && (pw.value||'').length >= 6;
+    if(!ok){
+      s.className = 'pn__status is-error';
+      s.textContent = t.errFill;
+      return;
+    }
+    s.className = 'pn__status is-ok';
+    s.textContent = t.okDemo;
+  });
+})();
+<\/script>
+</body>
+</html>;
+      }
+
+      function setDeviceSize(v){
+        const [w,h] = v.split("x").map(n=>parseInt(n,10));
+        if(Number.isFinite(w) && Number.isFinite(h)){
+          device.style.width = w + "px";
+          device.style.height = h + "px";
+        }
+      }
+
+      function render(lang){
+        // lock: always start and keep document lang consistent
+        const safe = (lang === "el") ? "el" : "en";
+        const html = buildAppHTML(safe);
+        frame.srcdoc = html;
+
+        document.documentElement.lang = safe;
+
+        const en = (safe === "en");
+        langEN.setAttribute("aria-pressed", en ? "true" : "false");
+        langEL.setAttribute("aria-pressed", en ? "false" : "true");
+      }
+
+      // UI events
+      langEN.addEventListener("click", ()=>render("en"));
+      langEL.addEventListener("click", ()=>render("el"));
+      deviceSize.addEventListener("change", (e)=> setDeviceSize(e.target.value));
+      refresh.addEventListener("click", ()=> render("en")); // refresh always EN unless you manually switched
+
+      // init
+      setDeviceSize(deviceSize.value);
+      render(DEFAULT_LANG); // always EN on load
+    })();
+  </script>
+</body>
+</html>
