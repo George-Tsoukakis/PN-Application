@@ -10,7 +10,7 @@ function apply_filters($tag,$v,...$a){ if(isset($GLOBALS['__filters'][$tag])) re
 function do_action(...$a){}
 function get_option($o,$d=false){return $GLOBALS['__options'][$o] ?? $d;}
 function absint($v){return abs((int)$v);}
-function wp_date($f,$ts=null){ $GLOBALS['__wpdate_calls']++; $d=new DateTimeImmutable('@'.($ts??time())); $d=$d->setTimezone(new DateTimeZone('Europe/Athens')); return $d->format($f);}
+function wp_date($f,$ts=null){ $GLOBALS['__wpdate_calls']++; $d=new DateTimeImmutable('@'.($ts??(getenv('QRRP_TEST_NOW')!==false?(int)getenv('QRRP_TEST_NOW'):time()))); $d=$d->setTimezone(new DateTimeZone('Europe/Athens')); return $d->format($f);}
 function is_wp_error($x){return $x instanceof WP_Error;}
 class WP_Error{ public $code,$msg; function __construct($c='',$m=''){$this->code=$c;$this->msg=$m;} function get_error_code(){return $this->code;} function get_error_message(){return $this->msg;}}
 function qrrp_max_raw_bytes(){return 4096;}

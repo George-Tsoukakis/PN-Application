@@ -538,6 +538,24 @@ final class QRRP_GS1_Parser {
 		$needs_review       = $checks['layout_recovered'] || ! empty( $meta['literal_gs_text'] );
 
 		/*
+		 * 2.15.7: όριο συνάγεται ενώ ο κωδικός έχει ρητά όρια (Group Separator ή
+		 * παρενθέσεις HRI). Ένας scanner στέλνει είτε όλους τους separators είτε
+		 * κανέναν· μικτή είσοδος σημαίνει ότι η ανάγνωση σπάει τιμή που ο κωδικός
+		 * είχε κλείσει και μπορεί να «δημιουργήσει» πεδίο που δεν υπάρχει
+		 * (π.χ. 21AB17280331<GS>10LOT → SN «AB» + επινοημένο EXP). Ποτέ αυτόματα.
+		 */
+		$explicit_boundaries = $inferred_boundaries > 0
+			&& (
+				self::has_terminating_separator( $raw )
+				|| ( isset( $meta['input_mode'] ) && 'parenthesized_hri' === $meta['input_mode'] )
+			);
+
+		if ( $explicit_boundaries ) {
+			$needs_review = true;
+			$warnings[]   = __( 'Ο κωδικός είχε ρητά όρια πεδίων (Group Separator ή παρενθέσεις), αλλά για να βρεθούν όλα τα PC/SN/LOT/EXP χρειάστηκε να χωριστεί τιμή που ο κωδικός είχε ήδη κλείσει. Κάποιο πεδίο μπορεί να μην υπάρχει στον αρχικό κωδικό. Ελέγξτε όλα τα πεδία με τη συσκευασία πριν συνεχίσετε.', 'qr-rebuilder-pro' );
+		}
+
+		/*
 		 * Αυτόματη αποδοχή συναγόμενων ορίων μόνο όταν η ανάγνωση είναι
 		 * αποδεδειγμένη: μία πλήρης έγκυρη ερμηνεία, ολοκληρωμένη αναζήτηση,
 		 * έγκυρο GTIN, όχι DD=00 που αλλάζει (2.15.3: μόνο στο παλιό μοντέλο)
@@ -3200,6 +3218,56 @@ final class QRRP_GS1_Parser {
 			'solutions' => $complete,
 			'truncated' => ! empty( $cross['truncated'] ),
 		);
+	}
+
+	/**
+	 * 2.15.7: true όταν κάποιος Group Separator κλείνει τιμή μεταβλητού μήκους
+	 * στην αυστηρή ανάγνωση (μεταβλητή τιμή έως τον επόμενο GS). GS μόνο μετά από
+	 * πεδία σταθερού μήκους (π.χ. 01<GS>) δεν δείχνει όρια μεταβλητών πεδίων.
+	 * Αν η αυστηρή ανάγνωση σταματήσει πριν περάσει όλους τους GS, επιστρέφει
+	 * true (συντηρητικά).
+	 */
+	private static function has_terminating_separator( $raw ) {
+		if ( false === strpos( $raw, self::GROUP_SEPARATOR ) ) {
+			return false;
+		}
+
+		$ai_table = self::full_ai_table();
+		$len      = strlen( $raw );
+		$pos      = 0;
+
+		while ( $pos < $len ) {
+			if ( self::GROUP_SEPARATOR === $raw[ $pos ] ) {
+				++$pos;
+				continue;
+			}
+
+			$matched = self::match_ai( $raw, $pos, $ai_table );
+			if ( null === $matched ) {
+				break;
+			}
+
+			list( $ai, $def ) = $matched;
+			$value_pos        = $pos + strlen( $ai );
+
+			if ( $def['length'] > 0 ) {
+				$pos = $value_pos + (int) $def['length'];
+				continue;
+			}
+
+			$gs_pos = strpos( $raw, self::GROUP_SEPARATOR, $value_pos );
+			if ( false === $gs_pos ) {
+				return false;
+			}
+
+			if ( $gs_pos > $value_pos ) {
+				return true;
+			}
+
+			$pos = $gs_pos + 1;
+		}
+
+		return false !== strpos( $raw, self::GROUP_SEPARATOR, min( $pos, $len ) );
 	}
 
 	/** True when at least one reading contains every required field. */
