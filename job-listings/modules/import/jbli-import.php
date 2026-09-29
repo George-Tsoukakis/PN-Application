@@ -41,8 +41,25 @@ function jbli_import_status() {
  */
 function jbli_import_canonical_url( $jbli_url ) {
 
-	$jbli_url = trim( (string) $jbli_url );
+	/* Invisible characters that come along when copying from browsers / chats. */
+	$jbli_url = trim( str_replace( array( "\xE2\x80\x8B", "\xE2\x80\x8E", "\xE2\x80\x8F", "\xEF\xBB\xBF", "\xC2\xA0" ), '', (string) $jbli_url ) );
 	$jbli_url = (string) preg_replace( '~#.*$~', '', $jbli_url );
+
+	/*
+	 * Greek (any non-ASCII) letters typed/pasted as-is are percent-encoded;
+	 * already-encoded %ce%b2… sequences are kept untouched. (9.9.56: the list
+	 * used to go through sanitize_textarea_field(), which deletes %XX
+	 * sequences, so Greek slugs were cut to "-life--2-" and the site said 404.)
+	 */
+	$jbli_url = (string) preg_replace_callback(
+		'/[^\x00-\x7F]+/',
+		static function ( $jbli_m ) { return rawurlencode( $jbli_m[0] ); },
+		$jbli_url
+	);
+	$jbli_url = str_replace( ' ', '%20', $jbli_url );
+
+	/* %CE%B2 and %ce%b2 are the same URL — one form, so duplicates are caught. */
+	$jbli_url = (string) preg_replace_callback( '/%[0-9A-Fa-f]{2}/', static function ( $jbli_m ) { return strtolower( $jbli_m[0] ); }, $jbli_url );
 
 	return esc_url_raw( $jbli_url, array( 'http', 'https' ) );
 
@@ -201,9 +218,11 @@ function jbli_import_render_page() {
 	{
 		check_admin_referer( 'jbli_import', 'jbli_import_nonce' );
 
-		$jbli_urls  = sanitize_textarea_field( wp_unslash( $_POST['jbli_import_urls'] ) );
+		/* Not sanitize_textarea_field(): it strips the %XX sequences of Greek URLs. Each line is validated by jbli_import_canonical_url(). */
+		$jbli_raw   = wp_check_invalid_utf8( (string) wp_unslash( $_POST['jbli_import_urls'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$jbli_email = sanitize_email( wp_unslash( $_POST['jbli_import_email'] ?? '' ) );
-		$jbli_list  = array_slice( array_values( array_unique( array_filter( array_map( 'trim', preg_split( '~[\r\n]+~', $jbli_urls ) ) ) ) ), 0, 20 );
+		$jbli_list  = array_slice( array_values( array_unique( array_filter( array_map( 'jbli_import_canonical_url', preg_split( '~[\r\n\s]+~', $jbli_raw ) ) ) ) ), 0, 20 );
+		$jbli_urls  = implode( "\n", $jbli_list );
 
 		if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 300 ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 

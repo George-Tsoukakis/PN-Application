@@ -43,7 +43,8 @@ function jbli_import_fetch( $jbli_url ) {
 		array(
 			'timeout'     => 20,
 			'redirection' => 5,
-			'user-agent'  => 'Mozilla/5.0 (compatible; PharmacyNeedsImport/1.0; +' . home_url( '/' ) . ')',
+			/* A regular browser UA: many sites' firewalls answer 403 to unknown bots. */
+			'user-agent'  => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
 			'headers'     => array( 'Accept' => 'text/html,application/xhtml+xml', 'Accept-Language' => 'el-GR,el;q=0.9,en;q=0.6' ),
 		)
 	);
