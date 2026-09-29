@@ -1165,6 +1165,10 @@ class Plandose_Subscriptions {
 		$next_month  = $date->modify( 'first day of next month' )->format( 'Y-m-d' );
 		$table       = self::table_name();
 
+		// The rollover race window (see below): a day for the request
+		// that crossed midnight plus a day for a site timezone change.
+		$next_month_grace = $date->modify( 'first day of next month' )->modify( '+2 days' )->format( 'Y-m-d' );
+
 		/*
 		 * Archive the outgoing month BEFORE the counter is zeroed —
 		 * otherwise the number is gone for good and all that survives is
@@ -1212,6 +1216,21 @@ class Plandose_Subscriptions {
 
 			// Already in the running month: nothing to close.
 			if ( '' !== $reset_at && $reset_at >= $month_start && $reset_at < $next_month ) {
+				return false;
+			}
+
+			// Already in the NEXT month: a request whose $today was fixed
+			// just before midnight on the last day runs after another one
+			// has rolled the counter over. That counter is the running
+			// month, not a closed one: archiving it as closed and resetting
+			// it back would drop its prints from its own month (the
+			// history keeps the larger figure, not the sum) and hand a
+			// Free pharmacy part of its allowance back. Nothing is done;
+			// this request's increment then matches no row and it is
+			// answered «try again». Only within the race window: a date
+			// further ahead is a clock that was wrong, reset as before so
+			// the counter cannot stay stuck.
+			if ( '' !== $reset_at && $reset_at >= $next_month && $reset_at < $next_month_grace ) {
 				return false;
 			}
 
