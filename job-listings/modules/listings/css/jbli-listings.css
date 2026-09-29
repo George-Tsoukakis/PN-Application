@@ -940,7 +940,8 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding: clamp(22px, 3.2vw, 44px) clamp(14px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
+  /* 9.9.50: more room above the search panel; the green band keeps its height. */
+  padding: clamp(40px, 5.5vw, 80px) clamp(14px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
   border-radius: 32px;
   border: 1px solid rgba(5, 150, 105, .10);
   background:
@@ -1003,7 +1004,7 @@
 @media (max-width: 640px) {
   .jbli_listings {
     border-radius: 22px;
-    padding: 18px 12px 26px;
+    padding: 34px 12px 26px;
   }
 
   .jbli_listings::before,
@@ -1033,4 +1034,13 @@
 #jbli_listings_root.jbli_listings {
   margin-top: clamp(28px, 4.5vw, 64px);
   margin-bottom: clamp(28px, 4.5vw, 64px);
+  /* 9.9.50: same reset also zeroed the padding, so the search panel sat on
+     the top edge of the green band. More room above it; band height unchanged. */
+  padding: clamp(40px, 5.5vw, 80px) clamp(14px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
+}
+
+@media (max-width: 640px) {
+  #jbli_listings_root.jbli_listings {
+    padding: 34px 12px 26px;
+  }
 }

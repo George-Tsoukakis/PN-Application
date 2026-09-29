@@ -3,7 +3,7 @@
  * Plugin Name:       Job Listings – PharmacyNeeds
  * Plugin URI:        https://pharmacyneeds.gr
  * Description:       Πλατφόρμα αγγελιών εργασίας αποκλειστικά για φαρμακεία.
- * Version:           9.9.49
+ * Version:           9.9.50
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            PharmacyNeeds
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-defined( 'JBLI_VERSION' )  || define( 'JBLI_VERSION',  '9.9.49' );
+defined( 'JBLI_VERSION' )  || define( 'JBLI_VERSION',  '9.9.50' );
 defined( 'JBLI_FILE' )     || define( 'JBLI_FILE',     __FILE__ );
 defined( 'JBLI_DIR' )      || define( 'JBLI_DIR',      plugin_dir_path( JBLI_FILE ) );
 defined( 'JBLI_URL' )      || define( 'JBLI_URL',      plugin_dir_url( JBLI_FILE ) );
