@@ -41,6 +41,12 @@
 			days: '%d ημέρες',
 			oneDay: '1 ημέρα',
 			doses: 'Φάρμακα',
+			everyDay: 'κάθε ημέρα',
+			weekly: '1 φορά την εβδομάδα',
+			everyN: 'κάθε %d ημέρες',
+			doseDays: '%d ημέρες με δόση',
+			hint8: 'Αν ο γιατρός σας είπε «κάθε 8 ώρες», βάλτε ώρες με ίση απόσταση, π.χ. Πρωί 07:00, Μεσημέρι 15:00, Βράδυ 23:00.',
+			hint12: 'Αν ο γιατρός σας είπε «κάθε 12 ώρες», βάλτε ώρες με ίση απόσταση, π.χ. Πρωί 08:00, Βράδυ 20:00.',
 			disclaimer: 'Το πλάνο είναι βοήθημα υπενθύμισης και δεν αντικαθιστά τις οδηγίες του γιατρού ή του φαρμακοποιού. Ελέγξτε ότι τα φάρμακα και οι δόσεις είναι ίδια με το φύλλο του φαρμακείου. Αν αλλάξει η δοσολογία, ζητήστε νέο πλάνο και σβήστε τις παλιές υπενθυμίσεις.',
 			slot: { m: 'Πρωί', n: 'Μεσημέρι', a: 'Απόγευμα', e: 'Βράδυ', x: 'Μέσα στην ημέρα' },
 			file: 'plano-farmakon.ics'
@@ -67,6 +73,12 @@
 			days: '%d days',
 			oneDay: '1 day',
 			doses: 'Medicines',
+			everyDay: 'every day',
+			weekly: 'once a week',
+			everyN: 'every %d days',
+			doseDays: '%d dose days',
+			hint8: 'If your doctor said “every 8 hours”, choose evenly spaced times, e.g. Morning 07:00, Midday 15:00, Night 23:00.',
+			hint12: 'If your doctor said “every 12 hours”, choose evenly spaced times, e.g. Morning 08:00, Night 20:00.',
 			disclaimer: 'This plan is a reminder aid and does not replace the instructions of your doctor or pharmacist. Check that the medicines and doses match the pharmacy sheet. If the dosage changes, ask for a new plan and delete the old reminders.',
 			slot: { m: 'Morning', n: 'Midday', a: 'Afternoon', e: 'Night', x: 'During the day' },
 			file: 'medicine-plan.ics'
@@ -416,7 +428,7 @@
 	}
 
 	/* For the tests (Node). */
-	window.PlanDoseCalendar = { decode: decode, segments: segments, dayMap: dayMap, buildIcs: buildIcs, googleLink: googleLink, DEFAULT_TIME: DEFAULT_TIME };
+	window.PlanDoseCalendar = { decode: decode, segments: segments, dayMap: dayMap, buildIcs: buildIcs, googleLink: googleLink, DEFAULT_TIME: DEFAULT_TIME, medWhen: medWhen, spacingHints: spacingHints, TEXT: TEXT };
 
 	/* ---------------------------------------------------------------- */
 	/* Page (DOM built with textContent: nothing from the link is HTML)    */
@@ -437,25 +449,77 @@
 		return node;
 	}
 
-	function medWhen(plan, index, T) {
+	/* The dayparts and the days of one medicine, sorted. */
+	function medDays(plan, index) {
 		var slots = [];
-		var first = -1;
-		var last = -1;
+		var days = [];
 		plan.tracks.forEach(function (t) {
 			if (t.med !== index) { return; }
 			for (var d = 0; d < plan.days; d++) {
 				if (has(t.bits, d)) {
 					if (-1 === slots.indexOf(t.slot)) { slots.push(t.slot); }
-					if (-1 === first || d < first) { first = d; }
-					if (d > last) { last = d; }
+					if (-1 === days.indexOf(d)) { days.push(d); }
 				}
 			}
 		});
 		slots.sort(function (a, b) { return SLOTS.indexOf(a) - SLOTS.indexOf(b); });
-		var span = first === last
-			? shortDate(addDays(plan.start, first))
-			: shortDate(addDays(plan.start, first)) + ' – ' + shortDate(addDays(plan.start, last));
-		return slots.map(function (s) { return T.slot[s]; }).join(' · ') + ' · ' + span;
+		days.sort(function (a, b) { return a - b; });
+		return { slots: slots, days: days };
+	}
+
+	/*
+	 * When a medicine is taken. The first–last dates alone read as «every
+	 * day»: a weekly methotrexate on 01/10, 08/10, 15/10, 22/10 must never
+	 * look like a daily one, so the rhythm is always said — every day, once
+	 * a week, every N days with the number of dose days, or the dates
+	 * themselves when they follow no rhythm.
+	 */
+	function medWhen(plan, index, T) {
+		var md = medDays(plan, index);
+		var parts = md.slots.map(function (s) { return T.slot[s]; });
+		var days = md.days;
+		if (!days.length) {
+			return parts.join(' · ');
+		}
+		var date = function (d) { return shortDate(addDays(plan.start, d)); };
+		var first = days[0];
+		var last = days[days.length - 1];
+		if (1 === days.length) {
+			return parts.concat(date(first)).join(' · ');
+		}
+		var gap = days[1] - days[0];
+		var even = days.every(function (d, k) { return 0 === k || d - days[k - 1] === gap; });
+		var span = date(first) + ' – ' + date(last);
+		if (even && 1 === gap) {
+			return parts.concat(T.everyDay, span).join(' · ');
+		}
+		var count = T.doseDays.replace('%d', days.length);
+		if (even) {
+			return parts.concat(7 === gap ? T.weekly : T.everyN.replace('%d', gap), count, span).join(' · ');
+		}
+		var shown = days.length <= 6
+			? days.map(date).join(', ')
+			: days.slice(0, 3).map(date).join(', ') + ' … ' + date(last);
+		return parts.concat(count + ': ' + shown).join(' · ');
+	}
+
+	/*
+	 * The plan keeps dayparts, not clock hours: «3 φορές την ημέρα» and
+	 * «κάθε 8 ώρες» both come here as Morning / Midday / Night, and the
+	 * default times (08:00, 14:00, 21:00) are not evenly spaced. When a
+	 * medicine is taken at exactly those dayparts (or Morning / Night), the
+	 * patient is told how to space them if the doctor said «every … hours».
+	 */
+	function spacingHints(plan, T) {
+		var out = [];
+		plan.meds.forEach(function (m, i) {
+			var key = medDays(plan, i).slots.join('');
+			var hint = 'mne' === key ? T.hint8 : ('me' === key ? T.hint12 : '');
+			if (hint && -1 === out.indexOf(hint)) {
+				out.push(hint);
+			}
+		});
+		return out;
 	}
 
 	function render() {
@@ -510,9 +574,12 @@
 		var neutralBox = el('input', { type: 'checkbox', id: 'pd-neutral' });
 		app.appendChild(el('section', { 'class': 'panel stack' }, [
 			el('h2', { text: T.times }),
-			timeBox,
+			timeBox
+		].concat(spacingHints(plan, T).map(function (h) {
+			return el('p', { 'class': 'muted hint', text: h });
+		})).concat([
 			el('label', { 'class': 'check', 'for': 'pd-neutral' }, [neutralBox, el('span', { text: T.neutral })])
-		]));
+		])));
 
 		var addBtn = el('button', { type: 'button', 'class': 'btn', text: T.add });
 		var done = el('p', { 'class': 'done', role: 'status', text: T.added.replace('%s', T.file) });
