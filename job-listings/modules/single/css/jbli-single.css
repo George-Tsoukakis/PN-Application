@@ -414,32 +414,6 @@
   height: clamp(460px, 72vh, 640px);
 }
 
-.jbli_page_wrap_single .jbli_single_aside_cta {
-  margin-top: 14px;
-}
-
-.jbli_page_wrap_single .jbli_single_aside_cta .jbli_btn_apply {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 46px;
-  border: 0;
-  border-radius: 12px;
-  background: #fff;
-  color: #065f46;
-  font-size: .95rem;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(2, 44, 34, .25);
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-
-.jbli_page_wrap_single .jbli_single_aside_cta .jbli_btn_apply:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(2, 44, 34, .32);
-}
-
 @media (max-width: 960px) {
   .jbli_page_wrap_single .jbli_single_layout {
     grid-template-columns: 1fr;

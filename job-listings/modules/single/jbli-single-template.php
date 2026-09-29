@@ -449,7 +449,7 @@ get_header();
 			</div><!-- .jbli_single_main -->
 
 			<?php
-				/* 9.9.51: picture/video on the right, with a short "interested?" card. */
+				/* 9.9.51: picture/video on the right, with a short "interested?" card (no button since 9.9.52). */
 				$jbli_side_media = (string) get_option( 'jbli_single_media_url', '' );
 
 				if ( '' === trim( $jbli_side_media ) ) { $jbli_side_media = (string) get_option( 'jbli_form_media_url', '' ); }
@@ -461,18 +461,15 @@ get_header();
 					$jbli_salary ? jbli_salary_label( $jbli_salary ) : '',
 					! empty( $jbli_nomoi ) ? implode( ', ', $jbli_nomoi ) : '',
 				) ) );
-
-				$jbli_side_button = function_exists( 'jbli_apply_render' ) ? jbli_apply_render( $jbli_id ) : '';
 			?>
 			<aside class="jbli_single_aside">
 				<?php
-					echo jbli_media_panel_html( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside; the button is built from escaped parts.
+					echo jbli_media_panel_html( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside.
 						$jbli_side_media,
 						array(
 							'kicker' => __( 'PharmacyNeeds', 'job-listings' ),
 							'title'  => __( 'Ενδιαφέρεστε για αυτή τη θέση;', 'job-listings' ),
 							'items'  => $jbli_side_items,
-							'html'   => '' !== $jbli_side_button ? '<div class="jbli_single_aside_cta">' . $jbli_side_button . '</div>' : '',
 						),
 						'jbli_single_media'
 					);
