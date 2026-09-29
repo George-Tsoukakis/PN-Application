@@ -9,16 +9,32 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Get the real client IP, respecting Cloudflare and common reverse proxies.
+ * Get the client IP for view de-duplication.
  *
- * Priority: CF-Connecting-IP → X-Real-IP → X-Forwarded-For → REMOTE_ADDR.
- * Only validated IPs are returned — falls back to 'unknown' if none pass.
+ * Forwarding headers are only believed when the request really comes from a
+ * proxy: Cloudflare's published ranges (CF-Connecting-IP) or a private /
+ * loopback address such as a local nginx or load balancer (X-Real-IP,
+ * X-Forwarded-For). Otherwise anyone could send a random header on each
+ * request and inflate the view count. The 'jbli_trusted_proxy' filter can
+ * mark other proxies as trusted.
  *
  * @return string
  */
 function jbli_get_client_ip(): string {
 
-	$jbli_keys = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR', );
+	$jbli_remote = sanitize_text_field( wp_unslash( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ) );
+
+	if ( ! filter_var( $jbli_remote, FILTER_VALIDATE_IP ) ) { return 'unknown'; }
+
+	$jbli_from_cloudflare = jbli_ip_in_ranges( $jbli_remote, jbli_cloudflare_ranges() );
+	$jbli_from_private    = ! filter_var( $jbli_remote, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE );
+	$jbli_trusted         = (bool) apply_filters( 'jbli_trusted_proxy', $jbli_from_cloudflare || $jbli_from_private, $jbli_remote );
+
+	if ( ! $jbli_trusted ) { return $jbli_remote; }
+
+	$jbli_keys = $jbli_from_cloudflare
+		? array( 'HTTP_CF_CONNECTING_IP' )
+		: array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP', 'HTTP_X_FORWARDED_FOR' );
 
 	foreach ( $jbli_keys as $jbli_key ) {
 
@@ -36,7 +52,64 @@ function jbli_get_client_ip(): string {
 
 	}
 
-	return 'unknown';
+	return $jbli_remote;
+
+}
+
+/**
+ * Cloudflare edge ranges (https://www.cloudflare.com/ips/).
+ *
+ * @return string[]
+ */
+function jbli_cloudflare_ranges(): array {
+
+	return (array) apply_filters( 'jbli_cloudflare_ranges', array(
+		'173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+		'141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+		'197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+		'104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+		'2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+		'2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+	) );
+
+}
+
+/**
+ * Whether an IP falls inside any of the given CIDR ranges (IPv4 or IPv6).
+ *
+ * @param string   $jbli_ip     IP address.
+ * @param string[] $jbli_ranges CIDR ranges.
+ * @return bool
+ */
+function jbli_ip_in_ranges( string $jbli_ip, array $jbli_ranges ): bool {
+
+	$jbli_ip_bin = @inet_pton( $jbli_ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+	if ( false === $jbli_ip_bin ) { return false; }
+
+	foreach ( $jbli_ranges as $jbli_range ) {
+
+		list( $jbli_subnet, $jbli_bits ) = array_pad( explode( '/', (string) $jbli_range, 2 ), 2, null );
+
+		$jbli_subnet_bin = @inet_pton( (string) $jbli_subnet ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		if ( false === $jbli_subnet_bin || strlen( $jbli_subnet_bin ) !== strlen( $jbli_ip_bin ) ) { continue; }
+
+		$jbli_bits  = null === $jbli_bits ? strlen( $jbli_ip_bin ) * 8 : (int) $jbli_bits;
+		$jbli_bytes = intdiv( $jbli_bits, 8 );
+		$jbli_rest  = $jbli_bits % 8;
+
+		if ( substr( $jbli_ip_bin, 0, $jbli_bytes ) !== substr( $jbli_subnet_bin, 0, $jbli_bytes ) ) { continue; }
+
+		if ( 0 === $jbli_rest ) { return true; }
+
+		$jbli_mask = ( 0xFF << ( 8 - $jbli_rest ) ) & 0xFF;
+
+		if ( ( ord( $jbli_ip_bin[ $jbli_bytes ] ) & $jbli_mask ) === ( ord( $jbli_subnet_bin[ $jbli_bytes ] ) & $jbli_mask ) ) { return true; }
+
+	}
+
+	return false;
 
 }
 

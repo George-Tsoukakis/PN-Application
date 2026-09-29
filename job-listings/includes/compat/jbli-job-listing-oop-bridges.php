@@ -34,7 +34,7 @@ if ( ! function_exists( 'jbli_plugin' ) )
 
 if ( ! function_exists( 'jbli_model' ) )
 {
-	function jbli_model( $jbli_post_id, array $jbli_terms = null ) {
+	function jbli_model( $jbli_post_id, ?array $jbli_terms = null ) {
 
 		return Listing::jbli_from_id( absint( $jbli_post_id ), $jbli_terms );
 

@@ -87,7 +87,7 @@ function jbli_post_type_args() {
 
 		'show_in_rest'          => false,
 
-		'supports' => array( 'jbli_title', 'editor', 'author', 'custom-fields', ),
+		'supports' => array( 'title', 'editor', 'author', 'custom-fields', ),
 
 		'rewrite' => array(
 			'slug'       => 'aggelia',
@@ -118,7 +118,7 @@ function jbli_register_post_statuses() {
 		'job-expired',
 		array(
 
-			'jbli_label' => _x(
+			'label' => _x(
 				'Έληξε',
 				'post status',
 				'job-listings'

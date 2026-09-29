@@ -100,9 +100,9 @@ function jbli_apply_handle_ajax(): void {
 
 	$jbli_placeholders = array(
 		'name'          => $jbli_name,
-		'jbli_phone'    => $jbli_phone,
-		'jbli_email'    => $jbli_email,
-		'jbli_position' => $jbli_position,
+		'phone'         => $jbli_phone,
+		'email'         => $jbli_email,
+		'position'      => $jbli_position,
 		'pharmacy'      => $jbli_pharmacy,
 		'listing_url'   => get_permalink( $jbli_post_id ),
 	);

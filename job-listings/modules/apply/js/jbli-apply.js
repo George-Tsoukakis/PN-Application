@@ -27,6 +27,10 @@
 			jbli_notice.textContent = '';
 		}
 
+		/* Hidden after a successful send; show it again for the next application. */
+		var jbli_form_wrap = jbli_modal.querySelector( '.jbli_apply_modal_form_wrap' );
+		if ( jbli_form_wrap ) { jbli_form_wrap.style.display = ''; }
+
 		var jbli_inputs = jbli_modal.querySelectorAll( '.jbli_apply_input' );
 		jbli_inputs.forEach( function ( jbli_input ) { jbli_input.value = ''; } );
 

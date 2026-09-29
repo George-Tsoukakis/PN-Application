@@ -238,14 +238,13 @@ else
 					
 						$jbli_base_url = add_query_arg(
 							array_filter( array(
-								'post_type' => JBLI_CPT,
 								'page'      => 'jbli_admin_panel',
 								'f_nomos'   => $jbli_f_nomos  ?: null,
 								'f_cat'     => $jbli_f_cat    ?: null,
 								'f_status'  => $jbli_f_status ?: null,
 								'f_s'       => $jbli_f_s      ?: null,
 							) ),
-							admin_url( 'edit.php' )
+							admin_url( 'admin.php' )
 						);
 
 						$jbli_pagination = paginate_links( array(
@@ -255,7 +254,7 @@ else
 							'total'     => $jbli_query->max_num_pages,
 							'prev_text' => __( '‹ Προηγ.', 'job-listings' ),
 							'next_text' => __( 'Επόμ. ›',  'job-listings' ),
-							'jbli_type' => 'plain',
+							'type'      => 'plain',
 						) );
 
 						if ( $jbli_pagination ) { echo wp_kses_post( $jbli_pagination ); }

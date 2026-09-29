@@ -30,7 +30,7 @@ jQuery(document).ready(function ($) {
     }
 
     function jbliWrapper($el) {
-        var $w = $el.closest('.jbli_field, .jbli_form_field, .jbli_consent_box');
+        var $w = $el.closest('.jbli_field, .jbli_form_field, .jbli_form_consent');
         return $w.length ? $w : $el.parent();
     }
 
@@ -49,8 +49,9 @@ jQuery(document).ready(function ($) {
         $w.find('.jbli_field_error').remove();
     }
 
-    /* Native validation: our own message, our own highlight. */
-    $form.on('invalid', ':input', function (e) {
+    /* Native validation: our own message, our own highlight.
+       "invalid" does not bubble, so it is bound on each field, not delegated. */
+    $form.find(':input').on('invalid', function (e) {
         e.preventDefault();
         jbliMark($(this), jbliMessageFor(this));
     });
@@ -73,9 +74,29 @@ jQuery(document).ready(function ($) {
         jbliPhoneCheck();
     }
 
-    $form.on('submit', function () {
+    var $btn = $('#jbli_submit_btn');
+    var btnLabel = $.trim($btn.text());
+
+    $form.on('submit', function (e) {
+        /* Block double clicks while the first submit is on its way. */
+        if ($btn.length && $btn.data('jbliSubmitted')) {
+            e.preventDefault();
+            return false;
+        }
+
         var invalid = this.querySelectorAll(':invalid');
-        if (!invalid.length) { return true; }
+        if (!invalid.length) {
+            if ($btn.length) {
+                $btn.data('jbliSubmitted', true).prop('disabled', true).addClass('is-loading')
+                    .text($btn.attr('data-loading-text') || 'Αποθήκευση…');
+
+                /* Re-enable if the page is still here (network error, back button). */
+                setTimeout(function () {
+                    $btn.data('jbliSubmitted', false).prop('disabled', false).removeClass('is-loading').text(btnLabel);
+                }, 15000);
+            }
+            return true;
+        }
 
         var $first = $(invalid[0]);
         jbliMark($first, jbliMessageFor(invalid[0]));
@@ -86,6 +107,26 @@ jQuery(document).ready(function ($) {
         setTimeout(function () { $first.trigger('focus'); }, 250);
 
         return true;
+    });
+
+    /* Live character counters: <span class="jbli_char_counter" data-input="id" data-max="n">. */
+    $form.find('.jbli_char_counter[data-input]').each(function () {
+        var $counter = $(this);
+        var $input   = $('#' + $counter.attr('data-input'));
+        var max      = parseInt($counter.attr('data-max') || '0', 10);
+        if (!$input.length || !max) { return; }
+
+        var update = function () {
+            var len = ($input.val() || '').length;
+            $counter.text(len).attr('data-warn', len >= max * 0.9 ? 'true' : 'false');
+        };
+        $input.on('input', update);
+        update();
+    });
+
+    /* Coming back via the back button restores the page from cache with the button still disabled. */
+    $(window).on('pageshow', function () {
+        $btn.data('jbliSubmitted', false).prop('disabled', false).removeClass('is-loading').text(btnLabel);
     });
 
     /* Fields the server rejected, carried across the redirect. */

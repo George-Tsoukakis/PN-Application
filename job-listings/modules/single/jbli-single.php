@@ -46,3 +46,38 @@ function jbli_override_single_template( $jbli_template ) {
 }
 
 add_filter( 'template_include', 'jbli_override_single_template', 99 );
+
+/**
+ * Redirect visitors away from unpublished listings.
+ *
+ * Runs on template_redirect, before any output. (It used to run inside the
+ * template after get_header(), where the redirect could no longer be sent.)
+ * Owners go to their dashboard with a notice; everyone else to the home page.
+ *
+ * @return void
+ */
+function jbli_single_redirect_unpublished() {
+
+	if ( ! is_singular( JBLI_CPT ) || current_user_can( 'manage_options' ) ) { return; }
+
+	$post = get_queried_object();
+
+	if ( ! $post instanceof WP_Post || 'publish' === $post->post_status ) { return; }
+
+	if ( is_user_logged_in() && (int) get_current_user_id() === (int) $post->post_author && function_exists( 'jbli_redirect_with_notice' ) )
+	{
+		$jbli_dash_url = function_exists( 'jbli_get_dashboard_url' ) ? jbli_get_dashboard_url() : home_url( '/dashboard/' );
+
+		jbli_redirect_with_notice(
+			$jbli_dash_url,
+			__( 'Αυτή η αγγελία δεν είναι δημοσιευμένη. Μπορείτε να τη διαχειριστείτε από εδώ.', 'job-listings' ),
+			'warning'
+		);
+	}
+
+	wp_safe_redirect( home_url( '/' ) );
+	exit;
+
+}
+
+add_action( 'template_redirect', 'jbli_single_redirect_unpublished', 5 );

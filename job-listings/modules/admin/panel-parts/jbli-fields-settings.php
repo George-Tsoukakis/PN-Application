@@ -40,18 +40,7 @@ $jbli_def_body 		= function_exists( 'jbli_apply_default_body' )    ? jbli_apply_
 
 $jbli_google_map_api_key = (string) get_option( 'jbli_google_map_api_key', '' );
 ?>
-<?php
-
-if ( isset( $jbli_saved_labels[ $jbli_saved ] ) )
-{
-
-	?>
-	<div class="notice notice-success is-dismissible" style="margin:16px 0 0;">
-		<p><?php echo esc_html( $jbli_saved_labels[ $jbli_saved ] ); ?></p>
-	</div>
-	<?php
-}
-?>
+<?php /* The "saved" notice is printed once by jbli-settings-template.php. */ ?>
 
 <?php  ?>
 

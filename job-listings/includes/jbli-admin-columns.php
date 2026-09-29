@@ -12,7 +12,7 @@ function jbli_admin_columns( array $jbli_columns ): array {
 
 	return array(
 		'cb'             => $jbli_columns['cb'] ?? '<input type="checkbox" />',
-		'jbli_title'     => __( 'Θέση Εργασίας', 'job-listings' ),
+		'title'          => __( 'Θέση Εργασίας', 'job-listings' ),
 		'job_pharmacy'   => __( 'Φαρμακείο', 'job-listings' ),
 		'job_nomos'      => __( 'Νομός', 'job-listings' ),
 		'job_category'   => __( 'Κατηγορία', 'job-listings' ),
@@ -147,9 +147,9 @@ function jbli_admin_filter_statuses(): array {
 
 function jbli_admin_filter_dropdowns(): void {
 
-	global $jbli_typenow;
+	global $typenow;
 
-	if ( JBLI_CPT !== $jbli_typenow ) { return; }
+	if ( JBLI_CPT !== $typenow ) { return; }
 
 	$jbli_selected_nomos  = absint( $_GET['job_filter_nomos'] ?? 0 );
 	$jbli_selected_cat    = absint( $_GET['job_filter_cat'] ?? 0 );

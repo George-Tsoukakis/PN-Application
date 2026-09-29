@@ -32,11 +32,16 @@ if ( ! function_exists( 'jbli_parse_filters' ) )
 
 		$jbli_f_nomos  = absint( $jbli_src['job_nomos'] ?? 0 );
 		$jbli_f_cat    = absint( $jbli_src['job_cat'] ?? 0 );
-		$jbli_f_type   = sanitize_key( wp_unslash( $jbli_src['job_type'] ?? '' ) );
-		$jbli_f_salary = sanitize_key( wp_unslash( $jbli_src['job_salary'] ?? '' ) );
+		/* Option keys may contain characters sanitize_key() strips (e.g. "2200+"). */
+		$jbli_f_type   = sanitize_text_field( wp_unslash( $jbli_src['job_type'] ?? '' ) );
+		$jbli_f_salary = sanitize_text_field( wp_unslash( $jbli_src['job_salary'] ?? '' ) );
 		$jbli_f_search = sanitize_text_field( wp_unslash( $jbli_src['job_s'] ?? '' ) );
 		$jbli_per_page = absint( $jbli_src['per_page'] ?? 0 );
-		$jbli_paged    = max( 1, absint( $jbli_src['paged'] ?? 1 ) );
+		$jbli_paged    = isset( $jbli_src['paged'] )
+			? absint( $jbli_src['paged'] )
+			/* Server-rendered paginate_links() use pretty /page/N/ URLs. */
+			: max( absint( get_query_var( 'paged' ) ), absint( get_query_var( 'page' ) ) );
+		$jbli_paged    = max( 1, $jbli_paged );
 
 		$jbli_default_per_page = (int) apply_filters( 'jbli_listings_per_page', 12 );
 		$jbli_default_per_page = max( 1, min( 50, $jbli_default_per_page ) );
@@ -158,7 +163,7 @@ if ( ! function_exists( 'jbli_build_query' ) )
 		{
 			$jbli_meta_query[] = array(
 				'key'     => JBLI_META_TYPE,
-				'value'   => sanitize_key( (string) $jbli_filters['f_type'] ),
+				'value'   => sanitize_text_field( (string) $jbli_filters['f_type'] ),
 				'compare' => '=',
 			);
 		}
@@ -167,7 +172,7 @@ if ( ! function_exists( 'jbli_build_query' ) )
 		{
 			$jbli_meta_query[] = array(
 				'key'     => JBLI_META_SALARY,
-				'value'   => sanitize_key( (string) $jbli_filters['f_salary'] ),
+				'value'   => sanitize_text_field( (string) $jbli_filters['f_salary'] ),
 				'compare' => '=',
 			);
 		}
@@ -178,7 +183,7 @@ if ( ! function_exists( 'jbli_build_query' ) )
 			'featured_clause' => array(
 				'key'       => JBLI_META_FEATURED,
 				'compare'   => 'EXISTS',
-				'jbli_type' => 'NUMERIC',
+				'type'      => 'NUMERIC',
 			),
 			'missing_featured_clause' => array( 'key'     => JBLI_META_FEATURED, 'compare' => 'NOT EXISTS', ),
 		);

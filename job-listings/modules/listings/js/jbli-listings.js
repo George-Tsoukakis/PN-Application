@@ -38,8 +38,7 @@
 
 		jbli_init_ajax_filters();
 		jbli_init_delete_confirm();
-		jbli_init_form_submit_loading();
-		jbli_init_char_counters();
+		/* Form submit-loading and the character counter live in jbli-form.js. */
 	});
 
 	function jbli_init_ajax_filters() {
@@ -213,27 +212,27 @@
 			jbli_html += '<div id="jbli_ajax_pagination" class="jbli_ajax_pages">';
 
 			if (jbli_current > 1) {
-				jbli_html += '<a class="jbli_page-numbers prev" data-jbli_page="' + jbli_esc_attr(jbli_current - 1) + '" href="#" aria-label="' + jbli_esc_attr(jbli_i18n.prev_page || 'Προηγούμενη σελίδα') + '">← Προηγ.</a>';
+				jbli_html += '<a class="page-numbers prev" data-jbli_page="' + jbli_esc_attr(jbli_current - 1) + '" href="#" aria-label="' + jbli_esc_attr(jbli_i18n.prev_page || 'Προηγούμενη σελίδα') + '">← Προηγ.</a>';
 			}
 
 			for (var i = 1; i <= jbli_max_pages; i++) {
 				if (i === jbli_current) {
-					jbli_html += '<span class="jbli_page-numbers jbli_current" aria-jbli_current="jbli_page">' + jbli_esc_html(i) + '</span>';
+					jbli_html += '<span class="page-numbers current" aria-current="page">' + jbli_esc_html(i) + '</span>';
 				} else if (i === 1 || i === jbli_max_pages || Math.abs(i - jbli_current) <= 2) {
-					jbli_html += '<a class="jbli_page-numbers" data-jbli_page="' + jbli_esc_attr(i) + '" href="#" aria-label="' + jbli_esc_attr((jbli_i18n.page_n || 'Σελίδα') + ' ' + i) + '">' + jbli_esc_html(i) + '</a>';
+					jbli_html += '<a class="page-numbers" data-jbli_page="' + jbli_esc_attr(i) + '" href="#" aria-label="' + jbli_esc_attr((jbli_i18n.page_n || 'Σελίδα') + ' ' + i) + '">' + jbli_esc_html(i) + '</a>';
 				} else if (Math.abs(i - jbli_current) === 3) {
-					jbli_html += '<span class="jbli_page-numbers dots" aria-hidden="true">…</span>';
+					jbli_html += '<span class="page-numbers dots" aria-hidden="true">…</span>';
 				}
 			}
 
 			if (jbli_current < jbli_max_pages) {
-				jbli_html += '<a class="jbli_page-numbers next" data-jbli_page="' + jbli_esc_attr(jbli_current + 1) + '" href="#" aria-label="' + jbli_esc_attr(jbli_i18n.next_page || 'Επόμενη σελίδα') + '">Επόμ. →</a>';
+				jbli_html += '<a class="page-numbers next" data-jbli_page="' + jbli_esc_attr(jbli_current + 1) + '" href="#" aria-label="' + jbli_esc_attr(jbli_i18n.next_page || 'Επόμενη σελίδα') + '">Επόμ. →</a>';
 			}
 
 			jbli_html += '</div></nav>';
 			jbli_pagination.innerHTML = jbli_html;
 
-			jbli_pagination.querySelectorAll('a.jbli_page-numbers').forEach(function (jbli_link) {
+			jbli_pagination.querySelectorAll('a.page-numbers').forEach(function (jbli_link) {
 				jbli_link.addEventListener('click', function (e) {
 					e.preventDefault();
 					if (jbli_is_loading) { return; }
@@ -291,63 +290,6 @@
 			jbli_btn.disabled = true;
 			jbli_btn.classList.add('is-loading');
 		});
-	}
-
-	function jbli_init_form_submit_loading() {
-		var jbli_form = document.getElementById('jbli_submit_form');
-		if (!jbli_form) { return; }
-
-		jbli_form.addEventListener('submit', function (e) {
-			var jbli_btn = document.getElementById('jbli_submit_btn');
-			if (!jbli_btn) { return; }
-
-			if (jbli_btn.dataset.submitted) {
-				e.preventDefault();
-				return;
-			}
-
-			if (jbli_form.checkValidity && !jbli_form.checkValidity()) {
-				return;
-			}
-
-			var jbli_original_label = jbli_btn.textContent;
-
-			jbli_btn.dataset.submitted  = '1';
-			jbli_btn.dataset.origLabel  = jbli_original_label;
-			jbli_btn.disabled           = true;
-			jbli_btn.classList.add('is-loading');
-			jbli_btn.textContent = jbli_btn.getAttribute('data-loading-text') || 'Αποθήκευση…';
-
-			window.setTimeout(function () {
-				if (jbli_btn.dataset.submitted) {
-					jbli_btn.dataset.submitted = '';
-					jbli_btn.disabled          = false;
-					jbli_btn.classList.remove('is-loading');
-					jbli_btn.textContent = jbli_btn.dataset.origLabel || jbli_original_label;
-				}
-			}, 15000);
-		});
-	}
-
-	function jbli_init_char_counters() {
-		var jbli_counters = document.querySelectorAll('.jbli_char_counter[data-jbli_input]');
-		if ( !jbli_counters.length ) { return; }
-
-		jbli_counters.forEach( function( jbli_counter ) {
-			var jbli_input_id = jbli_counter.getAttribute('data-jbli_input');
-			var jbli_max     = parseInt( jbli_counter.getAttribute('data-jbli_max') || '0', 10 );
-			var jbli_input   = document.getElementById( jbli_input_id );
-			if ( !jbli_input || !jbli_max ) { return; }
-
-			function jbli_update() {
-				var jbli_len = jbli_input.value.length;
-				jbli_counter.textContent = jbli_len;
-				jbli_counter.setAttribute( 'data-warn', jbli_len >= jbli_max * 0.9 ? 'true' : 'false' );
-			}
-
-			jbli_input.addEventListener( 'input', jbli_update );
-			jbli_update();
-		} );
 	}
 
 }());

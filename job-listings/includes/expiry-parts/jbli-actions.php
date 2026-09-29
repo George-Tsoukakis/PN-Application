@@ -33,6 +33,9 @@ function jbli_set_expiry_on_publish( $jbli_new_status, $jbli_old_status, $post )
 
 	if ( 'publish' !== $jbli_new_status || 'publish' === $jbli_old_status ) { return; }
 
+	/* Any (re)publish makes the listing live again, whichever screen did it. */
+	delete_post_meta( $post->ID, JBLI_META_EXPIRED );
+
 	if ( get_post_meta( $post->ID, JBLI_META_EXPIRES, true ) ) { return; }
 
 	update_post_meta( $post->ID, JBLI_META_EXPIRES, jbli_future_datetime( 30 ) );
@@ -61,7 +64,7 @@ function jbli_run_expiry() {
 					'key'       => JBLI_META_EXPIRES,
 					'value'     => $jbli_now,
 					'compare'   => '<',
-					'jbli_type' => 'DATETIME',
+					'type'      => 'DATETIME',
 				),
 			),
 		) );
@@ -93,7 +96,11 @@ function jbli_expire_job( $jbli_post_id ) {
 
 	if ( JBLI_CPT !== get_post_type( $jbli_post_id ) ) { return; }
 
-	if ( get_post_meta( $jbli_post_id, JBLI_META_EXPIRED, true ) ) { return; }
+	/*
+	 * Guard on the real status, not only the flag: a listing republished in
+	 * wp-admin can still carry jbli_expired=1 and would otherwise never expire again.
+	 */
+	if ( 'job-expired' === get_post_status( $jbli_post_id ) ) { return; }
 
 	$jbli_updated = wp_update_post(
 		array( 'ID' => $jbli_post_id, 'post_status' => 'job-expired' ),
@@ -142,7 +149,7 @@ function jbli_run_expiry_reminders() {
 				'key'       => JBLI_META_EXPIRES,
 				'value'     => array( $jbli_target_start, $jbli_target_end ),
 				'compare'   => 'BETWEEN',
-				'jbli_type' => 'DATETIME',
+				'type'      => 'DATETIME',
 			),
 			array( 'key'     => JBLI_META_REMINDER_SENT, 'compare' => 'NOT EXISTS', ),
 		),

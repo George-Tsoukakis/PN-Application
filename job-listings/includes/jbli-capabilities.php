@@ -243,7 +243,7 @@ function jbli_block_admin_edit_access() {
 	if ( ! is_admin( ) || wp_doing_ajax() ) { return; }
 
 	$jbli_action  = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
-	$jbli_post_id = isset( $_GET['jbli_post'] ) ? absint( $_GET['jbli_post'] ) : 0;
+	$jbli_post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
 
 	if ( 'edit' !== $jbli_action || $jbli_post_id <= 0 ) { return; }
 

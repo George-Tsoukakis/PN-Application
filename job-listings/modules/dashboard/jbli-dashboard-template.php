@@ -331,6 +331,12 @@ defined( 'ABSPATH' ) || exit;
 											);
 											echo $jbli_btn; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safe HTML button form.
 										}
+										elseif ( 'pending' === $jbli_job->post_status )
+										{
+											?>
+											<span class="jbli_btn jbli_btn_sm jbli_btn_outline" aria-disabled="true"><?php esc_html_e( 'Σε αναμονή έγκρισης', 'job-listings' ); ?></span>
+											<?php
+										}
 										elseif ( $jbli_is_draft )
 										{
 											$jbli_btn = jbli_dash_action_btn(
@@ -383,7 +389,7 @@ defined( 'ABSPATH' ) || exit;
 </div>
 <?php
 
-	if ( ! wp_script_is( 'job-listing-script', 'enqueued' ) )
+	if ( ! wp_script_is( 'jbli_listings_script', 'enqueued' ) )
 	{
 
 		?>

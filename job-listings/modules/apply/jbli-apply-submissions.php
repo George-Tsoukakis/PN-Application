@@ -71,6 +71,11 @@ function jbli_admin_ajax_get_submissions(): void {
 		wp_send_json_error( array( 'jbli_message' => __( 'Μη έγκυρο αίτημα.', 'job-listings' ) ) );
 	}
 
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'jbli_submissions_' . $jbli_post_id ) )
+	{
+		wp_send_json_error( array( 'jbli_message' => __( 'Security check failed', 'job-listings' ) ), 403 );
+	}
+
 	global $wpdb;
 	$jbli_table = jbli_apply_submissions_table();
 
@@ -199,7 +204,7 @@ function jbli_apply_export_csv(): void {
 		$jbli_rows = array();
 	}
 
-	$jbli_fields = array( 'name', 'jbli_phone', 'jbli_email', 'date', 'post_id' );
+	$jbli_fields = array( 'name', 'phone', 'email', 'date', 'post_id' );
 
 	$jbli_filename = 'listing-' . $jbli_post_id . '-submissions-' . gmdate( 'Y-m-d' ) . '.csv';
 
@@ -220,7 +225,7 @@ function jbli_apply_export_csv(): void {
 
 	if ( in_array( 'phone', $jbli_fields, true ) ) { $jbli_headers[] = __( 'Κινητό', 'job-listings' ); }
 
-	if ( in_array( 'jbli_email', $jbli_fields, true ) ) { $jbli_headers[] = __( 'Email', 'job-listings' ); }
+	if ( in_array( 'email', $jbli_fields, true ) ) { $jbli_headers[] = __( 'Email', 'job-listings' ); }
 
 	if ( in_array( 'date', $jbli_fields, true ) ) { $jbli_headers[] = __( 'Ημ/νία Υποβολής', 'job-listings' ); }
 
@@ -234,11 +239,11 @@ function jbli_apply_export_csv(): void {
 
 			$jbli_line = array();
 
-			if ( in_array( 'name', $jbli_fields, true ) ) { $jbli_line[] = $jbli_row['jbli_applicant_name']; }
+			if ( in_array( 'name', $jbli_fields, true ) ) { $jbli_line[] = jbli_csv_safe( $jbli_row['jbli_applicant_name'] ); }
 
-			if ( in_array( 'phone', $jbli_fields, true ) ) { $jbli_line[] = $jbli_row['jbli_applicant_phone']; }
+			if ( in_array( 'phone', $jbli_fields, true ) ) { $jbli_line[] = jbli_csv_safe( $jbli_row['jbli_applicant_phone'] ); }
 
-			if ( in_array( 'jbli_email', $jbli_fields, true ) ) { $jbli_line[] = $jbli_row['jbli_applicant_email']; }
+			if ( in_array( 'email', $jbli_fields, true ) ) { $jbli_line[] = jbli_csv_safe( $jbli_row['jbli_applicant_email'] ); }
 
 			if ( in_array( 'date', $jbli_fields, true ) )
 			{
@@ -257,6 +262,28 @@ function jbli_apply_export_csv(): void {
 }
 
 add_action( 'admin_init', 'jbli_apply_export_csv' );
+
+/**
+ * Neutralise spreadsheet formulas in visitor-supplied CSV values.
+ *
+ * Applicants are anonymous, so a name like "=HYPERLINK(...)" must not run
+ * as a formula when the pharmacy opens the export in Excel/Sheets.
+ *
+ * @param mixed $jbli_value Cell value.
+ * @return string
+ */
+function jbli_csv_safe( $jbli_value ) {
+
+	$jbli_value = (string) $jbli_value;
+
+	/* Plain phone numbers such as "+30 210..." are not formulas. */
+	if ( preg_match( '/^[+\d\s().\-]+$/', $jbli_value ) ) { return $jbli_value; }
+
+	if ( '' !== $jbli_value && false !== strpos( "=+-@\t\r", $jbli_value[0] ) ) { return "'" . $jbli_value; }
+
+	return $jbli_value;
+
+}
 
 function jbli_apply_submissions_admin_footer(): void {
 

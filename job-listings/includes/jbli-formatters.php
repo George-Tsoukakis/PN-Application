@@ -159,7 +159,7 @@ function jbli_notice( $jbli_message, $jbli_type = 'success' ) {
 function jbli_notice_allowed_html() {
 
 	return array(
-		'a'      => array( 'href'   => array(), 'jbli_target' => array(), 'rel'    => array(), ),
+		'a'      => array( 'href'   => array(), 'target' => array(), 'rel'    => array(), ),
 		'strong' => array(),
 		'em'     => array(),
 		'br'     => array(),
@@ -185,11 +185,11 @@ function jbli_allowed_html() {
 		'h5'     => array(),
 		'a'      => array(
 			'href'        => array(),
-			'jbli_title'  => array(),
-			'jbli_target' => array(),
+			'title'       => array(),
+			'target'      => array(),
 			'rel'         => array(),
 		),
-		'span'   => array( 'jbli_class' => array(), ),
+		'span'   => array( 'class' => array(), ),
 	);
 
 }

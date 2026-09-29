@@ -14,25 +14,7 @@ get_header();
 
 		$jbli_id = get_the_ID();
 
-		if ( 'publish' !== get_post_status( $jbli_id ) && ! current_user_can( 'manage_options' ) )
-		{
-			$jbli_post_obj = get_post( $jbli_id );
-			$jbli_is_owner = ( $jbli_post_obj instanceof WP_Post && is_user_logged_in() && (int) get_current_user_id() === (int) $jbli_post_obj->post_author );
-
-			if ( $jbli_is_owner && function_exists( 'jbli_redirect_with_notice' ) )
-			{
-				$jbli_dash_url = function_exists( 'jbli_get_dashboard_url' ) ? jbli_get_dashboard_url() : home_url( '/dashboard/' );
-
-				jbli_redirect_with_notice(
-					$jbli_dash_url,
-					__( 'Αυτή η αγγελία δεν είναι δημοσιευμένη. Μπορείτε να τη διαχειριστείτε από εδώ.', 'job-listings' ),
-					'warning'
-				);
-			}
-
-			wp_safe_redirect( home_url( '/' ) );
-			exit;
-		}
+		/* Unpublished listings are redirected earlier, in jbli_single_redirect_unpublished(). */
 
 		$jbli_meta 			= get_post_meta($jbli_id);
 
@@ -128,14 +110,14 @@ get_header();
 			$jbli_schema = array(
 				'@context'           => 'https://schema.org',
 				'@type'              => 'JobPosting',
-				'jbli_title'         => $jbli_position ?: get_the_title( $jbli_id ),
+				'title'              => $jbli_position ?: get_the_title( $jbli_id ),
 				'description'        => wp_strip_all_tags( get_the_content() ),
 				'datePosted'         => $jbli_jsonld_date_posted,
 				'hiringOrganization' => array(
 					'@type' => 'Organization',
 					'name'  => $jbli_pharmacy ?: get_bloginfo( 'name' ),
 				),
-				'jobLocation' => array( '@type'   => 'Place', 'jbli_address' => $jbli_postal_address, ),
+				'jobLocation' => array( '@type'   => 'Place', 'address' => $jbli_postal_address, ),
 				'directApply' => true,
 			);
 
@@ -149,7 +131,7 @@ get_header();
 			$jbli_schema = (array) apply_filters( 'jbli_jsonld_schema', $jbli_schema, $jbli_id );
 
 			echo '<script type="application/ld+json">'
-				. wp_json_encode( $jbli_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT )
+				. wp_json_encode( $jbli_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_HEX_TAG )
 				. '</script>' . "\n";
 
 			?>

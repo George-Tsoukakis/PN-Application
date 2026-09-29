@@ -114,19 +114,19 @@ JL_CPT      // 'job_listing'
 
 | Key                    | Περιγραφή                          |
 |------------------------|------------------------------------|
-| `_job_position`        | Τίτλος θέσης                       |
-| `_job_salary`          | Αμοιβή (key)                       |
-| `_job_type`            | Τύπος απασχόλησης                  |
-| `_job_address`         | Διεύθυνση                          |
-| `_job_lat` / `_job_lng`| Συντεταγμένες                      |
-| `_job_contact_phone`   | Τηλέφωνο αγγελίας                  |
-| `_job_pharmacy_name`   | Όνομα φαρμακείου                   |
-| `_job_expires`         | Ημ/νία λήξης (datetime)            |
-| `_job_expired`         | Flag λήξης (1/0)                   |
-| `_job_reminder_sent`   | Flag reminder email (1/0)          |
-| `_job_views`           | Αριθμός μοναδικών προβολών         |
-| `_job_featured`        | Featured flag (1/'')               |
-| `_job_email`           | Email αγγελίας                     |
+| `jbli_position`        | Τίτλος θέσης                       |
+| `jbli_salary`          | Αμοιβή (key)                       |
+| `jbli_type`            | Τύπος απασχόλησης                  |
+| `jbli_address`         | Διεύθυνση                          |
+| `jbli_lat` / `jbli_lng`| Συντεταγμένες                      |
+| `jbli_contact_phone`   | Τηλέφωνο αγγελίας                  |
+| `jbli_pharmacy_name`   | Όνομα φαρμακείου                   |
+| `jbli_expires`         | Ημ/νία λήξης (datetime)            |
+| `jbli_expired`         | Flag λήξης (1/0)                   |
+| `jbli_reminder_sent`   | Flag reminder email (1/0)          |
+| `jbli_views`           | Αριθμός μοναδικών προβολών         |
+| `jbli_featured`        | Featured flag (1/'')               |
+| `jbli_email`           | Email αγγελίας                     |
 
 ---
 
@@ -144,7 +144,7 @@ JL_CPT      // 'job_listing'
 - Admin μόνο → Row Action **"☆ Ορισμός Featured"** / **"★ Αφαίρεση Featured"**
 - Featured αγγελίες εμφανίζονται **πρώτες** στη λίστα με ειδικό ribbon
 - Ειδική στήλη (★) στο admin list view
-- Meta key: `_job_featured`
+- Meta key: `jbli_featured`
 
 ---
 
@@ -154,7 +154,7 @@ JL_CPT      // 'job_listing'
 - Deduplication: IP hash + 6ωρο transient throttle (χωρίς αποθήκευση IP)
 - Administrators δεν μετρώνται
 - Εμφανίζεται στα cards και στη single σελίδα
-- Meta key: `_job_views`
+- Meta key: `jbli_views`
 
 ---
 
@@ -195,6 +195,32 @@ JL_CPT      // 'job_listing'
 ---
 
 ## 📝 Changelog
+
+### v9.9.43
+- **Fix**: Email αιτήσεων — τα `{phone}`, `{email}`, `{position}` αντικαθίστανται ξανά.
+- **Fix**: Η φόρμα «Danger Zone» δεν απενεργοποιεί πλέον τις ρυθμίσεις απορρήτου.
+- **Fix**: CSV υποβολών — επανήλθε η στήλη τηλεφώνου· προστασία από formula injection.
+- **Security**: Έλεγχος nonce στο AJAX υποβολών· το IP για τις προβολές λαμβάνεται από proxy headers μόνο από Cloudflare/ιδιωτικό proxy.
+- **Fix**: Υπολείμματα της μετονομασίας `jbli_` σε κλειδιά WordPress/schema.org (`supports`, `label`, στήλη τίτλου, `$typenow`, `post`, kses `target/title/class`, meta_query `type`, paginate_links `type`, JSON-LD `title/address`, shortcode `title`).
+- **Fix**: Σελίδα αγγελίας — το redirect μη δημοσιευμένων γίνεται στο `template_redirect` (πριν το header).
+- **Fix**: Πρόσφατες αγγελίες — σωστές «ημέρες που απομένουν» ανά κάρτα· flush cache σε κάδο/επαναφορά/featured.
+- **Fix**: `[listings]` — η σελιδοποίηση `/page/N/` λειτουργεί· σωστές κλάσεις/`aria-current` στην AJAX σελιδοποίηση· φίλτρο αμοιβής «2200+».
+- **Fix**: Modal αίτησης — εμφανίζεται ξανά η φόρμα μετά από επιτυχία· σωστό AJAX URL σε single/recent σελίδες.
+- **Fix**: Dashboard — αγγελίες «σε αναμονή» δεν αυτο-εγκρίνονται από τον ιδιοκτήτη.
+- **Fix**: Φόρμα — μετρητής χαρακτήρων, προστασία διπλού κλικ και σωστά μηνύματα validation (μεταφέρθηκαν στο `jbli-form.js`).
+- **Fix**: Λήξη — αγγελία που ξαναδημοσιεύεται από το wp-admin λήγει κανονικά.
+- **Fix**: Ενιαίο URL admin panel (`admin.php?page=jbli_admin_panel`)· διπλό μήνυμα αποθήκευσης.
+- **Fix**: WP Rocket — εξαιρέσεις JS στα τρέχοντα αρχεία, ανανέωση config για τα reject URIs.
+- **Fix**: Πίνακας φαρμακείων — διπλό email δεν μπλοκάρει πλέον το index· καθαρισμός στη διαγραφή χρήστη.
+- **Compat**: PHP 8.4 (ρητά nullable παράμετροι)· account type αποθηκευμένο ως array.
+
+### v9.9.42
+- **Fix**: Η αμοιβή «2.200€+» απορριπτόταν πάντα στην υποβολή (`sanitize_key` έκοβε το `+`).
+- **Fix**: Μήνυμα επιτυχίας στη σελίδα της αγγελίας μετά την υποβολή.
+- **Fix**: Φόρμα/dashboard δεν μπαίνουν σε page cache (`DONOTCACHEPAGE`) — τέλος στο «Σφάλμα ασφαλείας» από ληγμένο nonce.
+- **Fix**: Το cooldown υποβολής απελευθερώνεται αν η αποθήκευση αποτύχει.
+- **DB 1.3.1**: Μετονομασία παλιών `_job_*` meta ανά αγγελία και rebuild του storage index μετά την αναβάθμιση· αφαιρέθηκαν μετατροπές με παλιά ονόματα στηλών.
+- **Fix**: Η απεγκατάσταση διαγράφει τους τρέχοντες πίνακες.
 
 ### v9.9.41
 

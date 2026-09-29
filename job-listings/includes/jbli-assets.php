@@ -93,6 +93,11 @@ if ( ! function_exists( 'jbli_enqueue_assets' ) ) {
 				true
 			);
 
+			/* The apply modal needs the AJAX URL too; on single/recent pages listings JS is absent. */
+			if ( 'apply' === $jbli_mod && ! in_array( 'listings', $jbli_modules, true ) ) {
+				wp_localize_script( 'jbli_apply_script', 'jbli_data', jbli_script_data() );
+			}
+
 			if ( 'listings' === $jbli_mod ) {
 				wp_localize_script( 'jbli_listings_script', 'jbli_data', jbli_script_data() );
 				wp_add_inline_script(

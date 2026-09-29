@@ -41,7 +41,7 @@ function jbli_render_recent_listings( $jbli_atts ) {
 			'count'          => 6,
 			'columns'        => 3,
 			'view_all_url'   => '',
-			'jbli_title'     => '',
+			'title'          => '',
 			'featured_first' => 'true',
 			'pagination'     => 'true',
 		),
@@ -51,7 +51,7 @@ function jbli_render_recent_listings( $jbli_atts ) {
 
 	$jbli_count          = min( 24, max( 1, (int) $jbli_atts['count'] ) );
 	$jbli_columns        = in_array( (int) $jbli_atts['columns'], array( 2, 3 ), true ) ? (int) $jbli_atts['columns'] : 3;
-	$jbli_section_title  = sanitize_text_field( (string) $jbli_atts['jbli_title'] );
+	$jbli_section_title  = sanitize_text_field( (string) $jbli_atts['title'] );
 	$jbli_featured_first = ( 'false' !== strtolower( (string) $jbli_atts['featured_first'] ) );
 	$jbli_show_paging    = ( 'false' !== strtolower( (string) $jbli_atts['pagination'] ) );
 
@@ -138,7 +138,7 @@ function jbli_render_recent_listings( $jbli_atts ) {
 			'featured_clause' => array(
 				'key'       => JBLI_META_FEATURED,
 				'compare'   => 'EXISTS',
-				'jbli_type' => 'NUMERIC',
+				'type'      => 'NUMERIC',
 			),
 			'missing_clause' => array( 'key'     => JBLI_META_FEATURED, 'compare' => 'NOT EXISTS', ),
 		);
@@ -258,6 +258,8 @@ function jbli_render_recent_listings( $jbli_atts ) {
 					$jbli_views       = $jbli_card['jbli_views'];
 					$jbli_nomoi       = $jbli_card['jbli_nomoi'];
 					$jbli_cats        = $jbli_card['jbli_cats'];
+					/* Set per card: the card partial keeps an already-set value, which leaked from card to card. */
+					$jbli_days_left   = function_exists( 'jbli_days_left' ) ? jbli_days_left( $jbli_id ) : '';
 
 					include $jbli_card_path;
 
@@ -431,3 +433,20 @@ add_action( 'jbli_renewed',     'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_activated',   'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_deactivated', 'jbli_recent_flush_listings_cache' );
 add_action( 'before_delete_post',      'jbli_recent_flush_listings_cache' );
+add_action( 'jbli_deleted',            'jbli_recent_flush_listings_cache' );
+add_action( 'jbli_admin_deleted',      'jbli_recent_flush_listings_cache' );
+add_action( 'jbli_featured_changed',   'jbli_recent_flush_listings_cache' );
+
+/**
+ * Flush the [recent-listings] cache when a listing is trashed or restored.
+ *
+ * @param int $jbli_post_id Post ID.
+ */
+function jbli_recent_flush_on_trash( $jbli_post_id ): void {
+
+	if ( JBLI_CPT === get_post_type( $jbli_post_id ) ) { jbli_recent_flush_listings_cache(); }
+
+}
+
+add_action( 'trashed_post',   'jbli_recent_flush_on_trash' );
+add_action( 'untrashed_post', 'jbli_recent_flush_on_trash' );

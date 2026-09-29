@@ -178,6 +178,11 @@ final class Plugin {
 
 		if ( function_exists( 'rocket_clean_domain' ) ) { rocket_clean_domain(); }
 
+		/* WP Rocket reads rocket_cache_reject_uri only when it regenerates its config. */
+		if ( function_exists( 'flush_rocket_htaccess' ) ) { flush_rocket_htaccess(); }
+
+		if ( function_exists( 'rocket_generate_config_file' ) ) { rocket_generate_config_file(); }
+
 	}
 
 	/**

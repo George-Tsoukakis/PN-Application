@@ -64,7 +64,7 @@ function jbli_admin_action_btn(
 	}
 
 	return
-		'<form method="post" action="' . esc_url( admin_url( 'edit.php?post_type=' . JBLI_CPT . '&page=jbli_admin_panel' ) ) . '" class="jbli_ap_form">'
+		'<form method="post" action="' . esc_url( admin_url( 'admin.php?page=jbli_admin_panel' ) ) . '" class="jbli_ap_form">'
 		. '<input type="hidden" name="jbli_admin_action" value="' . esc_attr( $jbli_action ) . '">'
 		. '<input type="hidden" name="job_post_id" value="' . esc_attr( (string) $jbli_post_id ) . '">'
 		. '<input type="hidden" name="_job_listing_admin_nonce" value="' . esc_attr( $jbli_nonce ) . '">'

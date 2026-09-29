@@ -84,11 +84,10 @@ function jbli_admin_panel_handle_action(): void {
 
 
 	$jbli_target_page = in_array( $jbli_action, $jbli_zero_post_actions, true ) ? 'jbli_settings' : 'jbli_admin_panel';
-	$jbli_target_base = in_array( $jbli_action, $jbli_zero_post_actions, true ) ? admin_url( 'admin.php' ) : admin_url( 'edit.php' );
+	$jbli_target_base = admin_url( 'admin.php' );
 
 	$jbli_redirect = add_query_arg(
 		array_filter( array(
-			'post_type'  => in_array( $jbli_action, $jbli_zero_post_actions, true ) ? null : JBLI_CPT,
 			'page'       => $jbli_target_page,
 			'job_done'   => $jbli_message,
 			'jbli_saved' => $jbli_message,
@@ -265,6 +264,14 @@ function jbli_action_save_settings(): string {
 		: false;
 
 	update_option( 'jbli_delete_on_uninstall', $jbli_delete_on_uninstall, false );
+
+	/* The Danger Zone form posts only its own checkbox; unchecked privacy boxes must not be read as "off". */
+	if ( 'danger' === sanitize_key( wp_unslash( $_POST['jbli_settings_section'] ?? '' ) ) )
+	{
+		do_action( 'jbli_admin_settings_saved' );
+
+		return 'settings_saved';
+	}
 
 	update_option( 'jbli_public_phone',   isset( $_POST['jbli_public_phone'] )   ? '1' : '0', false );
 	update_option( 'jbli_public_email',   isset( $_POST['jbli_public_email'] )   ? '1' : '0', false );

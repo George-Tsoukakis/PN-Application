@@ -306,6 +306,16 @@ function jbli_dash_adminpost_handler() {
 				);
 			}
 
+			/* A listing awaiting approval is published by an admin, not by its owner. */
+			if ( 'pending' === get_post_status( (int) $jbli_post_id ) && ! jbli_is_admin() )
+			{
+				jbli_redirect_with_notice(
+					$jbli_back_url,
+					__( 'Η αγγελία περιμένει έγκριση από τον διαχειριστή.', 'job-listings' ),
+					'warning'
+				);
+			}
+
 			$jbli_activated = jbli_activate_job( (int) $jbli_post_id );
 
 			if ( is_wp_error( $jbli_activated ) )

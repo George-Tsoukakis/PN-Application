@@ -72,7 +72,7 @@ final class Listing {
 	 * @param array|null $jbli_meta    Optional prefetched meta map.
 	 * @return self|null
 	 */
-	public static function jbli_from_id( $jbli_post_id, array $jbli_terms = null, array $jbli_meta = null ) {
+	public static function jbli_from_id( $jbli_post_id, ?array $jbli_terms = null, ?array $jbli_meta = null ) {
 
 		$jbli_post_id = absint( $jbli_post_id );
 
@@ -120,7 +120,7 @@ final class Listing {
 	 * @param array|null $jbli_terms Optional bulk terms.
 	 * @return self|null
 	 */
-	public static function jbli_from_post( \WP_Post $jbli_post, array $jbli_terms = null ) {
+	public static function jbli_from_post( \WP_Post $jbli_post, ?array $jbli_terms = null ) {
 
 		return self::jbli_from_id( (int) $jbli_post->ID, $jbli_terms );
 

@@ -59,6 +59,7 @@ defined( 'ABSPATH' ) || exit;
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=jbli_settings' ) ); ?>" class="jbli_ap_form">
 				<input type="hidden" name="jbli_admin_action" value="save_settings">
+				<input type="hidden" name="jbli_settings_section" value="danger">
 				<input type="hidden" name="job_post_id"              value="0">
 				<input type="hidden" name="_job_listing_admin_nonce" value="<?php echo esc_attr( $jbli_settings_nonce ); ?>">
 

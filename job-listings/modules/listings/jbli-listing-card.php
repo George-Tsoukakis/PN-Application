@@ -60,7 +60,7 @@ $jbli_days_left = isset( $jbli_days_left ) ? $jbli_days_left : ( function_exists
 			?>
 		</div>
 
-		<h2 class="jbli_card_title" itemprop="jbli_title">
+		<h2 class="jbli_card_title" itemprop="title">
 			<a href="<?php echo esc_url( $jbli_permalink ); ?>" itemprop="url"
 				aria-label="<?php 
 					/* translators: %s: Job listing title */

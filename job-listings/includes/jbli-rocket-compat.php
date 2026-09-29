@@ -10,7 +10,22 @@ defined( 'ABSPATH' ) || exit;
 
 function jbli_rocket_js_exclusions(): array {
 
-	return array( 'jl.js', 'jl\.js', '/job-listings/assets/js/jl.js', 'job-listing-script', 'jbli_data', );
+	return array(
+		/* Current front-end scripts (the old jl.js / job-listing-script names no longer exist). */
+		'/job-listings/modules/form/js/jbli-form.js',
+		'/job-listings/modules/listings/js/jbli-listings.js',
+		'/job-listings/modules/apply/js/jbli-apply.js',
+		'jbli-form.js',
+		'jbli-listings.js',
+		'jbli-apply.js',
+		'jbli_data',
+		'jbli_loaded',
+		/* Address autocomplete on the listing form. */
+		'maps.googleapis.com',
+		/* jQuery: jbli-form.js depends on it. */
+		'/jquery-?[0-9.](.*)(.min|.slim|.slim.min)?.js',
+		'jquery-migrate',
+	);
 
 }
 
@@ -160,7 +175,7 @@ if ( ! function_exists( 'jbli_rocket_exclude_js' ) )
 
 		return jbli_rocket_add_exclusions(
 			$jbli_exclusions,
-			array( 'jl.js', 'jl\.js', '/job-listings/assets/js/jl.js', )
+			array( 'jbli-form.js', 'jbli-listings.js', 'jbli-apply.js', 'maps.googleapis.com' )
 		);
 
 	}

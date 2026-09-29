@@ -58,6 +58,12 @@ function jbli_get_account_type( $jbli_user_id ) {
 
 		$jbli_value = get_user_meta( $jbli_user_id, $jbli_key, true );
 
+		/* Some registration plugins store a select/radio field as an array. */
+		if ( is_array( $jbli_value ) )
+		{
+			$jbli_value = (string) ( array_values( array_filter( $jbli_value, 'is_scalar' ) )[0] ?? '' );
+		}
+
 		if ( is_string( $jbli_value ) && '' !== trim( $jbli_value ) ) { return jbli_normalize_text( $jbli_value ); }
 
 	}

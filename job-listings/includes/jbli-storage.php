@@ -143,6 +143,26 @@ function jbli_get_or_create_pharmacy_id( $jbli_user_id ) {
 		? $jbli_user->user_email
 		: null;
 
+	/*
+	 * jbli_email is UNIQUE. If another pharmacy row already holds this email
+	 * (a deleted account that re-registered, a changed email...) store NULL
+	 * instead of letting the write fail: the email here is informational, and a
+	 * failed insert left the user's listings out of their dashboard.
+	 */
+	if ( null !== $jbli_email )
+	{
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$jbli_email_owner = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$jbli_table} WHERE jbli_email = %s AND id <> %d LIMIT 1",
+				$jbli_email,
+				$jbli_existing
+			)
+		);
+
+		if ( $jbli_email_owner > 0 ) { $jbli_email = null; }
+	}
+
 	if ( $jbli_existing > 0 )
 	{
 
@@ -193,6 +213,49 @@ function jbli_get_or_create_pharmacy_id( $jbli_user_id ) {
 	return $jbli_new_id;
 
 }
+
+/**
+ * Clean the storage index when a WordPress user is deleted.
+ *
+ * Frees the user's UNIQUE email/key in the pharmacies table and, when the
+ * user's posts were reassigned (wp_delete_user() does that with a raw SQL
+ * update, without save_post), re-indexes them under the new author.
+ *
+ * @param int      $jbli_user_id  Deleted user ID.
+ * @param int|null $jbli_reassign User ID the posts went to, if any.
+ * @return void
+ */
+function jbli_storage_on_deleted_user( $jbli_user_id, $jbli_reassign = null ) {
+
+	global $wpdb;
+
+	$jbli_user_id = absint( $jbli_user_id );
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$wpdb->delete( jbli_pharmacies_table(), array( 'jbli_user_id' => $jbli_user_id ), array( '%d' ) );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$wpdb->delete( jbli_pharmacy_listings_table(), array( 'jbli_user_id' => $jbli_user_id ), array( '%d' ) );
+
+	jbli_flush_pharmacy_cache( 0, $jbli_user_id );
+
+	$jbli_reassign = absint( $jbli_reassign );
+
+	if ( $jbli_reassign <= 0 || ! function_exists( 'jbli_sync_listing_storage' ) ) { return; }
+
+	$jbli_ids = get_posts( array(
+		'post_type'      => JBLI_CPT,
+		'post_status'    => function_exists( 'jbli_dashboard_statuses' ) ? jbli_dashboard_statuses() : 'any',
+		'author'         => $jbli_reassign,
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+	) );
+
+	foreach ( $jbli_ids as $jbli_post_id ) { jbli_sync_listing_storage( (int) $jbli_post_id ); }
+
+}
+
+add_action( 'deleted_user', 'jbli_storage_on_deleted_user', 10, 2 );
 
 require_once JBLI_DIR . 'includes/jbli-storage-schema.php';
 require_once JBLI_DIR . 'includes/jbli-storage-sync.php';

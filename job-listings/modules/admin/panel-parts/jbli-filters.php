@@ -12,9 +12,8 @@
 defined( 'ABSPATH' ) || exit;
 ?>
 
-<form method="get" action="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>" class="jbli_ap_filters">
+<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="jbli_ap_filters">
 
-	<input type="hidden" name="post_type" value="<?php echo esc_attr( JBLI_CPT ); ?>">
 	<input type="hidden" name="page"      value="jbli_admin_panel">
 
 	<div class="jbli_ap_filters_row">
@@ -84,7 +83,7 @@ defined( 'ABSPATH' ) || exit;
 			{
 
 				?>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . JBLI_CPT . '&page=jbli_admin_panel' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=jbli_admin_panel' ) ); ?>" class="button">
 					<?php esc_html_e( 'Καθαρισμός', 'job-listings' ); ?>
 				</a>
 				<?php
