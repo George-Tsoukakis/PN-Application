@@ -136,14 +136,21 @@ get_header();
 
 			?>
 
+			<div class="jbli_single_layout">
+
+			<div class="jbli_single_main">
+
 			<header class="jbli_single_hero<?php echo esc_attr( $jbli_featured ? ' jbli_single_hero_featured' : '' ); ?>">
 				<?php if ( $jbli_featured ) { ?><div class="jbli_single_featured_tag"><?php esc_html_e( 'Προτεινόμενη Αγγελία', 'job-listings' ); ?></div><?php } ?>
 
-				<p class="jbli_single_org"><strong><?php echo esc_html( $jbli_pharmacy ?: __( 'Φαρμακείο', 'job-listings' ) ); ?></strong></p>
+				<p class="jbli_single_org">
+					<span class="jbli_single_org_label"><?php esc_html_e( 'Φαρμακείο:', 'job-listings' ); ?></span>
+					<strong><?php echo esc_html( $jbli_pharmacy ? jbli_pharmacy_display_name( $jbli_pharmacy ) : '—' ); ?></strong>
+				</p>
 
 				<h1 class="jbli_single_title">
-					<?php esc_html_e( 'Αναζητά:', 'job-listings' ); ?>
-					<span><?php echo esc_html( $jbli_position ?: get_the_title( $jbli_id ) ); ?></span>
+					<span class="jbli_single_title_prefix"><?php esc_html_e( 'Αναζητά:', 'job-listings' ); ?></span>
+					<span class="jbli_single_title_text"><?php echo esc_html( $jbli_position ?: get_the_title( $jbli_id ) ); ?></span>
 				</h1>
 
 				<div class="jbli_single_hero_badges">
@@ -438,6 +445,41 @@ get_header();
 				</div>
 
 			</div>
+
+			</div><!-- .jbli_single_main -->
+
+			<?php
+				/* 9.9.51: picture/video on the right, with a short "interested?" card. */
+				$jbli_side_media = (string) get_option( 'jbli_single_media_url', '' );
+
+				if ( '' === trim( $jbli_side_media ) ) { $jbli_side_media = (string) get_option( 'jbli_form_media_url', '' ); }
+
+				$jbli_side_media = (string) apply_filters( 'jbli_single_media_url', $jbli_side_media, $jbli_id );
+
+				$jbli_side_items = array_values( array_filter( array(
+					$jbli_type   ? jbli_type_label( $jbli_type ) : '',
+					$jbli_salary ? jbli_salary_label( $jbli_salary ) : '',
+					! empty( $jbli_nomoi ) ? implode( ', ', $jbli_nomoi ) : '',
+				) ) );
+
+				$jbli_side_button = function_exists( 'jbli_apply_render' ) ? jbli_apply_render( $jbli_id ) : '';
+			?>
+			<aside class="jbli_single_aside">
+				<?php
+					echo jbli_media_panel_html( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside; the button is built from escaped parts.
+						$jbli_side_media,
+						array(
+							'kicker' => __( 'PharmacyNeeds', 'job-listings' ),
+							'title'  => __( 'Ενδιαφέρεστε για αυτή τη θέση;', 'job-listings' ),
+							'items'  => $jbli_side_items,
+							'html'   => '' !== $jbli_side_button ? '<div class="jbli_single_aside_cta">' . $jbli_side_button . '</div>' : '',
+						),
+						'jbli_single_media'
+					);
+				?>
+			</aside>
+
+			</div><!-- .jbli_single_layout -->
 
 		</div>
 		<?php

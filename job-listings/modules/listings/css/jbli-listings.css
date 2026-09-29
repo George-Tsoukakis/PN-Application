@@ -1044,3 +1044,52 @@
     padding: 34px 12px 26px;
   }
 }
+
+/* ==========================================================================
+   9.9.51 — "Φαρμακείο:" label next to the name, dark-blue "Αναζητά:".
+   Shared by [listings], [recent-listings] (same card partial) and the
+   single page.
+   ========================================================================== */
+
+.jbli_card .jbli_card_pharmacy .jbli_card_pharmacy_label {
+  margin-right: 4px;
+  color: var(--jbli_gray_500);
+  font-weight: 600;
+}
+
+.jbli_listings .jbli_card_pharmacy strong,
+.jbli_card .jbli_card_pharmacy strong {
+  display: inline;
+}
+
+.jbli_card .jbli_card_title .jbli_card_title_prefix {
+  margin-right: 4px;
+  color: #1e3a8a;
+  font-weight: 800;
+}
+
+/* Single page: the hero is green, so the prefix sits in a white tag. */
+.jbli_single .jbli_single_org_label {
+  margin-right: 4px;
+  color: rgba(255, 255, 255, .78);
+  font-weight: 600;
+}
+
+.jbli_single .jbli_single_title .jbli_single_title_prefix {
+  display: inline-block;
+  margin: 0 8px 6px 0;
+  padding: 4px 12px;
+  border-radius: 10px;
+  background: #fff;
+  color: #1e3a8a;
+  font-size: .62em;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.3;
+  vertical-align: middle;
+  box-shadow: 0 4px 12px rgba(2, 44, 34, .18);
+}
+
+.jbli_single .jbli_single_title .jbli_single_title_text {
+  color: #fff;
+}

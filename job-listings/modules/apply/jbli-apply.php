@@ -20,13 +20,101 @@ require_once __DIR__ . '/jbli-apply-submissions.php';
 
 function jbli_apply_default_subject(): string {
 
-	return 'Εκδήλωση Ενδιαφέροντος για τη θέση «{position}»';
+	return 'Νέο ενδιαφέρον για τη θέση «{position}» — {name}';
 
 }
 
+/**
+ * Intro text of the email. The applicant and listing details are added
+ * below it automatically (9.9.51), so they are no longer part of the text.
+ */
 function jbli_apply_default_body(): string {
 
-	return "Αγαπητέ/ή {pharmacy},\n\nΈνας υποψήφιος εξέφρασε ενδιαφέρον για τη θέση «{position}».\n\nΣτοιχεία υποψηφίου:\n• Όνομα: {name}\n• Κινητό: {phone}\n• Email: {email}\n\nΑγγελία: {listing_url}\n\nΤο μήνυμα αυτό εστάλη αυτόματα από το PharmacyNeeds.";
+	return "Γεια σας,\n\nΟ/Η {name} εκδήλωσε ενδιαφέρον για τη θέση «{position}» μέσω του PharmacyNeeds. Παρακάτω θα βρείτε τα στοιχεία επικοινωνίας του/της και τα στοιχεία της αγγελίας σας.";
+
+}
+
+/**
+ * Defaults shipped before 9.9.51. A site that still has them saved gets the
+ * new defaults (the old body repeated the details now shown in the boxes).
+ *
+ * @return array{subject:string,body:string}
+ */
+function jbli_apply_legacy_defaults(): array {
+
+	return array(
+		'subject' => 'Εκδήλωση Ενδιαφέροντος για τη θέση «{position}»',
+		'body'    => "Αγαπητέ/ή {pharmacy},\n\nΈνας υποψήφιος εξέφρασε ενδιαφέρον για τη θέση «{position}».\n\nΣτοιχεία υποψηφίου:\n• Όνομα: {name}\n• Κινητό: {phone}\n• Email: {email}\n\nΑγγελία: {listing_url}\n\nΤο μήνυμα αυτό εστάλη αυτόματα από το PharmacyNeeds.",
+	);
+
+}
+
+/**
+ * Build the full HTML email the pharmacy receives.
+ *
+ * @since 9.9.51
+ *
+ * @param int    $jbli_post_id Listing ID.
+ * @param array  $jbli_ph      Placeholder values (name, phone, email, position, pharmacy, listing_url).
+ * @param string $jbli_subject Final subject.
+ * @param string $jbli_intro   Final intro text (plain text).
+ * @return string Full HTML document.
+ */
+function jbli_apply_email_html( int $jbli_post_id, array $jbli_ph, string $jbli_subject, string $jbli_intro ): string {
+
+	$jbli_phone_href = 'tel:' . preg_replace( '/[^\d+]/', '', (string) $jbli_ph['phone'] );
+	$jbli_mail_href  = 'mailto:' . rawurlencode( (string) $jbli_ph['email'] )
+		. '?subject=' . rawurlencode( 'Σχετικά με τη θέση «' . $jbli_ph['position'] . '»' );
+
+	$jbli_nomoi = wp_get_post_terms( $jbli_post_id, 'job_nomos', array( 'fields' => 'names' ) );
+	$jbli_cats  = wp_get_post_terms( $jbli_post_id, 'job_category', array( 'fields' => 'names' ) );
+	$jbli_type  = (string) get_post_meta( $jbli_post_id, JBLI_META_TYPE, true );
+	$jbli_sal   = (string) get_post_meta( $jbli_post_id, JBLI_META_SALARY, true );
+	$jbli_exp   = (string) get_post_meta( $jbli_post_id, JBLI_META_EXPIRES, true );
+
+	$jbli_listing_rows = array(
+		array( __( 'Θέση', 'job-listings' ), esc_html( $jbli_ph['position'] ) ),
+		array( __( 'Φαρμακείο', 'job-listings' ), esc_html( $jbli_ph['pharmacy'] ) ),
+	);
+
+	if ( ! is_wp_error( $jbli_cats ) && $jbli_cats )   { $jbli_listing_rows[] = array( __( 'Κατηγορία', 'job-listings' ), esc_html( implode( ', ', $jbli_cats ) ) ); }
+	if ( ! is_wp_error( $jbli_nomoi ) && $jbli_nomoi ) { $jbli_listing_rows[] = array( __( 'Νομός', 'job-listings' ), esc_html( implode( ', ', $jbli_nomoi ) ) ); }
+	if ( $jbli_type ) { $jbli_listing_rows[] = array( __( 'Απασχόληση', 'job-listings' ), esc_html( jbli_type_label( $jbli_type ) ) ); }
+	if ( $jbli_sal )  { $jbli_listing_rows[] = array( __( 'Αμοιβή', 'job-listings' ), esc_html( jbli_salary_label( $jbli_sal ) ) ); }
+	if ( $jbli_exp && false !== strtotime( $jbli_exp ) ) { $jbli_listing_rows[] = array( __( 'Λήξη αγγελίας', 'job-listings' ), esc_html( wp_date( 'd/m/Y', strtotime( $jbli_exp ) ) ) ); }
+
+	$jbli_body = '<h1 style="margin:0 0 6px;font-size:22px;line-height:1.3;color:#111827;">' . esc_html__( 'Νέο ενδιαφέρον για την αγγελία σας', 'job-listings' ) . '</h1>'
+		. '<p style="margin:0 0 18px;font-size:14px;color:#6b7280;">'
+		. esc_html( sprintf( 'Θέση: %s · %s', $jbli_ph['position'], wp_date( 'd/m/Y, H:i' ) ) )
+		. '</p>'
+		. '<div style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#374151;">' . nl2br( esc_html( $jbli_intro ) ) . '</div>'
+
+		. jbli_email_section_title( __( 'Στοιχεία υποψηφίου', 'job-listings' ) )
+		. jbli_email_info_table( array(
+			array( __( 'Ονοματεπώνυμο', 'job-listings' ), esc_html( $jbli_ph['name'] ) ),
+			array( __( 'Κινητό', 'job-listings' ), '<a href="' . esc_url( $jbli_phone_href, array( 'tel' ) ) . '" style="color:#047857;text-decoration:none;">' . esc_html( $jbli_ph['phone'] ) . '</a>' ),
+			array( __( 'Email', 'job-listings' ), '<a href="mailto:' . esc_attr( $jbli_ph['email'] ) . '" style="color:#047857;text-decoration:none;">' . esc_html( $jbli_ph['email'] ) . '</a>' ),
+		) )
+		. jbli_email_buttons( array(
+			array( __( 'Καλέστε τον/την υποψήφιο/α', 'job-listings' ), $jbli_phone_href, true ),
+			array( __( 'Απάντηση με email', 'job-listings' ), $jbli_mail_href ),
+		) )
+
+		. jbli_email_section_title( __( 'Η αγγελία σας', 'job-listings' ) )
+		. jbli_email_info_table( $jbli_listing_rows )
+		. jbli_email_buttons( array(
+			array( __( 'Προβολή αγγελίας', 'job-listings' ), (string) $jbli_ph['listing_url'] ),
+		) )
+
+		. '<p style="margin:20px 0 0;padding:12px 14px;border-radius:10px;background:#f0f9ff;color:#1e3a8a;font-size:13px;line-height:1.5;">'
+		. esc_html__( 'Συμβουλή: πατήστε «Απάντηση» σε αυτό το email για να γράψετε απευθείας στον/στην υποψήφιο/α.', 'job-listings' )
+		. '</p>';
+
+	return jbli_email_wrap(
+		$jbli_subject,
+		$jbli_body,
+		sprintf( '%s — %s, %s', $jbli_ph['name'], $jbli_ph['phone'], $jbli_ph['email'] )
+	);
 
 }
 
@@ -107,21 +195,22 @@ function jbli_apply_handle_ajax(): void {
 		'listing_url'   => get_permalink( $jbli_post_id ),
 	);
 
-	$jbli_raw_subject = (string) get_option( 'jbli_apply_email_subject', jbli_apply_default_subject() );
-	$jbli_raw_body    = (string) get_option( 'jbli_apply_email_body',    jbli_apply_default_body() );
+	$jbli_raw_subject = trim( (string) get_option( 'jbli_apply_email_subject', '' ) );
+	$jbli_raw_body    = trim( (string) get_option( 'jbli_apply_email_body',    '' ) );
+	$jbli_legacy      = jbli_apply_legacy_defaults();
 
-	$jbli_subject = jbli_apply_replace_placeholders( $jbli_raw_subject, $jbli_placeholders );
-	$jbli_body    = jbli_apply_replace_placeholders( $jbli_raw_body,    $jbli_placeholders );
+	/* Empty or still the pre-9.9.51 default → the new default. */
+	if ( '' === $jbli_raw_subject || $jbli_legacy['subject'] === $jbli_raw_subject ) { $jbli_raw_subject = jbli_apply_default_subject(); }
+	if ( '' === $jbli_raw_body || str_replace( "\r\n", "\n", $jbli_raw_body ) === $jbli_legacy['body'] ) { $jbli_raw_body = jbli_apply_default_body(); }
 
-	$jbli_body_html = jbli_email_heading( esc_html( $jbli_subject ) )
-		. '<div style="white-space:pre-line;margin:0 0 14px;color:#444;font-size:15px;line-height:1.6;">'
-		. wp_kses_post( nl2br( $jbli_body ) )
-		. '</div>'
-		. '<hr style="border:none;border-top:1px solid #eee;margin:20px 0;">'
-		. jbli_email_paragraph(
-			'<small style="color:#999;">Αίτημα από IP: ' . esc_html( sanitize_text_field( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ) ) . '</small>'
-		);
+	$jbli_subject = wp_strip_all_tags( jbli_apply_replace_placeholders( $jbli_raw_subject, $jbli_placeholders ) );
+	$jbli_body    = wp_strip_all_tags( jbli_apply_replace_placeholders( $jbli_raw_body,    $jbli_placeholders ) );
 
+	$jbli_email_html = jbli_apply_email_html( $jbli_post_id, $jbli_placeholders, $jbli_subject, $jbli_body );
+
+	/* "Reply" in the pharmacy's mail app goes straight to the applicant. */
+	$jbli_headers   = jbli_email_headers();
+	$jbli_headers[] = 'Reply-To: ' . str_replace( array( "\r", "\n", '<', '>', '"' ), '', $jbli_name ) . ' <' . $jbli_email . '>';
 
 	if ( function_exists( 'jbli_apply_save_submission' ) )
 	{
@@ -131,8 +220,8 @@ function jbli_apply_handle_ajax(): void {
 	$jbli_sent = wp_mail(
 		$jbli_to,
 		'[PharmacyNeeds] ' . $jbli_subject,
-		jbli_email_wrap( $jbli_subject, $jbli_body_html ),
-		jbli_email_headers()
+		$jbli_email_html,
+		$jbli_headers
 	);
 
 	if ( ! $jbli_sent )

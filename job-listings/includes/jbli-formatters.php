@@ -193,3 +193,22 @@ function jbli_allowed_html() {
 	);
 
 }
+
+/**
+ * Pharmacy name for display after a "Φαρμακείο:" label.
+ *
+ * Strips a leading "Φαρμακείο" from the stored name so the label is not
+ * doubled ("Φαρμακείο: Φαρμακείο Παπαδόπουλος" → "Φαρμακείο: Παπαδόπουλος").
+ *
+ * @since 9.9.51
+ * @param string $jbli_name Stored pharmacy name.
+ * @return string
+ */
+function jbli_pharmacy_display_name( $jbli_name ) {
+
+	$jbli_name     = trim( (string) $jbli_name );
+	$jbli_stripped = trim( (string) preg_replace( '/^φαρμακε[ιί]ο\s*[:\-–—]?\s*/iu', '', $jbli_name ) );
+
+	return '' !== $jbli_stripped ? $jbli_stripped : $jbli_name;
+
+}

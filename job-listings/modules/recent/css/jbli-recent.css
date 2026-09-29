@@ -1559,3 +1559,21 @@ section.jbli_recent .jbli_card .jbli_views,
   overflow-wrap: anywhere !important;
   word-break: break-word !important;
 }
+
+/* 9.9.51 — "Φαρμακείο:" label next to the name, dark-blue "Αναζητά:" */
+.jbli_recent .jbli_card .jbli_card_pharmacy .jbli_card_pharmacy_label {
+  margin-right: 4px !important;
+  color: var(--jbli_gray_500) !important;
+  font-weight: 600 !important;
+}
+
+section.jbli_recent .jbli_card .jbli_card_pharmacy strong,
+.jbli_recent .jbli_card .jbli_card_pharmacy strong {
+  display: inline !important;
+}
+
+section.jbli_recent .jbli_card .jbli_card_title .jbli_card_title_prefix,
+.jbli_recent .jbli_card .jbli_card_title .jbli_card_title_prefix {
+  color: #1e3a8a !important;
+  font-weight: 800 !important;
+}

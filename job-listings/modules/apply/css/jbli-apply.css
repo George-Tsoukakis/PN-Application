@@ -353,9 +353,49 @@
   }
 
   .jbli_apply_modal .jbli_apply_modal_head {
-    margin: 0 -18px 18px;
-    padding: 24px 18px 18px;
+    margin: 0 -18px 16px;
+    padding: 18px 56px 14px;
   }
+
+  /* 9.9.51: compact header so "Αποστολή" is visible without scrolling. */
+  .jbli_apply_modal .jbli_apply_modal_icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+  }
+
+  .jbli_apply_modal .jbli_apply_modal_title {
+    font-size: 1.12rem;
+  }
+
+  .jbli_apply_modal .jbli_apply_modal_job {
+    margin-top: 8px;
+    padding: 8px 14px;
+  }
+
+  .jbli_apply_modal .jbli_apply_modal_sub {
+    display: none;
+  }
+
+  .jbli_apply_modal .jbli_apply_modal_close {
+    top: 12px;
+    right: 12px;
+  }
+
+  .jbli_apply_modal .jbli_apply_field {
+    margin-bottom: 12px;
+  }
+
+  /* Real visible height on phones (address bar aware). */
+  .jbli_apply_modal .jbli_apply_modal_box {
+    max-height: 92dvh;
+  }
+}
+
+/* 9.9.51: 16px stops iOS Safari from zooming the page when a field is tapped. */
+.jbli_apply_modal .jbli_apply_input {
+  font-size: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {

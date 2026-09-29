@@ -61,3 +61,4 @@ require_once __DIR__ . '/helpers-parts/jbli-terms.php';
 require_once __DIR__ . '/helpers-parts/jbli-expiry-display.php';
 require_once __DIR__ . '/helpers-parts/jbli-notices.php';
 require_once __DIR__ . '/helpers-parts/jbli-slugs.php';
+require_once __DIR__ . '/helpers-parts/jbli-media.php';

@@ -38,8 +38,18 @@ $jbli_body     		= (string) get_option( 'jbli_apply_email_body',    '' );
 $jbli_def_subj 		= function_exists( 'jbli_apply_default_subject' ) ? jbli_apply_default_subject() : '';
 $jbli_def_body 		= function_exists( 'jbli_apply_default_body' )    ? jbli_apply_default_body()    : '';
 
+/* 9.9.51: a saved pre-9.9.51 default is shown (and sent) as the new default. */
+if ( function_exists( 'jbli_apply_legacy_defaults' ) )
+{
+	$jbli_legacy = jbli_apply_legacy_defaults();
+
+	if ( trim( $jbli_subj ) === $jbli_legacy['subject'] ) { $jbli_subj = ''; }
+	if ( str_replace( "\r\n", "\n", trim( $jbli_body ) ) === $jbli_legacy['body'] ) { $jbli_body = ''; }
+}
+
 $jbli_google_map_api_key = (string) get_option( 'jbli_google_map_api_key', '' );
 $jbli_form_media_url     = (string) get_option( 'jbli_form_media_url', '' );
+$jbli_single_media_url   = (string) get_option( 'jbli_single_media_url', '' );
 $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_title_max_chars() : (int) get_option( 'jbli_title_max_chars', 15 );
 ?>
 <?php /* The "saved" notice is printed once by jbli-settings-template.php. */ ?>
@@ -276,11 +286,11 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 <div class="jbli_ap_tools">
 
 	<h2 class="jbli_ap_tools_heading">
-		<?php esc_html_e( 'Εικόνα / Video φόρμας νέας αγγελίας', 'job-listings' ); ?>
+		<?php esc_html_e( 'Εικόνες / Video (φόρμα & σελίδα αγγελίας)', 'job-listings' ); ?>
 	</h2>
 
 	<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">
-		<?php esc_html_e( 'Εμφανίζεται δεξιά από τη φόρμα. Δεκτά: εικόνα (JPG, PNG, WebP), video MP4/WebM, ή σύνδεσμος YouTube / Vimeo. Αν μείνει κενό, εμφανίζεται μια έτοιμη πράσινη εικονογράφηση.', 'job-listings' ); ?>
+		<?php esc_html_e( 'Εμφανίζονται δεξιά από τη φόρμα νέας αγγελίας και δεξιά στη σελίδα κάθε αγγελίας. Δεκτά: εικόνα (JPG, PNG, WebP), video MP4/WebM, ή σύνδεσμος YouTube / Vimeo. Αν μείνουν κενά, εμφανίζεται μια έτοιμη πράσινη εικονογράφηση.', 'job-listings' ); ?>
 	</p>
 
 	<form method="post" action="<?php echo esc_url( $jbli_form_url ); ?>">
@@ -290,7 +300,7 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">
-					<label for="jbli_form_media_url"><?php esc_html_e( 'URL εικόνας ή video', 'job-listings' ); ?></label>
+					<label for="jbli_form_media_url"><?php esc_html_e( 'Φόρμα νέας αγγελίας', 'job-listings' ); ?></label>
 				</th>
 				<td>
 					<input
@@ -302,8 +312,27 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 						placeholder="https://"
 					>
 					<p style="margin-top:8px;">
-						<button type="button" class="button" id="jbli_form_media_pick"><?php esc_html_e( 'Επιλογή από τα Πολυμέσα', 'job-listings' ); ?></button>
-						<button type="button" class="button-link" id="jbli_form_media_clear" style="margin-left:8px;"><?php esc_html_e( 'Καθαρισμός', 'job-listings' ); ?></button>
+						<button type="button" class="button jbli_media_pick" data-target="jbli_form_media_url"><?php esc_html_e( 'Επιλογή από τα Πολυμέσα', 'job-listings' ); ?></button>
+						<button type="button" class="button-link jbli_media_clear" data-target="jbli_form_media_url" style="margin-left:8px;"><?php esc_html_e( 'Καθαρισμός', 'job-listings' ); ?></button>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="jbli_single_media_url"><?php esc_html_e( 'Σελίδα αγγελίας', 'job-listings' ); ?></label>
+				</th>
+				<td>
+					<input
+						type="url"
+						id="jbli_single_media_url"
+						name="jbli_single_media_url"
+						value="<?php echo esc_attr( $jbli_single_media_url ); ?>"
+						class="large-text"
+						placeholder="<?php esc_attr_e( 'Κενό = ίδια με της φόρμας', 'job-listings' ); ?>"
+					>
+					<p style="margin-top:8px;">
+						<button type="button" class="button jbli_media_pick" data-target="jbli_single_media_url"><?php esc_html_e( 'Επιλογή από τα Πολυμέσα', 'job-listings' ); ?></button>
+						<button type="button" class="button-link jbli_media_clear" data-target="jbli_single_media_url" style="margin-left:8px;"><?php esc_html_e( 'Καθαρισμός', 'job-listings' ); ?></button>
 					</p>
 				</td>
 			</tr>
@@ -319,30 +348,31 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 
 	<script>
 		( function () {
-			var pick  = document.getElementById( 'jbli_form_media_pick' );
-			var clear = document.getElementById( 'jbli_form_media_clear' );
-			var input = document.getElementById( 'jbli_form_media_url' );
+			document.querySelectorAll( '.jbli_media_clear' ).forEach( function ( btn ) {
+				btn.addEventListener( 'click', function () { document.getElementById( btn.getAttribute( 'data-target' ) ).value = ''; } );
+			} );
 
-			if ( clear ) { clear.addEventListener( 'click', function () { input.value = ''; } ); }
+			var picks = document.querySelectorAll( '.jbli_media_pick' );
 
-			if ( ! pick ) { return; }
+			if ( ! window.wp || ! wp.media ) { picks.forEach( function ( b ) { b.style.display = 'none'; } ); return; }
 
-			if ( ! window.wp || ! wp.media ) { pick.style.display = 'none'; return; }
-
-			var frame;
-			pick.addEventListener( 'click', function () {
-				if ( ! frame ) {
-					frame = wp.media( {
-						title: <?php echo wp_json_encode( __( 'Εικόνα ή video για τη φόρμα', 'job-listings' ) ); ?>,
-						library: { type: [ 'image', 'video' ] },
-						multiple: false
-					} );
-					frame.on( 'select', function () {
-						var file = frame.state().get( 'selection' ).first().toJSON();
-						input.value = file.url || '';
-					} );
-				}
-				frame.open();
+			picks.forEach( function ( btn ) {
+				var frame;
+				btn.addEventListener( 'click', function () {
+					var input = document.getElementById( btn.getAttribute( 'data-target' ) );
+					if ( ! frame ) {
+						frame = wp.media( {
+							title: <?php echo wp_json_encode( __( 'Εικόνα ή video', 'job-listings' ) ); ?>,
+							library: { type: [ 'image', 'video' ] },
+							multiple: false
+						} );
+						frame.on( 'select', function () {
+							var file = frame.state().get( 'selection' ).first().toJSON();
+							input.value = file.url || '';
+						} );
+					}
+					frame.open();
+				} );
 			} );
 		}() );
 	</script>
@@ -358,7 +388,7 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 	</h2>
 
 	<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">
-		<?php esc_html_e( 'Το email που λαμβάνει το φαρμακείο όταν κάποιος πατήσει «Εκδήλωση Ενδιαφέροντος».', 'job-listings' ); ?>
+		<?php esc_html_e( 'Το email που λαμβάνει το φαρμακείο όταν κάποιος πατήσει «Εκδήλωση Ενδιαφέροντος». Εδώ ορίζετε το θέμα και το εισαγωγικό κείμενο· τα στοιχεία του υποψηφίου (με κουμπιά κλήσης/απάντησης) και της αγγελίας προστίθενται αυτόματα από κάτω. Το «Απάντηση» στο email πηγαίνει απευθείας στον υποψήφιο.', 'job-listings' ); ?>
 		<?php esc_html_e( 'Διαθέσιμα placeholders:', 'job-listings' ); ?>
 		<code>{name}</code> <code>{phone}</code> <code>{email}</code> <code>{position}</code> <code>{pharmacy}</code> <code>{listing_url}</code>
 	</p>

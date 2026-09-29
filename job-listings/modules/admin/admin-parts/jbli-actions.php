@@ -336,6 +336,7 @@ if ( ! function_exists( 'jbli_fields_handle_save' ) )
 		if ( 'save_form_media' === $jbli_sub_action )
 		{
 			update_option( 'jbli_form_media_url', esc_url_raw( trim( wp_unslash( (string) ( $_POST['jbli_form_media_url'] ?? '' ) ) ) ), false );
+			update_option( 'jbli_single_media_url', esc_url_raw( trim( wp_unslash( (string) ( $_POST['jbli_single_media_url'] ?? '' ) ) ) ), false );
 
 			wp_safe_redirect(
 				add_query_arg(

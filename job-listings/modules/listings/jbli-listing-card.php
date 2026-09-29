@@ -43,8 +43,9 @@ $jbli_days_left = isset( $jbli_days_left ) ? $jbli_days_left : ( function_exists
 		<div class="jbli_card_top">
 			<span class="jbli_card_pharmacy" itemprop="hiringOrganization" itemscope
 				itemtype="https://schema.org/Organization">
+				<span class="jbli_card_pharmacy_label"><?php esc_html_e( 'Φαρμακείο:', 'job-listings' ); ?></span>
 				<strong
-					itemprop="name"><?php echo esc_html( $jbli_pharmacy ?: __( 'Φαρμακείο', 'job-listings' ) ); ?></strong>
+					itemprop="name"><?php echo esc_html( $jbli_pharmacy ? jbli_pharmacy_display_name( $jbli_pharmacy ) : '—' ); ?></strong>
 			</span>
 			<?php
 
@@ -66,7 +67,7 @@ $jbli_days_left = isset( $jbli_days_left ) ? $jbli_days_left : ( function_exists
 					/* translators: %s: Job listing title */
 					echo esc_attr( sprintf( __( 'Δείτε την αγγελία: %s', 'job-listings' ), $jbli_title ) ); 
 				?>">
-				<?php esc_html_e( 'Αναζητά:', 'job-listings' ); ?>
+				<span class="jbli_card_title_prefix"><?php esc_html_e( 'Αναζητά:', 'job-listings' ); ?></span>
 				<em><?php echo esc_html( $jbli_title ); ?></em>
 			</a>
 		</h2>
