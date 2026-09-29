@@ -226,8 +226,9 @@ final class QRRP_Site_Health {
 		$filtered = apply_filters( 'qrrp_page_cache_lifespan', $lifespan, $source );
 
 		if ( is_numeric( $filtered ) && (int) $filtered > 0 ) {
+			/* 2.15.7: η ανιχνευμένη πηγή μένει μόνο αν το φίλτρο δεν άλλαξε την τιμή της. */
+			$source   = ( '' !== $source && ! $infinite && (int) $filtered === $lifespan ) ? $source : __( 'φίλτρο qrrp_page_cache_lifespan', 'qr-rebuilder-pro' );
 			$lifespan = (int) $filtered;
-			$source   = ( '' !== $source && ! $infinite ) ? $source : __( 'φίλτρο qrrp_page_cache_lifespan', 'qr-rebuilder-pro' );
 			$infinite = false;
 		}
 

@@ -37,7 +37,8 @@ class QRRP_Vendor_Check {
 
 	private const REPO_URL = 'https://repo.packagist.org/p2/%s.json';
 
-	private const TIMEOUT = 10;
+	/* 2.15.7: 10 → 5 s· δύο πακέτα διαδοχικά, ώστε ένα κολλημένο δίκτυο να μη φτάνει το max_execution_time. */
+	private const TIMEOUT = 5;
 
 	/* Το JSON του Packagist για αυτά τα πακέτα είναι μερικές εκατοντάδες KB. */
 	private const MAX_BYTES = 4194304;

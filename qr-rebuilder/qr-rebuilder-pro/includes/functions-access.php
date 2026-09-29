@@ -72,7 +72,9 @@ function qrrp_user_is_pharmacist( $user_id ) {
 	$is = false;
 
 	if ( function_exists( 'pn_uf_get_category' ) ) {
-		$is = 'Φαρμακείο' === pn_uf_get_category( $user_id );
+		/* 2.15.7: ίδια ανεκτική σύγκριση με τα meta keys (τόνοι/κεφαλαία). */
+		$category = pn_uf_get_category( $user_id );
+		$is       = is_scalar( $category ) && 'φαρμακειο' === qrrp_fold_greek( (string) $category );
 	} else {
 		foreach ( array( 'account_type', 'user_registration_account_type', 'user_registration_Account_Type' ) as $key ) {
 			$value = get_user_meta( $user_id, $key, true );

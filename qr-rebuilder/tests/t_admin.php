@@ -114,5 +114,23 @@ check( 'handler checks capability and nonce before writing', false !== strpos( $
 $access = file_get_contents( $PD . '/includes/functions-access.php' );
 check( 'access code does not read the dismiss flag', false === strpos( $access, 'qrrp_hide_pharmacist_warning' ) );
 
+/* 2.15.7: σελίδα εργαλείου — χωρίς δημοσιευμένες σελίδες το πεδίο λείπει (null). */
+function get_post_type( $id ) { return $GLOBALS['__posts'][ $id ]['type'] ?? false; }
+function get_post_status( $id ) { return $GLOBALS['__posts'][ $id ]['status'] ?? false; }
+$GLOBALS['__options']['qrrp_tool_page_id'] = 12;
+$GLOBALS['__posts'] = array( 12 => array( 'type' => 'page', 'status' => 'publish' ), 30 => array( 'type' => 'post', 'status' => 'publish' ) );
+$GLOBALS['__errors'] = array();
+check( '2.15.7: tool page field missing (no published pages) → keeps value silently', 12 === QRRP_Admin::sanitize_tool_page_id( null ) && array() === $GLOBALS['__errors'] );
+check( '  ...a published page is still accepted', 12 === QRRP_Admin::sanitize_tool_page_id( '12' ) && array() === $GLOBALS['__errors'] );
+$r = QRRP_Admin::sanitize_tool_page_id( '30' );
+check( '  ...a non-page is still refused with a warning', 12 === $r && 1 === count( $GLOBALS['__errors'] ) && 'qrrp_invalid_tool_page' === $GLOBALS['__errors'][0][0] );
+
+/* 2.15.7: pn_uf_get_category() με ανεκτική σύγκριση (τόνοι/κεφαλαία), όπως τα meta keys. */
+function user_can( $u, $c ) { return false; }
+function pn_uf_get_category( $u ) { return $GLOBALS['__pn_cat'][ $u ] ?? ''; }
+$GLOBALS['__pn_cat'] = array( 1 => 'Φαρμακείο', 2 => 'ΦΑΡΜΑΚΕΙΟ', 3 => 'φαρμακειο ', 4 => 'Ιατρείο' );
+check( '2.15.7: pn_uf category «Φαρμακείο» / «ΦΑΡΜΑΚΕΙΟ» → pharmacist', qrrp_user_is_pharmacist( 1 ) && qrrp_user_is_pharmacist( 2 ) );
+check( '  ...other category → not pharmacist', ! qrrp_user_is_pharmacist( 4 ) );
+
 echo $fails ? "\n$fails FAILED\n" : "\nALL PASS\n";
 exit( $fails ? 1 : 0 );

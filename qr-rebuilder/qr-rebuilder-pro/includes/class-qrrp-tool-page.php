@@ -37,7 +37,7 @@ final class QRRP_Tool_Page {
 		$tool_page_id = function_exists( 'qrrp_tool_page_id' ) ? qrrp_tool_page_id() : 0;
 
 		$has_tool = ( $tool_page_id > 0 && $tool_page_id === (int) $post->ID )
-			|| self::content_has_tool( (string) $post->post_content );
+			|| self::cached_content_has_tool( (int) $post->ID, (string) $post->post_content );
 
 		/**
 		 * Δηλώστε σελίδα εργαλείου που η ανίχνευση δεν βλέπει (π.χ. page builders
@@ -47,6 +47,24 @@ final class QRRP_Tool_Page {
 		 * @param WP_Post $post     Η ανάρτηση που εξετάζεται.
 		 */
 		return (bool) apply_filters( 'qrrp_page_has_tool', $has_tool, $post );
+	}
+
+	/**
+	 * 2.15.7: η ανίχνευση τρέχει τουλάχιστον δύο φορές ανά αίτημα
+	 * (template_redirect και wp_enqueue_scripts), με parse_blocks() και έως
+	 * MAX_PATTERN_REFS get_post() κάθε φορά. Κρατιέται ανά αίτημα, με κλειδί το
+	 * ID και το hash του περιεχομένου (αλλαγή περιεχομένου = νέος έλεγχος).
+	 */
+	private static function cached_content_has_tool( $post_id, $content ) {
+		static $cache = array();
+
+		$key = $post_id . ':' . md5( $content );
+
+		if ( ! isset( $cache[ $key ] ) ) {
+			$cache[ $key ] = self::content_has_tool( $content );
+		}
+
+		return $cache[ $key ];
 	}
 
 	/**

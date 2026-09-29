@@ -647,6 +647,16 @@ final class QRRP_Admin {
 	 * @return int
 	 */
 	public static function sanitize_tool_page_id( $value ) {
+		/*
+		 * 2.15.7: χωρίς δημοσιευμένες σελίδες η wp_dropdown_pages() δεν τυπώνει
+		 * πεδίο, οπότε το options.php περνά null. Δεν είναι άκυρη επιλογή: η τιμή
+		 * κρατιέται σιωπηλά (πριν: προειδοποίηση σε κάθε αποθήκευση, που έκρυβε
+		 * και το «Οι ρυθμίσεις αποθηκεύτηκαν»).
+		 */
+		if ( null === $value ) {
+			return qrrp_tool_page_id();
+		}
+
 		if ( is_scalar( $value ) ) {
 			$raw = trim( (string) $value );
 
