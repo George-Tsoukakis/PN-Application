@@ -110,28 +110,16 @@ jQuery(document).ready(function ($) {
         return true;
     });
 
-    /* Title: live word counter + limits (max words, max characters per word). */
-    $form.find('.jbli_word_counter[data-input]').each(function () {
-        var $counter  = $(this);
-        var $input    = $('#' + $counter.attr('data-input'));
-        var maxWords  = parseInt($counter.attr('data-max-words') || '0', 10);
-        var maxChars  = parseInt($counter.attr('data-max-word-chars') || '0', 10);
-        if (!$input.length || !maxWords) { return; }
+    /* Title: live character counter (the input's maxlength enforces the limit). */
+    $form.find('.jbli_char_counter[data-input]').each(function () {
+        var $counter = $(this);
+        var $input   = $('#' + $counter.attr('data-input'));
+        var max      = parseInt($counter.attr('data-max') || '0', 10);
+        if (!$input.length || !max) { return; }
 
         var update = function () {
-            var words = $.trim($input.val() || '').split(/\s+/).filter(Boolean);
-            var tooLongWord = maxChars && words.some(function (w) { return w.length > maxChars; });
-            var msg = '';
-
-            if (words.length > maxWords) {
-                msg = 'Ο τίτλος μπορεί να έχει έως ' + maxWords + ' λέξεις.';
-            } else if (tooLongWord) {
-                msg = 'Κάθε λέξη του τίτλου μπορεί να έχει έως ' + maxChars + ' χαρακτήρες.';
-            }
-
-            $input[0].setCustomValidity(msg);
-            $counter.text(words.length).attr('data-warn', words.length > maxWords || tooLongWord ? 'true' : 'false');
-            if (msg) { jbliMark($input, msg); } else if ($input[0].checkValidity()) { jbliClear($input); }
+            var len = Array.from($input.val() || '').length;
+            $counter.text(len).attr('data-warn', len >= max ? 'true' : 'false');
         };
         $input.on('input', update);
         update();

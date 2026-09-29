@@ -778,13 +778,13 @@
   }
 }
 
-/* 9.9.46 — title word counter */
-.jbli_word_counter {
+/* 9.9.47 — title character counter */
+.jbli_char_counter {
   margin-left: 4px;
   font-weight: 700;
   color: var(--jbli_gray_600);
 }
 
-.jbli_word_counter[data-warn="true"] {
-  color: var(--jbli_red);
+.jbli_char_counter[data-warn="true"] {
+  color: var(--jbli_amber);
 }

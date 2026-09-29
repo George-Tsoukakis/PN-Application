@@ -17,20 +17,20 @@ defined('ABSPATH') || exit;
 	<label for="job_position"><?php esc_html_e('Τίτλος Αγγελίας', 'job-listings'); ?> <span
 			class="jbli_req">*</span></label>
 
-	<input type="text" id="job_position" name="job_position" value="<?php echo esc_attr($jbli_fv('jbli_position')); ?>" class="jbli_input" maxlength="120" placeholder="<?php esc_attr_e( 'π.χ. Ζητείται Βοηθός Φαρμακείου', 'job-listings' ); ?>" required autocomplete="organization-title" enterkeyhint="next" aria-describedby="job_position_hint">
-
 	<?php
-		$jbli_pos_value = $jbli_fv( 'jbli_position' );
-		$jbli_pos_words = function_exists( 'jbli_title_words' ) ? count( jbli_title_words( $jbli_pos_value ) ) : 0;
-		$jbli_max_words = function_exists( 'jbli_title_max_words' ) ? jbli_title_max_words() : 15;
-		$jbli_max_chars = function_exists( 'jbli_title_max_word_chars' ) ? jbli_title_max_word_chars() : 30;
+		$jbli_pos_value = (string) $jbli_fv( 'jbli_position' );
+		$jbli_max_title = function_exists( 'jbli_title_max_chars' ) ? jbli_title_max_chars() : 15;
+		$jbli_pos_len   = function_exists( 'jbli_strlen' ) ? jbli_strlen( $jbli_pos_value ) : mb_strlen( $jbli_pos_value );
 	?>
+
+	<input type="text" id="job_position" name="job_position" value="<?php echo esc_attr( $jbli_pos_value ); ?>" class="jbli_input" maxlength="<?php echo esc_attr( (string) $jbli_max_title ); ?>" placeholder="<?php esc_attr_e( 'π.χ. Φαρμακοποιός', 'job-listings' ); ?>" required autocomplete="organization-title" enterkeyhint="next" aria-describedby="job_position_hint">
+
 	<span class="jbli_field_hint" id="job_position_hint" aria-live="polite">
 		<?php
-			/* translators: %d: maximum number of words */
-			echo esc_html( sprintf( __( 'Σύντομος τίτλος, π.χ. «Ζητείται Βοηθός Φαρμακείου» (έως %d λέξεις).', 'job-listings' ), $jbli_max_words ) );
+			/* translators: %d: maximum number of characters */
+			echo esc_html( sprintf( __( 'Σύντομος τίτλος, έως %d χαρακτήρες.', 'job-listings' ), $jbli_max_title ) );
 		?>
-		<span class="jbli_word_counter" data-input="job_position" data-max-words="<?php echo esc_attr( (string) $jbli_max_words ); ?>" data-max-word-chars="<?php echo esc_attr( (string) $jbli_max_chars ); ?>"><?php echo esc_html( (string) $jbli_pos_words ); ?></span>/<?php echo esc_html( (string) $jbli_max_words ); ?>
+		<span class="jbli_char_counter" data-input="job_position" data-max="<?php echo esc_attr( (string) $jbli_max_title ); ?>"><?php echo esc_html( (string) $jbli_pos_len ); ?></span>/<?php echo esc_html( (string) $jbli_max_title ); ?>
 	</span>
 
 </div>
