@@ -919,6 +919,9 @@
 			if (drug.strengthSep) {
 				warnings.push('strengthSep');
 			}
+			if (drug.strengthThousands) {
+				warnings.push('strengthThousands');
+			}
 			if (drug.strengthUnsure) {
 				warnings.push('strength');
 			}

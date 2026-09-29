@@ -226,7 +226,16 @@
 		} else if (leadingZero) {
 			text = '0' + leadSep[1] + text;
 		}
-		return { text: text, found: true, unsure: unsure, perDropped: perDropped, leadingZero: leadingZero, splitNumber: splitNumber, sepAdjacent: sepAdjacent };
+		/* A separator followed by exactly three digits after a non-zero
+		   whole part («1.000MG», «2,500MG») reads as a thousand to a
+		   Greek eye and as one to an English one — the ambiguity the dose
+		   field already refuses (PD.checkDoseAmount). Kept as written, but
+		   the medicine goes through the form («strengthThousands»).
+		   Only in mg, mcg and units, where both readings are real doses:
+		   «2,810G» is never 2810 grams. «0,125MG» has a zero whole part:
+		   not ambiguous either. */
+		var thousands = /(?:^|[^\d.,])[1-9]\d{0,2}[.,]\d{3}\s*(?:mg|mcg|IU|U|anti-?XA)(?![A-Za-z])/i.test(text);
+		return { text: text, found: true, unsure: unsure, perDropped: perDropped, leadingZero: leadingZero, splitNumber: splitNumber, sepAdjacent: sepAdjacent, thousands: thousands };
 	}
 
 	/**
@@ -335,6 +344,7 @@
 			strengthZero: !!st.leadingZero,
 			strengthSplit: !!st.splitNumber,
 			strengthSep: !!st.sepAdjacent,
+			strengthThousands: !!st.thousands,
 			form: formAt > 0 ? latin(words[formAt]).toUpperCase() : '',
 			latinText: latin(text).toUpperCase(),
 			pack: readPack(latin(text).toUpperCase(), plain(text), formAt > 0 ? latin(words[formAt]).toUpperCase() : ''),

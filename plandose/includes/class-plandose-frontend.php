@@ -1206,6 +1206,7 @@ class Plandose_Frontend {
 				'rxWarn_strengthCheck' => __( 'Η περιεκτικότητα λείπει ή δεν διαβάστηκε ολόκληρη — συγκρίνετε το όνομα με τη συνταγή και επιβεβαιώστε.', 'plandose' ),
 				'rxWarn_strengthZero' => __( 'Η περιεκτικότητα είναι γραμμένη χωρίς το αρχικό μηδέν (π.χ. «.25MG») και μπήκε με μηδέν μπροστά (0.25MG) — συγκρίνετε το όνομα με τη συνταγή στη φόρμα.', 'plandose' ),
 				'rxWarn_strengthSplit' => __( 'Ο αριθμός της περιεκτικότητας είναι σπασμένος με κενό (π.χ. «0. 25MG», «1 . 5MG») και μπήκε ενωμένος (0.25MG, 1.5MG) — συγκρίνετε το όνομα με τη συνταγή στη φόρμα.', 'plandose' ),
+				'rxWarn_strengthThousands' => __( 'Η περιεκτικότητα έχει τελεία ή κόμμα και τρία ψηφία (π.χ. «1.000MG») — μπορεί να σημαίνει χίλια ή ένα. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα.', 'plandose' ),
 				'rxWarn_strengthSep' => __( 'Ακριβώς πριν από την περιεκτικότητα υπάρχει τελεία, κόμμα ή άλλος αριθμός (π.χ. «1X. 5MG», «0 25MG») — ίσως λείπει μηδέν ή υποδιαστολή. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα.', 'plandose' ),
 				'rxWarn_weeklyOnly' => __( 'ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα, εδώ είναι συχνότερα. Επαληθεύστε τη συχνότητα με τον γιατρό που το συνταγογράφησε.', 'plandose' ),
 				/* translators: %s: medicine name. */
@@ -2088,6 +2089,7 @@ class Plandose_Frontend {
 			'rxWarn_strengthCheck' => 'The strength is missing or was only partly read — compare the name with the prescription and confirm.',
 			'rxWarn_strengthZero' => 'The strength is written without its leading zero (e.g. “.25MG”) and was entered with the zero (0.25MG) — compare the name with the prescription in the form.',
 			'rxWarn_strengthSplit' => 'The strength number is split by a space (e.g. “0. 25MG”, “1 . 5MG”) and was entered joined (0.25MG, 1.5MG) — compare the name with the prescription in the form.',
+			'rxWarn_strengthThousands' => 'The strength has a dot or comma followed by three digits (e.g. “1.000MG”) — it may mean one thousand or one. Compare the name with the prescription in the form.',
 			'rxWarn_strengthSep' => 'There is a dot, comma or another number right before the strength (e.g. “1X. 5MG”, “0 25MG”) — a zero or decimal point may be missing. Compare the name with the prescription in the form.',
 			'rxWarn_weeklyOnly' => 'WARNING: this medicine is normally given once a week, here it is more often. Verify the frequency with the prescriber.',
 			/* translators: %s: medicine name. */

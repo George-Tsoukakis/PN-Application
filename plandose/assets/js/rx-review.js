@@ -48,6 +48,7 @@
 		strengthZero: 'Η περιεκτικότητα είναι γραμμένη χωρίς το αρχικό μηδέν (π.χ. «.25MG») και μπήκε με μηδέν μπροστά (0.25MG) — συγκρίνετε το όνομα με τη συνταγή στη φόρμα.',
 		strengthSplit: 'Ο αριθμός της περιεκτικότητας είναι σπασμένος με κενό (π.χ. «0. 25MG», «1 . 5MG») και μπήκε ενωμένος (0.25MG, 1.5MG) — συγκρίνετε το όνομα με τη συνταγή στη φόρμα.',
 		strengthSep: 'Ακριβώς πριν από την περιεκτικότητα υπάρχει τελεία, κόμμα ή άλλος αριθμός (π.χ. «1X. 5MG», «0 25MG») — ίσως λείπει μηδέν ή υποδιαστολή. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα.',
+		strengthThousands: 'Η περιεκτικότητα έχει τελεία ή κόμμα και τρία ψηφία (π.χ. «1.000MG») — μπορεί να σημαίνει χίλια ή ένα. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα.',
 		methotrexateDaily: 'ΠΡΟΣΟΧΗ: η μεθοτρεξάτη χορηγείται συνήθως μία φορά την εβδομάδα. Επιβεβαιώστε τη συχνότητα.',
 		weeklyOnly: 'ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα, εδώ είναι συχνότερα. Επαληθεύστε τη συχνότητα με τον γιατρό που το συνταγογράφησε.',
 		dispensedQty: 'Η ποσότητα που χορηγήθηκε δεν ταιριάζει με το πλάνο (πολύ περισσότερη ή πολύ λιγότερη) — ελέγξτε ποσότητα, συχνότητα και διάρκεια με τη συνταγή.',
@@ -314,7 +315,7 @@
 	/* Which field each warning is about (for the «?» marking and the
 	   confirmation's description). */
 	var WARN_FIELD = {
-		name: 'name', strength: 'name', strengthZero: 'name', strengthSplit: 'name', strengthSep: 'name', brandWords: 'name',
+		name: 'name', strength: 'name', strengthZero: 'name', strengthSplit: 'name', strengthSep: 'name', strengthThousands: 'name', brandWords: 'name',
 		dose: 'qty', noDose: 'qty', tooLong: 'qty', amount: 'qty', unit: 'qty', iuConfirm: 'qty', highQty: 'qty',
 		injectionQty: 'qty', insulinUnits: 'qty', insulinMl: 'qty', unitForm: 'qty', iuSyringe: 'qty', shortDuration: 'days', phrase: 'qty', unitsOrInjection: 'qty', sameDrugOtherDose: 'qty', variableDose: 'qty',
 		freq: 'freq', freqWeekly: 'freq', weekDay: 'freq', startDay: 'freq', everyHours: 'freq', time: 'freq', monthly: 'freq',
