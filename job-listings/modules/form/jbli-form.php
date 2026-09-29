@@ -307,6 +307,40 @@ add_action( 'admin_post_job_listing_submit',        'jbli_form_adminpost_handler
 add_action( 'admin_post_nopriv_job_listing_submit', 'jbli_form_adminpost_handler' );
 
 /**
+ * Handle the listing form and dashboard buttons on the front end.
+ *
+ * The forms post back to their own page instead of /wp-admin/admin-post.php.
+ * admin-post.php runs admin_init, and security plugins or theme code that
+ * keep non-admins out of wp-admin (redirect/403 on admin_init) silently
+ * swallowed every submission from pharmacy accounts. The admin-post hooks
+ * above stay for forms rendered by older cached pages.
+ *
+ * @since 9.9.44
+ * @return void
+ */
+function jbli_frontend_post_router() {
+
+	if ( is_admin() || wp_doing_ajax() || 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) { return; }
+
+	$jbli_action = sanitize_key( wp_unslash( $_POST['action'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Each handler verifies its own nonce.
+
+	if ( 'job_listing_submit' === $jbli_action )
+	{
+		jbli_form_adminpost_handler();
+		exit;
+	}
+
+	if ( 'job_listing_dash_action' === $jbli_action && function_exists( 'jbli_dash_adminpost_handler' ) )
+	{
+		jbli_dash_adminpost_handler();
+		exit;
+	}
+
+}
+
+add_action( 'wp_loaded', 'jbli_frontend_post_router' );
+
+/**
  * Process a job listing form submission.
  *
  * Orchestrates in order:

@@ -52,7 +52,7 @@ $jbli_partials = __DIR__ . '/template-parts/';
 
 	<form
 		method="post"
-		action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+		action="<?php echo esc_url( $jbli_back_url ); ?>"
 		class="jbli_form jbli_form_simple"
 		id="jbli_submit_form"
 		autocomplete="on"

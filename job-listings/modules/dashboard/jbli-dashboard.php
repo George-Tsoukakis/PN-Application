@@ -384,7 +384,7 @@ function jbli_dash_action_btn(
 	}
 
 	return
-		'<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="jbli_inline_form jbli_dash_action_form">'
+		'<form method="post" action="' . esc_url( $jbli_back_url ) . '" class="jbli_inline_form jbli_dash_action_form">'
 		. '<input type="hidden" name="action" value="job_listing_dash_action">'
 		. '<input type="hidden" name="job_listing_dash_action" value="' . esc_attr( $jbli_action ) . '">'
 		. '<input type="hidden" name="job_post_id" value="' . esc_attr( (string) $jbli_post_id ) . '">'

@@ -196,6 +196,10 @@ JL_CPT      // 'job_listing'
 
 ## 📝 Changelog
 
+### v9.9.44
+- **Fix**: Η φόρμα νέας αγγελίας και τα κουμπιά του dashboard υποβάλλονται πλέον στην ίδια τη σελίδα, όχι στο `/wp-admin/admin-post.php`. Security plugins ή κώδικας theme που κρατούν τους μη-διαχειριστές έξω από το wp-admin (redirect στο `admin_init`) «κατάπιναν» σιωπηλά κάθε υποβολή φαρμακείου.
+- **Fix**: Ο WP Rocket καθαρίζει κάθε σελίδα που εμφανίζει αγγελίες (με shortcode σε content ή page builder meta), όχι μόνο τη σελίδα με slug `aggelies`.
+
 ### v9.9.43
 - **Fix**: Email αιτήσεων — τα `{phone}`, `{email}`, `{position}` αντικαθίστανται ξανά.
 - **Fix**: Η φόρμα «Danger Zone» δεν απενεργοποιεί πλέον τις ρυθμίσεις απορρήτου.

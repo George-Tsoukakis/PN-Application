@@ -237,31 +237,13 @@ if ( ! function_exists( 'jbli_rocket_purge_plugin_pages' ) )
 
 		if ( ! jbli_rocket_can_purge( ) ) { return; }
 
-		$jbli_urls_to_purge = array_filter( array(
-			get_transient( 'jbli_listings_page_url' ),
-			get_transient( 'jbli_form_page_url' ),
-		) );
-
-		if ( empty( $jbli_urls_to_purge ) )
-		{
-			foreach ( array( 'aggelies', 'dashboard', 'nea-aggelia' ) as $jbli_slug ) {
-
-				$jbli_page = get_page_by_path( $jbli_slug );
-
-				if ( $jbli_page instanceof WP_Post ) { rocket_clean_post( $jbli_page->ID ); }
-
-			}
-		} else {
-
-			foreach ( $jbli_urls_to_purge as $jbli_url ) {
-
-				$jbli_page_id = url_to_postid( $jbli_url );
-
-				if ( $jbli_page_id > 0 ) { rocket_clean_post( $jbli_page_id ); }
-
-			}
-		}
-
+		/*
+		 * Purge every page that shows listings, whatever its slug and however it
+		 * was built. (Only the "aggelies" slug used to be purged, so on other
+		 * slugs or page-builder pages a new listing stayed invisible until the
+		 * cache expired.)
+		 */
+		foreach ( jbli_listing_page_ids() as $jbli_page_id ) { rocket_clean_post( $jbli_page_id ); }
 
 		if ( function_exists( 'rocket_clean_home' ) ) { rocket_clean_home(); }
 
@@ -348,3 +330,52 @@ function jbli_rocket_purge_on_featured_change( int $jbli_post_id, int $jbli_new_
 }
 
 add_action( 'jbli_featured_changed', 'jbli_rocket_purge_on_featured_change', 10, 2 );
+
+/**
+ * IDs of published pages that render listings ([listings], [recent-listings],
+ * [dashboard], [new-listing]), found in post content or in post meta, where
+ * page builders such as Elementor store their content.
+ *
+ * Cached for 12 hours; the cache is dropped whenever a page is saved.
+ *
+ * @return int[]
+ */
+function jbli_listing_page_ids(): array {
+
+	$jbli_cached = get_transient( 'jbli_listing_page_ids' );
+
+	if ( is_array( $jbli_cached ) ) { return array_map( 'intval', $jbli_cached ); }
+
+	global $wpdb;
+
+	$jbli_ids = array();
+
+	foreach ( array( '[listings', '[recent-listings', '[dashboard', '[new-listing' ) as $jbli_tag ) {
+
+		$jbli_like = '%' . $wpdb->esc_like( $jbli_tag ) . '%';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$jbli_found = $wpdb->get_col( $wpdb->prepare(
+			"SELECT p.ID FROM {$wpdb->posts} p
+			  WHERE p.post_status = 'publish'
+			    AND p.post_type NOT IN ( 'revision', 'nav_menu_item', %s )
+			    AND ( p.post_content LIKE %s
+			          OR EXISTS ( SELECT 1 FROM {$wpdb->postmeta} m WHERE m.post_id = p.ID AND m.meta_value LIKE %s ) )",
+			JBLI_CPT,
+			$jbli_like,
+			$jbli_like
+		) );
+
+		$jbli_ids = array_merge( $jbli_ids, array_map( 'intval', (array) $jbli_found ) );
+
+	}
+
+	$jbli_ids = array_values( array_unique( $jbli_ids ) );
+
+	set_transient( 'jbli_listing_page_ids', $jbli_ids, 12 * HOUR_IN_SECONDS );
+
+	return $jbli_ids;
+
+}
+
+add_action( 'save_post_page', static function () { delete_transient( 'jbli_listing_page_ids' ); } );
