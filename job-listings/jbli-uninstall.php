@@ -65,6 +65,14 @@ $wpdb->query( "DROP TABLE IF EXISTS `{$jbli_prefix}jbli_pharmacies`" );
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $wpdb->query( "DROP TABLE IF EXISTS `{$jbli_prefix}jbli_apply_submissions`" );
 
+/* Current table names (schema 1.3.0+); the plural names above are the pre-1.3.0 ones. */
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query( "DROP TABLE IF EXISTS `{$jbli_prefix}jbli_pharmacy_listing`" );
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query( "DROP TABLE IF EXISTS `{$jbli_prefix}jbli_pharmacy`" );
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query( "DROP TABLE IF EXISTS `{$jbli_prefix}jbli_apply_submission`" );
+
 $jbli_options = array(
 	'jbli_version',
 	'jbli_db_version',

@@ -64,7 +64,7 @@ function jbli_get_dashboard_url(): string {
 }
 
 add_action(
-	'update_optionjbli_dashboard_page_id',
+	'update_option_jbli_dashboard_page_id',
 	static function () {
 
 		delete_transient( 'jbli_dashboard_page_url' );

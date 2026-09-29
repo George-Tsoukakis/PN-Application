@@ -148,3 +148,19 @@ function jbli_check_rate_limits( $jbli_user_id, $jbli_is_edit ) {
 	return null;
 
 }
+
+/**
+ * Release the cooldown set by jbli_check_rate_limits().
+ *
+ * Called when the save fails before anything was written, so the user is
+ * not told to wait before retrying a submission that never went through.
+ *
+ * @param int  $jbli_user_id WordPress user ID.
+ * @param bool $jbli_is_edit True for edits, false for new submissions.
+ * @return void
+ */
+function jbli_clear_rate_limit( $jbli_user_id, $jbli_is_edit ) {
+
+	delete_transient( ( $jbli_is_edit ? 'jbli_edit_rate_' : 'jbli_rate_' ) . absint( $jbli_user_id ) );
+
+}

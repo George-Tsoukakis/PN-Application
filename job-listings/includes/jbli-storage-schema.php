@@ -19,8 +19,12 @@ defined( 'ABSPATH' ) || exit;
  *           and KEY status (status) to wpjbli_pharmacy_listings.
  *  1.2.0 — email column on jbli_pharmacies upgraded from KEY to UNIQUE KEY.
  *  1.2.1 — email column changed to NULL DEFAULT NULL before UNIQUE KEY.
+ *  1.3.0 — tables and columns renamed with the jbli_ prefix (new tables,
+ *           created by dbDelta with all keys; nothing is copied over).
+ *  1.3.1 — upgrade path for 1.3.0: rename legacy _job_* post meta and
+ *           rebuild the storage index from the listing posts.
  */
-defined( 'JBLI_DB_VERSION' ) || define( 'JBLI_DB_VERSION', '1.3.0' );
+defined( 'JBLI_DB_VERSION' ) || define( 'JBLI_DB_VERSION', '1.3.1' );
 
 function jbli_install_storage() {
 
@@ -111,148 +115,47 @@ function jbli_maybe_install_storage() {
 }
 
 /**
- * Run schema migrations that dbDelta cannot handle automatically.
+ * Run the migrations dbDelta cannot handle.
  *
- * dbDelta adds missing columns/tables but does NOT add indexes to existing
- * tables. Each migration is guarded by an existence check so it is safe
- * to run repeatedly.
+ * Since 1.3.0 the storage lives in new jbli_* tables that dbDelta creates
+ * with every key, so the pre-1.3.0 index/email migrations (which used the
+ * old column names and only produced SQL errors) are gone. What is left is
+ * carrying existing listings over to the new keys and tables.
  *
  * @param string $jbli_from_version The DB version stored before this update.
  */
 function jbli_run_migrations( $jbli_from_version ) {
 
-	global $wpdb;
-
 	$jbli_from_version = (string) $jbli_from_version;
-	$jbli_listings     = jbli_pharmacy_listings_table();
-	$jbli_pharmacies   = jbli_pharmacies_table();
 
-	if ( '' === $jbli_from_version || version_compare( $jbli_from_version, '1.1.0', '<' ) )
+	if ( '' !== $jbli_from_version && version_compare( $jbli_from_version, '1.3.1', '>=' ) ) { return; }
+
+	if ( function_exists( 'jbli_migrate_meta_key_prefix' ) ) { jbli_migrate_meta_key_prefix(); }
+
+	/* The backfill queries the CPT, so it has to wait for init. */
+	if ( did_action( 'init' ) )
 	{
-		jbli_migrate_add_listings_indexes( $jbli_listings );
-	}
-
-	if ( version_compare( $jbli_from_version, '1.2.1', '<' ) )
-	{
-		jbli_migrate_unique_email( $jbli_pharmacies, $jbli_listings );
-	}
-
-}
-
-/**
- * Migration helper: add pharmacy_status and status indexes to listings table.
- *
- * @param string $jbli_listings Table name.
- */
-function jbli_migrate_add_listings_indexes( $jbli_listings ) {
-
-	global $wpdb;
-
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$jbli_has_pharmacy_status = (int) $wpdb->get_var(
-		$wpdb->prepare(
-			"SELECT COUNT(1)
-			 FROM information_schema.statistics
-			 WHERE table_schema = DATABASE()
-			   AND table_name   = %s
-			   AND index_name   = 'pharmacy_status'",
-			$jbli_listings
-		)
-	);
-
-	if ( ! $jbli_has_pharmacy_status )
-	{
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$wpdb->query( "ALTER TABLE `{$jbli_listings}` ADD KEY `pharmacy_status` (`pharmacy_id`, `status`)" );
-	}
-
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$jbli_has_status = (int) $wpdb->get_var(
-		$wpdb->prepare(
-			"SELECT COUNT(1)
-			 FROM information_schema.statistics
-			 WHERE table_schema = DATABASE()
-			   AND table_name   = %s
-			   AND index_name   = 'status'",
-			$jbli_listings
-		)
-	);
-
-	if ( ! $jbli_has_status )
-	{
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$wpdb->query( "ALTER TABLE `{$jbli_listings}` ADD KEY `status` (`status`)" );
+		jbli_run_storage_backfill_migration();
+	} else {
+		add_action( 'init', 'jbli_run_storage_backfill_migration', 99 );
 	}
 
 }
 
 /**
- * Migration helper: enforce UNIQUE email on pharmacies table.
+ * Rebuild the storage index (dashboards, active-listing counts) from posts.
  *
- * Steps:
- *  1. Normalize empty emails → NULL (MySQL UNIQUE allows multiple NULLs).
- *  2. Make column nullable (dbDelta doesn't change nullability).
- *  3. Remove duplicate non-NULL emails, keeping the oldest row.
- *  4. Clean up orphaned pharmacy_listings rows after de-duplication.
- *  5. Upgrade the email index from KEY to UNIQUE KEY.
- *
- * @param string $jbli_pharmacies Table name.
- * @param string $jbli_listings   Table name.
+ * @return void
  */
-function jbli_migrate_unique_email( $jbli_pharmacies, $jbli_listings ) {
+function jbli_run_storage_backfill_migration() {
 
-	global $wpdb;
+	if ( ! function_exists( 'jbli_backfill_storage' ) ) { return; }
 
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-	$wpdb->query( "UPDATE `{$jbli_pharmacies}` SET `email` = NULL WHERE `email` = ''" );
+	$jbli_result = jbli_backfill_storage();
 
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-	$wpdb->query( "ALTER TABLE `{$jbli_pharmacies}` MODIFY `email` VARCHAR(190) NULL DEFAULT NULL" );
-
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-	$wpdb->query(
-		"DELETE p1
-		 FROM `{$jbli_pharmacies}` p1
-		 INNER JOIN `{$jbli_pharmacies}` p2
-		        ON p1.email = p2.email
-		       AND p1.id > p2.id
-		 WHERE p1.email IS NOT NULL
-		   AND p1.email != ''"
-	);
-
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-	$wpdb->query(
-		"DELETE pl
-		   FROM `{$jbli_listings}` pl
-		   LEFT JOIN `{$jbli_pharmacies}` p ON p.id = pl.pharmacy_id
-		  WHERE pl.pharmacy_id IS NOT NULL
-		    AND p.id IS NULL"
-	);
-
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$jbli_index_type = $wpdb->get_var(
-		$wpdb->prepare(
-			"SELECT NON_UNIQUE
-			 FROM information_schema.statistics
-			 WHERE table_schema = DATABASE()
-			   AND table_name   = %s
-			   AND index_name   = 'jbli_email'
-			 LIMIT 1",
-			$jbli_pharmacies
-		)
-	);
-
-	if ( '1' === (string ) $jbli_index_type )
+	if ( empty( $jbli_result['success'] ) && defined( 'WP_DEBUG' ) && WP_DEBUG )
 	{
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$wpdb->query( "ALTER TABLE `{$jbli_pharmacies}` DROP INDEX `email`, ADD UNIQUE KEY `email` (`email`)" );
-	} 
-	elseif ( null === $jbli_index_type ) 
-	{
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$wpdb->query( "ALTER TABLE `{$jbli_pharmacies}` ADD UNIQUE KEY `email` (`email`)" );
+		error_log( '[Job Listings] storage backfill after upgrade failed: ' . (string) ( $jbli_result['error'] ?? '' ) );
 	}
 
 }

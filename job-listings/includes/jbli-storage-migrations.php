@@ -42,24 +42,34 @@ function jbli_migrate_meta_key_prefix() {
 		'_job_email'         => 'jbli_email',
 	);
 
+	$jbli_renamed = 0;
+
 	foreach ( $jbli_meta_map as $jbli_old_key => $jbli_new_key ) {
 
+		/*
+		 * Rename per post, skipping posts that already have the new key.
+		 * (A global "new key exists anywhere" check skipped every old listing
+		 * as soon as one listing had been created with the new keys.)
+		 * The derived table is needed because MySQL cannot read the table
+		 * being updated in a direct subquery.
+		 */
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$jbli_exists = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s LIMIT 1",
+		$jbli_renamed += (int) $wpdb->query( $wpdb->prepare(
+			"UPDATE {$wpdb->postmeta} SET meta_key = %s
+			  WHERE meta_key = %s
+			    AND post_id NOT IN (
+			        SELECT post_id FROM (
+			            SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s
+			        ) AS jbli_has_new
+			    )",
+			$jbli_new_key,
+			$jbli_old_key,
 			$jbli_new_key
 		) );
 
-		if ( $jbli_exists ) { continue; }
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( $wpdb->prepare(
-			"UPDATE {$wpdb->postmeta} SET meta_key = %s WHERE meta_key = %s",
-			$jbli_new_key,
-			$jbli_old_key
-		) );
-
 	}
+
+	if ( $jbli_renamed > 0 ) { wp_cache_flush(); }
 
 }
 

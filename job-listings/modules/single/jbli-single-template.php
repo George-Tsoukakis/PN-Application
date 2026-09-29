@@ -68,6 +68,9 @@ get_header();
 		<div class="jbli_single">
 			<?php
 
+			/* The submit handler redirects here with a flash notice ("published" / "updated"). */
+			if ( function_exists( 'jbli_print_transient_notice' ) ) { echo wp_kses_post( jbli_print_transient_notice() ); }
+
 			$jbli_jsonld_date_posted   = get_the_date( 'c' );
 			$jbli_jsonld_valid_through = '';
 

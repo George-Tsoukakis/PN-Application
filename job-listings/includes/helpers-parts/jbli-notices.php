@@ -58,6 +58,9 @@ function jbli_print_transient_notice() {
 
 	delete_transient( 'jbli_notice_' . $jbli_user_id );
 
+	/* A one-time notice must not end up in a page cache (e.g. WP Rocket logged-in cache). */
+	defined( 'DONOTCACHEPAGE' ) || define( 'DONOTCACHEPAGE', true );
+
 	$jbli_type = ! empty( $jbli_data['jbli_type'] ) ? sanitize_key( (string) $jbli_data['jbli_type'] ) : 'info';
 
 	return jbli_notice( (string) $jbli_data['msg'], $jbli_type );

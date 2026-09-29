@@ -245,8 +245,8 @@ function jbli_form_adminpost_handler() {
 			$jbli_saved_fields = array(
 				'job_position'               => sanitize_text_field( wp_unslash( $_POST['job_position']             ?? '' ) ),
 				'job_description'            => wp_kses( wp_unslash( $_POST['job_description']          ?? '' ), jbli_allowed_html() ),
-				'job_salary'                 => sanitize_key( wp_unslash( $_POST['job_salary']           ?? '' ) ),
-				'job_type'                   => sanitize_key( wp_unslash( $_POST['job_type']             ?? '' ) ),
+				'job_salary'                 => sanitize_text_field( wp_unslash( $_POST['job_salary']    ?? '' ) ),
+				'job_type'                   => sanitize_text_field( wp_unslash( $_POST['job_type']      ?? '' ) ),
 				'job_contact_phone'          => sanitize_text_field( wp_unslash( $_POST['job_contact_phone']        ?? '' ) ),
 				'job_contact_email'          => sanitize_email( wp_unslash( $_POST['job_contact_email']             ?? '' ) ),
 				'job_category'               => absint( $_POST['job_category']             ?? 0 ),
@@ -376,6 +376,9 @@ function jbli_process_form_submit( $jbli_edit_id = 0 ) {
 
 
 	$jbli_post_id = jbli_save_listing_post( $jbli_edit_id, $jbli_fields, $jbli_was_expired, $jbli_edit_post, $jbli_user_id );
+
+	// Nothing was written, so the user must be able to retry straight away.
+	if ( is_wp_error( $jbli_post_id ) || ! $jbli_post_id ) { jbli_clear_rate_limit( $jbli_user_id, (bool) $jbli_edit_id ); }
 
 	if ( is_wp_error( $jbli_post_id ) )
 	{

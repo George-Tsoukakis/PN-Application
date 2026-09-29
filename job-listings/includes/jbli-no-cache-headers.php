@@ -20,6 +20,9 @@ function jbli_send_no_cache_headers(): void {
 		return;
 	}
 
+	/* Page caches (WP Rocket etc.) would otherwise store the form with a nonce that expires. */
+	defined( 'DONOTCACHEPAGE' ) || define( 'DONOTCACHEPAGE', true );
+
 	if ( headers_sent() )
 	{
 		return;
@@ -62,6 +65,16 @@ function jbli_is_no_cache_page(): bool {
 	$post = get_queried_object();
 
 	if ( ! $post instanceof WP_Post ) { return false; }
+
+	$jbli_page_ids = array_filter( array(
+		(int) get_option( 'jbli_form_page_id', 0 ),
+		(int) get_option( 'jbli_dashboard_page_id', 0 ),
+	) );
+
+	if ( in_array( (int) $post->ID, $jbli_page_ids, true ) ) { return true; }
+
+	/* Any page carrying [new-listing] or [dashboard], whatever its slug. */
+	if ( function_exists( 'jbli_required_asset_modules' ) && array_intersect( array( 'form', 'dashboard' ), jbli_required_asset_modules() ) ) { return true; }
 
 	return in_array( $post->post_name, jbli_no_cache_slugs(), true );
 

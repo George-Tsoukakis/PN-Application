@@ -54,8 +54,10 @@ function jbli_validate_form_data( $jbli_edit_id ) {
 
 	$jbli_position      = sanitize_text_field( wp_unslash( $_POST['job_position']      ?? '' ) );
 	$jbli_description   = wp_kses( wp_unslash( $_POST['job_description']  ?? '' ), jbli_allowed_html() );
-	$jbli_salary        = sanitize_key( wp_unslash( $_POST['job_salary']          ?? '' ) );
-	$jbli_type          = sanitize_key( wp_unslash( $_POST['job_type']            ?? '' ) );
+	// Option keys are matched against a whitelist below. sanitize_key() would
+	// strip characters such as "+" and turn the valid "2200+" into "2200".
+	$jbli_salary        = sanitize_text_field( wp_unslash( $_POST['job_salary']   ?? '' ) );
+	$jbli_type          = sanitize_text_field( wp_unslash( $_POST['job_type']     ?? '' ) );
 	$jbli_contact_phone = jbli_sanitize_phone( sanitize_text_field( wp_unslash( $_POST['job_contact_phone'] ?? '' ) ) );
 	$jbli_contact_email = sanitize_email( wp_unslash( $_POST['job_contact_email'] ?? '' ) );
 	$jbli_category_id   = absint( $_POST['job_category'] ?? 0 );
