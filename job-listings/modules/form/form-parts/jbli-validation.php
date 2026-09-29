@@ -39,6 +39,45 @@ function jbli_form_error_fields( $jbli_fields = null ) {
 }
 
 /**
+ * Maximum number of words in a listing title.
+ *
+ * @since 9.9.46
+ * @return int
+ */
+function jbli_title_max_words() {
+
+	return max( 1, (int) apply_filters( 'jbli_title_max_words', 15 ) );
+
+}
+
+/**
+ * Maximum characters in a single title word (stops "ΣΔΑδαδασδσ…" strings).
+ *
+ * @since 9.9.46
+ * @return int
+ */
+function jbli_title_max_word_chars() {
+
+	return max( 5, (int) apply_filters( 'jbli_title_max_word_chars', 30 ) );
+
+}
+
+/**
+ * Split a title into words.
+ *
+ * @since 9.9.46
+ * @param string $jbli_text Title.
+ * @return string[]
+ */
+function jbli_title_words( $jbli_text ) {
+
+	$jbli_words = preg_split( '/\s+/u', trim( (string) $jbli_text ), -1, PREG_SPLIT_NO_EMPTY );
+
+	return is_array( $jbli_words ) ? $jbli_words : array();
+
+}
+
+/**
  * Validate and sanitize form POST data.
  *
  * @since 9.9.20
@@ -93,6 +132,34 @@ function jbli_validate_form_data( $jbli_edit_id ) {
 	if ( jbli_strlen( $jbli_position ) > 120 )
 	{
 		$jbli_errors[] = array( 'field' => 'job_position', 'message' => __( 'Η θέση εργασίας δεν μπορεί να υπερβαίνει τους 120 χαρακτήρες.', 'job-listings' ) );
+	}
+
+	/* 9.9.46: short, readable titles, e.g. "Ζητείται Βοηθός Φαρμακείου". */
+	$jbli_title_words    = jbli_title_words( $jbli_position );
+	$jbli_max_words      = jbli_title_max_words();
+	$jbli_max_word_chars = jbli_title_max_word_chars();
+
+	if ( count( $jbli_title_words ) > $jbli_max_words )
+	{
+		$jbli_errors[] = array(
+			'field'   => 'job_position',
+			/* translators: %d: maximum number of words */
+			'message' => sprintf( __( 'Ο τίτλος μπορεί να έχει έως %d λέξεις.', 'job-listings' ), $jbli_max_words ),
+		);
+	}
+
+	foreach ( $jbli_title_words as $jbli_word ) {
+
+		if ( jbli_strlen( $jbli_word ) > $jbli_max_word_chars )
+		{
+			$jbli_errors[] = array(
+				'field'   => 'job_position',
+				/* translators: %d: maximum characters per word */
+				'message' => sprintf( __( 'Κάθε λέξη του τίτλου μπορεί να έχει έως %d χαρακτήρες.', 'job-listings' ), $jbli_max_word_chars ),
+			);
+			break;
+		}
+
 	}
 
 

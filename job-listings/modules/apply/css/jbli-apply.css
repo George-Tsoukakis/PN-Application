@@ -30,6 +30,7 @@
 
 .jbli_apply_modal .jbli_apply_modal_box {
   position: relative;
+  overflow-x: hidden;
   width: 100%;
   max-width: 460px;
   max-height: calc(100vh - 40px);
@@ -94,6 +95,17 @@
   background: rgba(255, 255, 255, .14);
   font-size: .82rem;
   line-height: 1.35;
+}
+
+.jbli_apply_modal .jbli_apply_modal_job {
+  max-width: 100%;
+}
+
+.jbli_apply_modal .jbli_apply_modal_job strong,
+.jbli_apply_modal .jbli_apply_modal_job span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .jbli_apply_modal .jbli_apply_modal_job strong {

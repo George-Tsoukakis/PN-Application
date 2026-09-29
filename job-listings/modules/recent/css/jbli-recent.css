@@ -1551,3 +1551,11 @@ section.jbli_recent .jbli_card .jbli_views,
 .jbli_empty .jbli_btn {
   white-space: normal;
 }
+
+/* 9.9.46 — long titles wrap instead of running off the card */
+.jbli_recent .jbli_card .jbli_card_title,
+.jbli_recent .jbli_card .jbli_card_title a,
+.jbli_recent .jbli_card .jbli_card_title em {
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}

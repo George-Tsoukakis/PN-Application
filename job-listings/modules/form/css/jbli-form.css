@@ -777,3 +777,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* 9.9.46 — title word counter */
+.jbli_word_counter {
+  margin-left: 4px;
+  font-weight: 700;
+  color: var(--jbli_gray_600);
+}
+
+.jbli_word_counter[data-warn="true"] {
+  color: var(--jbli_red);
+}

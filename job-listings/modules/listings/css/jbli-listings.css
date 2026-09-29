@@ -638,7 +638,9 @@
   line-height: 1.4;
   min-height: 52px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -938,6 +940,9 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  /* Keep clear of the site header (9.9.46). */
+  margin-top: clamp(24px, 4vw, 56px);
+  margin-bottom: clamp(24px, 4vw, 56px);
   padding: clamp(22px, 3.2vw, 44px) clamp(14px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
   border-radius: 32px;
   border: 1px solid rgba(5, 150, 105, .10);
@@ -1008,4 +1013,16 @@
   .jbli_listings::after {
     height: 170px;
   }
+}
+
+/* 9.9.46 — long titles wrap instead of running off the card */
+.jbli_card_title,
+.jbli_card_title a,
+.jbli_card_title em,
+.jbli_single_title,
+.jbli_dash_item_title,
+.jbli_apply_modal_job strong,
+.jbli_apply_modal_job span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
