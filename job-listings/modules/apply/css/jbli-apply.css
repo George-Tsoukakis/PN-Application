@@ -84,21 +84,21 @@
   letter-spacing: -.02em;
 }
 
+/* 9.9.49: rounded rectangle (was a pill) with room around the text. */
 .jbli_apply_modal .jbli_apply_modal_job {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  margin: 10px 0 0;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .14);
-  font-size: .82rem;
-  line-height: 1.35;
-}
-
-.jbli_apply_modal .jbli_apply_modal_job {
+  gap: 4px;
   max-width: 100%;
+  margin: 12px 0 0;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .18);
+  font-size: .82rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .jbli_apply_modal .jbli_apply_modal_job strong,
