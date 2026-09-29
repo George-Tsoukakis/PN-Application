@@ -4,8 +4,8 @@
  *
  * Αγγελίες → «Εισαγωγή από URL»: paste one or more ad URLs from other job
  * boards (e.g. jobfind.gr). Each page is fetched, parsed (schema.org
- * JobPosting, OpenGraph fallback) and saved as a listing in "pending"
- * status for review; the admin approves it from the listings panel.
+ * JobPosting, OpenGraph fallback) and saved as a listing: published at once
+ * or "pending" for review, per the «Εισαγωγή από URL» setting (9.9.54).
  * The same source URL is never imported twice.
  *
  * @package JobListings
@@ -18,6 +18,20 @@ require_once __DIR__ . '/jbli-import-parser.php';
 
 defined( 'JBLI_META_SOURCE_URL' )  || define( 'JBLI_META_SOURCE_URL',  'jbli_source_url' );
 defined( 'JBLI_META_SOURCE_SITE' ) || define( 'JBLI_META_SOURCE_SITE', 'jbli_source_site' );
+
+/**
+ * Status for imported listings, from Ρυθμίσεις → «Εισαγωγή από URL».
+ *
+ * 'publish' (default): approved immediately. 'pending': waits for review.
+ *
+ * @since 9.9.54
+ * @return string 'publish' | 'pending'
+ */
+function jbli_import_status() {
+
+	return 'pending' === get_option( 'jbli_import_status', 'publish' ) ? 'pending' : 'publish';
+
+}
 
 /**
  * Canonical form of a source URL (no fragment, no trailing spaces).
@@ -100,7 +114,7 @@ function jbli_import_url( $jbli_url, $jbli_apply_email = '' ) {
 	$jbli_post_id = wp_insert_post(
 		array(
 			'post_type'    => JBLI_CPT,
-			'post_status'  => 'pending',
+			'post_status'  => jbli_import_status(),
 			'post_author'  => get_current_user_id(),
 			'post_title'   => $jbli_title,
 			'post_content' => $jbli_data['description'],
@@ -142,6 +156,7 @@ function jbli_import_url( $jbli_url, $jbli_apply_email = '' ) {
 
 	return array(
 		'status'   => 'created',
+		'published'=> 'publish' === get_post_status( (int) $jbli_post_id ),
 		'post_id'  => (int) $jbli_post_id,
 		'title'    => $jbli_data['position'],
 		'warnings' => $jbli_warnings,
@@ -208,7 +223,13 @@ function jbli_import_render_page() {
 		<h1><?php esc_html_e( 'Εισαγωγή αγγελιών από URL', 'job-listings' ); ?></h1>
 
 		<p style="max-width:780px;color:#4b5563;">
-			<?php esc_html_e( 'Επικολλήστε συνδέσμους αγγελιών από άλλους ιστότοπους (π.χ. jobfind.gr, kariera.gr), έναν ανά γραμμή (έως 20). Κάθε αγγελία δημιουργείται «Σε αναμονή» με τίτλο, περιγραφή, φαρμακείο, νομό, κατηγορία, τύπο και αμοιβή όπως αναγνωρίστηκαν, μαζί με σύνδεσμο στην αρχική. Ελέγξτε την και εγκρίνετέ την από τη Διαχείριση Αγγελιών. Ο ίδιος σύνδεσμος δεν εισάγεται δεύτερη φορά.', 'job-listings' ); ?>
+			<?php esc_html_e( 'Επικολλήστε συνδέσμους αγγελιών από άλλους ιστότοπους (π.χ. jobfind.gr, kariera.gr), έναν ανά γραμμή (έως 20). Κάθε αγγελία δημιουργείται με τίτλο, περιγραφή, φαρμακείο, νομό, κατηγορία, τύπο και αμοιβή όπως αναγνωρίστηκαν, μαζί με σύνδεσμο στην αρχική. Ο ίδιος σύνδεσμος δεν εισάγεται δεύτερη φορά.', 'job-listings' ); ?>
+		</p>
+
+		<p style="max-width:780px;">
+			<strong><?php esc_html_e( 'Έγκριση:', 'job-listings' ); ?></strong>
+			<?php echo esc_html( 'pending' === jbli_import_status() ? __( 'Σε αναμονή για έλεγχο — εγκρίνετε από τη Διαχείριση Αγγελιών.', 'job-listings' ) : __( 'Άμεση έγκριση — οι αγγελίες δημοσιεύονται αμέσως.', 'job-listings' ) ); ?>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=jbli_settings#jbli_import_settings' ) ); ?>"><?php esc_html_e( 'Αλλαγή στις Ρυθμίσεις', 'job-listings' ); ?></a>
 		</p>
 
 		<p style="max-width:780px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;">
@@ -233,7 +254,7 @@ function jbli_import_render_page() {
 						<td style="word-break:break-all;"><a href="<?php echo esc_url( $jbli_r['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $jbli_r['url'] ); ?></a></td>
 						<td>
 							<?php
-								if ( 'created' === $jbli_r['status'] )       { echo '<strong style="color:#047857;">' . esc_html__( 'Δημιουργήθηκε', 'job-listings' ) . '</strong>'; }
+								if ( 'created' === $jbli_r['status'] )       { echo '<strong style="color:#047857;">' . esc_html( ! empty( $jbli_r['published'] ) ? __( 'Δημοσιεύτηκε', 'job-listings' ) : __( 'Σε αναμονή', 'job-listings' ) ) . '</strong>'; }
 								elseif ( 'duplicate' === $jbli_r['status'] ) { echo '<strong style="color:#92400e;">' . esc_html__( 'Υπάρχει ήδη', 'job-listings' ) . '</strong>'; }
 								else                                         { echo '<strong style="color:#b91c1c;">' . esc_html__( 'Σφάλμα', 'job-listings' ) . '</strong>'; }
 							?>
@@ -255,7 +276,9 @@ function jbli_import_render_page() {
 				</tbody>
 			</table>
 
-			<p><a class="button button-primary" href="<?php echo esc_url( $jbli_panel_url ); ?>"><?php esc_html_e( 'Έλεγχος & έγκριση αγγελιών σε αναμονή', 'job-listings' ); ?></a></p>
+			<?php if ( 'pending' === jbli_import_status() ) { ?>
+				<p><a class="button button-primary" href="<?php echo esc_url( $jbli_panel_url ); ?>"><?php esc_html_e( 'Έλεγχος & έγκριση αγγελιών σε αναμονή', 'job-listings' ); ?></a></p>
+			<?php } ?>
 
 		<?php } ?>
 

@@ -234,6 +234,46 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 
 </div>
 
+<?php /* 9.9.54: approval mode for listings imported from URLs. */ ?>
+
+<?php $jbli_import_status = function_exists( 'jbli_import_status' ) ? jbli_import_status() : 'publish'; ?>
+
+<div class="jbli_ap_tools" id="jbli_import_settings">
+
+	<h2 class="jbli_ap_tools_heading">
+		<?php esc_html_e( 'Εισαγωγή από URL', 'job-listings' ); ?>
+	</h2>
+
+	<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">
+		<?php esc_html_e( 'Όταν εισάγεται μια αγγελία από URL, να δημοσιεύεται αμέσως ή να περιμένει έλεγχο;', 'job-listings' ); ?>
+	</p>
+
+	<form method="post" action="<?php echo esc_url( $jbli_form_url ); ?>">
+		<input type="hidden" name="jbli_fields_action" value="save_import_status">
+		<?php wp_nonce_field( 'jbli_fields_save', 'jbli_fields_nonce' ); ?>
+
+		<fieldset style="margin:0 0 12px;">
+			<label style="display:block;margin:0 0 8px;">
+				<input type="radio" name="jbli_import_status" value="publish" <?php checked( 'publish', $jbli_import_status ); ?>>
+				<strong><?php esc_html_e( 'Άμεση έγκριση', 'job-listings' ); ?></strong>
+				— <?php esc_html_e( 'η αγγελία δημοσιεύεται αμέσως (προεπιλογή).', 'job-listings' ); ?>
+			</label>
+			<label style="display:block;">
+				<input type="radio" name="jbli_import_status" value="pending" <?php checked( 'pending', $jbli_import_status ); ?>>
+				<strong><?php esc_html_e( 'Σε αναμονή για έλεγχο', 'job-listings' ); ?></strong>
+				— <?php esc_html_e( 'η αγγελία μπαίνει «Σε αναμονή» και την εγκρίνετε από τη Διαχείριση Αγγελιών.', 'job-listings' ); ?>
+			</label>
+		</fieldset>
+
+		<p>
+			<button type="submit" class="button button-primary">
+				<?php esc_html_e( 'Αποθήκευση', 'job-listings' ); ?>
+			</button>
+		</p>
+	</form>
+
+</div>
+
 <?php /* 9.9.48: title length limit. */ ?>
 
 <div class="jbli_ap_tools">

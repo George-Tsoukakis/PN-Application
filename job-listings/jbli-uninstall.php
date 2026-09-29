@@ -83,6 +83,7 @@ $jbli_options = array(
 	'jbli_form_media_url',
 	'jbli_single_media_url',
 	'jbli_title_max_chars',
+	'jbli_import_status',
 	'jbli_listings_page_id',
 	'jbli_apply_email_subject',
 	'jbli_apply_email_body',

@@ -436,6 +436,7 @@ add_action( 'before_delete_post',      'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_deleted',            'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_admin_deleted',      'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_featured_changed',   'jbli_recent_flush_listings_cache' );
+add_action( 'jbli_imported',           'jbli_recent_flush_listings_cache' );
 
 /**
  * Flush the [recent-listings] cache when a listing is trashed or restored.

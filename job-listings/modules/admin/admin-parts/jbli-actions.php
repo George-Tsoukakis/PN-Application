@@ -320,6 +320,21 @@ if ( ! function_exists( 'jbli_fields_handle_save' ) )
 			exit;
 		}
 
+		if ( 'save_import_status' === $jbli_sub_action )
+		{
+			$jbli_mode = sanitize_key( wp_unslash( $_POST['jbli_import_status'] ?? 'publish' ) );
+
+			update_option( 'jbli_import_status', 'pending' === $jbli_mode ? 'pending' : 'publish', false );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array( 'page' => 'jbli_settings', 'jbli_saved' => 'import_status' ),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
 		if ( 'save_title_limit' === $jbli_sub_action )
 		{
 			update_option( 'jbli_title_max_chars', min( 120, max( 5, absint( $_POST['jbli_title_max_chars'] ?? 15 ) ) ), false );

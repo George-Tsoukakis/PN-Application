@@ -36,6 +36,7 @@ $jbli_cache_url 			= admin_url('admin.php?page=jbli_cache');
 			'google_map' => __('Οι ρυθμίσεις του Google Map αποθηκεύτηκαν.', 'job-listings'),
 			'form_media' => __('Η εικόνα / το video της φόρμας αποθηκεύτηκε.', 'job-listings'),
 			'title_limit' => __('Το όριο χαρακτήρων του τίτλου αποθηκεύτηκε.', 'job-listings'),
+			'import_status' => __('Η ρύθμιση έγκρισης για την εισαγωγή από URL αποθηκεύτηκε.', 'job-listings'),
 		);
 	
 
