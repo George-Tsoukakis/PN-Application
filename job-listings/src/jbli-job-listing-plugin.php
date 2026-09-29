@@ -102,6 +102,7 @@ final class Plugin {
 			'modules/admin/jbli-cache.php',
 			'modules/recent/jbli-recent-listings.php',
 			'modules/apply/jbli-apply.php',
+			'modules/import/jbli-import.php',
 		);
 
 		ob_start();

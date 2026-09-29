@@ -425,11 +425,27 @@ get_header();
 				?>
 				<?php
 
-					if ( function_exists( 'jbli_apply_render' ) )
-					{
+					$jbli_apply_html = function_exists( 'jbli_apply_render' ) ? jbli_apply_render( $jbli_id ) : '';
 
-						$jbli_apply_html = jbli_apply_render( $jbli_id );
-						echo $jbli_apply_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safe HTML component.
+					echo $jbli_apply_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safe HTML component.
+
+					/* 9.9.53: listings imported from another site show their source. */
+					$jbli_source_url  = (string) get_post_meta( $jbli_id, 'jbli_source_url', true );
+					$jbli_source_site = (string) get_post_meta( $jbli_id, 'jbli_source_site', true );
+
+					if ( '' !== $jbli_source_url )
+					{
+						?>
+						<div class="jbli_single_source">
+							<span>
+								<?php esc_html_e( 'Πηγή αγγελίας:', 'job-listings' ); ?>
+								<strong><?php echo esc_html( $jbli_source_site ?: (string) wp_parse_url( $jbli_source_url, PHP_URL_HOST ) ); ?></strong>
+							</span>
+							<a href="<?php echo esc_url( $jbli_source_url ); ?>" class="jbli_btn <?php echo esc_attr( '' === $jbli_apply_html ? 'jbli_btn_primary' : 'jbli_btn_outline' ); ?>" target="_blank" rel="noopener noreferrer nofollow">
+								<?php esc_html_e( 'Δείτε την αρχική αγγελία ↗', 'job-listings' ); ?>
+							</a>
+						</div>
+						<?php
 					}
 				?>
 

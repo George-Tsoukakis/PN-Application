@@ -426,3 +426,23 @@
     display: none;
   }
 }
+
+/* 9.9.53 — source of an imported listing */
+.jbli_page_wrap_single .jbli_single_source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin: 14px 0 0;
+  padding: 14px 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #f5f9ff;
+  color: #1e3a8a;
+  font-size: .9rem;
+}
+
+.jbli_page_wrap_single .jbli_single_source .jbli_btn {
+  text-decoration: none;
+}
