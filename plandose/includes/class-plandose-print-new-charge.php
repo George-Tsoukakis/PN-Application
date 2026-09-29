@@ -85,10 +85,12 @@ final class Plandose_Print_New_Charge {
 	private static function answer_lock_held( Plandose_Print_Request $request, $lock_token ) {
 		$user_id = $request->user_id;
 
+		// Never '' since 1.30.1 (Plandose_Print_Request::read_post()
+		// refuses a request without an id). Kept fail-closed: without an
+		// id this request cannot be told apart from another one, so it is
+		// answered «try again», never «already recorded, print».
 		if ( '' === $request->request_hash ) {
-			// A script from before 1.24.0 sends no request id: answered the
-			// legacy way (the client compares the counter, see api.js).
-			return self::duplicate_ignored( $request );
+			return self::server_error( $request, $request->row );
 		}
 
 		/*

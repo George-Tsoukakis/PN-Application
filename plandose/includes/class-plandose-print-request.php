@@ -99,12 +99,19 @@ final class Plandose_Print_Request {
 	 * client promises after a lost answer, but at most
 	 * Plandose_Print_Charges::MAX_REPLAYS times (a replay prints without
 	 * charging anything). The next one is refused (replay_limit): not
-	 * charged, not printed. A malformed request id is treated as none.
+	 * charged, not printed.
+	 *
+	 * The request id is required. Every script since 1.24.0 sends one;
+	 * without it the lock-held path answered «already recorded, print»
+	 * with nothing charged, so a client that left it out (or sent a
+	 * malformed one) could print past the Free limit by racing
+	 * same-token requests. A missing or malformed id is refused like a
+	 * malformed token.
 	 *
 	 * Call only after the nonce check (Plandose_Ajax::guard()).
 	 *
 	 * @return array{token:string,request_hash:string}|null Null when the
-	 *         token is missing or malformed.
+	 *         token or the request id is missing or malformed.
 	 */
 	public static function read_post() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in Plandose_Ajax::guard() (check_ajax_referer) before this is called; the raw value is only ever accepted if it matches the strict pattern in full.
@@ -116,11 +123,16 @@ final class Plandose_Print_Request {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in Plandose_Ajax::guard(); only accepted if it matches the strict token pattern in full.
-		$raw_request = isset( $_POST['request_id'] ) ? wp_unslash( $_POST['request_id'] ) : '';
+		$raw_request  = isset( $_POST['request_id'] ) ? wp_unslash( $_POST['request_id'] ) : '';
+		$request_hash = self::request_hash( $raw_request );
+
+		if ( '' === $request_hash ) {
+			return null;
+		}
 
 		return array(
 			'token'        => $token,
-			'request_hash' => self::request_hash( $raw_request ),
+			'request_hash' => $request_hash,
 		);
 	}
 
