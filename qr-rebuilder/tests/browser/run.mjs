@@ -1,4 +1,4 @@
-// QR ReBuilder Pro 2.15.5 — browser regression tests for assets/js/qrrp-app.js.
+// QR ReBuilder Pro 2.15.7 — browser regression tests for assets/js/qrrp-app.js.
 // Loads fixture.html (rendered by render.php from the real shortcode) at
 // http://qrrp.test/tool/ with every request answered by Playwright route():
 // plugin assets from disk, admin-ajax.php from per-test mocks.
@@ -409,6 +409,53 @@ tests['f. user_declared provenance note'] = async (browser) => {
   await scanAndBuild(t, 1, { provenance: 'user_declared' });
   const s = await state(t.page);
   check('[f] #qrrp-summary-provenance visible and contains «Δηλωμένο»', s.provenance !== null && s.provenance.includes('Δηλωμένο'), s.provenance);
+  await t.context.close();
+};
+
+tests['g. 2.15.7: Greek passthrough, parse announcement, stale email status'] = async (browser) => {
+  // Paste: Greek characters reach the server unchanged (the server recovers the layout and asks to confirm).
+  let t = await newTool(browser);
+  let { page } = t;
+  t.handlers.qrrp_parse = async () => parseOk(fieldsFor(1), { requires_confirmation: true });
+  await page.click('#qrrp-manual-toggle');
+  await page.fill('#qrrp-manual-input', '0105012345678900' + '21ΑΒΣά9');
+  await page.click('#qrrp-manual-submit');
+  await waitRequests(t, 'qrrp_parse', 1);
+  const sent = t.requests.find((r) => r.action === 'qrrp_parse').params.get('raw');
+  check('[g] pasted Greek is sent to the server unchanged (no lossy Σ→S / ά→a in the browser)', sent === '010501234567890021ΑΒΣά9', sent);
+  await page.waitForSelector('#qrrp-results-panel:not([hidden])');
+  await page.waitForFunction(() => document.getElementById('qrrp-status-live').textContent !== '').catch(() => {});
+  let s = await state(page);
+  check('[g] parse needing confirmation is announced in #qrrp-status-live', /επιβεβαίωση/.test(s.statusLive) && s.alertLive === '', s.statusLive);
+  check('[g] focus still returns to #qrrp-hw-input for the next scan', s.active === 'qrrp-hw-input', s.active);
+  await t.context.close();
+
+  // Clean parse: plain "done" announcement.
+  t = await newTool(browser);
+  page = t.page;
+  t.handlers.qrrp_parse = async () => parseOk(fieldsFor(1));
+  await scan(page, '0108006540718101172803311001');
+  await page.waitForSelector('#qrrp-results-panel:not([hidden])');
+  await page.waitForFunction(() => document.getElementById('qrrp-status-live').textContent !== '').catch(() => {});
+  s = await state(page);
+  check('[g] successful parse is announced in #qrrp-status-live', /ολοκληρώθηκε/.test(s.statusLive) && !/επιβεβαίωση/.test(s.statusLive), s.statusLive);
+  await t.context.close();
+
+  // Email answered after «Νέα σάρωση»: no «sent» on the reset tool, loader not left to the old request.
+  t = await newTool(browser);
+  page = t.page;
+  const gate = deferred();
+  await scanAndBuild(t, 1);
+  t.handlers.qrrp_send_email = async () => { await gate.promise; return json({ success: true, data: {} }); };
+  await page.fill('#qrrp-email-input', 'a@example.org');
+  await page.click('#qrrp-send-email');
+  await waitRequests(t, 'qrrp_send_email', 1);
+  await page.click('#qrrp-rescan');
+  gate.resolve();
+  await sleep(300);
+  s = await state(page);
+  check('[g] email reply after «Νέα σάρωση» does not show «sent» on the reset tool', !/στάλθηκε/.test(s.status) && !/στάλθηκε/.test(s.statusLive), s);
+  check('[g] no JS errors', t.errors.length === 0, t.errors);
   await t.context.close();
 };
 

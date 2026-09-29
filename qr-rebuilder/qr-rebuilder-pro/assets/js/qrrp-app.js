@@ -112,64 +112,18 @@
 	var SCANNER_ASCII_PATTERN = /^[\x20-\x7E]$/;
 
 	/*
-	 * Ελληνική διάταξη πληκτρολογίου — δίχτυ ασφαλείας.
+	 * Ελληνική διάταξη πληκτρολογίου.
 	 *
 	 * Ο σαρωτής στέλνει πατήματα πλήκτρων που το λειτουργικό μεταφράζει με την
 	 * ενεργή διάταξη: με ελληνικό πληκτρολόγιο το YN68XRRFDZP φτάνει ως ΥΝ68ΧΡΡΦΔΖΠ.
-	 * Συνήθως το event.code δίνει το φυσικό πλήκτρο, αλλά κάποια Bluetooth/εικονικά
-	 * πληκτρολόγια στέλνουν κενό code. Η αντιστοίχιση είναι κατά θέση πλήκτρου και
-	 * είναι ασφαλής, γιατί το GS1 character set 82 δεν έχει ελληνικά γράμματα.
+	 * Συνήθως το event.code δίνει το φυσικό πλήκτρο. Όπου λείπει (κάποια
+	 * Bluetooth/εικονικά πληκτρολόγια) και στην επικόλληση, 2.15.7: οι ελληνικοί
+	 * χαρακτήρες στέλνονται ΑΥΤΟΥΣΙΟΙ στον server, που κάνει την πλήρη ανάκτηση
+	 * (νεκρά πλήκτρα «ά» → «;a», «ΐ» → «Wi», «Σ» = S ή W με επιλογή) και ζητά
+	 * επιβεβαίωση. Πριν, η μετατροπή γινόταν εδώ με απώλειες (Σ → S σιωπηλά,
+	 * ά → a) και ο server έβλεπε λατινικά, χωρίς λόγο να ζητήσει επιβεβαίωση.
 	 */
-	var GREEK_TO_LATIN = ( function () {
-		var pairs = {
-			a: 'α', b: 'β', c: 'ψ', d: 'δ', e: 'ε', f: 'φ', g: 'γ', h: 'η',
-			i: 'ι', j: 'ξ', k: 'κ', l: 'λ', m: 'μ', n: 'ν', o: 'ο', p: 'π',
-			r: 'ρ', s: 'σ', t: 'τ', u: 'θ', v: 'ω', w: 'ς', x: 'χ', y: 'υ',
-			z: 'ζ'
-		};
-
-		/* Τονισμένες/διαλυτικά μορφές δείχνουν στο ίδιο φυσικό πλήκτρο. */
-		var accented = {
-			'ά': 'a', 'έ': 'e', 'ή': 'h', 'ί': 'i', 'ό': 'o', 'ύ': 'y', 'ώ': 'v',
-			'ϊ': 'i', 'ϋ': 'y', 'ΐ': 'i', 'ΰ': 'y'
-		};
-
-		var map = {};
-		var latin;
-
-		for ( latin in pairs ) {
-			if ( Object.prototype.hasOwnProperty.call( pairs, latin ) ) {
-				map[ pairs[ latin ] ] = latin;
-				map[ pairs[ latin ].toUpperCase() ] = latin.toUpperCase();
-			}
-		}
-
-		for ( var greek in accented ) {
-			if ( Object.prototype.hasOwnProperty.call( accented, greek ) ) {
-				map[ greek ] = accented[ greek ];
-				map[ greek.toUpperCase() ] = accented[ greek ].toUpperCase();
-			}
-		}
-
-		/* Το τελικό σίγμα βρίσκεται στη θέση του W όπως και το ς. */
-		map[ 'Σ' ] = 'S';
-
-		return map;
-	}() );
-
-	/** Επαναφέρει έναν χαρακτήρα από ελληνική διάταξη στο λατινικό του πλήκτρο. */
-	function fromGreekLayout( character ) {
-		return Object.prototype.hasOwnProperty.call( GREEK_TO_LATIN, character )
-			? GREEK_TO_LATIN[ character ]
-			: character;
-	}
-
-	/** Ίδιο, για ολόκληρη συμβολοσειρά (διαδρομή επικόλλησης). */
-	function undoGreekLayout( value ) {
-		return String( value ).replace( /[\u0370-\u03FF\u1F00-\u1FFF]/g, function ( character ) {
-			return fromGreekLayout( character );
-		} );
-	}
+	var GREEK_LAYOUT_PATTERN = /^[\u0370-\u03FF\u1F00-\u1FFF]$/;
 
 	var GROUP_SEPARATOR = '\x1D';
 
@@ -192,8 +146,6 @@
 	 * μια αρχική ετικέτα «GS1:» από την εκτύπωση.
 	 */
 	function normalizeManualInput( value ) {
-		value = undoGreekLayout( value );
-
 		return String( value || '' )
 			.replace( /^\s*GS1\s*[:：]?\s*/i, '' )
 			.replace( /\s+/g, '' );
@@ -260,8 +212,8 @@
 			/* Χωρίς event.code, μια εκδήλωση σε σύνθεση (νεκρό πλήκτρο) δεν είναι αξιόπιστη. */
 			return null;
 		} else if ( typeof event.key === 'string' && event.key.length === 1 ) {
-			/* Εδώ ο χαρακτήρας έχει ήδη περάσει από τη διάταξη· επαναφέρουμε τα ελληνικά. */
-			character = fromGreekLayout( event.key );
+			/* Εδώ ο χαρακτήρας έχει ήδη περάσει από τη διάταξη· τα ελληνικά τα επαναφέρει ο server. */
+			character = event.key;
 
 			/*
 			 * Το ';' / ':' ΔΕΝ μετατρέπεται σε q/Q: είναι έγκυροι χαρακτήρες GS1 και
@@ -269,7 +221,7 @@
 			 */
 		}
 
-		return character && SCANNER_ASCII_PATTERN.test( character )
+		return character && ( SCANNER_ASCII_PATTERN.test( character ) || GREEK_LAYOUT_PATTERN.test( character ) )
 			? character
 			: null;
 	}
@@ -2188,6 +2140,15 @@
 			clearValidatedOutput();
 			setOutputActionsEnabled( false );
 
+			/*
+			 * 2.15.7: η επιτυχής ανάλυση ανακοινώνεται (live region), γιατί η εστίαση
+			 * επιστρέφει στο πεδίο του σαρωτή και ένας χρήστης screen reader αλλιώς
+			 * δεν μαθαίνει ότι εμφανίστηκαν αποτελέσματα ή ότι ζητείται επιβεβαίωση.
+			 */
+			setStatus( lastParseNeedsConfirmation
+				? t( 'parseDoneConfirm', 'Η ανάλυση ολοκληρώθηκε, αλλά χρειάζεται επιβεβαίωση: ελέγξτε τα πεδία και τις προειδοποιήσεις πριν δημιουργήσετε τον κωδικό.' )
+				: t( 'parseDone', 'Η ανάλυση ολοκληρώθηκε. Ελέγξτε τα πεδία PC, SN, LOT και EXP με τη συσκευασία.' ) );
+
 			els.resultsPanel.scrollIntoView( {
 				behavior: scrollBehavior(),
 				block: 'start'
@@ -3343,6 +3304,14 @@
 
 			var request = ajaxRequest( 'qrrp_send_email', emailPayload )
 				.then( function ( json ) {
+					/*
+					 * 2.15.7: μετά από «Νέα σάρωση» ή νέο κωδικό η απάντηση ανήκει σε
+					 * άλλη οθόνη· δεν γράφει status (π.χ. «στάλθηκε» σε άδειο εργαλείο).
+					 */
+					if ( emailGeneration !== rebuildGeneration ) {
+						return;
+					}
+
 					if ( json && json.success ) {
 						setStatus( t( 'emailSent', 'Το email στάλθηκε με επιτυχία.' ) );
 						return;
@@ -3386,10 +3355,17 @@
 				 * προειδοποιεί να ελεγχθεί πριν από νέα αποστολή.
 				 */
 				.catch( function ( error ) {
-					setStatus( networkErrorMessage( error ), true );
+					if ( emailGeneration === rebuildGeneration ) {
+						setStatus( networkErrorMessage( error ), true );
+					}
 				} );
 
 			promiseFinally( request, function () {
+				/* 2.15.7: ο loader ανήκει πλέον σε νεότερη ενέργεια (ή τον έκλεισε το reset). */
+				if ( emailGeneration !== rebuildGeneration ) {
+					return;
+				}
+
 				hideLoader();
 
 				if (

@@ -257,6 +257,8 @@ final class QRRP_Shortcode {
 					'invalidGs1Data'        => __( 'Μη έγκυρα δεδομένα GS1.', 'qr-rebuilder-pro' ),
 					'analyzingGs1'          => __( 'Ανάλυση GS1…', 'qr-rebuilder-pro' ),
 					'parseFailed'           => __( 'Η ανάλυση των GS1 δεδομένων απέτυχε.', 'qr-rebuilder-pro' ),
+					'parseDone'             => __( 'Η ανάλυση ολοκληρώθηκε. Ελέγξτε τα πεδία PC, SN, LOT και EXP με τη συσκευασία.', 'qr-rebuilder-pro' ),
+					'parseDoneConfirm'      => __( 'Η ανάλυση ολοκληρώθηκε, αλλά χρειάζεται επιβεβαίωση: ελέγξτε τα πεδία και τις προειδοποιήσεις πριν δημιουργήσετε τον κωδικό.', 'qr-rebuilder-pro' ),
 					'serverCommFailed'      => __( 'Αποτυχία επικοινωνίας με τον server.', 'qr-rebuilder-pro' ),
 					'warningsLabel'         => __( 'Προειδοποιήσεις:', 'qr-rebuilder-pro' ),
 					'xDimensionBelowGs1Minimum' => __(
