@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class QRRP_Site_Health {
 
+	/** 2.15.7: cache του ελέγχου παλαιών συνδέσμων (12 ώρες). */
+	public const LEGACY_TOKENS_CACHE = 'qrrp_sh_legacy_tokens';
+
 	public static function init() {
 		add_filter( 'site_status_tests', array( __CLASS__, 'register_site_health_test' ) );
 	}
@@ -45,6 +48,11 @@ final class QRRP_Site_Health {
 		$tests['direct']['qrrp_legacy_tokens'] = array(
 			'label' => __( 'Παλαιοί σύνδεσμοι email', 'qr-rebuilder-pro' ),
 			'test'  => array( __CLASS__, 'run_legacy_tokens_test' ),
+		);
+
+		$tests['direct']['qrrp_token_capacity'] = array(
+			'label' => __( 'Χωρητικότητα συνδέσμων email', 'qr-rebuilder-pro' ),
+			'test'  => array( __CLASS__, 'run_token_capacity_test' ),
 		);
 
 		return $tests;
@@ -89,6 +97,65 @@ final class QRRP_Site_Health {
 		return self::site_health_result(
 			self::legacy_tokens_verdict( self::legacy_tokens_diagnostics() ),
 			'qrrp_legacy_tokens'
+		);
+	}
+
+	public static function run_token_capacity_test() {
+		$usage = ( class_exists( 'QRRP_Tokens' ) && is_callable( array( 'QRRP_Tokens', 'index_usage' ) ) )
+			? QRRP_Tokens::index_usage()
+			: null;
+
+		return self::site_health_result( self::token_capacity_verdict( $usage, time() ), 'qrrp_token_capacity' );
+	}
+
+	/**
+	 * 2.15.7: γεμάτο ευρετήριο σημαίνει email χωρίς σύνδεσμο ανακατασκευής.
+	 * Απόρριψη τις τελευταίες 7 ημέρες → 'recommended'· πάνω από 80% → 'recommended'.
+	 *
+	 * @param array|null $usage Ό,τι επιστρέφει η QRRP_Tokens::index_usage().
+	 * @param int        $now   Τρέχουσα χρονοσφραγίδα.
+	 * @return array{status:string, label:string, description:string}
+	 */
+	public static function token_capacity_verdict( $usage, $now ) {
+		if ( ! is_array( $usage ) ) {
+			return array(
+				'status'      => 'recommended',
+				'label'       => __( 'Δεν ήταν δυνατός ο έλεγχος της χωρητικότητας συνδέσμων', 'qr-rebuilder-pro' ),
+				'description' => '<p>' . esc_html__( 'Το τμήμα διαχείρισης συνδέσμων δεν φορτώθηκε. Συνήθως σημαίνει ελλιπές ανέβασμα του πρόσθετου — ανεβάστε ξανά ολόκληρο τον φάκελο.', 'qr-rebuilder-pro' ) . '</p>',
+			);
+		}
+
+		$count   = isset( $usage['count'] ) ? (int) $usage['count'] : 0;
+		$max     = isset( $usage['max'] ) ? max( 1, (int) $usage['max'] ) : 1;
+		$full_at = isset( $usage['full_at'] ) ? (int) $usage['full_at'] : 0;
+		$usage_p = sprintf(
+			/* translators: 1: live email rebuild links, 2: maximum. */
+			esc_html__( 'Ενεργοί σύνδεσμοι: %1$d από %2$d.', 'qr-rebuilder-pro' ),
+			$count,
+			$max
+		);
+		$advice  = esc_html__( 'Μειώστε τη διάρκεια των συνδέσμων (φίλτρο qrrp_rebuild_token_ttl) ή αυξήστε το ταβάνι (φίλτρο qrrp_token_index_max, έως 10000).', 'qr-rebuilder-pro' );
+
+		if ( $full_at > 0 && $now - $full_at < 7 * DAY_IN_SECONDS ) {
+			return array(
+				'status'      => 'recommended',
+				'label'       => __( 'Κάποια email στάλθηκαν χωρίς σύνδεσμο ανακατασκευής', 'qr-rebuilder-pro' ),
+				'description' => '<p>' . esc_html__( 'Τις τελευταίες 7 ημέρες το όριο ενεργών συνδέσμων γέμισε και νέα email στάλθηκαν χωρίς σύνδεσμο (ο κωδικός επισυνάπτεται κανονικά).', 'qr-rebuilder-pro' ) . '</p><p>' . $usage_p . '</p><p>' . $advice . '</p>',
+			);
+		}
+
+		if ( $count * 5 >= $max * 4 ) {
+			return array(
+				'status'      => 'recommended',
+				'label'       => __( 'Οι ενεργοί σύνδεσμοι email πλησιάζουν το όριο', 'qr-rebuilder-pro' ),
+				'description' => '<p>' . $usage_p . '</p><p>' . $advice . '</p>',
+			);
+		}
+
+		return array(
+			'status'      => 'good',
+			'label'       => __( 'Υπάρχει χώρος για νέους συνδέσμους email', 'qr-rebuilder-pro' ),
+			'description' => '<p>' . $usage_p . '</p>',
 		);
 	}
 
@@ -466,7 +533,16 @@ final class QRRP_Site_Health {
 			);
 		}
 
-		$counts = QRRP_Tokens::legacy_payload_counts();
+		/*
+		 * 2.15.7: ένα get_transient ανά εγγραφή του ευρετηρίου (έως 2000) σε κάθε
+		 * φόρτωση του Site Health ήταν ακριβό· το αποτέλεσμα κρατιέται 12 ώρες.
+		 */
+		$counts = get_transient( self::LEGACY_TOKENS_CACHE );
+
+		if ( ! is_array( $counts ) ) {
+			$counts = QRRP_Tokens::legacy_payload_counts();
+			set_transient( self::LEGACY_TOKENS_CACHE, $counts, 12 * HOUR_IN_SECONDS );
+		}
 
 		return array(
 			'available'  => true,

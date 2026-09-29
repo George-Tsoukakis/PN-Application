@@ -4,7 +4,7 @@
  * Plugin URI:        https://pharmacyneeds.gr
  * Update URI:        https://pharmacyneeds.gr/qr-rebuilder-pro/
  * Description:       Σάρωση, ανάλυση και αναδημιουργία GS1 DataMatrix με αυτόματη εξαγωγή των πεδίων PC, SN, LOT και EXP.
- * Version:           2.15.6
+ * Version:           2.15.7
  * Requires at least: 6.1
  * Requires PHP:      8.2
  * Author:            PharmacyNeeds
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 if ( ! defined( 'QRRP_VERSION' ) ) {
-	define( 'QRRP_VERSION', '2.15.6' );
+	define( 'QRRP_VERSION', '2.15.7' );
 }
 
 if ( ! defined( 'QRRP_PLUGIN_FILE' ) ) {

@@ -27,11 +27,15 @@ final class QRRP_Mailer {
 
 	/**
 	 * Temp αρχεία εικόνας: create_image_file() γράφει
-	 * GS1-DataMatrix-<12 hex>[-N].png. Αρχεία αυτής της μορφής παλαιότερα της
-	 * μίας ώρας είναι υπόλοιπα διακοπείσας αποστολής (fatal/timeout).
+	 * GS1-DataMatrix-<8 hex site>-<12 hex>.png (2.15.7). Το site tag κρατά κάθε
+	 * site στα δικά του αρχεία όταν πολλά WordPress μοιράζονται τον ίδιο /tmp.
+	 * Αρχεία της παλιάς μορφής (GS1-DataMatrix-<12 hex>[-N].png, ≤ 2.15.6) δεν
+	 * ανήκουν αποδεδειγμένα σε αυτό το site: σβήνονται μόνο όταν είναι ήδη
+	 * παλαιότερα του TEMP_FILE_MAX_AGE, ακόμη και στο uninstall.
 	 */
-	private const TEMP_FILE_GLOB    = 'GS1-DataMatrix-*.png';
-	private const TEMP_FILE_PATTERN = '/\AGS1-DataMatrix-[a-f0-9]{12}(?:-[0-9]+)?\.png\z/';
+	private const TEMP_FILE_GLOB           = 'GS1-DataMatrix-*.png';
+	private const TEMP_FILE_PATTERN        = '/\AGS1-DataMatrix-([a-f0-9]{8})-[a-f0-9]{12}\.png\z/';
+	private const TEMP_FILE_LEGACY_PATTERN = '/\AGS1-DataMatrix-[a-f0-9]{12}(?:-[0-9]+)?\.png\z/';
 	private const TEMP_FILE_MAX_AGE = 3600;
 	private const TEMP_SWEEP_LIMIT  = 50;
 
@@ -54,7 +58,7 @@ final class QRRP_Mailer {
 		}
 	}
 
-	/** Για το uninstall: σβήνει όλα τα temp PNG του plugin, ανεξαρτήτως ηλικίας. */
+	/** Για το uninstall: σβήνει όλα τα temp PNG αυτού του site, ανεξαρτήτως ηλικίας (και παλιάς μορφής > 1 ώρα). */
 	public static function purge_all_temp_files() {
 		self::sweep_stale_temp_files( 0, PHP_INT_MAX );
 	}
@@ -152,10 +156,10 @@ final class QRRP_Mailer {
 		}
 
 		/*
-		 * Από εδώ κάθε έξοδος περνά από το finally. Το temp PNG σβήνεται αμέσως,
-		 * εκτός αν το wp_mail() δέχτηκε το μήνυμα (2.15.2): τότε ένα SMTP/queue
-		 * plugin μπορεί να το στείλει αργότερα και να χρειαστεί το συνημμένο, οπότε
-		 * το σβήνει ο sweep μετά το TEMP_FILE_MAX_AGE (αρχείο 0600, τυχαίο όνομα).
+		 * Από εδώ κάθε έξοδος περνά από το finally, που σβήνει το temp PNG. Εξαίρεση
+		 * (2.15.7: μόνο με το φίλτρο qrrp_mail_attachment_deferred): mailer με ουρά
+		 * που θα διαβάσει το συνημμένο αργότερα — τότε το σβήνει ο sweep μετά το
+		 * TEMP_FILE_MAX_AGE (αρχείο 0600, τυχαίο όνομα).
 		 */
 		$rebuild_token    = '';
 		$handed_to_mailer = false;
@@ -265,6 +269,16 @@ final class QRRP_Mailer {
 				);
 			}
 
+			/*
+			 * 2.15.7: με σύγχρονο wp_mail() (PHPMailer/SMTP) το συνημμένο έχει ήδη
+			 * διαβαστεί, οπότε το PNG (με SN/LOT/EXP) σβήνεται αμέσως στο finally.
+			 * Μόνο αν δηλωθεί mailer με ουρά (φίλτρο qrrp_mail_attachment_deferred)
+			 * μένει στον δίσκο για τον sweep μετά το TEMP_FILE_MAX_AGE.
+			 */
+			if ( ! (bool) apply_filters( 'qrrp_mail_attachment_deferred', false ) ) {
+				return true;
+			}
+
 			$handed_to_mailer = true;
 
 			/*
@@ -326,7 +340,7 @@ final class QRRP_Mailer {
 		$files = glob( trailingslashit( $tmp_dir ) . self::TEMP_FILE_GLOB, GLOB_NOSORT );
 
 		foreach ( is_array( $files ) ? $files : array() as $file ) {
-			if ( 1 === preg_match( self::TEMP_FILE_PATTERN, basename( $file ) ) && ! is_link( $file ) && is_file( $file ) ) {
+			if ( self::is_own_temp_file( basename( $file ) ) && ! is_link( $file ) && is_file( $file ) ) {
 				return true;
 			}
 		}
@@ -451,9 +465,9 @@ final class QRRP_Mailer {
 				return new WP_Error( 'qrrp_temp_failed', __( 'Δεν ήταν δυνατή η δημιουργία ασφαλούς προσωρινού ονόματος αρχείου.', 'qr-rebuilder-pro' ) );
 			}
 
-			$filename = wp_unique_filename( $tmp_dir, 'GS1-DataMatrix-' . $suffix . '.png' );
-			$file     = trailingslashit( $tmp_dir ) . $filename;
-			$handle   = @fopen( $file, 'xb' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			/* Χωρίς wp_unique_filename(): τυχαίο όνομα + fopen 'xb' αρκούν, και φίλτρο τρίτου δεν αλλάζει το μοτίβο του sweep. */
+			$file   = trailingslashit( $tmp_dir ) . 'GS1-DataMatrix-' . self::temp_site_tag() . '-' . $suffix . '.png';
+			$handle = @fopen( $file, 'xb' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 			if ( false === $handle ) {
 				continue;
@@ -530,8 +544,11 @@ final class QRRP_Mailer {
 			return;
 		}
 
-		$cutoff  = time() - max( 0, (int) $max_age );
-		$deleted = 0;
+		$cutoff         = time() - max( 0, (int) $max_age );
+		$legacy_cutoff  = min( $cutoff, time() - self::TEMP_FILE_MAX_AGE );
+		/* Αρχεία με tag άλλου site (ή παλιού salt): μόνο όταν είναι σίγουρα εγκαταλελειμμένα. */
+		$foreign_cutoff = time() - DAY_IN_SECONDS;
+		$deleted        = 0;
 
 		/*
 		 * 2.15.2: εξετάζονται όλα τα αρχεία και το όριο μετρά διαγραφές. Αφού τα
@@ -543,17 +560,43 @@ final class QRRP_Mailer {
 				break;
 			}
 
-			if ( 1 !== preg_match( self::TEMP_FILE_PATTERN, basename( $file ) ) || is_link( $file ) || ! is_file( $file ) ) {
+			$name = basename( $file );
+
+			if ( self::is_own_temp_file( $name ) ) {
+				$file_cutoff = $cutoff;
+			} elseif ( 1 === preg_match( self::TEMP_FILE_LEGACY_PATTERN, $name ) ) {
+				$file_cutoff = $legacy_cutoff;
+			} elseif ( 1 === preg_match( self::TEMP_FILE_PATTERN, $name ) ) {
+				$file_cutoff = $foreign_cutoff;
+			} else {
+				continue;
+			}
+
+			if ( is_link( $file ) || ! is_file( $file ) ) {
 				continue;
 			}
 
 			$mtime = @filemtime( $file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
-			if ( false !== $mtime && $mtime <= $cutoff ) {
+			if ( false !== $mtime && $mtime <= $file_cutoff ) {
 				wp_delete_file( $file );
 				++$deleted;
 			}
 		}
+	}
+
+	/**
+	 * 2.15.7: σταθερό, μη αναστρέψιμο tag του site (HMAC με το salt της
+	 * εγκατάστασης και το blog id), ώστε sweep/purge να αγγίζουν μόνο δικά του αρχεία.
+	 */
+	private static function temp_site_tag() {
+		$blog_id = function_exists( 'get_current_blog_id' ) ? (int) get_current_blog_id() : 1;
+
+		return substr( hash_hmac( 'sha256', 'qrrp-temp-file|' . $blog_id, wp_salt( 'auth' ) ), 0, 8 );
+	}
+
+	private static function is_own_temp_file( $name ) {
+		return 1 === preg_match( self::TEMP_FILE_PATTERN, (string) $name, $m ) && hash_equals( self::temp_site_tag(), $m[1] );
 	}
 
 	private static function delete_temp_file( $file ) {

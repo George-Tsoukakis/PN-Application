@@ -52,7 +52,15 @@ final class QRRP_Tokens {
 	private const SCHEMA = 2;
 
 	private const TOKEN_INDEX_OPTION = 'qrrp_token_index';
-	private const TOKEN_INDEX_MAX    = 500;
+	/*
+	 * 2.15.7: 500 → 2000 (φίλτρο qrrp_token_index_max, 100–10000). Με TTL 7 ημερών
+	 * τα 500 γέμιζαν από ~70 email/ημέρα και τα επόμενα έφευγαν χωρίς σύνδεσμο.
+	 * ~90 bytes ανά εγγραφή → ~180 KB στο προεπιλεγμένο ταβάνι (όχι autoload).
+	 */
+	private const TOKEN_INDEX_MAX    = 2000;
+
+	/** Πότε απορρίφθηκε τελευταία φορά token λόγω γεμάτου ευρετηρίου (Site Health). */
+	public const INDEX_FULL_OPTION = 'qrrp_token_index_full_at';
 
 	private const TOKEN_INDEX_CAS_ATTEMPTS = 5;
 
@@ -461,7 +469,7 @@ final class QRRP_Tokens {
 				 * χωρίς σύνδεσμο). Πριν, σβηνόταν το παλαιότερο ζωντανό token, οπότε
 				 * μαζικές αποστολές ακύρωναν συνδέσμους που είχαν ήδη σταλεί.
 				 */
-				if ( count( $result['index'] ) >= self::TOKEN_INDEX_MAX ) {
+				if ( count( $result['index'] ) >= self::token_index_max() ) {
 					$retained = false;
 
 					return $result;
@@ -478,6 +486,7 @@ final class QRRP_Tokens {
 			self::log_token_index_failure( 'remember_failed' );
 		} elseif ( ! $retained ) {
 			self::log_token_index_failure( 'token_index_full' );
+			self::remember_index_full();
 		}
 
 		return $remembered && $retained;
@@ -506,6 +515,49 @@ final class QRRP_Tokens {
 		return $forgotten;
 	}
 
+	/** Ταβάνι του ευρετηρίου (φίλτρο qrrp_token_index_max, 100–10000). */
+	public static function token_index_max() {
+		$max = (int) apply_filters( 'qrrp_token_index_max', self::TOKEN_INDEX_MAX );
+
+		return max( 100, min( 10000, $max ) );
+	}
+
+	/**
+	 * Πλήθος ζωντανών εγγραφών, ταβάνι και τελευταία απόρριψη λόγω πληρότητας.
+	 * Ένα get_option ανά κλήση — φθηνό για Site Health.
+	 *
+	 * @return array{count:int, max:int, full_at:int}
+	 */
+	public static function index_usage() {
+		$index = get_option( self::TOKEN_INDEX_OPTION, array() );
+		$now   = time();
+		$live  = 0;
+
+		if ( is_array( $index ) ) {
+			foreach ( $index as $expires ) {
+				if ( (int) $expires > $now ) {
+					++$live;
+				}
+			}
+		}
+
+		return array(
+			'count'   => $live,
+			'max'     => self::token_index_max(),
+			'full_at' => (int) get_option( self::INDEX_FULL_OPTION, 0 ),
+		);
+	}
+
+	/** Σημειώνει την απόρριψη· γράφει το πολύ μία φορά την ώρα. */
+	private static function remember_index_full() {
+		$now  = time();
+		$last = (int) get_option( self::INDEX_FULL_OPTION, 0 );
+
+		if ( $now - $last >= HOUR_IN_SECONDS ) {
+			update_option( self::INDEX_FULL_OPTION, $now, false );
+		}
+	}
+
 	/** Privacy-safe ίχνος: μόνο το είδος του συμβάντος. error_log μόνο σε WP_DEBUG. */
 	private static function log_token_index_failure( $event ) {
 		$event = sanitize_key( (string) $event );
@@ -523,7 +575,7 @@ final class QRRP_Tokens {
 	 * καθαρή συνάρτηση (μπορεί να ξανατρέξει)· οι παρενέργειες εκτελούνται μόνο
 	 * μετά το commit. Χωρίς non-atomic fallback: αποτυχία → false.
 	 *
-	 * @param callable $mutator array $index => array{index:array, dropped:array, evicted_live?:bool}
+	 * @param callable $mutator array $index => array{index:array, dropped:array}
 	 * @return bool
 	 */
 	private static function mutate_token_index( callable $mutator ) {
@@ -599,30 +651,17 @@ final class QRRP_Tokens {
 			&& is_callable( array( $wpdb, 'prepare' ) );
 	}
 
-	/** Δέχεται είτε το ζεύγος index/dropped είτε σκέτο πίνακα, για ανθεκτικότητα. */
+	/** Κανονικοποιεί το αποτέλεσμα του mutator στο ζεύγος index/dropped. */
 	private static function normalize_index_mutation( $result ) {
-		if ( is_array( $result ) && isset( $result['index'] ) && is_array( $result['index'] ) ) {
-			return array(
-				'index'        => $result['index'],
-				'dropped'      => ( isset( $result['dropped'] ) && is_array( $result['dropped'] ) ) ? $result['dropped'] : array(),
-				'evicted_live' => ! empty( $result['evicted_live'] ),
-			);
-		}
-
 		return array(
-			'index'        => is_array( $result ) ? $result : array(),
-			'dropped'      => array(),
-			'evicted_live' => false,
+			'index'   => ( is_array( $result ) && isset( $result['index'] ) && is_array( $result['index'] ) ) ? $result['index'] : array(),
+			'dropped' => ( is_array( $result ) && isset( $result['dropped'] ) && is_array( $result['dropped'] ) ) ? $result['dropped'] : array(),
 		);
 	}
 
 	/** Παρενέργειες του ευρετηρίου, μόνο μετά από επιτυχές commit. */
 	private static function commit_index_side_effects( $result ) {
 		self::drop_indexed_tokens( $result['dropped'] );
-
-		if ( ! empty( $result['evicted_live'] ) ) {
-			self::log_token_index_failure( 'token_index_evicted_live' );
-		}
 	}
 
 	private static function drop_indexed_tokens( $keys ) {
@@ -632,18 +671,15 @@ final class QRRP_Tokens {
 	}
 
 	/**
-	 * Υπολογίζει το κλάδεμα: ληγμένες εγγραφές και, πάνω από TOKEN_INDEX_MAX,
-	 * οι παλαιότερες. Οι δεύτερες είναι ζωντανά email tokens που θα σβηστούν,
-	 * γι' αυτό επιστρέφεται evicted_live (καταγράφεται). Αν συμβαίνει συχνά,
-	 * μικρότερο qrrp_rebuild_token_ttl — όχι μεγαλύτερο ταβάνι.
+	 * Υπολογίζει το κλάδεμα: μόνο ληγμένες εγγραφές. 2.15.7: ζωντανά tokens δεν
+	 * σβήνονται ποτέ, ούτε όταν το ταβάνι μειωθεί με φίλτρο κάτω από το πλήθος
+	 * τους — τα νέα απορρίπτονται ώσπου να λήξουν αρκετά (βλ. remember_token_in_index).
 	 *
-	 * @return array{index:array, dropped:array, evicted_live:bool}
+	 * @return array{index:array, dropped:array}
 	 */
 	private static function prepare_pruned_token_index( $index ) {
 		$now     = time();
 		$dropped = array();
-
-		$evicted_live = false;
 
 		foreach ( $index as $key => $expires ) {
 			if ( (int) $expires <= $now ) {
@@ -652,21 +688,9 @@ final class QRRP_Tokens {
 			}
 		}
 
-		if ( count( $index ) > self::TOKEN_INDEX_MAX ) {
-			asort( $index );
-
-			$over    = array_slice( $index, 0, count( $index ) - self::TOKEN_INDEX_MAX, true );
-			$dropped = array_merge( $dropped, array_keys( $over ) );
-
-			$index = array_slice( $index, -self::TOKEN_INDEX_MAX, null, true );
-
-			$evicted_live = ( array() !== $over );
-		}
-
 		return array(
-			'index'        => $index,
-			'dropped'      => $dropped,
-			'evicted_live' => $evicted_live,
+			'index'   => $index,
+			'dropped' => $dropped,
 		);
 	}
 

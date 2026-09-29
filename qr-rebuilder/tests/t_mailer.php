@@ -1,6 +1,6 @@
 <?php require 'bootp.php';
 $PD=qrrp_test_pdir();
-define('MINUTE_IN_SECONDS',60);
+define('MINUTE_IN_SECONDS',60); define('DAY_IN_SECONDS',86400);
 $GLOBALS['__options']['admin_email']='shop@example.gr'; $GLOBALS['mail_ok']=true; $GLOBALS['sched']=array(); $GLOBALS['last_body']=''; $GLOBALS['att']=array();
 function wp_mail($to,$s,$b,$h,$a){ $GLOBALS['last_body']=$b; $GLOBALS['att']=$a; return $GLOBALS['mail_ok']; }
 function get_temp_dir(){ return __DIR__.'/tmpmail/'; }
@@ -28,7 +28,16 @@ $args=array('a@b.gr',$f,'','',$raw,'',array());
 $r=QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'manual_reconstruction','changed_fields'=>array('SN'),'changed_fields_unknown'=>false))));
 $left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
 printf("success: result=%s files_kept=%d scheduled=%d\n", $r===true?'true':'err', count($left), count($GLOBALS['sched']));
-echo (count($left)===1 && count($GLOBALS['sched'])===1 ? 'PASS':'FAIL')," attachment kept for queued mailers + sweep scheduled\n";
+/* 2.15.7: σύγχρονο wp_mail() → το PNG σβήνεται αμέσως, χωρίς sweep. */
+echo ($r===true && count($left)===0 && count($GLOBALS['sched'])===0 ? 'PASS':'FAIL')," 2.15.7: synchronous send deletes attachment immediately, no sweep scheduled\n";
+$tag=(new ReflectionMethod('QRRP_Mailer','temp_site_tag'))->invoke(null);
+echo (preg_match('/\A[a-f0-9]{8}\z/',$tag) && basename((string)(is_array($GLOBALS['att'])?reset($GLOBALS['att']):''))!=='' && strpos(basename(reset($GLOBALS['att'])),'GS1-DataMatrix-'.$tag.'-')===0 ? 'PASS':'FAIL')," 2.15.7: attachment file carries this site's tag\n";
+/* Mailer με ουρά: το συνημμένο μένει για τον sweep. */
+$GLOBALS['__filters']['qrrp_mail_attachment_deferred']=function(){return true;};
+$r=QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'manual_reconstruction','changed_fields'=>array('SN'),'changed_fields_unknown'=>false))));
+$left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
+echo ($r===true && count($left)===1 && count($GLOBALS['sched'])===1 ? 'PASS':'FAIL')," deferred (queue) mailer: attachment kept + sweep scheduled\n";
+unset($GLOBALS['__filters']['qrrp_mail_attachment_deferred']); $GLOBALS['sched']=array();
 echo (strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή: SN')!==false ? 'PASS':'FAIL')," email shows manual-change note\n";
 // failure
 array_map('unlink', glob(__DIR__.'/tmpmail/*')); $GLOBALS['mail_ok']=false;
@@ -46,15 +55,26 @@ $old=__DIR__.'/tmpmail/GS1-DataMatrix-ffffffffffff.png'; touch($old, time()-7200
 QRRP_Mailer::run_scheduled_sweep();
 printf("sweep: old_exists=%d fresh_left=%d\n", file_exists($old), count(glob(__DIR__.'/tmpmail/*'))-(file_exists($old)?1:0));
 echo (!file_exists($old) && count(glob(__DIR__.'/tmpmail/*'))===60 ? 'PASS':'FAIL')," sweep removes old file even behind 60 fresh ones\n";
+/* 2.15.7: purge = όλα τα δικά του + παλιάς μορφής > 1 ώρα· ποτέ αρχεία άλλου site. */
+$own=__DIR__.'/tmpmail/GS1-DataMatrix-'.$tag.'-000000000001.png'; touch($own);
+$foreign=__DIR__.'/tmpmail/GS1-DataMatrix-'.($tag==='00000000'?'11111111':'00000000').'-000000000002.png'; touch($foreign, time()-7200);
+$legacy_old=__DIR__.'/tmpmail/GS1-DataMatrix-eeeeeeeeeeee.png'; touch($legacy_old, time()-7200);
 QRRP_Mailer::purge_all_temp_files();
-echo (count(glob(__DIR__.'/tmpmail/*'))===0 ? 'PASS':'FAIL')," uninstall purge removes all\n";
+echo (!file_exists($own) && !file_exists($legacy_old) && file_exists($foreign) && count(glob(__DIR__.'/tmpmail/*'))===61 ? 'PASS':'FAIL')," 2.15.7: uninstall purge removes own + stale legacy, keeps other sites' and fresh legacy files\n";
+touch($foreign, time()-2*86400); QRRP_Mailer::purge_all_temp_files();
+echo (!file_exists($foreign) ? 'PASS':'FAIL')," 2.15.7: other-site/old-salt file older than a day is cleaned up\n";
+array_map('unlink', glob(__DIR__.'/tmpmail/*'));
 // reschedule when young files remain
-$GLOBALS['sched']=array(); touch(__DIR__.'/tmpmail/GS1-DataMatrix-aaaaaaaaaaaa.png');
+$GLOBALS['sched']=array(); touch(__DIR__.'/tmpmail/GS1-DataMatrix-'.$tag.'-aaaaaaaaaaaa.png');
 QRRP_Mailer::run_scheduled_sweep();
 echo (count($GLOBALS['sched'])===1 && $GLOBALS['sched'][0][0] >= time()+3600+15*60-2 ? 'PASS':'FAIL')," sweep reschedules (+75 min) while files remain\n";
 array_map('unlink', glob(__DIR__.'/tmpmail/*')); $GLOBALS['sched']=array();
 QRRP_Mailer::run_scheduled_sweep();
 echo (count($GLOBALS['sched'])===0 ? 'PASS':'FAIL')," no reschedule when directory is clean\n";
+/* 2.15.7: αρχεία άλλου site (π.χ. άλλος χρήστης στον κοινό /tmp) δεν κρατούν τον sweep σε ατέρμονο επαναπρογραμματισμό. */
+touch($foreign); QRRP_Mailer::run_scheduled_sweep();
+echo (count($GLOBALS['sched'])===0 && file_exists($foreign) ? 'PASS':'FAIL')," 2.15.7: foreign-site files neither swept nor keep the sweep rescheduling\n";
+array_map('unlink', glob(__DIR__.'/tmpmail/*'));
 // 2.15.3: σύνδεσμος prefill μόνο για συνδεδεμένους, σήμανση user_declared, ΗΗ=00
 $GLOBALS['mail_ok']=true;
 $GLOBALS['__filters']['qrrp_email_tool_page_url']=null;
@@ -69,7 +89,7 @@ $b0=QRRP_GS1_Parser::validate_and_build($f0);
 $r=QRRP_Mailer::send('a@b.gr',$f0,'','',$b0['raw']??'','',array(),array());
 echo ($r===true && strpos($b0['raw'],'17280200')!==false && strpos($GLOBALS['last_body'],'02/2028')!==false ? 'PASS':'FAIL')," DD=00: raw keeps 280200, email shows 02/2028\n";
 // build_html απευθείας με tool URL, για να φανεί ο σύνδεσμος
-if(!defined('DAY_IN_SECONDS')) define('DAY_IN_SECONDS',86400); if(!defined('HOUR_IN_SECONDS')) define('HOUR_IN_SECONDS',3600);
+ if(!defined('HOUR_IN_SECONDS')) define('HOUR_IN_SECONDS',3600);
 if(!function_exists('add_query_arg')){ function add_query_arg($a,$u){ return $u.'?'.http_build_query($a); } }
 $bh=new ReflectionMethod('QRRP_Mailer','build_html'); $bh->setAccessible(true);
 $sf=new ReflectionMethod('QRRP_Mailer','sanitize_fields'); $sf->setAccessible(true); $df=$sf->invoke(null,$f);

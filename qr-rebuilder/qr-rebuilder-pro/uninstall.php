@@ -136,9 +136,11 @@ function qrrp_uninstall_site() {
 	}
 
 	delete_option( 'qrrp_token_index' );
+	delete_option( 'qrrp_token_index_full_at' );
 
 	qrrp_uninstall_delete_transients( 'qrrp_tok_' );
 	qrrp_uninstall_delete_transients( 'qrrp_rl_' );
+	qrrp_uninstall_delete_transients( 'qrrp_sh_' );
 
 	/* 2.15.2: το single event που σβήνει τα temp PNG των αποστολών email. */
 	wp_clear_scheduled_hook( 'qrrp_sweep_mail_temp_files' );
@@ -245,19 +247,27 @@ foreach (
 	qrrp_uninstall_require( $qrrp_file );
 }
 
+/*
+ * 2.15.7: τα temp PNG φέρουν tag ανά site, οπότε το purge τρέχει μέσα σε κάθε
+ * site (πριν: μία φορά για όλο τον κοινό φάκελο, σβήνοντας και αρχεία άλλων
+ * εγκαταστάσεων στον ίδιο /tmp).
+ */
+function qrrp_uninstall_purge_temp_files() {
+	if ( is_callable( array( 'QRRP_Mailer', 'purge_all_temp_files' ) ) ) {
+		QRRP_Mailer::purge_all_temp_files();
+	}
+}
+
 if ( is_multisite() && function_exists( 'get_sites' ) ) {
 	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $qrrp_site_id ) {
 		switch_to_blog( (int) $qrrp_site_id );
 		qrrp_uninstall_site();
+		qrrp_uninstall_purge_temp_files();
 		restore_current_blog();
 	}
 } else {
 	qrrp_uninstall_site();
+	qrrp_uninstall_purge_temp_files();
 }
 
 qrrp_uninstall_network();
-
-/* 2.15.2: ο temp φάκελος είναι κοινός για όλο το δίκτυο, οπότε μία φορά. */
-if ( is_callable( array( 'QRRP_Mailer', 'purge_all_temp_files' ) ) ) {
-	QRRP_Mailer::purge_all_temp_files();
-}

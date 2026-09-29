@@ -16,6 +16,8 @@ require __DIR__ . '/boot.php';
 require __DIR__ . '/lib/sqlite_wpdb.php';
 require $PD . '/includes/class-qrrp-tokens.php';
 require $PD . '/includes/class-qrrp-rate-limiter.php';
+/* 2.15.7: το προεπιλεγμένο ταβάνι έγινε 2000· τα σενάρια ελέγχουν τον μηχανισμό στο 500. */
+$GLOBALS['__filters']['qrrp_token_index_max'] = function () { return 500; };
 
 $T_START = microtime( true );
 $fails   = 0;
@@ -378,6 +380,8 @@ $before = tok_rows( $db );
 $refuse = QRRP_Tokens::issue( 'email_rebuild', array( 'pc' => 'over' ), 7 * DAY_IN_SECONDS );
 check( "b: index filled to 500 ($fill more), 501st refused", 500 === count( tok_index( $db ) ) && '' === $refuse );
 check( 'b: refused token left no orphan transient (rows unchanged)', $before === tok_rows( $db ) );
+$usage = QRRP_Tokens::index_usage();
+check( '2.15.7 b: index_usage() on real SQL = 500/500 with refusal recorded', 500 === $usage['count'] && 500 === $usage['max'] && $usage['full_at'] >= time() - 5 );
 
 /* Churn: 12 γύροι, λήγουν 40, ζητούνται 55. Ευρετήριο ≤ 500 και ευρετήριο == γραμμές email. */
 $churn_ok   = true;

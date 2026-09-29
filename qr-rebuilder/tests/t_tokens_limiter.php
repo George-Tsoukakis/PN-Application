@@ -52,7 +52,7 @@ function sanitize_text_field( $s ) { return trim( (string) $s ); }
 function wp_unslash( $v ) { return $v; }
 function is_user_logged_in() { return false; }
 function get_current_user_id() { return 0; }
-function update_option( ...$a ) { return true; }
+function update_option( $o, $v, ...$a ) { $GLOBALS['__options'][ $o ] = $v; return true; }
 function delete_option( ...$a ) { return true; }
 function add_action( ...$a ) {}
 
@@ -61,6 +61,16 @@ require $PD . '/includes/class-qrrp-rate-limiter.php';
 
 $fails = 0;
 function check( $label, $ok ) { global $fails; if ( ! $ok ) { $fails++; } echo ( $ok ? 'PASS' : 'FAIL' ), ' ', $label, "\n"; }
+
+/* --- 2.15.7: ταβάνι 2000 από προεπιλογή, φίλτρο με όρια 100–10000 --- */
+check( '2.15.7: default index cap is 2000', 2000 === QRRP_Tokens::token_index_max() );
+$GLOBALS['__filters']['qrrp_token_index_max'] = function () { return 5; };
+check( '2.15.7: filter clamped to ≥100', 100 === QRRP_Tokens::token_index_max() );
+$GLOBALS['__filters']['qrrp_token_index_max'] = function () { return 999999; };
+check( '2.15.7: filter clamped to ≤10000', 10000 === QRRP_Tokens::token_index_max() );
+/* Ο μηχανισμός του ταβανιού ελέγχεται στο 500 (όπως πριν το 2.15.7). */
+$GLOBALS['__filters']['qrrp_token_index_max'] = function () { return 500; };
+check( '2.15.7: no refusal recorded yet', 0 === QRRP_Tokens::index_usage()['full_at'] );
 
 /* --- Fix 4 --- */
 $issued = array();
@@ -76,6 +86,9 @@ $alive = 0;
 foreach ( $issued as $t ) { if ( is_array( QRRP_Tokens::verify_token_for_request( $t, 'email_rebuild' ) ) ) { $alive++; } }
 check( 'all 500 existing links still valid (none evicted)', 500 === $alive );
 check( 'refused token left no orphan transient', 500 === count( $GLOBALS['__transients'] ) );
+$usage = QRRP_Tokens::index_usage();
+/* Το fake $wpdb κρατά το ευρετήριο εκτός get_option, οπότε εδώ ελέγχονται full_at και max. */
+check( '2.15.7: refusal recorded for Site Health (full_at set, max 500)', $usage['full_at'] >= time() - 5 && 500 === $usage['max'] );
 
 /* Μια λήξη ελευθερώνει θέση. */
 $index = unserialize( $GLOBALS['wpdb']->rows['qrrp_token_index'] );

@@ -5,7 +5,7 @@ Tags: gs1, datamatrix, barcode, pharmacy, scanner
 Requires at least: 6.1
 Requires PHP: 8.2
 Tested up to: 7.1
-Stable tag: 2.15.6
+Stable tag: 2.15.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -151,7 +151,7 @@ QR ReBuilder Pro applies several layers of control:
 * Rate limiting.
 * Size limits on raw input.
 * Signature and dimension checks on the generated image.
-* Temporary email attachments with a random name that never contains the Serial Number, permissions 0600 set before the bytes are written, and deletion after sending.
+* Temporary email attachments with a random name that never contains the Serial Number, permissions 0600 set before the bytes are written, and deletion right after sending.
 * Rebuild links in email carry an opaque token only. The token stays valid until a rebuild completes successfully, and is invalidated at that point. It is deliberately not invalidated merely by opening the link, so that automated link checks performed by mail gateways cannot consume it before the recipient does.
 * Verification that the symbol was encoded as a GS1 DataMatrix, with a leading FNC1, before it is returned. `WP_DEBUG` alone can never bypass this verification; any diagnostic override requires the explicit `QRRP_ALLOW_UNVERIFIED_GS1` constant.
 
@@ -194,7 +194,7 @@ The plugin keeps no history of scans or generated labels. Pack data (PC, SN, LOT
 * **Monthly usage counters.** One option holds, per month, aggregate numbers only: codes generated, GS1 rejections and how hard reads were (for example how many had no separators or needed confirmation). It never holds pack data, users, IP addresses or times. The two public numbers are also written to a small static file, `uploads/qrrp/usage.json`.
 * **Rate-limit entries.** Counters that expire with their window: 10 to 15 minutes for most actions, 24 hours for the per-user daily email limit and the per-recipient email limits. Each holds a counter under a key that is an MD5 hash of the action and the actor: the user ID for logged-in users, or a keyed hash (HMAC-SHA-256 with the site salt) of the IP address for guests. Per-recipient email limits use a keyed hash of the normalised recipient address (combined with the user ID for logged-in senders) instead. Neither the IP address nor the email address is ever stored. Entries left behind are removed by the hourly cleanup after at most 2 days.
 * **Short-lived confirmation tokens (15 minutes).** While you review and confirm a reading, the server keeps tokens that bind the confirmation to the exact data. They hold keyed fingerprints (HMAC-SHA-256) of the field values and of the raw scan, never the values themselves, so no plaintext Serial Number is stored.
-* **Email rebuild links.** When you email a code, the rebuild link in that email needs the fields to still exist when the recipient clicks it, so PC, SN, LOT and EXP are held on the server under a random 128-bit token — never in the link itself. Only a SHA-256 hash of that token is stored, so the stored record cannot be turned back into a working link. The record is deleted as soon as the link is used to rebuild a code, and expires on its own after at most 7 days by default (filter `qrrp_rebuild_token_ttl`; 1 hour to 30 days). The plugin keeps at most 500 live rebuild links at a time. When that store is full, a new email is sent without a rebuild link; links already sent are never retired early.
+* **Email rebuild links.** When you email a code, the rebuild link in that email needs the fields to still exist when the recipient clicks it, so PC, SN, LOT and EXP are held on the server under a random 128-bit token — never in the link itself. Only a SHA-256 hash of that token is stored, so the stored record cannot be turned back into a working link. The record is deleted as soon as the link is used to rebuild a code, and expires on its own after at most 7 days by default (filter `qrrp_rebuild_token_ttl`; 1 hour to 30 days). The plugin keeps at most 2,000 live rebuild links at a time (filter `qrrp_token_index_max`, 100–10,000). When that store is full, a new email is sent without a rebuild link and Site Health reports it; links already sent are never retired early.
 
 Uninstalling the plugin removes all of the above, including entries kept in an external object cache such as Redis when they can be located.
 
@@ -220,6 +220,15 @@ In practice small labels, for example 54 × 25 mm, cannot fit the content with a
 If your label is borderline, the two settings that save height are "Show note" and "Show fields" («Εμφάνιση σημείωσης», «Εμφάνιση στοιχείων»). If the label is still too small, the code is shrunk to fit, but never below the minimum printable size for GS1 DataMatrix (a floor of about 14 mm with the default settings); below that it overflows visibly instead of printing unreadably small.
 
 == Changelog ==
+
+= 2.15.7 =
+
+**Fixes from a code review. One parsing change: mixed-separator inputs now always ask for confirmation.**
+
+* Parsing: when a code has explicit field boundaries (a Group Separator that ends a variable-length value, or parenthesised HRI) but a complete PC/SN/LOT/EXP reading is only possible by splitting a value the code had already closed, the reading is no longer accepted automatically. Example: `01…21AB17280331<GS>10LOT1` used to become SN "AB" plus an invented expiry 2028-03-31 without asking. It now needs confirmation, with a warning that a field may not exist in the original code. Inputs with no separators at all, or with a separator only after a fixed-length field such as 01, behave as before.
+* Email rebuild links: the store holds 2,000 live links (was 500; filter `qrrp_token_index_max`, 100–10,000). New Site Health check "Email link capacity" warns at 80% and when emails went out without a link in the last 7 days. Live links are never deleted early, even if the filter lowers the cap.
+* Email attachments: the temporary PNG is deleted right after a successful synchronous send (it used to stay on disk for about an hour). Sites whose mail plugin queues messages and reads attachments later should return true from the new filter `qrrp_mail_attachment_deferred` to keep the previous behaviour. Temporary file names now carry a per-site tag, so the cleanup and the uninstall purge never touch another site's files in a shared temp folder.
+* Site Health: the legacy email-link check is cached for 12 hours instead of reading every stored link on each Site Health visit.
 
 = 2.15.6 =
 

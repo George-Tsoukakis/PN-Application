@@ -2,6 +2,16 @@
 
 Πλήρες ιστορικό εκδόσεων. Το readme.txt κρατά μόνο τις πιο πρόσφατες.
 
+## 2.15.7
+
+**Διορθώσεις από code review. Μία αλλαγή στον parser: μικτοί separators ζητούν πάντα επιβεβαίωση (7 από τις 4.021 εισόδους του golden).**
+
+* **Parser (`analyse_payload`, νέα `has_terminating_separator`):** όταν ο κωδικός έχει ρητά όρια — GS που κλείνει τιμή μεταβλητού μήκους στην αυστηρή ανάγνωση, ή HRI με παρενθέσεις — και η μόνη πλήρης ανάγνωση χρειάζεται συναγόμενο όριο, δεν γίνεται πια αυτόματη αποδοχή (`requires_confirmation`, νέα προειδοποίηση). Πριν, π.χ. `01…21AB17280331<GS>10LOT1` → SN «AB» + επινοημένο EXP 2028-03-31 χωρίς ερώτηση, με ψευδές μήνυμα «δεν περιείχε Group Separator». GS μόνο μετά από fixed-length AI (π.χ. `01<GS>`) δεν μετρά ως ρητό όριο· είσοδοι χωρίς GS αμετάβλητες.
+* **Tokens:** `TOKEN_INDEX_MAX` 500 → 2000, φίλτρο `qrrp_token_index_max` (100–10000, `token_index_max()`). Αφαιρέθηκε ο νεκρός κώδικας eviction ζωντανών tokens (`evicted_live`)· ζωντανό token δεν σβήνεται ποτέ, ούτε αν το φίλτρο μειώσει το ταβάνι. Η απόρριψη λόγω γεμάτου ευρετηρίου καταγράφεται στο option `qrrp_token_index_full_at` (το πολύ μία εγγραφή/ώρα, όχι autoload, σβήνεται στο uninstall)· νέα `index_usage()`.
+* **Site Health:** νέος έλεγχος `qrrp_token_capacity` (`token_capacity_verdict()`, καθαρή συνάρτηση): recommended στο 80% ή όταν υπήρξε απόρριψη τις τελευταίες 7 ημέρες. Ο `qrrp_legacy_tokens` κρατά το αποτέλεσμα 12 ώρες (transient `qrrp_sh_legacy_tokens`)· πριν, έως ένα `get_transient` ανά εγγραφή σε κάθε φόρτωση.
+* **Mailer:** μετά από επιτυχές σύγχρονο `wp_mail()` το temp PNG (SN/LOT/EXP) σβήνεται αμέσως· πριν έμενε 60–75'. Φίλτρο `qrrp_mail_attachment_deferred` (true) για mailers με ουρά → η παλιά συμπεριφορά (sweep). Όνομα αρχείου `GS1-DataMatrix-<site tag>-<12 hex>.png` (HMAC του blog id με το salt): sweep, purge και `temp_files_remain()` αγγίζουν μόνο αρχεία του site· αρχεία παλιάς μορφής σβήνονται μόνο όταν είναι > 1 ώρας, αρχεία με tag άλλου site (ή παλιού salt) μόνο όταν είναι > 1 ημέρας. Το uninstall κάνει purge ανά site. Αφαιρέθηκε το `wp_unique_filename()` (το `fopen 'xb'` αρκεί).
+* **Tests:** νέα `t_mixed_separators` (14· 8 αποτυγχάνουν στον παλιό κώδικα) και `t_token_capacity` (6)· `t_mailer` (16), `t_tokens_limiter`, `t_storage_longrun` ενημερώθηκαν (ταβάνι 500 μέσω φίλτρου). `golden.php` με σταθερό «σήμερα» (`QRRP_TEST_NOW`) — νέο `golden-2.15.7.json`. Το `run-all.sh` αποτυγχάνει και σε PHP Warning/Notice/Deprecated.
+
 ## 2.15.6
 
 **Νέα λειτουργία: έλεγχος για νεότερη έκδοση της βιβλιοθήκης DataMatrix.**
