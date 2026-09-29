@@ -1,0 +1,2008 @@
+/**
+ * PlanDose — plandose.css
+ *
+ * The dosage tool itself: steps, form fields, chips, medicine cards,
+ * on-screen print preview and the Pro labels page.
+ *
+ * The popup shell (overlay/modal/close/header), the .plandose-btn family,
+ * the guest view and the :root custom properties live in
+ * plandose-guest.css. That file is enqueued as a dependency of
+ * this one and always loads first; this stylesheet will not render
+ * correctly on its own.
+ */
+
+#plandose-confirm-close {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 20, 18, 0.65);
+	/* Above the popup (100000/100001) and the WordPress admin bar
+	   (99999) — see #plandose-overlay in plandose-guest.css. */
+	z-index: 100002;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 22px;
+	box-sizing: border-box;
+}
+
+.plandose-confirm-box {
+	background: #ffffff;
+	border-radius: var(--pd-radius-md);
+	box-shadow: var(--pd-shadow);
+	padding: 22px;
+	width: min(420px, 100%);
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.plandose-confirm-box p {
+	margin: 0 0 18px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--pd-text);
+	text-align: center;
+}
+
+.plandose-confirm-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.plandose-confirm-actions .plandose-btn {
+	width: 100%;
+}
+
+.plandose-v2 {
+	position: relative;
+}
+
+.plandose-steps {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	margin: 0 0 18px;
+	padding: 8px;
+	border: 1px solid var(--pd-border-soft);
+	border-radius: 18px;
+	background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+}
+
+.plandose-step-dot {
+	position: relative;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	padding: 8px 6px;
+	border-radius: 14px;
+	font-family: inherit;
+	color: var(--pd-muted);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	min-width: 0;
+	-webkit-tap-highlight-color: transparent;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.plandose-step-dot span {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	border: 1.5px solid var(--pd-border);
+	background: #ffffff;
+	font-size: 13px;
+	font-weight: 900;
+	color: var(--pd-muted);
+	transition: all 0.15s ease;
+}
+
+.plandose-step-dot small {
+	display: block;
+	width: 100%;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.plandose-step-dot:hover {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+}
+
+.plandose-step-dot.active {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+}
+
+.plandose-step-dot.active span {
+	background: var(--pd-accent);
+	border-color: var(--pd-accent);
+	color: #ffffff;
+	box-shadow: 0 6px 16px rgba(15, 110, 86, 0.26);
+}
+
+.plandose-step-dot.done span {
+	background: var(--pd-accent-soft);
+	border-color: rgba(15, 110, 86, 0.30);
+	color: var(--pd-accent);
+}
+
+.plandose-step-panel {
+	animation: plandoseFadeIn 0.18s ease both;
+}
+
+.plandose-step-panel[hidden] {
+	display: none !important;
+}
+
+@keyframes plandoseFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.plandose-field-patient {
+	margin-bottom: 16px;
+}
+
+.plandose-section {
+	background:
+		radial-gradient(circle at top right, rgba(17, 163, 127, 0.08), transparent 34%),
+		var(--pd-bg-soft);
+	border: 1px solid var(--pd-border);
+	border-radius: var(--pd-radius-md);
+	padding: 16px;
+	margin-bottom: 16px;
+}
+
+.plandose-section-title {
+	margin: 0 0 13px;
+	font-size: 13px;
+	font-weight: 900;
+	letter-spacing: 0.01em;
+	color: var(--pd-accent);
+}
+
+.plandose-field {
+	margin-bottom: 13px;
+}
+
+.plandose-field:last-child {
+	margin-bottom: 0;
+}
+
+.plandose-field label {
+	display: block;
+	font-size: 13px;
+	font-weight: 750;
+	color: #3d4542;
+	margin-bottom: 6px;
+}
+
+.plandose-field small {
+	display: block;
+	margin-top: 7px;
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--pd-muted);
+}
+
+.plandose-field input,
+.plandose-field select,
+.plandose-field textarea {
+	width: 100%;
+	padding: 12px 14px !important;
+	box-sizing: border-box;
+	border: 1.5px solid var(--pd-border) !important;
+	border-radius: 10px !important;
+	font-size: 16px;
+	font-family: inherit;
+	background: #ffffff;
+	color: var(--pd-text);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.plandose-field select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%236b6f6d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+	background-repeat: no-repeat;
+	background-position: right 14px center;
+	background-size: 15px;
+	/* !important, or the field rule's `padding: 12px 14px
+	   !important` above wins and the text runs under the arrow. */
+	padding-right: 40px !important;
+}
+
+.plandose-field textarea {
+	resize: vertical;
+	min-height: 68px;
+}
+
+/* The border colour is !important and carries the modal's id.
+   The field rule above sets `border: … !important` (so a theme cannot
+   restyle the fields), which would silently beat a plain border-color —
+   the focus ring would have no accent border at all. */
+.plandose-field input:focus,
+.plandose-field select:focus,
+.plandose-field textarea:focus,
+#plandose-modal .plandose-field input:focus,
+#plandose-modal .plandose-field select:focus,
+#plandose-modal .plandose-field textarea:focus {
+	/* Transparent, not none — Windows High Contrast (forced colors)
+	   paints it, so the focused field stays visible there too. */
+	outline: 2px solid transparent;
+	outline-offset: 1px;
+	border-color: var(--pd-accent) !important;
+	box-shadow: 0 0 0 1px var(--pd-accent), 0 0 0 4px rgba(15, 110, 86, 0.14);
+	background: #ffffff;
+}
+
+/* «Διάρκεια» and «Σημειώσεις» on one row. Duration only ever holds
+   a number up to the plan limit, so it stays narrow; notes take the rest
+   and drop to their own line on a phone. The «Κάθε πόσες ημέρες;» field
+   (custom frequency only) sits on its own line above this row. */
+.pd-duration-notes-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	column-gap: 12px;
+	row-gap: 13px; /* only matters once the row has wrapped */
+	margin-bottom: 13px;
+}
+
+.pd-duration-notes-row > .plandose-field {
+	margin-bottom: 0;
+	min-width: 0;
+}
+
+.pd-duration-notes-row > .plandose-field-duration {
+	flex: 0 0 150px;
+}
+
+.pd-duration-notes-row > .plandose-field-notes {
+	flex: 1 1 240px;
+}
+
+/* One line high like the duration field, so the row lines up; the
+   pharmacist can still drag it taller, and long notes wrap inside. */
+.pd-duration-notes-row input#pd-days,
+.pd-duration-notes-row textarea#pd-notes {
+	height: 46px;
+	min-height: 46px;
+}
+
+.pd-duration-notes-row textarea#pd-notes {
+	resize: vertical;
+	/* 46px box − 24px padding − 3px border = 19px: exactly one line. */
+	line-height: 19px;
+}
+
+/* The dose total follows the row instead of sitting inside it. */
+.pd-duration-notes-row + .pd-dose-total {
+	margin: 0 0 13px;
+}
+
+.plandose-chips {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.plandose-chip {
+	flex: 1 1 130px;
+	min-width: 0;
+	padding: 10px 12px;
+	font-size: 14px;
+	font-weight: 700;
+	text-align: center;
+	border-radius: 10px;
+	border: 1.5px solid var(--pd-border);
+	background: #ffffff;
+	color: var(--pd-text);
+	cursor: pointer;
+	min-height: 42px;
+	line-height: 1.2;
+	appearance: none;
+	-webkit-appearance: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.plandose-chip-custom {
+	flex-grow: 0;
+	flex-basis: 200px;
+}
+
+.pd-custom-mode-chips .pd-custom-mode-chip {
+	flex: 0 1 auto;
+	min-height: 36px;
+	padding: 7px 14px;
+	font-size: 13px;
+}
+
+.pd-dose-total {
+	margin: 10px 0 0;
+	padding: 8px 12px;
+	border: 1px solid var(--pd-border);
+	border-radius: 8px;
+	background: var(--pd-accent-light);
+	color: var(--pd-text);
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.4;
+}
+
+.pd-dose-total[hidden] {
+	display: none;
+}
+
+.pd-interval-presets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.pd-interval-preset {
+	border: 1px solid var(--pd-border);
+	background: #ffffff;
+	color: var(--pd-muted);
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 700;
+	padding: 6px 10px;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.pd-interval-preset:hover,
+.pd-interval-preset:active {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+	border-color: var(--pd-accent);
+}
+
+.plandose-chip:hover,
+.plandose-chip:active {
+	border-color: var(--pd-accent);
+	color: var(--pd-accent);
+	background: var(--pd-accent-light);
+	transform: translateY(-1px);
+}
+
+.plandose-chip.active,
+.plandose-chip.active:hover,
+.plandose-chip.active:active {
+	background: var(--pd-accent);
+	color: #ffffff;
+	border-color: var(--pd-accent);
+	box-shadow: 0 8px 18px rgba(15, 110, 86, 0.22);
+}
+
+.plandose-added-wrap,
+.plandose-review {
+	background: #ffffff;
+	border: 1px solid var(--pd-border-soft);
+	border-radius: var(--pd-radius-md);
+	padding: 15px;
+	margin-bottom: 16px;
+}
+
+.plandose-review p,
+.plandose-preview-head p {
+	margin: -4px 0 14px;
+	font-size: 13px;
+	line-height: 1.45;
+	color: var(--pd-muted);
+}
+
+.plandose-empty {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--pd-muted);
+	text-align: center;
+	padding: 18px 12px;
+	margin: 0;
+	border: 1px dashed var(--pd-border);
+	border-radius: 14px;
+	background: #fafaf9;
+}
+
+.plandose-empty strong {
+	color: var(--pd-text);
+	font-size: 14px;
+}
+
+.plandose-med-card,
+.plandose-list-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	background: #ffffff;
+	border: 1px solid var(--pd-border-soft);
+	border-radius: 15px;
+	padding: 13px;
+	font-size: 14px;
+	margin-bottom: 10px;
+	gap: 12px;
+	box-shadow: 0 8px 20px rgba(20, 30, 26, 0.04);
+}
+
+.plandose-med-card:last-child,
+.plandose-list-item:last-child {
+	margin-bottom: 0;
+}
+
+.plandose-med-card-main {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.plandose-med-card-main strong {
+	color: var(--pd-text);
+	font-size: 15px;
+	font-weight: 900;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+
+.plandose-med-card-main span,
+.plandose-list-item span {
+	color: #38413e;
+	font-size: 13px;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.plandose-med-card-main small {
+	color: var(--pd-muted);
+	font-size: 12px;
+	line-height: 1.35;
+	font-style: italic;
+	overflow-wrap: anywhere;
+}
+
+.plandose-med-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.plandose-mini-btn {
+	border: 1px solid var(--pd-border);
+	background: #ffffff;
+	color: var(--pd-text);
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 800;
+	border-radius: 999px;
+	min-height: 32px;
+	padding: 6px 10px;
+	font-family: inherit;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.plandose-mini-btn:hover,
+.plandose-mini-btn:focus-visible {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+	border-color: rgba(15, 110, 86, 0.30);
+}
+
+.plandose-mini-btn-danger {
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	font-size: 18px;
+	color: var(--pd-danger);
+}
+
+.plandose-mini-btn-danger:hover,
+.plandose-mini-btn-danger:focus-visible {
+	background: var(--pd-danger-soft);
+	color: var(--pd-danger);
+	border-color: rgba(163, 45, 45, 0.25);
+}
+
+.plandose-list-item button {
+	border: none;
+	background: none;
+	cursor: pointer;
+	font-size: 18px;
+	color: var(--pd-danger);
+	width: 32px;
+	height: 32px;
+	flex-shrink: 0;
+	border-radius: 50%;
+}
+
+.plandose-list-item button:hover,
+.plandose-list-item button:focus-visible {
+	background: var(--pd-danger-soft);
+}
+
+/* Visible keyboard focus. */
+.plandose-list-item button:focus-visible {
+	outline: 2px solid var(--pd-danger);
+	outline-offset: 2px;
+}
+
+.plandose-actionbar {
+	position: sticky;
+	bottom: 0;
+	margin: 18px -26px 0;
+	padding: 16px 26px calc(16px + env(safe-area-inset-bottom));
+	background: #ffffff;
+	box-shadow: 0 -10px 20px rgba(20, 30, 26, 0.06);
+	border-top: 1px solid rgba(216, 216, 213, 0.65);
+	z-index: 2;
+}
+
+.plandose-actionbar-buttons {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	align-items: center;
+}
+
+.plandose-actionbar-buttons .plandose-btn {
+	width: 100%;
+}
+
+/* Pro: "Εκτύπωση Ετικετών" gets its own full-width row under the three
+   step buttons, so the existing layout does not change for anyone. */
+.plandose-actionbar-buttons .plandose-btn-labels {
+	grid-column: 1 / -1;
+}
+
+/* Pro: «Ετικέτα: x/50 χαρακτήρες» under the notes field. */
+.plandose-notes-count {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+	color: var(--pd-muted);
+}
+
+.plandose-notes-count.is-over {
+	color: #8a5a00;
+	font-weight: 600;
+}
+
+.plandose-print-counter {
+	margin: 0 0 10px;
+	font-size: 12.5px;
+	color: var(--pd-muted);
+	text-align: center;
+}
+
+.plandose-print-hint {
+	margin: 0 0 10px;
+	font-size: 11px;
+	color: var(--pd-muted);
+	text-align: center;
+	line-height: 1.35;
+}
+
+#pd-message,
+.pd-message {
+	font-size: 13px;
+	line-height: 1.35;
+	min-height: 18px;
+	margin: 12px 0;
+	text-align: center;
+	color: var(--pd-danger);
+}
+
+/* Also matched on the id — the #pd-message rule above outranks
+   a class alone, which would print every success message in red. */
+#pd-message.pd-message-error,
+.pd-message-error {
+	color: var(--pd-danger);
+}
+
+#pd-message.pd-message-success,
+.pd-message-success {
+	color: var(--pd-success);
+}
+
+.plandose-preview-area {
+	border: 1px solid var(--pd-border);
+	border-radius: 18px;
+	background: #f4f4f2;
+	padding: 14px;
+	max-height: 430px;
+	overflow: auto;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	color: #1a1a1a;
+}
+
+/* The preview's paper. Its content is styled by the print stylesheet
+   (PD.PRINT_STYLES, scoped to .pd-preview-sheet by preview.js), so the
+   preview is the printed sheet: 210 mm wide with the @page margins as
+   padding (content 190 mm, as on paper), scaled to fit by
+   PD.fitPreviewSheet(). Screen-only frame; nothing here styles the plan.
+   The typography is reset because the print document starts from browser
+   defaults, not from the popup's or the theme's text settings. */
+.pd-preview-page {
+	width: -moz-fit-content;
+	width: fit-content;
+	margin: 0 auto;
+	overflow: hidden;
+	background: #ffffff;
+	border-radius: 4px;
+	box-shadow: 0 12px 28px rgba(20, 30, 26, 0.10), 0 0 0 1px rgba(20, 30, 26, 0.06);
+}
+
+.pd-preview-sheet {
+	box-sizing: border-box;
+	width: 210mm;
+	padding: 12mm 10mm;
+	background: #ffffff;
+	transform-origin: 0 0;
+	font-size: medium;
+	font-weight: 400;
+	font-style: normal;
+	line-height: normal;
+	letter-spacing: normal;
+	word-spacing: normal;
+	text-align: left;
+	text-transform: none;
+	white-space: normal;
+}
+
+@media (max-width: 620px) {
+	.plandose-steps {
+		gap: 4px;
+		padding: 6px;
+	}
+
+	.plandose-step-dot {
+		padding: 7px 3px;
+	}
+
+	.plandose-step-dot span {
+		width: 26px;
+		height: 26px;
+		font-size: 12px;
+	}
+
+	.plandose-step-dot small {
+		font-size: 10px;
+	}
+
+	.plandose-med-card,
+	.plandose-list-item {
+		flex-direction: column;
+	}
+
+	.plandose-med-card-actions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+
+	.plandose-actionbar {
+		margin: 18px -16px 0;
+		padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+	}
+
+	.plandose-actionbar-buttons {
+		gap: 6px;
+	}
+
+	.plandose-actionbar-buttons .plandose-btn {
+		padding: 10px 6px;
+		font-size: 12.5px;
+		min-height: 42px;
+	}
+
+	.plandose-preview-area {
+		max-height: 55vh;
+		padding: 10px;
+	}
+}
+
+@media (max-width: 420px) {
+	/* Stacked on a phone: full width, like every other field there. */
+	.pd-duration-notes-row > .plandose-field-duration {
+		flex-basis: 100%;
+	}
+
+	.plandose-chips {
+		gap: 6px;
+	}
+
+	.plandose-chip {
+		padding: 9px 12px;
+		font-size: 13px;
+	}
+
+	.plandose-step-dot small {
+		display: none;
+	}
+
+	.plandose-step-dot span {
+		width: 30px;
+		height: 30px;
+	}
+}
+
+/* Sticky float, like #plandose-close (plandose-guest.css), so it
+   stays on screen while the popup scrolls. It floats just left of the ×:
+   the ×'s float takes 32px of the content box, so margin-right 6px puts
+   this button 64px from the modal's right edge and margin-top -8px puts it
+   18px from the top. */
+#plandose-lang-toggle {
+	position: -webkit-sticky;
+	position: sticky;
+	top: -8px; /* 18px from the visible top: see #plandose-close */
+	float: right;
+	margin: -8px 6px 0 0;
+	height: 36px;
+	min-width: 44px;
+	padding: 0 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	box-sizing: border-box;
+	background: #fff;
+	color: var(--pd-accent);
+	border: 1px solid var(--pd-accent-soft);
+	border-radius: 999px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	cursor: pointer;
+	z-index: 3;
+	transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+#plandose-lang-toggle:hover,
+#plandose-lang-toggle:focus-visible {
+	background: var(--pd-accent-light);
+	border-color: var(--pd-accent);
+}
+
+#plandose-lang-toggle:active {
+	transform: translateY(1px);
+}
+
+#plandose-modal #plandose-modal-head {
+	margin-right: 128px;
+}
+
+#plandose-lang-toggle.is-locked {
+	color: var(--pd-muted);
+	border-style: dashed;
+}
+
+#plandose-lang-toggle.is-locked:hover,
+#plandose-lang-toggle.is-locked:focus-visible {
+	background: var(--pd-accent-light);
+	border-color: var(--pd-muted);
+}
+
+.plandose-lang-lock {
+	position: relative;
+	width: 9px;
+	height: 8px;
+	margin-left: 1px;
+	border: 1.5px solid currentColor;
+	border-radius: 2px;
+	box-sizing: border-box;
+}
+
+.plandose-lang-lock::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: -5px;
+	width: 5px;
+	height: 5px;
+	transform: translateX(-50%);
+	border: 1.5px solid currentColor;
+	border-bottom: none;
+	border-radius: 4px 4px 0 0;
+	box-sizing: border-box;
+}
+
+#plandose-lang-toggle.is-locked::after {
+	content: attr(data-hint);
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	white-space: nowrap;
+	background: var(--pd-text);
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0;
+	padding: 6px 10px;
+	border-radius: 8px;
+	opacity: 0;
+	transform: translateY(-4px);
+	pointer-events: none;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+	z-index: 5;
+}
+
+#plandose-lang-toggle.is-locked.show-hint::after {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+@media (max-width: 620px) {
+	/* Full screen: 14px from the top, 56px from the right (the ×'s float
+	   takes 42px here), clear of a notch while stuck. */
+	#plandose-lang-toggle {
+		top: calc(max(14px, env(safe-area-inset-top)) - max(22px, env(safe-area-inset-top)));
+		margin: -8px -2px 0 0;
+		height: 34px;
+		min-width: 40px;
+		padding: 0 10px;
+	}
+
+	#plandose-modal #plandose-modal-head {
+		margin-right: 120px;
+	}
+}
+
+#pd-preview-area .pd-labels-page {
+	width: 100%;
+	margin-top: 28px;
+	padding-top: 24px;
+	border-top: 2px solid var(--pd-border);
+	break-before: auto;
+	page-break-before: auto;
+}
+
+#pd-preview-area .pd-labels-head {
+	margin: 0 0 18px;
+	text-align: center;
+}
+
+#pd-preview-area .pd-labels-head h2 {
+	margin: 0;
+	color: var(--pd-text);
+	font-size: 22px;
+	font-weight: 900;
+	line-height: 1.2;
+	letter-spacing: 0;
+	text-transform: none;
+}
+
+#pd-preview-area .pd-labels-head p {
+	margin: 6px 0 0;
+	color: var(--pd-muted);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+/* Label preview: the same markup as the label printer, drawn at real size
+   (mm/pt). The type sizes are NOT defined here: buildLabelsPage()
+   injects PD.labelTextCss() — the exact rules the printed label uses — so the
+   preview can never drift from what comes out. */
+#pd-preview-area .pd-labels-grid {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	margin-top: 14px;
+}
+
+#pd-preview-area .pd-lbl-card {
+	position: relative;
+	max-width: 100%;
+	background: #ffffff;
+	border: 1px dashed #9a9a94;
+	border-radius: 6px;
+	color: #000000;
+	font-family: Arial, Helvetica, sans-serif;
+	break-inside: avoid;
+	page-break-inside: avoid;
+}
+
+#pd-preview-area .pd-lbl {
+	display: block;
+	box-sizing: border-box;
+}
+
+/* Label size picker and fit notes. */
+#pd-preview-area .pd-lbl-size {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 6px 10px;
+	margin: 12px auto 0;
+	max-width: 520px;
+}
+
+#pd-preview-area .pd-lbl-size label {
+	color: var(--pd-text);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+#pd-preview-area .pd-lbl-size select {
+	min-height: 36px;
+	max-width: 100%;
+	padding: 4px 8px;
+	border: 1px solid var(--pd-border);
+	border-radius: 6px;
+	background: #ffffff;
+	color: var(--pd-text);
+	font-size: 14px;
+}
+
+#pd-preview-area .pd-lbl-size-hint {
+	flex-basis: 100%;
+	margin: 2px 0 0;
+	color: var(--pd-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+#pd-preview-area .pd-lbl-size-hint.is-error {
+	color: #b42318;
+}
+
+#pd-preview-area .pd-lbl-custom {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 6px 8px;
+	flex-basis: 100%;
+}
+
+#pd-preview-area .pd-lbl-custom label {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+#pd-preview-area .pd-lbl-custom input {
+	width: 5.5em;
+	min-height: 34px;
+	padding: 4px 6px;
+	border: 1px solid var(--pd-border);
+	border-radius: 6px;
+	background: #ffffff;
+	color: var(--pd-text);
+	font-size: 14px;
+	text-align: center;
+}
+
+#pd-preview-area .pd-lbl-custom .plandose-btn,
+#pd-preview-area .pd-lbl-test {
+	min-height: 34px;
+	padding: 4px 12px;
+	font-size: 13px;
+}
+
+#pd-preview-area .pd-lbl-fitwrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/* A fixed-size card is the real label — it never shrinks on a
+   narrow screen (that would wrap and clip text the print does not). */
+#pd-preview-area .pd-lbl-fitwrap .pd-lbl-card {
+	flex: 0 0 auto;
+	max-width: none;
+}
+
+#pd-preview-area .pd-lbl-fit-note {
+	max-width: 100mm;
+	margin: 4px 0 0;
+	color: var(--pd-muted);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.35;
+	text-align: center;
+}
+
+#pd-preview-area .pd-lbl-fit-note.is-error {
+	color: #b42318;
+}
+
+/* ---------------------------------------------------------------
+   Printing the host page must never produce a plan.
+
+   The metered print path writes the plan into a separate window (or
+   a hidden iframe) with its own stylesheet, so nothing here affects
+   it. What this does close is the free route: with the popup open,
+   Ctrl+P on the site page itself would otherwise print whatever is
+   rendered in #pd-preview-area — a complete, unmetered copy of the
+   plan. Hiding the whole tool at print time removes that.
+   --------------------------------------------------------------- */
+@media print {
+
+	#plandose-overlay,
+	#plandose-trigger,
+	#plandose-modal {
+		display: none !important;
+	}
+}
+
+/* ---- Plan start date ----
+ * A compact date field (just wide enough for dd/mm/yyyy and the calendar
+ * icon) with a two-option «Σήμερα | Αύριο» switch next to it. Every state
+ * of the switch buttons is set explicitly under #plandose-app: themes
+ * commonly style button:hover / :focus (e.g. a dark grey background),
+ * which would otherwise paint over the selected option. */
+.pd-start-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: 8px;
+}
+
+.plandose-field .pd-start-row input.pd-start-input {
+	flex: 0 0 auto;
+	width: 11.5em;
+	max-width: 100%;
+	min-width: 0;
+}
+
+/* Every part of the date (day, month, year, separators) in the normal
+   text colour — some browsers draw one part lighter than the rest. */
+#pd-start-date::-webkit-datetime-edit-day-field,
+#pd-start-date::-webkit-datetime-edit-month-field,
+#pd-start-date::-webkit-datetime-edit-year-field,
+#pd-start-date::-webkit-datetime-edit-text {
+	color: var(--pd-text);
+}
+
+.pd-start-chips {
+	display: inline-flex;
+	align-items: stretch;
+	gap: 3px;
+	padding: 3px;
+	border: 1.5px solid var(--pd-border);
+	border-radius: 10px;
+	background: #ffffff;
+	box-sizing: border-box;
+}
+
+#plandose-app .pd-start-chip {
+	appearance: none;
+	-webkit-appearance: none;
+	margin: 0;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--pd-text);
+	box-shadow: none;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.2;
+	letter-spacing: normal;
+	text-transform: none;
+	min-height: 0;
+	padding: 0 16px;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+#plandose-app .pd-start-chip:hover,
+#plandose-app .pd-start-chip:focus,
+#plandose-app .pd-start-chip:active {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+}
+
+#plandose-app .pd-start-chip.active,
+#plandose-app .pd-start-chip.active:hover,
+#plandose-app .pd-start-chip.active:focus,
+#plandose-app .pd-start-chip.active:active {
+	background: var(--pd-accent);
+	color: #ffffff;
+}
+
+#plandose-app .pd-start-chip:focus-visible {
+	outline: 3px solid var(--pd-accent);
+	outline-offset: 2px;
+}
+
+/* ---- Clearly visible keyboard focus: the ONE rule for these controls ----
+ * A solid 3px ring in the accent colour (6.4:1 on white); a tinted
+ * shadow falls short of the 3:1 WCAG asks of a focus indicator. Mouse
+ * clicks are unaffected, since :focus-visible only matches keyboard focus. */
+.plandose-step-dot:focus-visible,
+.plandose-chip:focus-visible,
+.pd-interval-preset:focus-visible,
+.plandose-mini-btn:focus-visible,
+#plandose-lang-toggle:focus-visible {
+	outline: 3px solid var(--pd-accent);
+	outline-offset: 2px;
+}
+
+.plandose-mini-btn-danger:focus-visible {
+	outline-color: var(--pd-danger);
+}
+
+.plandose-field-start {
+	margin-bottom: 16px;
+}
+
+/* «Ασθενής» and «Ημερομηνία έναρξης» on one row. The start date
+   keeps its natural width; the patient field takes whatever is left, and
+   drops to its own line when that would be under 220px (phones). */
+.pd-patient-start-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	column-gap: 16px;
+	row-gap: 16px; /* only matters once the row has wrapped */
+	margin-bottom: 16px;
+}
+
+.pd-patient-start-row > .plandose-field-patient {
+	flex: 1 1 220px;
+	min-width: 0;
+	margin-bottom: 0;
+}
+
+.pd-patient-start-row > .plandose-field-start {
+	flex: 0 0 auto;
+	max-width: 100%;
+	margin-bottom: 0;
+}
+
+/* Same height for the text and the date input, so the row lines up (a
+   date input is naturally a little taller). */
+.pd-patient-start-row input#pd-patient,
+.pd-patient-start-row input#pd-start-date {
+	height: 46px;
+}
+
+
+/* First-dose daypart and the carried-over course line. */
+.plandose-field-first-slot small {
+	display: block;
+	margin-top: 4px;
+}
+
+.plandose-med-card-main small.pd-med-course {
+	color: var(--pd-accent);
+	font-weight: 700;
+}
+
+/* «Νέος ασθενής» after a print, on its own full-width row
+   (like the Pro labels button), and truly hidden otherwise. */
+.plandose-actionbar-buttons .plandose-btn-new-patient {
+	grid-column: 1 / -1;
+}
+
+#plandose-app .plandose-btn-new-patient[hidden] {
+	display: none;
+}
+
+/* «Όνομα φαρμάκου», «Ποσότητα» and «Είδος» on one row. The name
+   takes the remaining space; on a phone it gets its own line and the two
+   small fields share the next one. */
+.pd-drug-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	column-gap: 12px;
+	row-gap: 13px;
+	margin-bottom: 13px;
+}
+
+.pd-drug-row > .plandose-field {
+	margin-bottom: 0;
+	min-width: 0;
+}
+
+.pd-drug-row > .plandose-field-drug {
+	flex: 1 1 260px;
+}
+
+.pd-drug-row > .plandose-field-amount {
+	flex: 0 0 110px;
+}
+
+.pd-drug-row > .plandose-field-unit {
+	flex: 0 0 190px;
+}
+
+.pd-drug-row input#pd-drug,
+.pd-drug-row input#pd-dose-amount,
+.pd-drug-row select#pd-dose-unit {
+	width: 100%;
+	height: 46px;
+	box-sizing: border-box;
+}
+
+@media (max-width: 620px) {
+	.pd-drug-row > .plandose-field-drug {
+		flex-basis: 100%;
+	}
+
+	.pd-drug-row > .plandose-field-amount,
+	.pd-drug-row > .plandose-field-unit {
+		flex: 1 1 0;
+	}
+}
+
+/* «Προσθήκη Φαρμάκου» with a small «Καθαρισμός» beside it. The
+   add button keeps the width; clearing is secondary, so it stays narrow. */
+.pd-add-row {
+	display: flex;
+	gap: 10px;
+	align-items: stretch;
+}
+
+.pd-add-row #pd-add {
+	flex: 1 1 auto;
+}
+
+.pd-add-row .pd-clear-form {
+	flex: 0 0 auto;
+	width: auto;
+	padding-left: 16px;
+	padding-right: 16px;
+	font-size: 13.5px;
+}
+
+/* A field named in the current error message (aria-invalid set by
+   PD.flagFieldError()) gets a red border, so the eye finds it as fast as
+   a screen reader does. */
+.plandose-field input[aria-invalid="true"],
+.plandose-field select[aria-invalid="true"],
+.plandose-field textarea[aria-invalid="true"],
+#plandose-modal .plandose-field input[aria-invalid="true"],
+#plandose-modal .plandose-field select[aria-invalid="true"],
+#plandose-modal .plandose-field textarea[aria-invalid="true"],
+#plandose-modal .plandose-field input[aria-invalid="true"]:focus,
+#plandose-modal .plandose-field select[aria-invalid="true"]:focus,
+#plandose-modal .plandose-field textarea[aria-invalid="true"]:focus {
+	/* !important for the same reason as :focus above; the
+	   :focus variants outrank the focus rule, so a field that is both
+	   focused and invalid stays red. */
+	border-color: var(--pd-danger) !important;
+	box-shadow: 0 0 0 1px var(--pd-danger);
+}
+
+/* ------------------------------------------------------------------ */
+/* «Επικόλληση συνταγής» (assets/js/rx-import.js)                      */
+/* ------------------------------------------------------------------ */
+#plandose-modal .pd-rx-drop {
+	position: relative;
+	margin: 6px 0 14px;
+	padding: 14px 18px;
+	border: 2px dashed #9cc9b8;
+	border-radius: 14px;
+	background: #f6fbf9;
+	color: var(--pd-accent, #0f6e56);
+	line-height: 1.3;
+	cursor: text;
+	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+#plandose-modal .pd-rx-idle {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+#plandose-modal .pd-rx-drop .pd-rx-icon {
+	flex: 0 0 auto;
+}
+
+#plandose-modal .pd-rx-drop-text b {
+	display: block;
+	font-size: 15.5px;
+}
+
+#plandose-modal .pd-rx-drop-text > span {
+	display: block;
+	margin-top: 3px;
+	color: #56665f;
+	font-size: 13.5px;
+	line-height: 1.55;
+}
+
+#plandose-modal .pd-rx-drop kbd {
+	font-family: inherit;
+	font-weight: 700;
+	font-size: 12px;
+	color: #16211d;
+	background: #fff;
+	border: 1px solid #c9d8d1;
+	border-bottom-width: 3px;
+	border-radius: 6px;
+	padding: 0 6px;
+	white-space: nowrap;
+}
+
+/* At rest the real text field lies invisible over the box (so a click
+   or a right-click → Paste lands in it). */
+#plandose-modal .pd-rx-drop textarea {
+	position: absolute;
+	box-sizing: border-box;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 14px;
+	background: transparent;
+	color: transparent;
+	opacity: 0;
+	resize: none;
+	cursor: text;
+	box-shadow: none;
+	outline: none;
+	z-index: 1;
+}
+
+/* Open (hover / click): the box becomes the text field. */
+#plandose-modal .pd-rx-drop.is-open {
+	padding: 10px;
+	border-style: solid;
+	border-color: var(--pd-accent, #0f6e56);
+	background: #e6f5ee;
+	box-shadow: 0 0 0 4px rgba(15, 110, 86, 0.14);
+}
+
+#plandose-modal .pd-rx-drop.is-open .pd-rx-idle {
+	display: none;
+}
+
+#plandose-modal .pd-rx-drop.is-open textarea {
+	position: static;
+	display: block;
+	box-sizing: border-box;
+	max-width: 100%;
+	height: 118px;
+	padding: 12px 14px;
+	border: 1px solid #b9d9cc;
+	border-radius: 10px;
+	background: #fff;
+	color: #16211d;
+	opacity: 1;
+	font-family: inherit;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+/* The field itself says outline:none, so without this a keyboard user
+   would have only the box's colour change to tell focus from hover. */
+#plandose-modal .pd-rx-drop.is-open textarea:focus-visible {
+	outline: 2px solid var(--pd-accent, #0f6e56);
+	outline-offset: 2px;
+}
+
+#plandose-modal .pd-rx-drop:not(.is-open):focus-within {
+	outline: 2px solid var(--pd-accent, #0f6e56);
+	outline-offset: 2px;
+}
+
+#plandose-modal .pd-rx-drop.is-open textarea::placeholder {
+	color: var(--pd-accent, #0f6e56);
+	font-weight: 700;
+	opacity: 0.85;
+}
+
+/* «Nothing found»: one discreet line under the box. */
+#plandose-modal .pd-rx-hint {
+	margin: -8px 4px 12px;
+	color: #8a5a00;
+	font-size: 12.5px;
+	line-height: 1.4;
+}
+
+#plandose-modal .pd-rx-hint::before {
+	content: "ⓘ " / "";
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#plandose-modal .pd-rx-drop {
+		transition: none;
+	}
+}
+
+#plandose-modal .pd-rx-drop .pd-rx-new {
+	position: absolute;
+	top: -10px;
+	right: 14px;
+	z-index: 2;
+	padding: 2px 8px;
+	border-radius: 999px;
+	/* White 10px text on this is 5.2:1. */
+	background: #c2410c;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.4px;
+	line-height: 1.4;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	pointer-events: none;
+}
+
+#plandose-modal .pd-rx-panel {
+	border: 1px solid var(--pd-accent);
+	border-radius: var(--pd-radius-md, 10px);
+	background: var(--pd-accent-soft, #eef7f3);
+	padding: 12px 14px;
+	margin: 0 0 14px;
+}
+
+#plandose-modal .pd-rx-panel label[for="pd-rx-text"] {
+	display: block;
+	font-weight: 700;
+	margin: 0 0 6px;
+}
+
+#plandose-modal #pd-rx-text {
+	width: 100%;
+	min-height: 120px;
+	font: inherit;
+	font-size: 13px;
+	box-sizing: border-box;
+}
+
+#plandose-modal .pd-rx-panel small,
+#plandose-modal .pd-rx-src {
+	display: block;
+	color: var(--pd-muted);
+	font-size: 12px;
+	margin-top: 4px;
+	overflow-wrap: anywhere;
+}
+
+#plandose-modal .pd-rx-error {
+	color: var(--pd-danger);
+	font-weight: 600;
+	margin: 8px 0 0;
+}
+
+#plandose-modal .pd-rx-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+#plandose-modal .pd-rx-found {
+	font-weight: 700;
+	margin: 0 0 8px;
+}
+
+#plandose-modal .pd-rx-list {
+	list-style: none;
+	margin: 8px 0 0;
+	padding: 0;
+}
+
+#plandose-modal .pd-rx-row {
+	background: #fff;
+	border: 1px solid var(--pd-border);
+	border-radius: 8px;
+	padding: 8px 10px;
+	margin: 0 0 8px;
+}
+
+#plandose-modal .pd-rx-row.needs-form {
+	border-color: #e0a800;
+	background: #fffaf0;
+}
+
+#plandose-modal .pd-rx-check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+#plandose-modal .pd-rx-name {
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+#plandose-modal .pd-rx-sum {
+	margin: 2px 0 0 26px;
+	font-size: 13px;
+}
+
+#plandose-modal .pd-rx-row .pd-rx-src,
+#plandose-modal .pd-rx-times,
+#plandose-modal .pd-rx-warns,
+#plandose-modal .pd-rx-toform {
+	margin-left: 26px;
+}
+
+#plandose-modal .pd-rx-times .pd-rx-time {
+	flex: 0 0 auto;
+	min-height: 0;
+	padding: 4px 12px;
+	font-size: 13px;
+	font-family: inherit;
+	line-height: 1.3;
+	border-radius: 999px;
+}
+
+#plandose-modal .pd-rx-times {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-top: 6px;
+	font-size: 13px;
+}
+
+#plandose-modal .pd-rx-warns {
+	list-style: none;
+	padding: 0;
+	margin-top: 6px;
+	font-size: 13px;
+}
+
+#plandose-modal .pd-rx-warns .is-warn {
+	color: #8a5a00;
+}
+
+#plandose-modal .pd-rx-warns .is-warn::before,
+#plandose-modal .pd-rx-warns .is-danger::before {
+	content: "⚠ " / "";
+}
+
+#plandose-modal .pd-rx-warns .is-danger {
+	color: var(--pd-danger);
+	font-weight: 700;
+}
+
+#plandose-modal .pd-rx-toform {
+	margin-top: 6px;
+	width: auto;
+	max-width: calc(100% - 26px);
+	padding-left: 16px;
+	padding-right: 16px;
+	font-family: inherit;
+}
+
+#plandose-modal .pd-rx-patient {
+	margin: 0 0 6px;
+}
+
+#plandose-modal .pd-rx-row.is-loaded {
+	background: #eef2f0;
+	border-color: #d5ddd9;
+	color: var(--pd-text);
+}
+
+#plandose-modal .pd-rx-row.is-loaded .pd-rx-sum,
+#plandose-modal .pd-rx-row.is-loaded .pd-rx-src {
+	margin-left: 0;
+}
+
+#plandose-modal .pd-rx-note {
+	margin: 4px 0 8px;
+	font-size: 13px;
+	color: #8a5a00;
+}
+
+/* Prescription review — the medicine's own lines next to the
+   fields read from them, and what still has to be chosen or confirmed. */
+#plandose-modal .pd-rx-row.needs-check {
+	border-color: var(--pd-accent);
+}
+
+#plandose-modal .pd-rx-cols {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+	gap: 10px;
+	margin: 6px 0 0 26px;
+}
+
+#plandose-modal .pd-rx-orig {
+	min-width: 0;
+}
+
+#plandose-modal .pd-rx-orig-label {
+	display: block;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--pd-muted);
+	margin: 0 0 2px;
+}
+
+#plandose-modal .pd-rx-orig-text {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.45;
+	background: var(--pd-bg-soft, #f6f8f7);
+	border: 1px solid var(--pd-border-soft, #e3e8e5);
+	border-radius: 6px;
+	padding: 6px 8px;
+	color: var(--pd-text);
+}
+
+#plandose-modal .pd-rx-fields {
+	margin: 0;
+	font-size: 13px;
+	min-width: 0;
+}
+
+#plandose-modal .pd-rx-field {
+	display: grid;
+	grid-template-columns: 88px minmax(0, 1fr);
+	gap: 6px;
+	padding: 3px 4px;
+	border-left: 3px solid transparent;
+}
+
+#plandose-modal .pd-rx-field dt {
+	color: var(--pd-muted);
+	margin: 0;
+}
+
+#plandose-modal .pd-rx-field dd {
+	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+#plandose-modal .pd-rx-field.is-doubt {
+	border-left-color: #e0a800;
+}
+
+#plandose-modal .pd-rx-field.is-open {
+	background: #fffaf0;
+}
+
+#plandose-modal .pd-rx-value {
+	font-weight: 600;
+}
+
+#plandose-modal .pd-rx-field .pd-rx-times {
+	margin-left: 0;
+}
+
+#plandose-modal .pd-rx-confirm {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	font-weight: 600;
+	color: #8a5a00;
+	cursor: pointer;
+}
+
+#plandose-modal .pd-rx-confirm.is-done {
+	color: var(--pd-success, #1c7c54);
+}
+
+#plandose-modal .pd-rx-md-input {
+	width: 5em;
+	font: inherit;
+}
+
+#plandose-modal .pd-rx-md-note {
+	flex-basis: 100%;
+}
+
+#plandose-modal .pd-rx-total {
+	margin-top: 4px;
+	font-size: 12px;
+	color: var(--pd-text);
+}
+
+/* «Χορηγούνται N · το πλάνο χρειάζεται M». */
+#plandose-modal .pd-rx-qty {
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--pd-text);
+}
+
+#plandose-modal .pd-rx-qty.is-warn {
+	font-weight: 600;
+	color: #8a5a00;
+}
+
+/* «Ίδια ώρα για όλα τα 1×ημέρα». */
+#plandose-modal .pd-rx-bulk {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+#plandose-modal .pd-rx-bulk .pd-rx-time {
+	flex: 0 0 auto;
+	min-height: 0;
+	padding: 4px 12px;
+	font-size: 13px;
+	font-family: inherit;
+	font-weight: 400;
+	line-height: 1.3;
+	border-radius: 999px;
+}
+
+#plandose-modal .pd-rx-bulk-status {
+	margin: 0 0 8px;
+	font-size: 13px;
+}
+
+#plandose-modal .pd-rx-bulk-status:empty {
+	display: none;
+}
+
+#plandose-modal .pd-rx-bulk-mark {
+	font-size: 12px;
+	font-style: italic;
+}
+
+#plandose-modal .pd-rx-block {
+	border: 1px solid #e0a800;
+	background: #fffaf0;
+	border-radius: 8px;
+	padding: 8px 10px;
+	margin: 0 0 8px;
+	font-size: 13px;
+}
+
+#plandose-modal .pd-rx-block p {
+	margin: 0 0 6px;
+	font-weight: 700;
+	color: #8a5a00;
+}
+
+#plandose-modal .pd-rx-block .pd-rx-check {
+	align-items: flex-start;
+}
+
+@media (max-width: 620px) {
+	#plandose-modal .pd-rx-cols {
+		grid-template-columns: minmax(0, 1fr);
+		margin-left: 0;
+	}
+
+	#plandose-modal .pd-rx-row .pd-rx-warns,
+	#plandose-modal .pd-rx-row .pd-rx-toform {
+		margin-left: 0;
+	}
+}
+
+/* The prescription text of the medicine in the form (read-only,
+   screen only). */
+#plandose-modal .pd-rx-source {
+	border: 1px solid var(--pd-accent);
+	background: var(--pd-accent-light);
+	border-radius: 8px;
+	padding: 8px 10px;
+	margin: 0 0 12px;
+	font-size: 13px;
+}
+
+#plandose-modal .pd-rx-source[hidden] {
+	display: none;
+}
+
+#plandose-modal .pd-rx-source strong {
+	display: block;
+	margin: 0 0 2px;
+}
+
+#plandose-modal .pd-rx-source-text {
+	display: block;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+}
+
+#plandose-modal .pd-monthday-last {
+	display: block;
+	color: #8a5a00;
+	font-weight: 600;
+}
+
+#plandose-modal .pd-monthday-last[hidden] {
+	display: none;
+}
+
+#plandose-modal #pd-custom-monthday {
+	max-width: 8em;
+}
+
+@media print {
+	#plandose-modal .pd-rx-source {
+		display: none !important;
+	}
+}
+
+/* The modal is designed light only; a dark OS theme must not
+   repaint form controls and scrollbars inside it. */
+#plandose-overlay,
+#plandose-confirm-close {
+	color-scheme: light;
+}
+
+/* Text inputs under 16px make iOS zoom the page on focus. */
+@media (max-width: 620px) {
+	#plandose-modal .pd-rx-drop.is-open textarea,
+	#plandose-modal #pd-rx-text,
+	#plandose-modal .pd-rx-md-input,
+	#pd-preview-area .pd-lbl-size select,
+	#pd-preview-area .pd-lbl-custom input {
+		font-size: 16px;
+	}
+}
+
+/* Billing status (print.js), a quiet one-line status under
+   #pd-message. #3d4a45 on white is 9.4:1. */
+#pd-billing-status,
+.pd-billing-status {
+	margin: 4px 0 0;
+	font-size: 13px;
+	line-height: 1.4;
+	color: #3d4a45;
+}
+
+#pd-billing-status[hidden],
+.pd-billing-status[hidden] {
+	display: none;
+}
+
+/* Why the popup cannot close during a print (modal.js). Small and
+   muted, #4f5b56 on white is 7:1. */
+#plandose-modal .pd-close-blocked {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.4;
+	color: #4f5b56;
+}
+
+/* Not display:none when empty — it is a live region and must stay in
+   the accessibility tree to be announced. */
+#plandose-modal .pd-close-blocked:not(:empty) {
+	padding: 0 20px 12px;
+}
+
+/* The warning a minute before an idle plan is cleared, at the top of the
+   sticky action bar so it is in view on either step. The box stays in the
+   DOM when inactive (empty, no padding): its text is a live region. */
+#plandose-modal .pd-idle-warning-text {
+	margin: 0;
+}
+
+#plandose-modal .pd-idle-warning.is-active {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 14px;
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	background: #fff4d6;
+	color: #5c3d00;
+	border: 2px solid #b07800;
+	border-radius: 8px;
+}
+
+#plandose-modal .pd-idle-warning.is-active .pd-idle-warning-text {
+	flex: 1 1 16em;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.45;
+}
+
+#plandose-modal .pd-idle-warning .pd-idle-keep {
+	flex: 0 0 auto;
+	width: auto;
+	min-height: 44px;
+}
+
+#plandose-modal .pd-idle-warning .pd-idle-keep[hidden] {
+	display: none;
+}
+
+@keyframes pd-idle-warning-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	#plandose-modal .pd-idle-warning.is-active {
+		animation: pd-idle-warning-in 0.2s ease-out;
+	}
+}
+
+/* Windows high contrast: backgrounds are dropped, so the box and the
+   button need real borders to stay visible. */
+@media (forced-colors: active) {
+	#plandose-modal .pd-idle-warning.is-active {
+		border: 2px solid CanvasText;
+	}
+
+	#plandose-modal .pd-idle-warning .pd-idle-keep {
+		border: 2px solid ButtonText;
+	}
+
+	#plandose-modal .pd-idle-warning .pd-idle-keep:focus-visible {
+		outline: 3px solid Highlight;
+		outline-offset: 2px;
+	}
+}
+
+/* A notice about the phone-reminder QR, above the sheet. */
+#plandose-modal .pd-preview-notice {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	background: #fff4d6;
+	color: #5c3d00;
+	border: 1px solid #e0b64a;
+	border-radius: 8px;
+	font-size: 13px;
+	line-height: 1.45;
+	font-weight: 600;
+}
+
+@media print {
+	#plandose-modal .pd-preview-notice {
+		display: none !important;
+	}
+}
+
+/* The preview while the start date is unusable. */
+#plandose-modal .pd-preview-blocked {
+	color: var(--pd-danger);
+	font-weight: 600;
+}
+
+/* The leading word(s) of a multi-word brand, to be confirmed. */
+#plandose-modal .pd-rx-brand-lead {
+	background: #fff1c2;
+	color: #5c3d00;
+	border-bottom: 2px dashed #b07800;
+	padding: 0 2px;
+}

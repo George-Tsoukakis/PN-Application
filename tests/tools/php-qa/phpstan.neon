@@ -1,0 +1,111 @@
+# PHPStan for the PlanDose plugin. Dev only, never shipped (build/build-zip.sh
+# packages plandose/ alone). Run from this directory:
+#   composer install && vendor/bin/phpstan
+# The WordPress extension is included explicitly rather than through
+# phpstan/extension-installer: Composer disables plugins when run as root
+# (containers), which would silently drop the extension.
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 5
+	phpVersion:
+		min: 80000
+		max: 80499
+	paths:
+		- ../../../plandose
+	scanFiles:
+		- vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+		- vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
+	# Typed $wpdb (src/GlobalWpdbTypeExtension.php) and impure query methods
+	# (stubs/wpdb.stub), so $wpdb->last_error checks after a query are real.
+	stubFiles:
+		- stubs/wpdb.stub
+	bootstrapFiles:
+		- phpstan-bootstrap.php
+	tmpDir: .phpstan-cache
+	# Values from options, filters, $wpdb and WP core PHPDoc are not trustworthy
+	# at runtime (a filter can return anything), so the plugin re-checks them
+	# with is_array()/is_string(); do not report those checks as redundant.
+	treatPhpDocTypesAsCertain: false
+	# get_option(), get_user_meta() & co. read state that the code in between
+	# changes (delete, update); do not reuse a function's earlier result.
+	rememberPossiblyImpureFunctionValues: false
+	dynamicConstantNames:
+		# Guarded by defined() in plandose.php; tests and wp-config may predefine them.
+		- PLANDOSE_VERSION
+		- PLANDOSE_INVOICE_DIR
+		- LOGGED_IN_COOKIE
+	ignoreErrors:
+		# The plugin guards cross-class calls with method_exists() so that a
+		# half-copied update (old and new files mixed) degrades instead of
+		# fatalling. PHPStan sees the current classes and calls them redundant.
+		-
+			identifier: function.alreadyNarrowedType
+			message: '#^Call to function method_exists\(\) with ''Plandose[^'']*'' and ''[^'']+'' will always evaluate to true\.$#'
+		# wpdb::__get() deliberately exposes the protected $dbh (core and
+		# plugins read it); the plugin needs the mysqli handle for errno/thread_id.
+		-
+			identifier: property.protected
+			message: '#^Access to protected property wpdb::\$dbh\.$#'
+			path: ../../../plandose/includes/class-plandose-print-charges.php
+			count: 2
+		# WP_Filesystem() fills the global $wp_filesystem as a side effect,
+		# which PHPStan cannot see after the earlier instanceof check failed.
+		-
+			identifier: instanceof.alwaysFalse
+			message: '#^Instanceof between mixed and WP_Filesystem_Base will always evaluate to false\.$#'
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+			count: 1
+		-
+			identifier: booleanAnd.alwaysFalse
+			message: '#^Result of && is always false\.$#'
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+			count: 1
+		# Plandose_Subscriptions::get_row() queries through the global $wpdb,
+		# which resets $wpdb->last_error; PHPStan keeps the '' assigned before it.
+		-
+			identifier: notIdentical.alwaysFalse
+			message: "#^Strict comparison using \\!\\=\\= between '' and '' will always evaluate to false\\.$#"
+			path: ../../../plandose/includes/class-plandose-privacy.php
+			count: 1
+		# wp_validate_redirect() returns the fallback as given; false makes a
+		# rejection unambiguous (a valid location is never false).
+		-
+			identifier: argument.type
+			message: '#^Parameter \#2 \$fallback_url of function wp_validate_redirect expects string, false given\.$#'
+			path: ../../../plandose/includes/class-plandose-settings.php
+			count: 1
+		# Same half-updated-files guard as method_exists() above: an older copy
+		# of the constant may not be a list.
+		-
+			identifier: arrayValues.list
+			message: '#^Parameter \#1 \$array \(array\{[^}]+\}\) of array_values is already a list, call has no effect\.$#'
+			path: ../../../plandose/includes/class-plandose-settings.php
+			count: 1
+		# Defensive checks on values the WordPress PHPDoc types too narrowly:
+		# a filtered HTTP response may carry any 'headers' value, a db drop-in's
+		# get_col() may return null, and the uninstaller's blob list is re-checked
+		# after the error branch that resets it.
+		-
+			identifier: function.alreadyNarrowedType
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			path: ../../../plandose/includes/class-plandose-cli.php
+			count: 1
+		-
+			identifier: notIdentical.alwaysTrue
+			message: "#^Strict comparison using \\!\\=\\= between '' and mixed~'' will always evaluate to true\\.$#"
+			path: ../../../plandose/tools/find-orphan-invoices.php
+			count: 1
+		-
+			identifier: function.alreadyNarrowedType
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			path: ../../../plandose/uninstall.php
+			count: 1
+
+
+services:
+	-
+		class: PlanDose\PhpQa\GlobalWpdbTypeExtension
+		tags:
+			- phpstan.broker.expressionTypeResolverExtension

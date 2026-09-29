@@ -1,0 +1,1523 @@
+.plandose-admin-wrap {
+	--pd-primary: #5b4df5;
+	--pd-green: #10b981;
+	--pd-bg: #f6f8ff;
+	--pd-border: #e5e7ef;
+	--pd-text: #172033;
+	--pd-muted: #687089;
+	--pd-danger: #dc2626;
+	--pd-warning: #f97316;
+	--pd-card-shadow: 0 8px 24px rgba(21, 30, 50, 0.06);
+
+	max-width: 1600px;
+}
+
+.plandose-admin-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px;
+	margin: 22px 0 24px;
+}
+
+.plandose-admin-head h1 {
+	margin: 0;
+	font-weight: 800;
+	color: var(--pd-text);
+}
+
+.plandose-admin-head p {
+	margin: 5px 0 0;
+	color: var(--pd-muted);
+}
+
+.plandose-logo {
+	width: 58px;
+	height: 58px;
+	display: grid;
+	place-items: center;
+	border-radius: 18px;
+	color: #ffffff;
+	font-weight: 900;
+	background: linear-gradient(135deg, #11c79f, #6d5dfc, #ff5b7f);
+	box-shadow: 0 12px 28px rgba(91, 77, 245, 0.22);
+}
+
+/*
+ * Title and header actions share one flex row, so a button never has to be
+ * pulled up over the notices that core places after .wp-header-end.
+ */
+.plandose-admin-title {
+	flex: 1 1 320px;
+	min-width: 0;
+}
+
+.plandose-admin-head-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.plandose-admin-head-actions form {
+	margin: 0;
+}
+
+/* ==========================================================================
+   KPIs
+   ========================================================================== */
+
+.plandose-kpis {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(150px, 1fr));
+	gap: 18px;
+	margin-bottom: 20px;
+}
+
+.plandose-kpi {
+	background: #ffffff;
+	border: 1px solid var(--pd-border);
+	border-radius: 16px;
+	padding: 20px;
+	box-shadow: var(--pd-card-shadow);
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	min-width: 0;
+}
+
+.plandose-kpi > span {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: #eef2ff;
+	display: grid;
+	place-items: center;
+	font-size: 24px;
+	flex: 0 0 auto;
+}
+
+.plandose-kpi strong {
+	display: block;
+	font-size: 26px;
+	line-height: 1.1;
+	color: var(--pd-text);
+}
+
+.plandose-kpi em {
+	display: block;
+	color: var(--pd-muted);
+	font-style: normal;
+	margin-top: 5px;
+}
+
+/* ==========================================================================
+   Filters
+   ========================================================================== */
+
+.plandose-filter-card {
+	background: #ffffff;
+	border: 1px solid var(--pd-border);
+	border-radius: 16px;
+	padding: 18px;
+	box-shadow: 0 8px 24px rgba(21, 30, 50, 0.05);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+/*
+ * Every control carries its own label, so nothing depends on the
+ * placeholder being fully visible. The search field is given real room
+ * to grow (a fixed grid column would cut its placeholder off mid-word).
+ */
+.plandose-filter-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--pd-text);
+	flex: 1 1 150px;
+	min-width: 0;
+}
+
+.plandose-filter-search {
+	flex: 3 1 280px;
+}
+
+.plandose-filter-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	flex: 0 0 auto;
+	margin-left: auto;
+}
+
+.plandose-filter-actions .button {
+	min-height: 38px;
+}
+
+.plandose-filter-card input,
+.plandose-filter-card select,
+.plandose-filter-field input,
+.plandose-filter-field select,
+.plandose-settings-form input[type="text"],
+.plandose-settings-form input[type="number"],
+.plandose-settings-form input[type="date"],
+.plandose-settings-form input[type="color"],
+.plandose-settings-form select,
+.plandose-settings-form textarea {
+	width: 100%;
+	border: 1px solid var(--pd-border);
+	border-radius: 9px;
+	min-height: 38px;
+	box-sizing: border-box;
+}
+
+.plandose-filter-card input:focus,
+.plandose-filter-card select:focus,
+.plandose-settings-form input:focus,
+.plandose-settings-form select:focus,
+.plandose-settings-form textarea:focus {
+	border-color: var(--pd-primary);
+	box-shadow: 0 0 0 1px var(--pd-primary);
+	/* Transparent, not none — Windows High Contrast (forced colors)
+	   paints it, so the focused field stays visible there too. */
+	outline: 2px solid transparent;
+	outline-offset: 1px;
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
+.plandose-main-card,
+.plandose-side-card,
+.plandose-settings-card {
+	background: #ffffff;
+	border: 1px solid var(--pd-border);
+	border-radius: 16px;
+	box-shadow: var(--pd-card-shadow);
+}
+
+.plandose-main-card {
+	padding: 16px;
+	overflow: auto;
+}
+
+.plandose-side-card {
+	padding: 18px;
+}
+
+.plandose-side-card h3 {
+	margin: 0 0 14px;
+}
+
+.plandose-side-card .button {
+	display: block;
+	text-align: center;
+	margin: 8px 0;
+}
+
+.plandose-bottom-grid {
+	margin-top: 20px;
+	display: grid;
+	grid-template-columns: 300px minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+
+.plandose-bottom-actions {
+	background: #ffffff;
+	border: 1px solid var(--pd-border);
+	border-radius: 16px;
+	box-shadow: var(--pd-card-shadow);
+	padding: 18px 20px;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 14px;
+}
+
+.plandose-bottom-actions h3 {
+	margin: 0;
+	white-space: nowrap;
+}
+
+.plandose-bottom-actions-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-left: auto;
+}
+
+.plandose-bottom-actions-buttons .button {
+	display: inline-block;
+	margin: 0;
+}
+
+/* ==========================================================================
+   Tabs
+   ========================================================================== */
+
+.plandose-tabs {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 0 0 15px;
+	border-bottom: 1px solid var(--pd-border);
+}
+
+.plandose-tabs a {
+	text-decoration: none;
+	color: var(--pd-muted);
+	padding: 12px 14px;
+	border-bottom: 3px solid transparent;
+	font-weight: 700;
+}
+
+.plandose-tabs a:hover {
+	color: var(--pd-primary);
+}
+
+.plandose-tabs a.active {
+	color: var(--pd-primary);
+	border-color: var(--pd-primary);
+}
+
+/* ==========================================================================
+   Table
+   ========================================================================== */
+
+.plandose-table {
+	min-width: 980px;
+}
+
+.plandose-table th {
+	font-weight: 800;
+	color: var(--pd-text);
+}
+
+.plandose-table td {
+	vertical-align: middle;
+}
+
+.pd-badge {
+	display: inline-block;
+	padding: 5px 10px;
+	border-radius: 999px;
+	font-weight: 800;
+	font-size: 12px;
+	line-height: 1.2;
+}
+
+.pd-badge.pro {
+	background: #ede9fe;
+	color: #5b21b6;
+}
+
+.pd-badge.free {
+	background: #d1fae5;
+	color: #047857;
+}
+
+.pd-badge.paid {
+	background: #d1fae5;
+	color: #047857;
+}
+
+.pd-badge.pending {
+	background: #ffedd5;
+	color: #c2410c;
+}
+
+.pd-badge.pd-muted-badge {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+.pd-access-override {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+
+.pd-access-state {
+	margin: 0;
+}
+
+.pd-access-reason {
+	margin: 4px 0 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #646970;
+}
+
+.plandose-manual-lookup {
+	margin-bottom: 20px;
+}
+
+.plandose-manual-lookup h3 {
+	margin: 0 0 6px;
+}
+
+.plandose-manual-lookup-form {
+	display: flex;
+	gap: 8px;
+	margin: 10px 0;
+}
+
+.plandose-manual-lookup-form input[type="text"] {
+	flex: 1;
+	max-width: 360px;
+}
+
+.plandose-manual-lookup-result {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 10px;
+	padding: 12px;
+	background: #f8fafc;
+	border: 1px solid var(--pd-border);
+	border-radius: 10px;
+}
+
+.pd-muted {
+	color: var(--pd-muted);
+}
+
+.pd-danger {
+	color: var(--pd-danger);
+	font-weight: 700;
+}
+
+.pd-inline-form {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.pd-pro-form {
+	gap: 4px;
+}
+
+/* ==========================================================================
+   Invoice upload
+   ========================================================================== */
+
+.pd-invoice-label {
+	position: relative;
+	cursor: pointer;
+	overflow: hidden;
+}
+
+.pd-manage-grid .pd-invoice-form {
+	width: 100%;
+	margin: 0;
+}
+
+.pd-manage-grid .pd-invoice-label {
+	width: 100%;
+	min-height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+}
+
+.pd-invoice-file {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	cursor: pointer;
+	width: 100%;
+}
+
+/* ==========================================================================
+   Debug panel
+   ========================================================================== */
+
+.pd-debug-panel {
+	margin-top: 20px;
+	padding: 18px;
+	border: 1px dashed #f59e0b;
+	border-radius: 14px;
+	background: #fffbeb;
+}
+
+.pd-debug-panel h3 {
+	margin: 0 0 8px;
+	color: #92400e;
+}
+
+.pd-debug-panel p {
+	margin: 0 0 14px;
+	color: #78350f;
+	font-size: 13px;
+}
+
+.pd-debug-panel code {
+	background: #ffffff;
+	padding: 1px 5px;
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+.pd-debug-panel table {
+	background: #ffffff;
+}
+
+/* ==========================================================================
+   Donut
+   ========================================================================== */
+
+.plandose-donut {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	margin: 8px auto 15px;
+	/* Pro share comes from PHP (--pd-pro-pct); the rest is Free. */
+	background: conic-gradient(var(--pd-primary) 0 var(--pd-pro-pct, 0%), var(--pd-green) var(--pd-pro-pct, 0%) 100%);
+	display: grid;
+	place-items: center;
+}
+
+.plandose-donut.is-empty {
+	background: var(--pd-border);
+}
+
+/* Colour key for the ring's two segments. */
+.plandose-donut-key::before {
+	content: "";
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 6px;
+	border-radius: 50%;
+	background: var(--pd-green);
+}
+
+.plandose-donut-key.is-pro::before {
+	background: var(--pd-primary);
+}
+
+.plandose-donut span {
+	width: 88px;
+	height: 88px;
+	border-radius: 50%;
+	background: #ffffff;
+	display: grid;
+	place-items: center;
+	text-align: center;
+	font-weight: 900;
+}
+
+.plandose-donut small {
+	display: block;
+	color: var(--pd-muted);
+	font-weight: 500;
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.plandose-pagination {
+	display: flex;
+	justify-content: flex-end;
+	gap: 6px;
+	margin: 16px 0 0;
+	flex-wrap: wrap;
+}
+
+.plandose-pagination a,
+.plandose-pagination span {
+	padding: 8px 11px;
+	border: 1px solid var(--pd-border);
+	border-radius: 8px;
+	background: #ffffff;
+	text-decoration: none;
+}
+
+.plandose-pagination a:hover {
+	border-color: var(--pd-primary);
+	color: var(--pd-primary);
+}
+
+.plandose-pagination a.active {
+	background: var(--pd-primary);
+	color: #ffffff;
+	border-color: var(--pd-primary);
+}
+
+/* ==========================================================================
+   Settings
+   ========================================================================== */
+
+.plandose-savebar {
+	position: sticky;
+	top: 32px;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	background: #ffffff;
+	border: 1px solid var(--pd-border);
+	border-radius: 14px;
+	padding: 14px 18px;
+	margin: 0 0 20px;
+	box-shadow: 0 8px 24px rgba(21, 30, 50, 0.08);
+}
+
+.plandose-savebar-hint {
+	color: var(--pd-muted);
+	font-size: 13px;
+}
+
+.plandose-settings-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(240px, 1fr));
+	gap: 18px;
+}
+
+.plandose-settings-card {
+	padding: 18px;
+}
+
+.plandose-settings-card.wide {
+	grid-column: 1 / -1;
+}
+
+.plandose-settings-card.wide .pd-card-body {
+	display: grid;
+	grid-template-columns: 1fr 1fr 2fr;
+	gap: 16px;
+}
+
+.pd-card-head h2 {
+	margin: 0 0 6px;
+	font-size: 18px;
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+
+.pd-card-desc {
+	margin: 0 0 16px;
+	color: var(--pd-muted);
+	font-size: 13px;
+	font-weight: 400;
+}
+
+.plandose-settings-card label {
+	display: block;
+	margin: 0 0 14px;
+	font-weight: 700;
+	color: var(--pd-text);
+}
+
+.plandose-settings-card small {
+	display: block;
+	margin-top: 5px;
+	color: var(--pd-muted);
+	font-weight: 400;
+}
+
+.pd-role-column {
+	display: flex;
+	flex-direction: column;
+}
+
+.pd-group-label {
+	font-size: 13px;
+}
+
+/* ==========================================================================
+   Checkbox pills
+   ========================================================================== */
+
+.pd-checkbox-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.pd-checkbox-pill {
+	display: flex !important;
+	align-items: center;
+	gap: 7px;
+	margin: 0 !important;
+	padding: 8px 14px;
+	border: 1.5px solid var(--pd-border);
+	border-radius: 999px;
+	font-weight: 600 !important;
+	font-size: 13px;
+	color: var(--pd-text);
+	cursor: pointer;
+	transition: 0.15s;
+	background: #ffffff;
+}
+
+.pd-checkbox-pill input {
+	accent-color: var(--pd-primary);
+	margin: 0;
+}
+
+.pd-checkbox-pill:hover {
+	border-color: var(--pd-primary);
+	color: var(--pd-primary);
+}
+
+.pd-checkbox-pill.is-checked,
+.pd-checkbox-pill:has(input:checked) {
+	background: #eef2ff;
+	border-color: var(--pd-primary);
+	color: var(--pd-primary);
+}
+
+/* ==========================================================================
+   Toggle
+   ========================================================================== */
+
+.pd-toggle {
+	display: flex !important;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	position: relative;
+}
+
+.pd-toggle input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.pd-toggle input:focus-visible + em {
+	outline: 2px solid var(--pd-primary);
+	outline-offset: 3px;
+}
+
+.pd-toggle em {
+	width: 44px;
+	height: 24px;
+	border-radius: 999px;
+	/* ≥3:1 against the white card. */
+	background: #64748b;
+	position: relative;
+	flex: 0 0 auto;
+}
+
+.pd-toggle em::before {
+	content: "";
+	position: absolute;
+	width: 18px;
+	height: 18px;
+	top: 3px;
+	left: 3px;
+	background: #ffffff;
+	border-radius: 50%;
+	transition: 0.2s;
+}
+
+.pd-toggle input:checked + em {
+	background: var(--pd-green);
+}
+
+.pd-toggle input:checked + em::before {
+	left: 23px;
+}
+
+/* ==========================================================================
+   Preview
+   ========================================================================== */
+
+.pd-preview-button {
+	width: max-content;
+	max-width: 100%;
+	color: #ffffff;
+	padding: 13px 24px;
+	border-radius: 999px;
+	font-weight: 800;
+	margin: 8px auto 22px;
+	box-shadow: 0 10px 22px rgba(91, 77, 245, 0.2);
+	box-sizing: border-box;
+}
+
+.pd-preview-modal {
+	border: 1px solid var(--pd-border);
+	border-radius: 14px;
+	padding: 18px;
+	background: #ffffff;
+}
+
+.pd-preview-modal span {
+	display: block;
+	color: #ffffff;
+	text-align: center;
+	padding: 10px;
+	border-radius: 9px;
+	background: linear-gradient(135deg, #10b981, #6d5dfc);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+	.plandose-kpis {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.plandose-bottom-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.plandose-settings-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.plandose-settings-card.wide .pd-card-body {
+		grid-template-columns: 1fr;
+	}
+
+	.plandose-bottom-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.plandose-bottom-actions-buttons {
+		margin-left: 0;
+	}
+
+	.plandose-bottom-actions-buttons .button {
+		flex: 1 1 auto;
+		text-align: center;
+	}
+}
+
+@media (max-width: 782px) {
+	.plandose-admin-head {
+		align-items: flex-start;
+	}
+
+	/* Title stays next to the logo; the actions get a row of their own. */
+	.plandose-admin-title {
+		flex-basis: 0;
+	}
+
+	.plandose-admin-head-actions {
+		flex-basis: 100%;
+		margin-left: 0;
+	}
+
+	.plandose-logo {
+		width: 48px;
+		height: 48px;
+		border-radius: 15px;
+	}
+
+	.plandose-kpis {
+		grid-template-columns: 1fr;
+	}
+
+	.plandose-savebar {
+		top: 46px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.plandose-savebar .button {
+		width: 100%;
+		text-align: center;
+	}
+
+	.plandose-main-card {
+		padding: 12px;
+	}
+
+	.plandose-cards {
+		grid-template-columns: 1fr;
+	}
+
+	.pd-card-facts {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.plandose-filter-field,
+	.plandose-filter-search {
+		flex: 1 1 100%;
+	}
+
+	.plandose-filter-actions {
+		margin-left: 0;
+		width: 100%;
+	}
+
+	.plandose-filter-actions .button {
+		flex: 1 1 auto;
+		text-align: center;
+	}
+
+	.plandose-pagination-bar {
+		justify-content: center;
+	}
+
+	/*
+	 * The strip keeps all six columns on a phone rather than wrapping or
+	 * scrolling: comparing two cards depends on the slots staying in the
+	 * same place. Only the type shrinks.
+	 */
+	.pd-history-strip li {
+		padding: 5px 1px;
+	}
+
+	.pd-history-strip strong {
+		font-size: 12px;
+	}
+
+	.pd-history-strip em {
+		font-size: 9px;
+	}
+
+	/* Comfortable tap targets on a phone. */
+	.pd-pro-preset,
+	.pd-card-manage > summary,
+	.pd-manage-grid .button,
+	.pd-manage-grid .pd-invoice-label,
+	.pd-pro-submit {
+		min-height: 44px;
+	}
+
+	/* On a phone the presets drop to their own full-width row. */
+	.pd-pro-presets {
+		flex: 1 1 100%;
+	}
+
+	/* On a phone the card is narrow enough that stacking reads better. */
+	.pd-card-contact {
+		flex-direction: column;
+		align-items: flex-start;
+		font-size: 13px;
+	}
+
+	.pd-card-contact > * + * {
+		padding-left: 0;
+	}
+
+	.pd-card-contact > * + *::before {
+		display: none;
+	}
+}
+
+/* ==========================================================================
+   Subscriber cards
+
+   Replaces the seven-column table, which forced a horizontal scrollbar on
+   laptops and was unusable on a phone. One markup for every width: the
+   grid simply drops to fewer columns, then to one.
+   ========================================================================== */
+
+.plandose-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+	gap: 16px;
+	margin-top: 4px;
+}
+
+.plandose-card {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: #ffffff;
+	border: 1px solid var(--pd-border);
+	border-left: 4px solid var(--pd-border);
+	border-radius: 14px;
+	padding: 16px;
+	box-shadow: 0 4px 14px rgba(21, 30, 50, 0.04);
+}
+
+.plandose-card.is-pro {
+	border-left-color: var(--pd-primary);
+}
+
+.pd-card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.pd-card-title h3 {
+	margin: 0 0 2px;
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+.pd-card-title span {
+	font-size: 12px;
+}
+
+/*
+ * Email, phone and ΑΦΜ are all short, so they sit on one line with a
+ * thin divider between them and wrap only when the card is genuinely too
+ * narrow. Three stacked rows wasted about 40px per card for no gain.
+ */
+.pd-card-contact {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: 10px;
+	row-gap: 4px;
+	padding: 9px 12px;
+	border: 1px solid var(--pd-border);
+	border-radius: 10px;
+	background: #f8fafc;
+	font-size: 12.5px;
+	font-weight: 600;
+	word-break: break-word;
+}
+
+.pd-card-contact > * + * {
+	position: relative;
+	padding-left: 11px;
+}
+
+/* Divider drawn on the item itself rather than as a separate element, so
+   it disappears automatically whenever an item wraps to a new line. */
+.pd-card-contact > * + *::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 1px;
+	height: 12px;
+	background: var(--pd-border);
+}
+
+.pd-card-contact .pd-muted {
+	font-weight: 600;
+}
+
+.pd-contact-name {
+	font-weight: 700;
+	color: var(--pd-text);
+}
+
+.pd-card-facts {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	margin: 0;
+	padding: 12px 0;
+	border-top: 1px solid var(--pd-border);
+	border-bottom: 1px solid var(--pd-border);
+}
+
+.pd-card-facts > div {
+	min-width: 0;
+}
+
+/*
+ * Sentence case, not uppercase: Greek accented capitals ("ΛΉΞΗ") look
+ * wrong and the all-caps treatment made the labels shout louder than the
+ * values underneath them.
+ */
+.pd-card-facts dt {
+	font-size: 11.5px;
+	font-weight: 700;
+	color: var(--pd-muted);
+	margin-bottom: 3px;
+}
+
+.pd-card-facts dd {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.4;
+	word-break: break-word;
+}
+
+/* ==========================================================================
+   Monthly print history strip
+   ========================================================================== */
+
+/*
+ * Six closed months per card, oldest on the left, so the row reads as a
+ * trend rather than a list. Fixed six-column grid instead of flex wrap or a
+ * scroller: every card must show the same six slots in the same positions,
+ * otherwise two cards can't be compared at a glance, which is the only
+ * reason the strip exists.
+ */
+.pd-card-history {
+	padding: 12px 0;
+	border-bottom: 1px solid var(--pd-border);
+}
+
+.pd-card-history-label {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 11.5px;
+	font-weight: 700;
+	color: var(--pd-muted);
+	margin-bottom: 8px;
+}
+
+.pd-card-history-label strong {
+	font-size: 13px;
+	color: var(--pd-text);
+}
+
+.pd-history-strip {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pd-history-strip li {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1px;
+	margin: 0;
+	padding: 6px 2px;
+	border: 1px solid var(--pd-border);
+	border-radius: 6px;
+	background: #fff;
+	min-width: 0;
+}
+
+.pd-history-strip strong {
+	font-size: 13px;
+	line-height: 1.2;
+	color: var(--pd-text);
+	font-variant-numeric: tabular-nums;
+}
+
+.pd-history-strip em {
+	font-size: 10px;
+	font-style: normal;
+	line-height: 1.2;
+	color: var(--pd-muted);
+	white-space: nowrap;
+}
+
+/*
+ * A month with no prints is drawn, not hidden. Greyed rather than removed,
+ * because a gap in the middle of the row is the signal worth seeing — a
+ * pharmacy that stopped and started again must not look like one that never
+ * stopped.
+ */
+.pd-history-strip .pd-history-empty {
+	background: var(--pd-bg);
+	border-style: dashed;
+}
+
+.pd-history-strip .pd-history-empty strong {
+	color: var(--pd-muted);
+	font-weight: 400;
+}
+
+/* Collapsed by default: with 84 pharmacies, showing every control at once
+   put hundreds of buttons on screen. Native <details> needs no JavaScript
+   and is keyboard- and screen-reader-accessible out of the box. */
+/*
+ * Closed, this is a single button-like row. Open, the same border grows
+ * into one panel containing the sections, so nothing floats loose under
+ * a stray outline.
+ */
+.pd-card-manage {
+	border: 1px solid var(--pd-border);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.pd-card-manage > summary {
+	cursor: pointer;
+	list-style: none;
+	font-weight: 700;
+	font-size: 13px;
+	color: var(--pd-primary);
+	padding: 0 12px;
+	min-height: 40px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pd-card-manage > summary::-webkit-details-marker {
+	display: none;
+}
+
+.pd-card-manage > summary::before {
+	content: "\25B8";
+	font-size: 11px;
+	transition: transform 0.15s ease;
+}
+
+.pd-card-manage[open] > summary {
+	border-bottom: 1px solid var(--pd-border);
+	background: var(--pd-accent-light, #f2f5ff);
+}
+
+.pd-card-manage[open] > summary::before {
+	transform: rotate(90deg);
+}
+
+.pd-card-manage > summary:hover {
+	background: var(--pd-accent-light, #f2f5ff);
+}
+
+/*
+ * <summary> is focusable, so clicking it left the browser's default black
+ * outline stuck around the header. Suppress that, but keep a real focus
+ * ring for keyboard users — removing it outright would break Tab
+ * navigation.
+ */
+.pd-card-manage > summary:focus {
+	outline: none;
+}
+
+.pd-card-manage > summary:focus-visible {
+	background: var(--pd-accent-light, #f2f5ff);
+	outline: 2px solid var(--pd-primary);
+	outline-offset: -2px;
+}
+
+.pd-card-manage-body {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+}
+
+/* Every section is built the same way: a small label, then full-width
+   controls on a shared 2-column grid. That is what makes the panel read
+   as aligned rather than as a pile of differently sized buttons. */
+.pd-manage-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px 12px;
+}
+
+.pd-manage-section + .pd-manage-section {
+	border-top: 1px solid var(--pd-border);
+}
+
+.pd-manage-title {
+	margin: 0;
+	font-size: 11.5px;
+	font-weight: 700;
+	color: var(--pd-muted);
+}
+
+.pd-manage-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.pd-manage-grid-one {
+	grid-template-columns: 1fr;
+}
+
+/* Buttons inside the panel are wrapped in their own <form>, so the form
+   has to stretch before the button can. */
+.pd-manage-grid > .pd-inline-form,
+.pd-manage-grid > .button {
+	width: 100%;
+	margin: 0;
+}
+
+.pd-manage-grid .button {
+	width: 100%;
+	min-height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.plandose-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--pd-muted);
+}
+
+/* ==========================================================================
+   Pro duration control
+   ========================================================================== */
+
+.pd-pro-form {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 10px;
+	width: 100%;
+}
+
+/*
+ * One row instead of three: the number field, its ceiling, and the quick
+ * picks all sit side by side, with only the submit button on its own
+ * line. Saves roughly 80px of vertical space per card.
+ */
+.pd-pro-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.pd-pro-days {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.pd-pro-days-input {
+	width: 68px;
+	flex: 0 0 68px;
+	text-align: center;
+	min-height: 40px;
+	border: 1px solid var(--pd-border);
+	border-radius: 9px;
+	box-sizing: border-box;
+}
+
+.pd-pro-days-max {
+	font-weight: 400;
+	font-size: 11.5px;
+	color: var(--pd-muted);
+	white-space: nowrap;
+}
+
+.pd-pro-presets {
+	display: flex;
+	flex: 1 1 150px;
+	gap: 5px;
+	min-width: 0;
+}
+
+/* min-width: 0 lets the buttons shrink below their content width, which
+   is what keeps the row on one line instead of wrapping. */
+.pd-pro-presets .pd-pro-preset {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.pd-pro-preset {
+	border: 1px solid var(--pd-border);
+	background: #ffffff;
+	color: var(--pd-text);
+	border-radius: 9px;
+	font-size: 12px;
+	font-weight: 700;
+	min-height: 40px;
+	padding: 0 6px;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.pd-pro-preset:hover,
+.pd-pro-preset:focus-visible {
+	border-color: var(--pd-primary);
+	color: var(--pd-primary);
+}
+
+.pd-pro-submit {
+	width: 100%;
+	min-height: 40px;
+}
+
+/* ==========================================================================
+   Pagination bar
+   ========================================================================== */
+
+.plandose-pagination-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 18px;
+}
+
+.plandose-pagination-count {
+	margin: 0;
+	font-size: 12.5px;
+	color: var(--pd-muted);
+}
+
+.pd-page-step {
+	font-weight: 700;
+}
+
+/* Επεξηγηματική γραμμή κάτω από ένα πεδίο ρυθμίσεων. */
+.pd-field-help {
+	margin: -4px 0 12px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #646970;
+}
+
+/*
+ * Live warning under the display-scope fields, shown only while the setting
+ * and the site actually disagree. Deliberately louder than .pd-field-help
+ * next to it: that one states a rule, this one says the rule is biting
+ * right now.
+ */
+.pd-scope-warning {
+	margin: -4px 0 12px;
+	padding: 8px 10px;
+	border-left: 3px solid var(--pd-warning);
+	border-radius: 4px;
+	background: #fff7ed;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--pd-text);
+}
+/* «Χρήστες που δεν μετράνε ως φαρμακεία». */
+.pd-uncounted {
+	margin-top: 20px;
+}
+
+.pd-uncounted > summary {
+	cursor: pointer;
+	padding: 4px 0;
+}
+
+.pd-uncounted h4 {
+	margin: 18px 0 8px;
+}
+
+.pd-uncounted .widefat td {
+	vertical-align: top;
+}
+
+/* ==========================================================================
+   Diagnostics
+   ========================================================================== */
+
+.pd-diag-table td,
+.pd-diag-table th {
+	vertical-align: top;
+}
+
+.pd-diag-status {
+	display: inline-block;
+	min-width: 3.5em;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-weight: 800;
+	font-size: 12px;
+	text-align: center;
+	border: 1px solid currentColor;
+}
+
+.pd-diag-status.is-pass {
+	color: #065f46;
+	background: #ecfdf5;
+}
+
+.pd-diag-status.is-warn {
+	color: #92400e;
+	background: #fffbeb;
+}
+
+.pd-diag-status.is-fail {
+	color: #991b1b;
+	background: #fef2f2;
+}
+
+.pd-diag-details {
+	margin: 4px 0 0 1.2em;
+	color: var(--pd-muted);
+}
+
+.pd-diag-hint {
+	margin: 4px 0 0;
+	font-style: italic;
+}
+
+/* ==========================================================================
+   PlanDose → Εκτυπώσεις (print log)
+   ========================================================================== */
+
+.pd-card-history-label .pd-card-prints-link {
+	margin-left: auto;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.pd-card-history-label .pd-card-prints-link:hover,
+.pd-card-history-label .pd-card-prints-link:focus {
+	text-decoration: underline;
+}
+
+.plandose-prints .pd-prints-scope {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 12px;
+	margin: 0 0 14px;
+	font-size: 14px;
+}
+
+.plandose-prints .pd-table-scroll {
+	overflow-x: auto;
+}
+
+.plandose-prints .pd-prints-table {
+	min-width: 720px;
+}
+
+.plandose-prints .pd-prints-table td {
+	vertical-align: top;
+}
+
+.plandose-prints .pd-prints-table time {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.plandose-prints .pd-prints-email {
+	display: block;
+	font-size: 12px;
+}
+
+.plandose-prints .pd-num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.plandose-prints .plandose-pagination span.active {
+	padding: 6px 10px;
+}

@@ -1,0 +1,532 @@
+/**
+ * PlanDose — plandose-guest.css
+ *
+ * The shared popup shell (overlay, modal frame, close button, header,
+ * buttons) plus the logged-out "guest" view, kept apart from plandose.css
+ * so a visitor who is not a registered pharmacist downloads only
+ * this file instead of the full tool stylesheet.
+ *
+ * Loaded for EVERYONE — guests and pharmacists alike — and always before
+ * plandose.css, which depends on it. The :root custom properties live here
+ * for the same reason: both stylesheets read them, so they must load first
+ * and must not be duplicated. Never load plandose.css without this file.
+ *
+ * Rules were MOVED here verbatim, not copied: nothing below is duplicated
+ * in plandose.css.
+ */
+
+:root {
+	--pd-accent: #0f6e56;
+	/* 5.0:1 with white text, so the whole
+	   primary-button gradient passes AA with white text. */
+	--pd-accent-2: #0b7f61;
+	--pd-accent-light: #eef8f5;
+	--pd-accent-soft: rgba(15, 110, 86, 0.10);
+	--pd-border: #d8d8d5;
+	--pd-border-soft: #ececea;
+	--pd-text: #17201d;
+	--pd-muted: #6b6f6d;
+	--pd-danger: #a32d2d;
+	--pd-danger-soft: rgba(163, 45, 45, 0.08);
+	--pd-success: #0f6e56;
+	--pd-bg: #ffffff;
+	--pd-bg-soft: #fafaf9;
+	--pd-overlay: rgba(15, 20, 18, 0.58);
+	--pd-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+	--pd-radius-lg: 22px;
+	--pd-radius-md: 16px;
+}
+
+.plandose-modal-icon,
+.pd-print-brand-icon {
+	display: block;
+	flex: 0 0 auto;
+	background: currentColor;
+	mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6.2l4.5 2.6 1-1.7-3.5-2V7h-2z"/></svg>') center / contain no-repeat;
+	-webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6.2l4.5 2.6 1-1.7-3.5-2V7h-2z"/></svg>') center / contain no-repeat;
+}
+
+body.plandose-no-scroll {
+	overflow: hidden;
+}
+
+#plandose-overlay {
+	position: fixed;
+	inset: 0;
+	background: var(--pd-overlay);
+	/* Above the WordPress admin bar (z-index 99999), which would otherwise
+	   cover the × on phones. Stack: overlay 100000 < modal 100001 <
+	   confirm-close dialog 100002 (plandose.css). */
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 22px;
+	box-sizing: border-box;
+	-webkit-backdrop-filter: blur(4px);
+	backdrop-filter: blur(4px);
+}
+
+#plandose-overlay[hidden] {
+	display: none;
+}
+
+#plandose-modal {
+	background: var(--pd-bg);
+	color: var(--pd-text);
+	border-radius: var(--pd-radius-lg);
+	width: min(760px, 100%);
+	max-height: 90vh;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	padding: 26px 26px 0;
+	position: relative;
+	z-index: 100001;
+	box-shadow: var(--pd-shadow);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	box-sizing: border-box;
+}
+
+/*
+ * The × stays on screen while the popup scrolls (position:absolute inside
+ * the scrolling #plandose-modal would scroll away with the first
+ * screenful). It is a sticky FLOAT: floated to the
+ * top-right corner of the content box and pulled into the padding with
+ * negative margins, it sits 14px from
+ * the top and right of the modal, takes no room in the flow (the header
+ * keeps its right margin clear of it; a flex header never wraps around a
+ * float) and, being sticky, stays 14px from the top of the visible area as
+ * the content scrolls under it. Floats have no margin collapsing, so the
+ * offsets are exact. Modal padding 26px → margins -12px. The sticky `top`
+ * is measured from the modal's padding edge inwards (browsers keep a
+ * sticky box inside the scroll container's padding), hence -12px for
+ * 14px from the top of the visible area.
+ */
+#plandose-close {
+	position: -webkit-sticky;
+	position: sticky;
+	top: -12px;
+	float: right;
+	margin: -12px -12px 0 0;
+	padding: 0;
+	width: 44px;
+	height: 44px;
+	background: #f4f4f2;
+	border: none;
+	border-radius: 50%;
+	font-size: 21px;
+	cursor: pointer;
+	line-height: 1;
+	color: var(--pd-text);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 3;
+	transition: background 0.15s ease, transform 0.15s ease;
+}
+
+#plandose-close:hover,
+#plandose-close:focus-visible {
+	background: #e9e9e6;
+	transform: scale(1.03);
+}
+
+/* A solid accent outline, not a faint tinted ring, which a keyboard user
+   could barely see. */
+#plandose-close:focus-visible {
+	outline: 2px solid var(--pd-accent);
+	outline-offset: 2px;
+}
+
+#plandose-modal-head {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	margin: 0 52px 18px 0;
+}
+
+.plandose-modal-icon-wrap {
+	width: 44px;
+	height: 44px;
+	background-color: var(--pd-accent-light);
+	border-radius: 15px;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.plandose-modal-icon {
+	width: 24px;
+	height: 24px;
+	color: var(--pd-accent);
+}
+
+#plandose-modal-head h2 {
+	margin: 0 0 5px;
+	font-size: 22px;
+	line-height: 1.18;
+	font-weight: 900;
+	color: var(--pd-text);
+	letter-spacing: -0.02em;
+}
+
+#plandose-modal-head p {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.4;
+	color: var(--pd-muted);
+}
+
+.plandose-btn {
+	border: none;
+	border-radius: 10px;
+	font-size: 15px;
+	font-weight: 850;
+	padding: 12px 18px;
+	cursor: pointer;
+	min-height: 46px;
+	width: 100%;
+	text-decoration: none;
+	font-family: inherit;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Solid outline, see #plandose-close:focus-visible. */
+.plandose-btn:focus-visible {
+	outline: 2px solid var(--pd-accent);
+	outline-offset: 2px;
+}
+
+.plandose-btn:disabled,
+.plandose-btn.is-loading {
+	opacity: 0.62;
+	cursor: not-allowed;
+	transform: none;
+	filter: none;
+}
+
+.plandose-btn-secondary {
+	background: #ffffff;
+	color: var(--pd-accent);
+	border: 1.5px solid var(--pd-accent);
+}
+
+.plandose-btn-secondary:hover:not(:disabled),
+.plandose-btn-secondary:active:not(:disabled) {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+	transform: translateY(-1px);
+}
+
+.plandose-btn-primary {
+	background: linear-gradient(135deg, var(--pd-accent) 0%, var(--pd-accent-2) 100%);
+	color: #ffffff;
+	box-shadow: 0 10px 22px rgba(15, 110, 86, 0.24);
+}
+
+.plandose-btn-primary:hover:not(:disabled),
+.plandose-btn-primary:active:not(:disabled) {
+	filter: brightness(1.02);
+	color: #ffffff;
+	transform: translateY(-1px);
+	box-shadow: 0 14px 28px rgba(15, 110, 86, 0.30);
+}
+
+.plandose-btn-light {
+	background: #f4f4f2;
+	color: var(--pd-text);
+	border: 1px solid var(--pd-border);
+	box-shadow: none;
+}
+
+.plandose-btn-light:hover:not(:disabled),
+.plandose-btn-light:active:not(:disabled) {
+	background: #ececea;
+	color: var(--pd-text);
+	transform: translateY(-1px);
+}
+
+.plandose-title-green {
+	color: var(--pd-accent);
+	font-weight: 900;
+}
+
+.plandose-guest-app {
+	margin-top: 4px;
+}
+
+.plandose-guest {
+	position: relative;
+	padding: 4px 0 8px;
+}
+
+.plandose-guest-freebox {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 15px 16px;
+	margin: 0 0 16px;
+	border: 1px solid rgba(15, 110, 86, 0.18);
+	border-radius: 16px;
+	background:
+		radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 38%),
+		linear-gradient(135deg, #f0faf6 0%, #ffffff 72%);
+	box-shadow: 0 10px 28px rgba(15, 110, 86, 0.08);
+}
+
+.plandose-guest-freebox strong {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	color: var(--pd-accent);
+	font-size: 14px;
+	font-weight: 900;
+	line-height: 1.25;
+}
+
+.plandose-guest-freebox strong::before {
+	content: "🖨️";
+	display: inline-grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 10px;
+	background: rgba(15, 110, 86, 0.10);
+	font-size: 15px;
+}
+
+.plandose-guest-freebox span {
+	display: block;
+	color: #3f4b47;
+	font-size: 14px;
+	line-height: 1.45;
+	padding-left: 36px;
+}
+
+.plandose-guest-message {
+	margin: 0 0 16px;
+	font-size: 15px;
+	line-height: 1.5;
+	color: var(--pd-text);
+}
+
+.plandose-guest-points {
+	margin: 0 0 20px;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 10px;
+}
+
+.plandose-guest-points li {
+	position: relative;
+	margin: 0;
+	padding: 12px 12px 12px 42px;
+	border: 1px solid rgba(15, 110, 86, 0.10);
+	border-radius: 14px;
+	background: #fafaf9;
+	font-size: 14.5px;
+	line-height: 1.45;
+	color: var(--pd-text);
+}
+
+.plandose-guest-points li::before {
+	content: "✓";
+	position: absolute;
+	left: 12px;
+	top: 12px;
+	display: grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: rgba(15, 110, 86, 0.11);
+	color: var(--pd-accent);
+	font-size: 13px;
+	font-weight: 900;
+}
+
+.plandose-guest-cta {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	text-align: center;
+	text-decoration: none;
+	border-radius: 14px;
+	min-height: 54px;
+	font-size: 16px;
+	font-weight: 900;
+	/* End stop darkened for AA (see --pd-accent-2). */
+	background: linear-gradient(135deg, #0f6e56 0%, #0b7f61 100%);
+	box-shadow: 0 14px 28px rgba(15, 110, 86, 0.28);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.plandose-guest-cta::after {
+	content: "→";
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.18);
+	font-size: 17px;
+	line-height: 1;
+}
+
+.plandose-guest-cta:hover,
+.plandose-guest-cta:focus-visible {
+	transform: translateY(-1px);
+	filter: brightness(1.02);
+	box-shadow: 0 18px 34px rgba(15, 110, 86, 0.34);
+}
+
+@media (max-width: 620px) {
+	#plandose-overlay {
+		padding: 0;
+	}
+
+	#plandose-modal {
+		width: 100%;
+		height: 100%;
+		max-height: 100%;
+		border-radius: 0;
+		padding: 22px 16px 0;
+		padding-top: max(22px, env(safe-area-inset-top));
+	}
+
+	/* Full screen: 14px from the corner as before (padding 22px/16px →
+	   margins -8px/-2px), and clear of a notch while stuck. The overlay
+	   (z-index 100000) covers the WordPress admin bar (99999, 46px here),
+	   so the × is never underneath it. */
+	#plandose-close {
+		top: calc(max(14px, env(safe-area-inset-top)) - max(22px, env(safe-area-inset-top)));
+		margin: -8px -2px 0 0;
+	}
+
+	#plandose-modal-head {
+		margin-right: 46px;
+	}
+
+	#plandose-modal-head h2 {
+		font-size: 19px;
+	}
+
+	#plandose-modal-head p {
+		font-size: 13px;
+	}
+
+	.plandose-guest-freebox {
+		align-items: flex-start;
+	}
+
+	.plandose-guest-cta {
+		min-height: 54px;
+	}
+}
+
+@media (max-width: 420px) {
+	.plandose-guest-freebox {
+		padding: 12px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#plandose-close,
+	#plandose-lang-toggle,
+	#plandose-lang-toggle.is-locked::after,
+	.plandose-chip,
+	.plandose-btn,
+	.plandose-guest-cta,
+	.plandose-step-dot,
+	.plandose-step-panel {
+		transition: none;
+		animation: none;
+	}
+
+	#plandose-close:hover,
+	#plandose-close:focus-visible,
+	.plandose-chip:hover,
+	.plandose-btn:hover,
+	.plandose-guest-cta:hover,
+	.plandose-guest-cta:focus-visible {
+		transform: none;
+	}
+}
+/* Clearly visible keyboard focus (solid accent ring, 6.4:1 on
+   white) for the popup shell and buttons, shared by guest and tool. */
+#plandose-close:focus-visible,
+.plandose-btn:focus-visible,
+.plandose-guest-cta:focus-visible {
+	outline: 3px solid var(--pd-accent);
+	outline-offset: 2px;
+}
+
+/* Keep each button's own colours in EVERY state. Many themes
+   style button:hover / :focus / :active (e.g. a dark grey background),
+   so a button that is disabled, or still focused after a click, would
+   otherwise take the theme's grey.
+   These selectors carry the modal's id so they outrank such theme rules. */
+#plandose-modal .plandose-btn-secondary:focus,
+#plandose-modal .plandose-btn-secondary:disabled,
+#plandose-modal .plandose-btn-secondary:disabled:hover,
+#plandose-modal .plandose-btn-secondary.is-loading {
+	background: #ffffff;
+	color: var(--pd-accent);
+}
+
+#plandose-modal .plandose-btn-secondary:hover:not(:disabled),
+#plandose-modal .plandose-btn-secondary:active:not(:disabled) {
+	background: var(--pd-accent-light);
+	color: var(--pd-accent);
+}
+
+#plandose-modal .plandose-btn-primary:focus,
+#plandose-modal .plandose-btn-primary:hover,
+#plandose-modal .plandose-btn-primary:active,
+#plandose-modal .plandose-btn-primary:disabled,
+#plandose-modal .plandose-btn-primary.is-loading {
+	background: linear-gradient(135deg, var(--pd-accent) 0%, var(--pd-accent-2) 100%);
+	color: #ffffff;
+}
+
+#plandose-modal .plandose-btn-light:focus,
+#plandose-modal .plandose-btn-light:disabled,
+#plandose-modal .plandose-btn-light:disabled:hover,
+#plandose-modal .plandose-btn-light.is-loading {
+	background: #f4f4f2;
+	color: var(--pd-text);
+}
+
+#plandose-modal .plandose-btn-light:hover:not(:disabled),
+#plandose-modal .plandose-btn-light:active:not(:disabled) {
+	background: #ececea;
+	color: var(--pd-text);
+}
+
+#plandose-confirm-close .plandose-btn-light:focus,
+#plandose-confirm-close .plandose-btn-light:hover {
+	background: #ececea;
+	color: var(--pd-text);
+}
+
+#plandose-confirm-close .plandose-btn-primary:focus,
+#plandose-confirm-close .plandose-btn-primary:hover,
+#plandose-confirm-close .plandose-btn-primary:active {
+	background: linear-gradient(135deg, var(--pd-accent) 0%, var(--pd-accent-2) 100%);
+	color: #ffffff;
+}

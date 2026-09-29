@@ -1,0 +1,4293 @@
+# Copyright (C) 2026 PharmacyNeeds
+# This file is distributed under the GPL-2.0+ license.
+# The source strings below are Greek: PlanDose was written for Greek
+# pharmacies and its source language is Greek rather than the English
+# that WordPress convention assumes. Greek sites therefore need no
+# translation file at all — the source is already correct for them.
+# This template exists so any OTHER locale can be added without
+# touching the code.
+msgid ""
+msgstr ""
+"Project-Id-Version: PlanDose 1.30.0\n"
+"Report-Msgid-Bugs-To: https://pharmacyneeds.gr\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-29T15:59:09+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: PlanDose make-pot.php\n"
+"X-Domain: plandose\n"
+
+#. Plugin Name of the plugin
+#: plandose.php
+#: includes/class-plandose-account-type.php:512
+#: includes/class-plandose-admin-settings.php:257
+#: includes/class-plandose-admin.php:411
+#: includes/class-plandose-admin.php:412
+#: includes/class-plandose-diagnostics.php:115
+#: includes/class-plandose-frontend.php:2234
+#: includes/class-plandose-frontend.php:2248
+#: includes/class-plandose-frontend.php:2292
+#: includes/class-plandose-privacy.php:74
+#: includes/class-plandose-privacy.php:87
+#: includes/class-plandose-privacy.php:1135
+msgid "PlanDose"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: plandose.php
+msgid "https://pharmacyneeds.gr"
+msgstr ""
+
+#. Description of the plugin
+#: plandose.php
+msgid "Δημιουργεί εκτυπώσιμα πλάνα δοσολογίας για ασθενείς μέσα από ένα popup εργαλείο στην αρχική οθόνη."
+msgstr ""
+
+#. Author of the plugin
+#: plandose.php
+msgid "PharmacyNeeds"
+msgstr ""
+
+#: includes/class-plandose-account-type.php:515
+msgid "Κατηγορία Επιχείρησης"
+msgstr ""
+
+#: includes/class-plandose-account-type.php:519
+msgid "— Χωρίς κατηγορία —"
+msgstr ""
+
+#. translators: %s: category value stored by the registration form.
+#: includes/class-plandose-account-type.php:527
+#, php-format
+msgid "Άλλη τιμή: %s (διατήρηση)"
+msgstr ""
+
+#: includes/class-plandose-account-type.php:535
+msgid "Ο λογαριασμός αναγνωρίζεται ως φαρμακείο και μπορεί να χρησιμοποιήσει το PlanDose."
+msgstr ""
+
+#: includes/class-plandose-account-type.php:536
+msgid "Ο λογαριασμός ΔΕΝ αναγνωρίζεται ως φαρμακείο: δεν έχει πρόσβαση στο PlanDose και δεν μπορεί να γίνει Pro."
+msgstr ""
+
+#: includes/class-plandose-account-type.php:539
+msgid "Ο χρήστης δεν μπορεί να αλλάξει μόνος του την κατηγορία μετά την εγγραφή. Οι αλλαγές από αυτή τη σελίδα καταγράφονται στο Ημερολόγιο του PlanDose."
+msgstr ""
+
+#. translators: %s: list of stored values, e.g. "account_type: Εταιρία, user_registration_account_type: Φαρμακείο".
+#: includes/class-plandose-account-type.php:545
+#, php-format
+msgid "Προσοχή: η κατηγορία είναι αποθηκευμένη με διαφορετικές τιμές (%s). Με την αποθήκευση θα γραφτεί η επιλεγμένη τιμή παντού."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:158
+#: includes/class-plandose-diagnostics.php:114
+#: includes/class-plandose-diagnostics.php:1102
+msgid "PlanDose → Διαγνωστικά"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:164
+msgid "PlanDose: ο φάκελος τιμολογίων είναι ανοιχτός στο internet, γι' αυτό τα νέα τιμολόγια δεν αποθηκεύονται."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:166
+msgid "PlanDose: δεν έχει ελεγχθεί ακόμη αν ο φάκελος τιμολογίων είναι κλειστός για το internet· μέχρι να επιβεβαιωθεί, τα νέα τιμολόγια δεν αποθηκεύονται."
+msgstr ""
+
+#. translators: %s: reason
+#: includes/class-plandose-admin-invoices.php:170
+#, php-format
+msgid "PlanDose: δεν επιβεβαιώθηκε ότι ο φάκελος τιμολογίων είναι κλειστός για το internet (%s), γι' αυτό τα νέα τιμολόγια δεν αποθηκεύονται."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:176
+msgid "Πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:182
+#: includes/class-plandose-invoice-storage.php:1671
+msgid "Λύση:"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:194
+msgid "Η ιδιωτικότητα του φακέλου τιμολογίων δεν έχει επιβεβαιωθεί, αλλά τα uploads επιτρέπονται επειδή έχει οριστεί PLANDOSE_ALLOW_UNVERIFIED_INVOICE_DIR. Βεβαιωθείτε ότι ο web server αρνείται την απευθείας πρόσβαση στον φάκελο."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:195
+msgid "Η ιδιωτικότητα του φακέλου τιμολογίων δεν έχει επιβεβαιωθεί. Εδώ (μη παραγωγικό περιβάλλον) αυτό είναι μόνο προειδοποίηση· σε παραγωγή τα uploads θα απορρίπτονταν."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:207
+#: includes/class-plandose-admin-invoices.php:282
+msgid "Το κατάλαβα, μη μου το ξαναδείξεις"
+msgstr ""
+
+#. translators: 1: configured limit in MB, 2: actual server limit in MB
+#: includes/class-plandose-admin-invoices.php:276
+#, php-format
+msgid "Το όριο μεγέθους τιμολογίου στις ρυθμίσεις είναι %1$s MB, αλλά ο server δέχεται μέχρι %2$s MB (βάσει upload_max_filesize/post_max_size). Uploads μεγαλύτερα από %2$s MB θα αποτυγχάνουν σιωπηλά στο επίπεδο του PHP, πριν καν φτάσουν στον έλεγχο του PlanDose — είτε μειώστε το όριο στις ρυθμίσεις στα %2$s MB ή λιγότερο, είτε ζητήστε από τον πάροχο φιλοξενίας να ανεβάσει τα php.ini όρια."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:343
+#: includes/class-plandose-admin-invoices.php:822
+#: includes/class-plandose-admin-invoices.php:1026
+#: includes/class-plandose-admin-invoices.php:1393
+#: includes/class-plandose-admin-invoices.php:2151
+#: includes/class-plandose-admin-settings.php:348
+#: includes/class-plandose-admin-subscriptions.php:150
+#: includes/class-plandose-admin-subscriptions.php:297
+#: includes/class-plandose-diagnostics.php:357
+#: includes/class-plandose-diagnostics.php:1254
+#: includes/class-plandose-invoice-migration.php:638
+msgid "Μη επιτρεπτή μέθοδος αιτήματος."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:347
+#: includes/class-plandose-admin-invoices.php:598
+#: includes/class-plandose-admin-invoices.php:826
+#: includes/class-plandose-admin-invoices.php:1030
+#: includes/class-plandose-admin-invoices.php:1397
+#: includes/class-plandose-admin-invoices.php:1441
+#: includes/class-plandose-admin-invoices.php:2155
+#: includes/class-plandose-admin-invoices.php:2197
+#: includes/class-plandose-admin-prints.php:156
+#: includes/class-plandose-admin-settings.php:352
+#: includes/class-plandose-admin-subscriptions.php:154
+#: includes/class-plandose-admin-subscriptions.php:302
+#: includes/class-plandose-admin-subscriptions.php:598
+#: includes/class-plandose-admin-subscriptions.php:1345
+#: includes/class-plandose-admin-subscriptions.php:1732
+#: includes/class-plandose-admin.php:520
+#: includes/class-plandose-diagnostics.php:361
+#: includes/class-plandose-diagnostics.php:1097
+#: includes/class-plandose-diagnostics.php:1258
+#: includes/class-plandose-invoice-migration.php:642
+msgid "Δεν έχετε δικαίωμα πρόσβασης."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:358
+#: includes/class-plandose-admin-invoices.php:834
+#: includes/class-plandose-admin-subscriptions.php:181
+msgid "Δεν έχετε δικαίωμα να επεξεργαστείτε αυτόν τον χρήστη."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:362
+msgid "Ο χρήστης δεν βρέθηκε."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:364
+#: includes/class-plandose-admin-invoices.php:2322
+#: includes/class-plandose-admin-invoices.php:2332
+msgid "Δεν επιλέχθηκε αρχείο τιμολογίου."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:379
+#: includes/class-plandose-admin-subscriptions.php:106
+msgid "Ο χρήστης δεν έχει Κατηγορία Επιχείρησης «Φαρμακείο». Ορίστε πρώτα την κατηγορία στο προφίλ του."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:432
+msgid "Αποτυχία αποθήκευσης του αρχείου τιμολογίου."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:450
+#: includes/class-plandose-admin-invoices.php:854
+#: includes/class-plandose-admin-invoices.php:1057
+msgid "Γίνεται ήδη άλλη αλλαγή στα τιμολόγια αυτού του φαρμακείου. Δοκιμάστε ξανά σε λίγα δευτερόλεπτα."
+msgstr ""
+
+#. translators: %d: maximum number of invoices per pharmacy
+#: includes/class-plandose-admin-invoices.php:478
+#, php-format
+msgid "Το φαρμακείο έχει ήδη %d τιμολόγια, το ανώτατο όριο. Το νέο αρχείο δεν αποθηκεύτηκε και κανένα υπάρχον τιμολόγιο δεν διαγράφηκε. Διαγράψτε χειροκίνητα όσα δεν χρειάζεστε και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:490
+msgid "Το αρχείο δεν καταχωρήθηκε λόγω σφάλματος βάσης δεδομένων. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:611
+#: includes/class-plandose-admin-invoices.php:626
+msgid "Το τιμολόγιο δεν βρέθηκε."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:619
+msgid "Δεν έχετε δικαίωμα να δείτε τα τιμολόγια αυτού του χρήστη."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:648
+msgid "Το αρχείο δεν βρέθηκε στον server."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:675
+msgid "Δεν είναι δυνατή η έναρξη της λήψης του αρχείου."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:684
+msgid "Το αρχείο δεν ήταν δυνατό να διαβαστεί."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:876
+msgid "Το τιμολόγιο δεν βρέθηκε — ίσως άλλαξε η λίστα στο μεταξύ. Ανανεώστε τη σελίδα και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:882
+msgid "Το τιμολόγιο δεν διαγράφηκε λόγω σφάλματος βάσης δεδομένων. Δοκιμάστε ξανά."
+msgstr ""
+
+#. translators: %d: number of older invoices
+#: includes/class-plandose-admin-invoices.php:960
+#, php-format
+msgid "Παλαιότερα (%d)"
+msgstr ""
+
+#. translators: %d: invoice number in upload order, starting at 1
+#. translators: %d: invoice number in the list
+#: includes/class-plandose-admin-invoices.php:993
+#: includes/class-plandose-privacy.php:450
+#, php-format
+msgid "Τιμολόγιο %d"
+msgstr ""
+
+#. translators: %s: invoice label, e.g. "Τιμολόγιο 3"
+#: includes/class-plandose-admin-invoices.php:1000
+#, php-format
+msgid "Οριστική διαγραφή: «%s»; Το αρχείο σβήνεται από τον server και η ενέργεια δεν αναιρείται."
+msgstr ""
+
+#. translators: %s: invoice label
+#: includes/class-plandose-admin-invoices.php:1007
+#, php-format
+msgid "Διαγραφή: %s"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1087
+msgid "Τα τιμολόγια δεν διαγράφηκαν λόγω σφάλματος βάσης δεδομένων. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1468
+#: includes/class-plandose-admin-invoices.php:2239
+msgid "Δεν ήταν δυνατός ο έλεγχος των λιστών τιμολογίων λόγω σφάλματος βάσης δεδομένων. Κανένα αρχείο δεν διαγράφηκε."
+msgstr ""
+
+#. translators: %s: why the invoice folder cannot be used
+#: includes/class-plandose-admin-invoices.php:1723
+#, php-format
+msgid "Ο φάκελος τιμολογίων δεν είναι προσβάσιμος αυτή τη στιγμή, οπότε δεν ήταν δυνατό να ελεγχθούν τα προστατευμένα αντίγραφα. Δεν έγινε καμία αλλαγή και δεν διαγράφηκε κανένα αρχείο. (%s)"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1830
+msgid "Το ID δεν είναι πλέον συνημμένο της Media Library."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1831
+msgid "Εξακολουθεί να αναφέρεται σε λίστα τιμολογίων PlanDose."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1832
+msgid "Το αρχείο του πρωτοτύπου δεν βρέθηκε ή δεν διαβάζεται."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1833
+msgid "Το προστατευμένο αντίγραφο δεν βρέθηκε ή δεν διαβάζεται."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1834
+msgid "Ο φάκελος τιμολογίων δεν ήταν προσβάσιμος κατά τον έλεγχο, οπότε το προστατευμένο αντίγραφο δεν ελέγχθηκε. Δεν έγινε καμία αλλαγή."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1835
+msgid "Το προστατευμένο αντίγραφο δεν είναι πανομοιότυπο με το πρωτότυπο (SHA-256)."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1836
+msgid "Χρησιμοποιείται ως επιλεγμένη εικόνα (featured image) άρθρου ή σελίδας."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1837
+msgid "Αναφέρεται στο περιεχόμενο άρθρου ή σελίδας."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1838
+msgid "Ο έλεγχος αναφορών απέτυχε λόγω σφάλματος βάσης δεδομένων."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1839
+msgid "Η εγγραφή αφαιρέθηκε από τη λίστα τιμολογίων χωρίς να υπάρξει προστατευμένο αντίγραφο. Διαγράψτε το πρωτότυπο ρητά με το κουμπί της γραμμής."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1840
+msgid "Η διαγραφή του συνημμένου απέτυχε."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1843
+msgid "Άγνωστη αιτία."
+msgstr ""
+
+#. translators: 1: originals deleted, 2: originals skipped, 3: entries already gone, 4: originals still listed
+#: includes/class-plandose-admin-invoices.php:1864
+#, php-format
+msgid "PlanDose — Διαγραφή πρωτοτύπων: διαγράφηκαν %1$d, παραλείφθηκαν %2$d, είχαν ήδη αφαιρεθεί %3$d. Απομένουν %4$d στη λίστα."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1872
+msgid "Η διαδικασία σταμάτησε: ο φάκελος τιμολογίων έπαψε να είναι προσβάσιμος. Τα υπόλοιπα πρωτότυπα δεν ελέγχθηκαν και δεν άλλαξαν."
+msgstr ""
+
+#. translators: %d: number of files
+#: includes/class-plandose-admin-invoices.php:1878
+#, php-format
+msgid "Σε %d περιπτώσεις το συνημμένο διαγράφηκε αλλά το αρχείο δεν ήταν δυνατό να σβηστεί από τον δίσκο — ελέγξτε τα δικαιώματα του φακέλου uploads (λεπτομέρειες στο error log)."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1911
+msgid "PlanDose: πρωτότυπα παλιών τιμολογίων παραμένουν δημόσια στη Media Library"
+msgstr ""
+
+#. translators: %d: number of Media Library originals
+#: includes/class-plandose-admin-invoices.php:1916
+#, php-format
+msgid "Η μεταφορά των παλιών τιμολογίων ΑΝΤΕΓΡΑΨΕ %d αρχεία στην προστατευμένη αποθήκευση — δεν τα μετακίνησε. Τα πρωτότυπα βρίσκονται ακόμη στη Media Library (wp-content/uploads/ΕΕΕΕ/ΜΜ/) και έχουν δημόσια διεύθυνση, την οποία ΔΕΝ καλύπτει ο κανόνας του web server για τον φάκελο τιμολογίων. Το «Διαγραφή πρωτοτύπων» σβήνει κάθε πρωτότυπο μόνο αφού επιβεβαιώσει ότι το προστατευμένο αντίγραφο υπάρχει και είναι πανομοιότυπο (SHA-256), και ότι το συνημμένο δεν χρησιμοποιείται αλλού (επιλεγμένη εικόνα, περιεχόμενο, άλλη λίστα τιμολογίων). Ό,τι δεν περνά τους ελέγχους μένει στη λίστα με την αιτία."
+msgstr ""
+
+#. translators: %d: number of originals skipped on an earlier attempt
+#: includes/class-plandose-admin-invoices.php:1926
+#, php-format
+msgid "%d από αυτά παραλείφθηκαν σε προηγούμενη προσπάθεια (δείτε την αιτία παρακάτω) και θα ξαναελεγχθούν."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1935
+msgid "ID συνημμένου"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1936
+msgid "Φαρμακείο (ID χρήστη)"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1937
+msgid "Αντιγράφηκε"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1938
+#: includes/class-plandose-admin-subscriptions.php:733
+#: includes/class-plandose-diagnostics.php:1214
+msgid "Κατάσταση"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1939
+msgid "Ενέργειες"
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1948
+msgid "Αναμένει έλεγχο"
+msgstr ""
+
+#. translators: %d: attachment ID
+#: includes/class-plandose-admin-invoices.php:1953
+#, php-format
+msgid "Οριστική διαγραφή του δημόσιου πρωτοτύπου #%d από τη Media Library; ΔΕΝ υπάρχει προστατευμένο αντίγραφο του αρχείου, οπότε μετά τη διαγραφή το τιμολόγιο δεν θα υπάρχει πουθενά στο site. Η ενέργεια δεν αναιρείται."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1958
+msgid "Διαγραφή χωρίς αντίγραφο"
+msgstr ""
+
+#. translators: %d: number of originals not listed
+#: includes/class-plandose-admin-invoices.php:1971
+#, php-format
+msgid "… και %d ακόμη."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1978
+msgid "Οριστική διαγραφή των πρωτοτύπων από τη Media Library, όσων περνούν τους ελέγχους; Τα προστατευμένα αντίγραφα μένουν ως έχουν. Η ενέργεια δεν αναιρείται."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1981
+msgid "Διαγραφή πρωτοτύπων"
+msgstr ""
+
+#. translators: %d: batch size
+#: includes/class-plandose-admin-invoices.php:1986
+#, php-format
+msgid "Έως %d ανά πάτημα."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:1993
+msgid "Η διαγραφή των πρωτοτύπων γίνεται μόνο από διαχειριστή του site (δικαίωμα manage_options)."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2203
+msgid "Το πρωτότυπο δεν βρίσκεται στη λίστα. Ανανεώστε τη σελίδα."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2228
+msgid "Υπάρχει προστατευμένο αντίγραφο αυτού του πρωτοτύπου· χρησιμοποιήστε το «Διαγραφή πρωτοτύπων», που το επαληθεύει πριν τη διαγραφή."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2329
+msgid "Το αρχείο ξεπερνά το όριο upload_max_filesize του server."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2330
+msgid "Το αρχείο ξεπερνά το επιτρεπτό μέγεθος της φόρμας."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2331
+msgid "Το αρχείο ανέβηκε μόνο εν μέρει. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2333
+msgid "Λείπει ο προσωρινός φάκελος uploads του server."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2334
+msgid "Ο server δεν μπόρεσε να γράψει το αρχείο στον δίσκο."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2335
+msgid "Το upload διακόπηκε από επέκταση του PHP."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2340
+msgid "Σφάλμα κατά το ανέβασμα του αρχείου."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2348
+msgid "Το αρχείο upload δεν είναι έγκυρο."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2354
+msgid "Το αρχείο είναι κενό ή δεν ήταν δυνατό να διαβαστεί."
+msgstr ""
+
+#. translators: %d: Maximum invoice size in MB.
+#: includes/class-plandose-admin-invoices.php:2362
+#, php-format
+msgid "Το αρχείο ξεπερνά το όριο των %dMB."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2373
+msgid "Μη επιτρεπτός τύπος αρχείου τιμολογίου."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2379
+msgid "Η επέκταση του αρχείου δεν αντιστοιχεί στον πραγματικό τύπο του."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2385
+msgid "Η επέκταση του ονόματος αρχείου δεν είναι επιτρεπτή."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2400
+msgid "Το όνομα αρχείου περιέχει μη επιτρεπτή διπλή επέκταση (π.χ. «.php.pdf»). Μετονομάστε το αρχείο και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-invoices.php:2411
+msgid "Το περιεχόμενο του αρχείου δεν αντιστοιχεί στον τύπο που δηλώνει η επέκτασή του."
+msgstr ""
+
+#. translators: %d: user ID
+#. translators: %d: former WordPress user ID
+#: includes/class-plandose-admin-prints.php:132
+#: includes/class-plandose-admin-subscriptions.php:1053
+#, php-format
+msgid "Λογαριασμός #%d"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:161
+msgid "Το ιστορικό εκτυπώσεων χρειάζεται επιπλέον το δικαίωμα «list_users»."
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:167
+msgid "PlanDose → Εκτυπώσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:168
+msgid "Κάθε εκτύπωση πλάνου των φαρμακείων, από τη νεότερη. Δεν περιέχει στοιχεία ασθενών ή φαρμάκων· κρατιέται 12 μήνες."
+msgstr ""
+
+#. translators: %s: pharmacy name
+#: includes/class-plandose-admin-prints.php:210
+#, php-format
+msgid "Εκτυπώσεις του φαρμακείου %s"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:214
+msgid "Όλα τα φαρμακεία"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:219
+msgid "Το ιστορικό εκτυπώσεων δεν διαβάστηκε (σφάλμα βάσης δεδομένων). Ανανεώστε τη σελίδα· αν συνεχίζεται, δείτε PlanDose → Διαγνωστικά."
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:224
+msgid "Καμία εκτύπωση με αυτά τα φίλτρα."
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:226
+msgid "Δεν υπάρχουν ακόμη εκτυπώσεις. Η καταγραφή ξεκίνησε με την έκδοση 1.29.0· για παλαιότερους μήνες υπάρχουν μόνο τα σύνολα στις κάρτες των φαρμακείων."
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:235
+#: includes/class-plandose-admin-subscriptions.php:1808
+#: includes/class-plandose-privacy.php:681
+msgid "Ημερομηνία"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:236
+#: includes/class-plandose-admin-prints.php:337
+#: includes/class-plandose-admin-subscriptions.php:1041
+#: includes/class-plandose-admin-subscriptions.php:1145
+msgid "Φαρμακείο"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:237
+#: includes/class-plandose-admin-prints.php:343
+msgid "Εκτύπωση"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:238
+#: includes/class-plandose-admin-subscriptions.php:943
+msgid "Συνδρομή"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:239
+msgid "Του μήνα"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:259
+msgid "Διαγραμμένος λογαριασμός"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:269
+#: includes/class-plandose-privacy.php:609
+msgid "Δωρεάν επανεκτύπωση"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:271
+msgid "Χρεώθηκε"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:296
+#: includes/class-plandose-frontend.php:945
+msgid "Σήμερα"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:297
+msgid "Τελευταίες 7 ημέρες"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:298
+msgid "Τελευταίες 30 ημέρες"
+msgstr ""
+
+#. translators: %s: number of free reprints
+#: includes/class-plandose-admin-prints.php:313
+#, php-format
+msgid "+ %s δωρεάν επανεκτυπώσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:338
+msgid "Όνομα, email, ΑΦΜ…"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:345
+msgid "Όλες"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:346
+msgid "Χρεώθηκαν"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:347
+msgid "Δωρεάν επανεκτυπώσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:352
+msgid "Από"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:357
+msgid "Έως"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:362
+#: includes/class-plandose-admin-subscriptions.php:762
+msgid "Ανά σελίδα"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:371
+#: includes/class-plandose-admin-subscriptions.php:771
+#: includes/class-plandose-frontend.php:1133
+msgid "Εφαρμογή"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:372
+#: includes/class-plandose-admin-subscriptions.php:772
+#: includes/class-plandose-frontend.php:1052
+msgid "Καθαρισμός"
+msgstr ""
+
+#. translators: 1: first row on this page, 2: last row on this page, 3: total rows.
+#. translators: 1: first result on this page, 2: last result on this page, 3: total number of results.
+#: includes/class-plandose-admin-prints.php:395
+#: includes/class-plandose-admin-subscriptions.php:1684
+#, php-format
+msgid "Εμφάνιση %1$s–%2$s από %3$s"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:403
+msgid "Σελίδες ιστορικού εκτυπώσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:405
+msgid "Νεότερες"
+msgstr ""
+
+#. translators: 1: current page, 2: number of pages
+#: includes/class-plandose-admin-prints.php:410
+#, php-format
+msgid "Σελίδα %1$s από %2$s"
+msgstr ""
+
+#: includes/class-plandose-admin-prints.php:414
+msgid "Παλαιότερες"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:128
+msgid "Το κουμπί του PlanDose φορτώνει αυτή τη στιγμή σε ΟΛΕΣ τις σελίδες του site. Αυτό σημαίνει ότι τα αρχεία CSS και JavaScript του εργαλείου κατεβαίνουν και εκεί που δεν χρησιμοποιείται ποτέ. Αν το εργαλείο ζει σε μία ή δύο συγκεκριμένες σελίδες, περιορίστε το από τη ρύθμιση \"Πού εμφανίζεται\" και κερδίστε ταχύτητα σε όλο το υπόλοιπο site."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:130
+msgid "Άνοιγμα ρυθμίσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:132
+msgid "Το θέλω σε όλες τις σελίδες, μη μου το ξαναδείξεις"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:173
+msgid "Το κουμπί του PlanDose δεν εμφανίζεται σε ΚΑΜΙΑ σελίδα: η ρύθμιση λέει «Μόνο σε επιλεγμένες σελίδες», αλλά δεν έχει επιλεγεί καμία. Επιλέξτε τουλάχιστον μία σελίδα και αποθηκεύστε."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:175
+msgid "Επιλογή σελίδων"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:203
+msgid "PlanDose → Settings"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:203
+msgid "Διαχείριση ρυθμίσεων για το PlanDose."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:206
+msgid "Οι ρυθμίσεις αποθηκεύτηκαν."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:214
+msgid "Οι αλλαγές εφαρμόζονται αμέσως μετά την αποθήκευση."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:215
+msgid "Αποθήκευση Ρυθμίσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:219
+msgid "Γενικές Ρυθμίσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:219
+msgid "Ενεργοποίηση του εργαλείου και βασική συμπεριφορά σύνδεσης."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:220
+msgid "Ενεργοποίηση PlanDose"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:221
+msgid "Σελίδα σύνδεσης"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:221
+msgid "Κενό = προεπιλεγμένο wp-login.php"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:222
+msgid "Μήνυμα μη συνδεδεμένου χρήστη"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:223
+msgid "Εμφανίζεται στο popup του επισκέπτη, πάνω από το κουμπί εισόδου. Αφήστε το κενό για να μην εμφανίζεται τίποτα."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:226
+msgid "Εμφάνιση Κουμπιού"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:226
+msgid "Που, σε ποιους, και πώς εμφανίζεται το κουμπί στο site."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:227
+msgid "Εμφάνιση κουμπιού σε επισκέπτες"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:237
+msgid "Μόνο για εγγεγραμμένα φαρμακεία (account_type)"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:238
+msgid "Το PlanDose είναι διαθέσιμο μόνο σε λογαριασμούς με Κατηγορία «Φαρμακείο»."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:241
+msgid "Ορατό και στον διαχειριστή για δοκιμή"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:243
+msgid "Θέση κουμπιού"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:245
+msgid "Κάτω δεξιά"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:246
+msgid "Κάτω αριστερά"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:247
+msgid "Πάνω δεξιά"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:248
+msgid "Πάνω αριστερά"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:251
+msgid "Κείμενο κουμπιού (επεξήγηση και όνομα για αναγνώστες οθόνης· στο κουμπί φαίνεται «PlanDose»)"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:252
+msgid "Χρώμα κουμπιού"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:255
+#: includes/class-plandose-frontend.php:868
+#: includes/class-plandose-frontend.php:871
+msgid "Προεπισκόπηση"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:255
+msgid "Πώς θα φαίνεται το κουμπί στο front-end."
+msgstr ""
+
+#. translators: %s: the configured button text
+#: includes/class-plandose-admin-settings.php:258
+#, php-format
+msgid "Επεξήγηση (tooltip): %s"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:259
+#: includes/class-plandose-frontend.php:864
+#: includes/class-plandose-frontend.php:2294
+msgid "Δημιουργία Πλάνου Δοσολογίας"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:259
+msgid "Συμπληρώστε τα φάρμακα του ασθενή και εκτυπώστε το πλάνο."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:259
+msgid "Συνέχεια"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:262
+#: includes/class-plandose-admin.php:421
+#: includes/class-plandose-admin.php:421
+msgid "Συνδρομές"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:262
+msgid "Όρια ημερών για πλάνα, και η διάρκεια της συνδρομής Pro."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:263
+msgid "Μέγιστες ημέρες πλάνου"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:264
+msgid "Διάρκεια Pro (ημέρες)"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:264
+msgid "Εφαρμόζεται αυτόματα σε κάθε ενεργοποίηση/παράταση Pro — π.χ. 365 = 1 έτος."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:265
+msgid "Μέγιστες ημέρες ανά χειροκίνητη παράταση"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:265
+msgid "Ανώτατο όριο ημερών που μπορεί να προσθέσει ο διαχειριστής σε μία ενέργεια παράτασης."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:266
+msgid "Πόσες ημέρες πριν τη λήξη θεωρείται «λήγει σύντομα»"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:266
+msgid "Ορίζει την καρτέλα «Λήγουν Σύντομα», τον μετρητή στην κορυφή και την κόκκινη επισήμανση στις κάρτες. Προεπιλογή 7 ημέρες."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:269
+#: includes/class-plandose-admin-subscriptions.php:894
+#: includes/class-plandose-admin.php:426
+#: includes/class-plandose-admin.php:426
+msgid "Εκτυπώσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:269
+msgid "Μηνιαία όρια εκτυπώσεων για δωρεάν και Pro χρήστες."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:270
+msgid "Μηνιαίο όριο δωρεάν εκτυπώσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:271
+msgid "Όριο Pro εκτυπώσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:271
+msgid "0 = απεριόριστο"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:272
+msgid "Εμφάνιση μετρητή εκτυπώσεων στον χρήστη"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:273
+msgid "QR «Υπενθυμίσεις στο κινητό» στο τυπωμένο φύλλο"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:274
+msgid "Ο ασθενής σκανάρει το QR και οι δόσεις μπαίνουν στο ημερολόγιο του κινητού του. Το πλάνο πηγαίνει μέσα στο QR, όχι στον server του site. Ο σύνδεσμος μένει στο ιστορικό του κινητού· αν ο ασθενής προσθέσει τις υπενθυμίσεις σε συγχρονιζόμενο ημερολόγιο (Google, iCloud), ισχύει η πολιτική του παρόχου."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:275
+msgid "Προσανατολισμός ετικετών (Pro, ετικετογράφος)"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:282
+msgid "Το μέγεθος της ετικέτας το ορίζει ο οδηγός του ετικετογράφου (ρολό/ετικέτες που έχει μέσα). Για φαρδιές-κοντές ετικέτες (π.χ. Zebra 100×47) η «Οριζόντια» τυπώνει κάθε φάρμακο σε μία ετικέτα. Αν οι ετικέτες βγαίνουν κομμένες ή σε δύο κομμάτια, αλλάξτε εδώ τον προσανατολισμό."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:285
+#: includes/class-plandose-admin-subscriptions.php:1044
+msgid "Τιμολόγια"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:285
+msgid "Περιορισμοί για τα αρχεία τιμολογίων που ανεβάζουν οι φαρμακοποιοί."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:286
+msgid "Μέγιστο μέγεθος upload (MB)"
+msgstr ""
+
+#. translators: %s: the effective server-side upload limit in MB
+#: includes/class-plandose-admin-settings.php:291
+#, php-format
+msgid "Ο server σας δέχεται μέχρι %s MB ανά upload (upload_max_filesize/post_max_size). Ρύθμιση πάνω από αυτό δεν θα λειτουργεί πραγματικά."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:296
+msgid "Επιτρεπόμενοι τύποι αρχείων"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:300
+msgid "Απόρρητο & Audit Log"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:300
+msgid "Διατήρηση των εγγραφών audit log και προστασία προσωπικών δεδομένων."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:302
+msgid "Αυτές οι ρυθμίσεις απορρήτου και διατήρησης δεδομένων αλλάζουν μόνο από διαχειριστή του site."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:304
+msgid "Διατήρηση audit log (ημέρες)"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:304
+msgid "0 = διατήρηση για πάντα. Παλαιότερες εγγραφές διαγράφονται αυτόματα από το ημερήσιο cron."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:305
+msgid "Ανωνυμοποίηση διεύθυνσης IP στο audit log"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:306
+msgid "Διατήρηση δεδομένων σε περίπτωση απεγκατάστασης"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:308
+msgid "Όσο είναι ενεργό (προτεινόμενο), η διαγραφή του plugin από τη σελίδα Πρόσθετα ΔΕΝ σβήνει συνδρομές, μετρητές εκτυπώσεων, audit log ή αρχεία τιμολογίων. Απενεργοποιήστε το μόνο αν θέλετε πραγματικά να διαγραφούν όλα οριστικά."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:312
+msgid "⚠ Υπάρχουν ακόμη παλιά τιμολόγια στη Βιβλιοθήκη Πολυμέσων (δεν έχουν μεταφερθεί ή δεν έχουν διαγραφεί τα πρωτότυπα). Μέχρι να ολοκληρωθεί η μεταφορά (Διαγνωστικά) και η «Διαγραφή πρωτοτύπων», η διαγραφή του plugin κρατά όλα τα δεδομένα."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:317
+msgid "Κείμενα Εκτύπωσης"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:317
+msgid "Το κείμενο που τυπώνεται στο κάτω μέρος κάθε πλάνου δοσολογίας."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:318
+msgid "Κείμενο disclaimer στην εκτύπωση"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:319
+msgid "Γραμμή ευχαριστίας 1"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:320
+msgid "Γραμμή ευχαριστίας 2"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:322
+msgid "Οι δύο γραμμές τυπώνονται κάτω από το disclaimer. Αν τις αφήσετε όπως είναι, το Pro περιβάλλον στα Αγγλικά δείχνει τις αντίστοιχες αγγλικές προτάσεις· αν γράψετε δικό σας κείμενο, αυτό εμφανίζεται αυτούσιο και στις δύο γλώσσες."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:333
+msgid "Ρόλοι Πρόσβασης"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:333
+msgid "Ποιοι ρόλοι χρηστών δεν βλέπουν καθόλου το εργαλείο, ακόμη κι αν ο λογαριασμός είναι φαρμακείο."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:336
+msgid "Κρυφό για τους ρόλους"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:502
+msgid "Οι ρυθμίσεις δεν αποθηκεύτηκαν λόγω σφάλματος βάσης δεδομένων. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:503
+msgid "Σφάλμα αποθήκευσης"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:699
+msgid "Σε ποιες σελίδες εμφανίζεται"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:708
+msgid "Εκτός των επιλεγμένων σελίδων δεν φορτώνεται κανένα αρχείο του PlanDose. Περιορίστε το για ταχύτερες σελίδες."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:712
+msgid "Επιλεγμένες σελίδες"
+msgstr ""
+
+#. translators: %d: page ID
+#: includes/class-plandose-admin-settings.php:719
+#, php-format
+msgid "(χωρίς τίτλο) #%d"
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:732
+msgid "Ισχύει μόνο όταν έχει επιλεγεί «Μόνο σε επιλεγμένες σελίδες». Επιλέξτε τουλάχιστον μία· χωρίς επιλογή η αποθήκευση απορρίπτεται."
+msgstr ""
+
+#: includes/class-plandose-admin-settings.php:746
+msgid "⚠ Δεν έχει επιλεγεί καμία σελίδα, οπότε αυτή τη στιγμή το PlanDose δεν εμφανίζεται πουθενά στο site."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:75
+msgid "Η ενέργεια ολοκληρώθηκε επιτυχώς."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:76
+msgid "Ο επιλεγμένος χρήστης δεν βρέθηκε."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:77
+msgid "Η ζητούμενη ενέργεια δεν είναι έγκυρη."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:78
+msgid "Η ενέργεια δεν αποθηκεύτηκε. Δοκιμάστε ξανά και ελέγξτε το error log."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:80
+msgid "Η συνδρομή είχε ήδη αλλάξει (π.χ. διπλό πάτημα ή ενέργεια άλλου διαχειριστή), οπότε δεν προστέθηκαν ημέρες. Ελέγξτε τη νέα ημερομηνία λήξης και επαναλάβετε μόνο αν χρειάζεται."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:81
+msgid "Τα τιμολόγια του διαγραμμένου λογαριασμού διαγράφηκαν οριστικά."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:84
+msgid "Η χειροκίνητη έγκριση πρόσβασης καταργήθηκε: το PlanDose είναι διαθέσιμο μόνο σε λογαριασμούς με Κατηγορία «Φαρμακείο»."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:308
+msgid "Δεν είναι δυνατή η έναρξη της εξαγωγής CSV επειδή έχουν ήδη σταλεί δεδομένα εξόδου."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:326
+msgid "Δεν ήταν δυνατό να ανοίξει το αρχείο εξαγωγής."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:570
+msgid "PlanDose → Δωρεάν Συνδρομητές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:575
+msgid "PlanDose → Pro Συνδρομητές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:603
+msgid "Η λίστα συνδρομητών περιέχει στοιχεία επικοινωνίας και ΑΦΜ όλων των φαρμακείων και χρειάζεται επιπλέον το δικαίωμα «list_users»."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:606
+msgid "PlanDose → Συνδρομές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:680
+msgid "Όλοι"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:681
+#: includes/class-plandose-admin-subscriptions.php:702
+#: includes/class-plandose-admin-subscriptions.php:736
+#: includes/class-plandose-admin-subscriptions.php:868
+#: includes/class-plandose-admin.php:422
+#: includes/class-plandose-admin.php:422
+msgid "Δωρεάν"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:683
+#: includes/class-plandose-admin-subscriptions.php:704
+msgid "Λήγουν Σύντομα"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:688
+msgid "Διαχειριστείτε όλες τις συνδρομές των φαρμακείων και παρακολουθήστε τη χρήση και τις λήξεις."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:694
+msgid "Εξαγωγή CSV"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:701
+msgid "Σύνολο Συνδρομητών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:703
+msgid "Pro Ενεργές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:705
+msgid "Εκτυπώσεις Μήνα"
+msgstr ""
+
+#. translators: %s: previous calendar month, e.g. 2026-08
+#: includes/class-plandose-admin-subscriptions.php:710
+#, php-format
+msgid "Εκτυπώσεις %s"
+msgstr ""
+
+#. translators: %s: previous calendar month, e.g. 2026-08
+#: includes/class-plandose-admin-subscriptions.php:718
+#, php-format
+msgid "Ενεργά φαρμακεία %s"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:728
+#: includes/class-plandose-admin-subscriptions.php:1132
+msgid "Αναζήτηση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:729
+msgid "Φαρμακείο, όνομα, email, ΑΦΜ…"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:735
+msgid "Όλες οι καταστάσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:738
+msgid "Λήγουν σύντομα"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:743
+#: includes/class-plandose-admin-subscriptions.php:900
+#: includes/class-plandose-admin-subscriptions.php:1526
+msgid "Τιμολόγιο"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:745
+msgid "Όλα τα τιμολόγια"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:746
+msgid "Με τιμολόγιο"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:747
+msgid "Εκκρεμή τιμολόγια"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:752
+msgid "Λήξη από"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:757
+msgid "Λήξη έως"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:809
+msgid "Κανένας συνδρομητής δεν ταιριάζει με τα φίλτρα που έχετε επιλέξει."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:811
+msgid "Δεν βρέθηκαν συνδρομητές."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:844
+msgid "ΑΦΜ:"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:849
+msgid "Λήξη"
+msgstr ""
+
+#. translators: %d: days since the subscription expired.
+#: includes/class-plandose-admin-subscriptions.php:874
+#, php-format
+msgid "έληξε πριν %d ημέρα"
+msgid_plural "έληξε πριν %d ημέρες"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-plandose-admin-subscriptions.php:879
+msgid "λήγει σήμερα"
+msgstr ""
+
+#. translators: %d: number of days left until the subscription expires.
+#: includes/class-plandose-admin-subscriptions.php:884
+#, php-format
+msgid "σε %d ημέρα"
+msgid_plural "σε %d ημέρες"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-plandose-admin-subscriptions.php:897
+msgid "Καμία εκτύπωση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:901
+msgid "Υπάρχει"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:901
+msgid "Εκκρεμές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:921
+msgid "Ιστορικό 6 μηνών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:924
+msgid "Όλες οι εκτυπώσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:940
+msgid "Διαχείριση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:947
+#: includes/class-plandose-admin-subscriptions.php:1770
+msgid "Μετατροπή σε Free"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:953
+msgid "Πρόσβαση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:958
+msgid "Χρήστης &amp; αρχεία"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:960
+msgid "Προβολή"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:991
+msgid "Σύνοψη Συνδρομών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:997
+msgid "Σύνολο"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1000
+msgid "Γρήγορες Ενέργειες"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1002
+msgid "Δωρεάν συνδρομητές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1003
+msgid "Pro συνδρομητές"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1036
+msgid "Τιμολόγια διαγραμμένων λογαριασμών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1037
+msgid "Οι παρακάτω λογαριασμοί φαρμακείων έχουν διαγραφεί, αλλά τα τιμολόγιά τους διατηρούνται μέχρι να τα διαγράψετε εσείς."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1042
+#: includes/class-plandose-privacy.php:168
+msgid "ΑΦΜ"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1043
+msgid "Διαγραφή λογαριασμού"
+msgstr ""
+
+#. translators: %s: pharmacy name
+#: includes/class-plandose-admin-subscriptions.php:1071
+#, php-format
+msgid "Οριστική διαγραφή όλων των τιμολογίων του «%s»; Η ενέργεια δεν αναιρείται."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1076
+msgid "Οριστική διαγραφή"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1127
+msgid "Χειροκίνητη πρόσβαση για συγκεκριμένο χρήστη"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1128
+msgid "Αναζήτηση οποιουδήποτε χρήστη με email, username ή user ID, για αποκλεισμό ενός φαρμακείου ή για κατάργηση παλιάς χειροκίνητης ρύθμισης. Το PlanDose είναι διαθέσιμο μόνο σε λογαριασμούς με Κατηγορία «Φαρμακείο»· αν ένα φαρμακείο δεν εμφανίζεται στη λίστα, διορθώστε την Κατηγορία στο προφίλ του."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1131
+msgid "email, username, ή user ID..."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1137
+msgid "Δεν βρέθηκε χρήστης με αυτά τα στοιχεία."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1147
+msgid "Όχι φαρμακείο"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1160
+msgid "Άνοιγμα προφίλ"
+msgstr ""
+
+#. translators: %s: number of users
+#: includes/class-plandose-admin-subscriptions.php:1212
+#, php-format
+msgid "Χρήστες που δεν μετράνε ως φαρμακεία: %s"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1217
+msgid "(χωρίς τους διαχειριστές — πατήστε για λεπτομέρειες)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1219
+msgid "Ένας χρήστης μετράει ως φαρμακείο μόνο όταν η «Κατηγορία» του (account_type) είναι «Φαρμακείο» — μόνο αυτοί μπορούν να είναι συνδρομητές και να χρησιμοποιούν το PlanDose. Αν κάποιος από τους παρακάτω είναι φαρμακείο, διορθώστε την Κατηγορία στο προφίλ του."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1221
+msgid "Ανά τιμή «Κατηγορίας»"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1223
+msgid "Αποθηκευμένη τιμή"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1223
+#: includes/class-plandose-admin-subscriptions.php:1262
+msgid "Χρήστες"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1227
+msgid "(κενή — δεν έχει οριστεί Κατηγορία)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1238
+msgid "Εμφάνιση των χρηστών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1266
+#: includes/class-plandose-admin-subscriptions.php:1378
+msgid "Χρήστης"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1267
+#: includes/class-plandose-admin-subscriptions.php:1379
+msgid "Ρόλοι"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1268
+msgid "Κατηγορία ανά meta key"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1269
+msgid "Χειροκίνητη πρόσβαση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1282
+msgid "(κενή)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1292
+#: includes/class-plandose-admin-subscriptions.php:1601
+#: includes/class-plandose-admin-subscriptions.php:1632
+msgid "Αποκλεισμός"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1299
+msgid "Έγκριση (παλιά ρύθμιση — χωρίς ισχύ)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1309
+msgid "Κατάργηση"
+msgstr ""
+
+#. translators: %s: number of users shown
+#: includes/class-plandose-admin-subscriptions.php:1325
+#, php-format
+msgid "Εμφανίζονται οι %s πιο πρόσφατοι."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1341
+msgid "Η σελίδα έληξε. Ανανεώστε τη σελίδα και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1373
+msgid "Γιατί δεν βλέπω κανέναν; (διαγνωστικό)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1374
+msgid "Δεν βρέθηκε κανένας χρήστης με account_type που να περιέχει \"φαρμακείο\" ή \"pharmacy\". Παρακάτω βλέπεις τους 50 πιο πρόσφατους χρήστες και την τιμή που έχει όντως αποθηκευτεί για κάθε γνωστό meta key — αν η στήλη \"Ταιριάζει\" είναι Όχι σε όλους, το πρόβλημα είναι στο πεδίο εγγραφής (αποθηκεύει με διαφορετικό meta key ή διαφορετική τιμή απ' όσο περιμέναμε)."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1380
+msgid "Τιμές account_type ανά meta key"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1381
+msgid "Ταιριάζει;"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1386
+msgid "Δεν υπάρχουν καθόλου χρήστες στο site."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1394
+msgid "(καμία τιμή σε κανένα γνωστό meta key)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1401
+#: includes/class-plandose-frontend.php:1091
+msgid "Ναι"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1401
+#: includes/class-plandose-frontend.php:1092
+msgid "Όχι"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1471
+#: includes/class-plandose-admin-subscriptions.php:1769
+msgid "Παράταση Pro"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1471
+#: includes/class-plandose-admin-subscriptions.php:1768
+msgid "Ενεργοποίηση Pro"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1481
+msgid "Ημέρες"
+msgstr ""
+
+#. translators: %s: the largest number of days an admin may add at once.
+#: includes/class-plandose-admin-subscriptions.php:1496
+#, php-format
+msgid "έως %s"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1501
+msgid "Γρήγορη επιλογή ημερών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1526
+msgid "Νέο τιμολόγιο"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1579
+msgid "Παλιά χειροκίνητη έγκριση — δεν ισχύει πλέον από την έκδοση 1.21.0"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1580
+msgid "Χειροκίνητος αποκλεισμός από διαχειριστή"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1581
+msgid "Ο ρόλος του χρήστη είναι εξαιρημένος στις Ρυθμίσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1582
+msgid "Διαχειριστής — ενεργή η προεπισκόπηση στις Ρυθμίσεις"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1583
+msgid "Επιτρεπόμενος ρόλος (παλιά ρύθμιση — δεν ισχύει πλέον)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1584
+msgid "Χωρίς απαίτηση φαρμακείου (παλιά ρύθμιση — δεν ισχύει πλέον)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1585
+msgid "Λογαριασμός με Κατηγορία «Φαρμακείο»"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1586
+msgid "Ο λογαριασμός δεν έχει Κατηγορία Επιχείρησης «Φαρμακείο»"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1587
+msgid "Άγνωστος χρήστης"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1595
+msgid "Έχει πρόσβαση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1597
+msgid "Δεν έχει πρόσβαση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1603
+msgid "Παλιά έγκριση — χωρίς ισχύ"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1605
+#: includes/class-plandose-admin-subscriptions.php:1625
+msgid "Κανονική πρόσβαση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1617
+msgid "Υπάρχει αποθηκευμένη χειροκίνητη έγκριση από παλαιότερη έκδοση. Δεν χρειάζεται: το φαρμακείο έχει πρόσβαση κανονικά. Μπορείτε να την καταργήσετε."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1618
+msgid "Υπάρχει αποθηκευμένη χειροκίνητη έγκριση από παλαιότερη έκδοση. Δεν ισχύει πλέον, επειδή ο λογαριασμός δεν έχει Κατηγορία «Φαρμακείο». Μπορείτε να την καταργήσετε."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1737
+msgid "Το ημερολόγιο ενεργειών χρειάζεται επιπλέον το δικαίωμα «list_users»."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1742
+msgid "PlanDose → Ημερολόγιο Ενεργειών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1742
+msgid "Οι τελευταίες ευαίσθητες ενέργειες διαχειριστών: αλλαγές συνδρομής, χειροκίνητη πρόσβαση, τιμολόγια."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1771
+msgid "Έλεγχος cache από WP-CLI (προσωρινή συνεδρία)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1772
+msgid "Αρχειοθέτηση ξανά μηνών ιστορικού"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1773
+msgid "Καθαρισμός λίστας μη αρχειοθετημένων μηνών"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1774
+msgid "Αλλαγή μηνιαίου ορίου δωρεάν εκτυπώσεων στη νέα προεπιλογή"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1776
+msgid "Χειροκίνητη επιτρεπόμενη πρόσβαση (παλιά ενέργεια)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1777
+msgid "Χειροκίνητος αποκλεισμός πρόσβασης"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1778
+msgid "Επαναφορά σε κανονική πρόσβαση"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1779
+msgid "Ανέβασμα τιμολογίου"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1780
+msgid "Προβολή τιμολογίου"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1781
+msgid "Αποθήκευση ρυθμίσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1782
+msgid "Αυτόματη μεταφορά παλιών τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1783
+msgid "Εξαγωγή συνδρομητών σε CSV"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1784
+msgid "Έναρξη εξαγωγής συνδρομητών σε CSV"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1785
+msgid "Αποτυχία αποθήκευσης ρυθμίσεων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1786
+msgid "Διαγραφή λογαριασμού — τα τιμολόγια διατηρήθηκαν"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1787
+msgid "Διαγραφή τιμολογίων διαγραμμένου λογαριασμού"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1788
+msgid "Διαγραφή τιμολογίου"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1789
+#: includes/class-plandose-invoice-migration.php:690
+msgid "Επανάληψη μεταφοράς τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1790
+msgid "Αυτόματη επανάληψη μεταφοράς τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1791
+msgid "Αλλαγή Κατηγορίας Επιχείρησης"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1792
+msgid "Απόπειρα αλλαγής Κατηγορίας από τον ίδιο τον χρήστη (απορρίφθηκε)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1793
+msgid "Διαγραφή προσωπικών δεδομένων (GDPR)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1794
+msgid "Διαγραφή δημόσιου πρωτοτύπου τιμολογίου"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1795
+msgid "Πρωτότυπο τιμολογίου δεν διαγράφηκε (έλεγχος)"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1796
+msgid "Πρωτότυπο τιμολογίου δεν υπάρχει πια"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1797
+msgid "Διαγραφή πρωτοτύπων τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1798
+msgid "Διαγραφή δημόσιου πρωτοτύπου χωρίς αντίγραφο"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1799
+msgid "Καθαρισμός ημιτελών αντιγράφων μεταφοράς"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1800
+msgid "Απόρριψη τιμολογίου: μη ιδιωτικός φάκελος"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1801
+msgid "Έλεγχος ιδιωτικότητας φακέλου τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1809
+#: includes/class-plandose-privacy.php:685
+msgid "Ενέργεια"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1810
+msgid "Διαχειριστής"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1811
+msgid "Χρήστης-στόχος"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1813
+#: includes/class-plandose-privacy.php:697
+msgid "Λεπτομέρειες"
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1818
+msgid "Δεν υπάρχουν ακόμα καταχωρήσεις."
+msgstr ""
+
+#: includes/class-plandose-admin-subscriptions.php:1829
+msgid "Σύστημα"
+msgstr ""
+
+#: includes/class-plandose-admin.php:420
+#: includes/class-plandose-admin.php:420
+msgid "Dashboard"
+msgstr ""
+
+#: includes/class-plandose-admin.php:423
+#: includes/class-plandose-admin.php:423
+msgid "Pro"
+msgstr ""
+
+#: includes/class-plandose-admin.php:428
+#: includes/class-plandose-admin.php:428
+msgid "Ημερολόγιο"
+msgstr ""
+
+#: includes/class-plandose-admin.php:429
+#: includes/class-plandose-admin.php:429
+msgid "Settings"
+msgstr ""
+
+#: includes/class-plandose-admin.php:432
+#: includes/class-plandose-admin.php:432
+msgid "Διαγνωστικά"
+msgstr ""
+
+#: includes/class-plandose-admin.php:493
+msgid "Σίγουρα θέλετε να μετατρέψετε αυτή τη συνδρομή σε Free;"
+msgstr ""
+
+#: includes/class-plandose-admin.php:494
+msgid "Σίγουρα θέλετε να αποκλείσετε την πρόσβαση αυτού του χρήστη στο PlanDose;"
+msgstr ""
+
+#: includes/class-plandose-admin.php:495
+msgid "Σίγουρα θέλετε να καταργήσετε τη χειροκίνητη ρύθμιση πρόσβασης και να επιστρέψετε στον αυτόματο έλεγχο;"
+msgstr ""
+
+#: includes/class-plandose-admin.php:496
+msgid "Φόρτωση…"
+msgstr ""
+
+#: includes/class-plandose-admin.php:497
+msgid "Οι λεπτομέρειες δεν φορτώθηκαν. Δοκιμάστε ξανά ή ανοίξτε τον σύνδεσμο."
+msgstr ""
+
+#: includes/class-plandose-ajax.php:161
+msgid "Μη έγκυρη μέθοδος αιτήματος."
+msgstr ""
+
+#: includes/class-plandose-ajax.php:193
+#: includes/class-plandose-ajax.php:422
+msgid "Το εργαλείο PlanDose είναι προσωρινά απενεργοποιημένο."
+msgstr ""
+
+#: includes/class-plandose-ajax.php:211
+msgid "Το εργαλείο είναι διαθέσιμο μόνο σε εγγεγραμμένους φαρμακοποιούς."
+msgstr ""
+
+#: includes/class-plandose-ajax.php:220
+msgid "Πολλά αιτήματα σε σύντομο χρονικό διάστημα. Δοκιμάστε ξανά σε λίγα δευτερόλεπτα."
+msgstr ""
+
+#: includes/class-plandose-ajax.php:485
+msgid "Δεν ήταν δυνατή η ανάκτηση της συνδρομής σας. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:271
+msgid "Αρχειοθέτηση μηνιαίου ιστορικού"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:277
+msgid "Όλοι οι κλεισμένοι μήνες είναι αρχειοθετημένοι."
+msgstr ""
+
+#. translators: 1: user ID, 2: login (or «διαγραμμένος»), 3: month YYYY-MM, 4: prints, 5: date and time of the reset
+#: includes/class-plandose-diagnostics.php:286
+#, php-format
+msgid "#%1$d %2$s — %3$s: %4$d εκτυπώσεις (μηδενίστηκε στις %5$s)"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:288
+msgid "(διαγραμμένος)"
+msgstr ""
+
+#. translators: %d: entries not shown
+#: includes/class-plandose-diagnostics.php:297
+#, php-format
+msgid "… και άλλοι %d"
+msgstr ""
+
+#. translators: %d: number of months
+#: includes/class-plandose-diagnostics.php:305
+#, php-format
+msgid "%d κλεισμένος μήνας δεν αρχειοθετήθηκε: ο μετρητής μηδενίστηκε, αλλά το σύνολο του μήνα δεν γράφτηκε στο ιστορικό."
+msgid_plural "%d κλεισμένοι μήνες δεν αρχειοθετήθηκαν: οι μετρητές μηδενίστηκαν, αλλά τα σύνολα δεν γράφτηκαν στο ιστορικό."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-plandose-diagnostics.php:308
+msgid "Ελέγξτε τον πίνακα ιστορικού (ενότητα «Βάση δεδομένων» παραπάνω). Όταν λειτουργεί, πατήστε «Αρχειοθέτηση ξανά» (το κάνει και η ημερήσια εργασία). Οι αριθμοί υπάρχουν και στο error log."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:338
+msgid "PlanDose:"
+msgstr ""
+
+#. translators: %d: number of months
+#: includes/class-plandose-diagnostics.php:342
+#, php-format
+msgid "%d μήνας ιστορικού εκτυπώσεων δεν αρχειοθετήθηκε (σφάλμα βάσης)."
+msgid_plural "%d μήνες ιστορικού εκτυπώσεων δεν αρχειοθετήθηκαν (σφάλμα βάσης)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-plandose-diagnostics.php:347
+msgid "Δείτε τα Διαγνωστικά"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:439
+msgid "Προγραμματισμένες εργασίες (cron)"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:440
+msgid "Αποθήκευση τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:441
+msgid "Βάση δεδομένων"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:442
+msgid "Ιστορικό εκτυπώσεων"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:443
+msgid "Συμβατότητα με cache"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:444
+msgid "Περιβάλλον"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:456
+msgid "Ημερήσιος καθαρισμός"
+msgstr ""
+
+#. translators: %s: date and time
+#: includes/class-plandose-diagnostics.php:465
+#, php-format
+msgid "Επόμενη εκτέλεση: %s"
+msgstr ""
+
+#. translators: %s: date and time
+#: includes/class-plandose-diagnostics.php:467
+#, php-format
+msgid "Τελευταία εκτέλεση: %s"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:467
+msgid "δεν έχει καταγραφεί ακόμη"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:468
+msgid "DISABLE_WP_CRON = true (το WP-Cron δεν τρέχει από επισκέψεις)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:468
+msgid "DISABLE_WP_CRON δεν έχει οριστεί."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:472
+msgid "Η ημερήσια εργασία δεν είναι προγραμματισμένη."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:472
+msgid "Απενεργοποιήστε και ενεργοποιήστε ξανά το PlanDose· αν επιμένει, ελέγξτε το error log (WP_DEBUG)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:478
+msgid "Ζητήστε από τον πάροχο φιλοξενίας να ορίσει cron συστήματος που καλεί το wp-cron.php κάθε 5 λεπτά."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:479
+msgid "Το WP-Cron τρέχει μόνο όταν το site έχει επισκέψεις· ζητήστε από τον πάροχο φιλοξενίας cron συστήματος για το wp-cron.php κάθε 5 λεπτά."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:482
+msgid "Η ημερήσια εργασία έχει να τρέξει πάνω από 48 ώρες."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:484
+msgid "Το WP-Cron είναι απενεργοποιημένο και δεν έχει καταγραφεί ακόμη εκτέλεση."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:489
+msgid "Η ημερήσια εργασία τρέχει κανονικά."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:489
+msgid "Η ημερήσια εργασία είναι προγραμματισμένη (δεν έχει καταγραφεί ακόμη εκτέλεση)."
+msgstr ""
+
+#. translators: %s: table names
+#: includes/class-plandose-diagnostics.php:504
+#, php-format
+msgid "Πίνακες που λείπουν ή είναι ελλιπείς: %s"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:509
+msgid "Εργασίες που παραλείφθηκαν"
+msgstr ""
+
+#. translators: %s: date and time of the run
+#: includes/class-plandose-diagnostics.php:512
+#, php-format
+msgid "Η ημερήσια εκτέλεση της %s παρέλειψε εργασίες, επειδή η αναβάθμιση της βάσης δεν είχε ολοκληρωθεί."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:515
+msgid "Ολοκληρώστε την αναβάθμιση της βάσης (ενότητα «Βάση δεδομένων»)· οι εργασίες τρέχουν ξανά στην επόμενη ημερήσια εκτέλεση."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:539
+msgid "Φάκελος τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:542
+msgid "Η κλάση αποθήκευσης τιμολογίων δεν φορτώθηκε."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:542
+#: includes/class-plandose-diagnostics.php:728
+msgid "Ανεβάστε ξανά ολόκληρο το plugin."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:550
+msgid "Ο φάκελος τιμολογίων που ορίστηκε δεν είναι έγκυρος."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:550
+msgid "Διορθώστε τη σταθερά PLANDOSE_INVOICE_DIR στο wp-config.php."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:556
+msgid "Προεπιλογή (wp-content/uploads): "
+msgstr ""
+
+#. translators: %s: environment type
+#: includes/class-plandose-diagnostics.php:558
+#, php-format
+msgid "Περιβάλλον: %s"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:562
+msgid "Ο φάκελος δεν έχει δημιουργηθεί ακόμη (δεν έχει ανέβει τιμολόγιο)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:562
+msgid "Δημιουργείται με το πρώτο upload· ο έλεγχος ιδιωτικότητας γίνεται τότε αυτόματα."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:564
+msgid "Ο φάκελος δεν είναι εγγράψιμος από τον server."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:564
+msgid "Δώστε δικαίωμα εγγραφής στον χρήστη του PHP για τον φάκελο."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:566
+msgid "Ο φάκελος υπάρχει και είναι εγγράψιμος."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:593
+msgid "Ιδιωτικότητα τιμολογίων (έλεγχος HTTP)"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:599
+msgid "Ο φάκελος δεν υπάρχει ακόμη, οπότε δεν υπάρχει τίποτα εκτεθειμένο· ο έλεγχος γίνεται αυτόματα στο πρώτο upload."
+msgstr ""
+
+#. translators: %s: URL
+#: includes/class-plandose-diagnostics.php:604
+#, php-format
+msgid "Διεύθυνση φακέλου: %s/"
+msgstr ""
+
+#. translators: 1: URL, 2: HTTP status
+#: includes/class-plandose-diagnostics.php:609
+#, php-format
+msgid "Αρχείο σύγκρισης σε δημόσιο φάκελο: %1$s → HTTP %2$d"
+msgstr ""
+
+#. translators: %s: date and time
+#: includes/class-plandose-diagnostics.php:614
+#, php-format
+msgid "Τελευταίος έλεγχος: %s"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:621
+#: includes/class-plandose-diagnostics.php:627
+msgid "Ο φάκελος δεν έχει διεύθυνση στο site, αλλά από τη γραμμή εντολών δεν φαίνεται αν βρίσκεται μέσα στον δημόσιο χώρο του server."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:621
+#: includes/class-plandose-diagnostics.php:627
+msgid "Ξανατρέξτε με --docroot=<document root του site>, ή δείτε PlanDose → Διαγνωστικά στο wp-admin."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:631
+msgid "Από τη γραμμή εντολών ο έλεγχος δεν μπορεί να γίνει· ισχύει ο τελευταίος έλεγχος του web server, που έδειξε κλειστό φάκελο."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:631
+msgid "Πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά ή ξανατρέξτε με --docroot=<document root του site>. Μετά από 7 ημέρες χωρίς νέο έλεγχο η μεταφορά τιμολογίων σταματά."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:635
+msgid "Ο τελευταίος έλεγχος έδειξε κλειστό φάκελο, αλλά έγινε πριν από πάνω από 24 ώρες."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:635
+msgid "Πατήστε «Επανέλεγχος» (γίνεται και αυτόματα κάθε μέρα)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:639
+msgid "Το αίτημα έγινε από τον ίδιο τον server· αν υπάρχει CDN μπροστά, επιβεβαιώστε και από εξωτερικό δίκτυο."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:642
+msgid "Ο φάκελος τιμολογίων είναι κλειστός για το internet"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:645
+msgid "Ο φάκελος τιμολογίων είναι ανοιχτός στο internet: ένα δοκιμαστικό αρχείο του κατέβηκε χωρίς σύνδεση."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:645
+#: includes/class-plandose-diagnostics.php:662
+msgid "Γι' αυτό τα νέα τιμολόγια δεν αποθηκεύονται."
+msgstr ""
+
+#. translators: %s: reason
+#: includes/class-plandose-diagnostics.php:650
+#, php-format
+msgid "Δεν επιβεβαιώθηκε ότι ο φάκελος τιμολογίων είναι κλειστός για το internet (%s)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:655
+msgid "Δοκιμαστικό site: μόνο προειδοποίηση."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:659
+msgid "Τα τιμολόγια αποθηκεύονται, επειδή έχει οριστεί PLANDOSE_ALLOW_UNVERIFIED_INVOICE_DIR."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:665
+msgid "Δεν έχει γίνει ακόμη έλεγχος."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:665
+msgid "Πατήστε «Επανέλεγχος» (γίνεται και αυτόματα στο πρώτο upload)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:676
+msgid "Αρχεία προστασίας φακέλου"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:688
+#: includes/class-plandose-print-charges.php:710
+msgid "λείπει"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:689
+msgid "παλιά έκδοση"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:690
+msgid "άλλο περιεχόμενο"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:698
+msgid "Όλα τα αρχεία προστασίας υπάρχουν στην τρέχουσα μορφή."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:704
+msgid "Κάποια αρχεία προστασίας λείπουν ή διαφέρουν. (Η πραγματική προστασία κρίνεται από τον έλεγχο HTTP παραπάνω.)"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:706
+msgid "Ένα αρχείο έχει περιεχόμενο που δεν έγραψε το PlanDose και δεν αλλάζει αυτόματα· ελέγξτε το χειροκίνητα."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:707
+msgid "Επαναγράφονται αυτόματα με το επόμενο upload ή «Επανέλεγχο»."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:728
+#: includes/class-plandose-diagnostics.php:747
+#: includes/class-plandose-diagnostics.php:774
+#: includes/class-plandose-diagnostics.php:776
+msgid "Πίνακες"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:728
+msgid "Οι κλάσεις του plugin δεν φορτώθηκαν."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:747
+msgid "Ο έλεγχος των πινάκων απέτυχε."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:747
+#: includes/class-plandose-diagnostics.php:848
+msgid "Ζητήστε από τον πάροχο φιλοξενίας να ελέγξει τα δικαιώματα του χρήστη της βάσης δεδομένων."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:774
+msgid "Λείπουν πίνακες του PlanDose."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:774
+msgid "Απενεργοποιήστε και ενεργοποιήστε ξανά το plugin· αν επιμένει, ελέγξτε ότι ο χρήστης της βάσης έχει δικαίωμα CREATE."
+msgstr ""
+
+#. translators: %d: number of tables
+#: includes/class-plandose-diagnostics.php:778
+#, php-format
+msgid "Υπάρχει ο %d πίνακας του PlanDose."
+msgid_plural "Υπάρχουν και οι %d πίνακες του PlanDose."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-plandose-diagnostics.php:784
+#: includes/class-plandose-diagnostics.php:786
+#: includes/class-plandose-diagnostics.php:788
+msgid "Συναλλαγές (InnoDB)"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:784
+msgid "Πίνακες χρεώσεων χωρίς συναλλαγές: η «χρέωση και απόδειξη μαζί» δεν είναι εγγυημένη."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:784
+msgid "Ζητήστε από τον πάροχο φιλοξενίας να μετατρέψει αυτούς τους πίνακες σε InnoDB (ALTER TABLE <πίνακας> ENGINE=InnoDB)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:786
+msgid "Κάποιοι βοηθητικοί πίνακες δεν είναι InnoDB."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:786
+msgid "Προαιρετικά, ζητήστε από τον πάροχο να τους μετατρέψει σε InnoDB."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:788
+msgid "Όλοι οι πίνακες είναι InnoDB."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:800
+#: includes/class-plandose-diagnostics.php:801
+msgid "Έκδοση σχήματος"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:800
+msgid "Η αποθηκευμένη έκδοση ταιριάζει με τον κώδικα."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:801
+msgid "Η αποθηκευμένη έκδοση διαφέρει από τον κώδικα (η αναβάθμιση της βάσης δεν ολοκληρώθηκε)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:801
+msgid "Φορτώστε μια σελίδα του wp-admin· αν παραμένει, απενεργοποιήστε/ενεργοποιήστε το plugin και δείτε το error log."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:815
+msgid "Στήλες πινάκων"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:841
+msgid "Λείπουν στήλες από πίνακες του PlanDose: η αναβάθμιση της βάσης δεν ολοκληρώθηκε."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:842
+msgid "Απενεργοποιήστε και ενεργοποιήστε ξανά το PlanDose (η αναβάθμιση της βάσης θα ξανατρέξει). Αν συνεχίζει, ζητήστε από τον πάροχο να ελέγξει ότι ο χρήστης της βάσης έχει δικαίωμα ALTER."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:848
+msgid "Δεν ήταν δυνατός ο έλεγχος των στηλών."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:851
+msgid "Όλες οι στήλες που ορίζει το σχήμα υπάρχουν."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:969
+msgid "Page cache"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:982
+msgid "Drop-in wp-content/advanced-cache.php"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:987
+msgid "Το PlanDose στέλνει no-cache headers και ορίζει DONOTCACHEPAGE στις σελίδες του εργαλείου για συνδεδεμένους φαρμακοποιούς· τα περισσότερα plugins το σέβονται, όχι όμως κάθε cache του server ή του CDN."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:990
+msgid "Δεν εντοπίστηκε plugin ή drop-in page cache."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:990
+msgid "Cache του server (Nginx/LiteSpeed/CDN) δεν φαίνεται από εδώ: ο πραγματικός έλεγχος διαρροής γίνεται με «wp plandose check»."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:995
+msgid "Υπάρχει page cache. Οι σελίδες με το εργαλείο δεν πρέπει ποτέ να αποθηκεύονται για συνδεδεμένους φαρμακοποιούς."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:996
+msgid "Ρυθμίστε κάθε cache όπως γράφει παρακάτω και επιβεβαιώστε με «wp plandose check» (συνδέεται ως φαρμακείο και ελέγχει πραγματική διαρροή)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1005
+msgid "Είναι ενεργή η αποθήκευση σελίδων για συνδεδεμένους χρήστες («Enable caching for logged-in WordPress users»)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1005
+msgid "Απενεργοποιήστε τη ρύθμιση, ή βεβαιωθείτε ότι το WP Rocket κρατά ξεχωριστή cache ανά χρήστη."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1006
+msgid "Η αποθήκευση σελίδων για συνδεδεμένους χρήστες είναι απενεργοποιημένη."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1013
+msgid "Το Nginx Helper είναι ενεργό, άρα ο Nginx αποθηκεύει σελίδες. Η παράκαμψη για συνδεδεμένους χρήστες ορίζεται στο Nginx, όχι στο WordPress — δεν διαβάζεται από εδώ."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1014
+msgid "Στο vhost: if ( $http_cookie ~* \"wordpress_logged_in\" ) { set $skip_cache 1; }"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1057
+msgid "Αναβαθμίστε την PHP από τον πίνακα του παρόχου."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1061
+msgid "Αναβαθμίστε το WordPress."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1064
+msgid "Η επέκταση mbstring είναι διαθέσιμη."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1065
+msgid "Λείπει η επέκταση mbstring· ελληνικά κείμενα μπορεί να κόβονται λάθος."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1065
+msgid "Ζητήστε από τον πάροχο να ενεργοποιήσει το php-mbstring."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1068
+msgid "Η επέκταση fileinfo είναι διαθέσιμη (έλεγχος περιεχομένου τιμολογίων)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1069
+msgid "Λείπει η επέκταση fileinfo· ο τύπος των τιμολογίων ελέγχεται μόνο από την υπογραφή του αρχείου."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1069
+msgid "Ζητήστε από τον πάροχο να ενεργοποιήσει το php-fileinfo."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1078
+msgid "Object cache"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1081
+msgid "Υπάρχει μόνιμη object cache (π.χ. Redis/Memcached). Τα κλειδώματα του PlanDose διαβάζουν απευθείας τη βάση, οπότε δεν επηρεάζονται."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1084
+msgid "Δεν υπάρχει μόνιμη object cache (προαιρετική· δεν χρειάζεται για το PlanDose)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1102
+msgid "Έλεγχοι λειτουργίας και ασφάλειας για αυτόν τον server."
+msgstr ""
+
+#. translators: %s: result of the check
+#: includes/class-plandose-diagnostics.php:1113
+#, php-format
+msgid "Ο έλεγχος ιδιωτικότητας ολοκληρώθηκε: %s."
+msgstr ""
+
+#. translators: 1: date and time of this page's checks, 2: date and time of the last invoice-folder probe (or «ποτέ»)
+#: includes/class-plandose-diagnostics.php:1150
+#, php-format
+msgid "Έλεγχοι σελίδας: %1$s · Τελευταίος έλεγχος ιδιωτικότητας τιμολογίων: %2$s"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1152
+msgid "ποτέ"
+msgstr ""
+
+#. translators: 1: months archived now, 2: months still waiting
+#: includes/class-plandose-diagnostics.php:1170
+#, php-format
+msgid "Αρχειοθέτηση ξανά — γράφτηκαν στο ιστορικό: %1$d · σε αναμονή: %2$d."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1177
+msgid "Η λίστα καθαρίστηκε· οι αριθμοί καταγράφηκαν στο audit log."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1186
+msgid "Αρχειοθέτηση ξανά"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1187
+msgid "Γράφει στο ιστορικό τους μήνες που δεν αρχειοθετήθηκαν (το κάνει και η ημερήσια εργασία)."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1189
+msgid "Η λίστα θα καθαριστεί χωρίς να γραφτούν οι μήνες στο ιστορικό (οι αριθμοί μένουν στο audit log). Συνέχεια;"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1193
+msgid "Καθαρισμός λίστας"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1197
+msgid "Οι τεχνικές λεπτομέρειες (διαδρομές στον server, σφάλματα βάσης, εκδόσεις) εμφανίζονται μόνο σε διαχειριστές του site."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1203
+msgid "Επανέλεγχος ιδιωτικότητας τιμολογίων"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1204
+msgid "Γράφει ένα προσωρινό δοκιμαστικό αρχείο στον φάκελο τιμολογίων, το ζητά από τον web server χωρίς σύνδεση και το σβήνει."
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1215
+msgid "Έλεγχος"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1216
+msgid "Αποτέλεσμα"
+msgstr ""
+
+#: includes/class-plandose-diagnostics.php:1227
+msgid "Διόρθωση:"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:844
+msgid "Φόρτωση του PlanDose…"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:845
+msgid "Δεν ήταν δυνατή η φόρτωση του PlanDose. Ελέγξτε τη σύνδεσή σας και ανανεώστε τη σελίδα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:865
+#: includes/class-plandose-frontend.php:2305
+msgid "Συμπληρώστε τα φάρμακα του ασθενή και εκτυπώστε ένα καθαρό πλάνο υπενθύμισης."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:867
+msgid "Στοιχεία & Φάρμακα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:869
+msgid "Βήματα PlanDose"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:870
+msgid "Πίσω"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:873
+msgid "Στοιχεία Ασθενή"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:874
+msgid "Φάρμακα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:875
+msgid "Ασθενής (προαιρετικό)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:877
+msgid "Επικόλληση συνταγής"
+msgstr ""
+
+#. translators: short badge next to a new feature.
+#: includes/class-plandose-frontend.php:879
+msgid "ΝΕΟ"
+msgstr ""
+
+#. translators: keep «Ctrl+V» as written (⌘ on a Mac).
+#: includes/class-plandose-frontend.php:881
+msgid "Πατήστε Ctrl+V για να επικολλήσετε τη συνταγή — διαβάζεται αμέσως."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:882
+msgid "Πατήστε παρατεταμένα εδώ και επιλέξτε «Επικόλληση» — η συνταγή διαβάζεται αμέσως."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:883
+msgid "Επικολλήστε εδώ ολόκληρη την ηλεκτρονική συνταγή"
+msgstr ""
+
+#. translators: keep «Ctrl+A», «Ctrl+C», «Ctrl+V» as written: they are drawn as keys.
+#: includes/class-plandose-frontend.php:885
+msgid "Αντιγράψτε όλο το κείμενο της συνταγής (Ctrl+A → Ctrl+C), κάντε κλικ εδώ και πατήστε Ctrl+V. Φάρμακα, δοσολογία και ημέρες συμπληρώνονται αυτόματα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:886
+msgid "Επικολλήστε εδώ όλο το κείμενο της ηλεκτρονικής συνταγής…"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:887
+msgid "Το κείμενο διαβάζεται μόνο σε αυτόν τον browser — δεν στέλνεται και δεν αποθηκεύεται."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:888
+msgid "Ανάγνωση"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:889
+msgid "Άκυρο"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:890
+msgid "Δεν βρέθηκαν φάρμακα σε αυτό το κείμενο — αντιγράψτε ολόκληρη τη συνταγή και ξαναδοκιμάστε."
+msgstr ""
+
+#. translators: %d: number of medicines found
+#: includes/class-plandose-frontend.php:892
+#, php-format
+msgid "Βρέθηκαν %d φάρμακα. Ελέγξτε τα πριν μπουν στο πλάνο."
+msgstr ""
+
+#. translators: %s: patient name from the prescription
+#: includes/class-plandose-frontend.php:894
+#, php-format
+msgid "Όνομα ασθενή: %s"
+msgstr ""
+
+#. translators: %s: the dosage line as written on the prescription
+#: includes/class-plandose-frontend.php:896
+#, php-format
+msgid "Συνταγή: %s"
+msgstr ""
+
+#. translators: %s: number of days
+#: includes/class-plandose-frontend.php:898
+#, php-format
+msgid "%s ημέρες"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:899
+#: includes/class-plandose-frontend.php:982
+msgid "Ώρα λήψης"
+msgstr ""
+
+#. translators: %d: number of medicines to add
+#: includes/class-plandose-frontend.php:901
+#, php-format
+msgid "Προσθήκη στο πλάνο (%d)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:902
+msgid "Συμπλήρωση στη φόρμα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:903
+msgid "Δεν μπορεί να μπει όπως είναι — συμπληρώστε το στη φόρμα."
+msgstr ""
+
+#. translators: %d: number of medicines added
+#: includes/class-plandose-frontend.php:905
+#, php-format
+msgid "Προστέθηκαν %d φάρμακα από τη συνταγή. Ελέγξτε το πλάνο πριν την εκτύπωση."
+msgstr ""
+
+#. translators: %d: number of medicines left
+#: includes/class-plandose-frontend.php:907
+#, php-format
+msgid "Μένουν %d για συμπλήρωση στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:908
+msgid "Ελέγξτε το όνομα του φαρμάκου."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:909
+msgid "Η δοσολογία δεν διαβάστηκε — συμπληρώστε τη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:910
+msgid "Η ποσότητα δεν είναι έγκυρη — συμπληρώστε τη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:911
+#: includes/class-plandose-frontend.php:936
+msgid "Επιλέξτε «Είδος»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:912
+msgid "Ινσουλίνη: η ποσότητα διαβάστηκε ως μονάδες (IU) — επιβεβαιώστε τη στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:913
+msgid "Η ποσότητα δεν ταιριάζει με ενέσεις — ελέγξτε μονάδες και «Είδος»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:914
+msgid "Η συχνότητα δεν διαβάστηκε — συμπληρώστε τη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:915
+msgid "Εβδομαδιαία δοσολογία που δεν διαβάστηκε — συμπληρώστε τη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:916
+msgid "Εφάπαξ, αλλά για περισσότερες ημέρες — ελέγξτε τη διάρκεια."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:917
+msgid "Η δοσολογία έχει λέξεις ή αριθμούς που δεν αναγνωρίστηκαν — ελέγξτε ποσότητα και «Είδος»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:918
+msgid "Ισχύς σε μονάδες/ml: ελέγξτε αν η ποσότητα είναι ενέσεις ή μονάδες (IU)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:919
+msgid "Η πρώτη δόση μπαίνει την ημέρα έναρξης του πλάνου — ελέγξτε ότι είναι η σωστή ημέρα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:920
+msgid "Η συνταγή δεν ορίζει ώρα — επιλέξτε την."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:921
+msgid "ΠΡΟΣΟΧΗ: η μεθοτρεξάτη χορηγείται συνήθως μία φορά την εβδομάδα. Επιβεβαιώστε τη συχνότητα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:922
+msgid "Η δοσολογία έχει κι άλλο κείμενο που δεν διαβάστηκε — ελέγξτε τη συνταγή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:923
+msgid "Οι ημέρες δεν είναι ακέραιος αριθμός εβδομάδων/διαστημάτων: στο πλάνο μπαίνει μία δόση ακόμη (π.χ. 30 ημέρες εβδομαδιαία = 5 δόσεις). Ελέγξτε τη διάρκεια με όσα χορηγήθηκαν."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:924
+msgid "«1 φορά τον μήνα» μπήκε ως «κάθε 30 ημέρες» — ελέγξτε τις ημερομηνίες."
+msgstr ""
+
+#. translators: %s: medicine name
+#: includes/class-plandose-frontend.php:927
+#, php-format
+msgid "Ελέγξτε το φάρμακο «%s»: η ποσότητα, το «Είδος», η συχνότητα ή η διάρκεια δεν είναι έγκυρα. Πατήστε «Επεξεργασία»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:928
+msgid "ΠΡΟΣΟΧΗ: μεθοτρεξάτη συχνότερα από μία φορά την εβδομάδα. Αν η συχνότητα είναι σωστή, πατήστε ξανά «Εκτύπωση»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:929
+msgid "Υπάρχει ήδη πιο πάνω — δεν επιλέχθηκε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:930
+msgid "Υπάρχει ήδη στο πλάνο — δεν επιλέχθηκε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:931
+msgid "Φορτώθηκε στη φόρμα — ολοκληρώστε το εκεί."
+msgstr ""
+
+#. translators: %s: patient names, comma-separated.
+#: includes/class-plandose-frontend.php:933
+#, php-format
+msgid "Το κείμενο έχει συνταγές για διαφορετικούς ασθενείς (%s). Ελέγξτε ότι όλα τα φάρμακα είναι του ίδιου ασθενή."
+msgstr ""
+
+#. translators: 1: patient already in the plan, 2: patient on the prescription.
+#: includes/class-plandose-frontend.php:935
+#, php-format
+msgid "Στο πλάνο είναι ήδη ο ασθενής «%1$s» — η συνταγή είναι για «%2$s»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:937
+msgid "Επιλέξτε συχνότητα λήψης — η συνταγή δεν τη διάβασε με βεβαιότητα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:939
+msgid "Προαιρετικό πεδίο. Θα εμφανιστεί στην εκτύπωση."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:940
+msgid "π.χ. Ιωάννης Παπαδόπουλος"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:943
+msgid "Ημερομηνία έναρξης"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:944
+msgid "Από ποια ημέρα ξεκινά το πλάνο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:946
+msgid "Αύριο"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:947
+msgid "Η ημερομηνία έναρξης δεν είναι έγκυρη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:948
+msgid "Η ημερομηνία έναρξης έχει περάσει. Επιλέξτε σήμερα ή μεταγενέστερη ημέρα."
+msgstr ""
+
+#. translators: %d: maximum number of days ahead the plan may start.
+#: includes/class-plandose-frontend.php:950
+#, php-format
+msgid "Η ημερομηνία έναρξης δεν μπορεί να απέχει πάνω από %d ημέρες από σήμερα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:951
+msgid "Έναρξη πλάνου:"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:954
+msgid "Πρώτη δόση την ημέρα έναρξης"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:955
+msgid "Οι δόσεις που έχουν ήδη περάσει μεταφέρονται στο τέλος — το σύνολο δόσεων δεν αλλάζει."
+msgstr ""
+
+#. translators: 1: daypart of the first dose, 2: its day, 3: daypart of the last dose, 4: its day.
+#: includes/class-plandose-frontend.php:957
+#, php-format
+msgid "Πρώτη δόση: %1$s %2$s • Τελευταία δόση: %3$s %4$s"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:959
+msgid "Όνομα φαρμάκου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:960
+msgid "π.χ. Depon 500mg"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:961
+#: includes/class-plandose-frontend.php:1262
+msgid "Ποσότητα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:962
+msgid "Είδος"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:964
+msgid "Δισκίο(α)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:965
+msgid "Κάψουλα(ες)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:966
+msgid "ml"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:967
+msgid "mg"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:968
+msgid "Σταγόνα(ες)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:969
+msgid "Αμπούλα(ες)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:970
+msgid "Φακελίσκος(οι)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:971
+msgid "Εισπνοή(ες)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:973
+msgid "Επάλειψη(εις)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:975
+msgid "Ψεκασμός(οι)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:976
+msgid "Υπόθετο(α)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:977
+msgid "Έμπλαστρο(α)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:978
+msgid "Ένεση(εις)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:979
+msgid "Μονάδες (IU)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:981
+#: includes/class-plandose-frontend.php:1263
+msgid "Συχνότητα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:983
+msgid "Μία φορά την ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:984
+msgid "2 φορές την ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:985
+msgid "3 φορές την ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:986
+msgid "4 φορές την ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:987
+msgid "Συμπληρώστε την ποσότητα δόσης για το φάρμακο: "
+msgstr ""
+
+#: includes/class-plandose-frontend.php:988
+msgid "Η ποσότητα δόσης δεν είναι έγκυρη. Γράψτε αριθμό όπως 1, 1,5, 0,25, ½ ή 1/2."
+msgstr ""
+
+#. translators: %s: the quantity exactly as typed, e.g. "1.000".
+#: includes/class-plandose-frontend.php:991
+#, php-format
+msgid "Η ποσότητα «%s» είναι ασαφής: μπορεί να διαβαστεί ως χιλιάδες. Γράψτε π.χ. 1 ή 1,5 — ή 1000 για χίλια."
+msgstr ""
+
+#. translators: 1: dose as typed, e.g. 11/2; 2: what it reads as, e.g. 5,5; 3: the likely intended mixed number, e.g. 1 1/2
+#: includes/class-plandose-frontend.php:993
+#, php-format
+msgid "Η ποσότητα «%1$s» διαβάζεται ως %2$s. Αν εννοείτε %3$s, γράψτε το με κενό («%3$s») ή ως δεκαδικό (π.χ. 1,5)."
+msgstr ""
+
+#. translators: 1: dose as typed, e.g. 10/2; 2: what it reads as, e.g. 5
+#: includes/class-plandose-frontend.php:995
+#, php-format
+msgid "Η ποσότητα «%1$s» διαβάζεται ως %2$s. Ελέγξτε την τιμή: γράψτε μικτό αριθμό με κενό (π.χ. 1 1/2) ή δεκαδικό (π.χ. 1,5)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:996
+msgid "Η ποσότητα δόσης μπορεί να έχει έως 2 δεκαδικά ψηφία (π.χ. 0,25)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:997
+msgid "Η ποσότητα δόσης πρέπει να είναι μεγαλύτερη από το μηδέν."
+msgstr ""
+
+#. translators: %s: largest quantity allowed per intake.
+#: includes/class-plandose-frontend.php:999
+#, php-format
+msgid "Η ποσότητα δόσης δεν μπορεί να ξεπερνά το %s ανά λήψη. Ελέγξτε την τιμή."
+msgstr ""
+
+#. translators: 1: number of doses, 2: total quantity, 3: unit.
+#: includes/class-plandose-frontend.php:1001
+#, php-format
+msgid "Σύνολο: %1$s δόσεις • %2$s %3$s"
+msgstr ""
+
+#. translators: %1$s: number of doses.
+#: includes/class-plandose-frontend.php:1003
+#, php-format
+msgid "Σύνολο: %1$s δόσεις"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1004
+msgid "Εξειδικευμένη συχνότητα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1005
+msgid "Τρόπος εξειδικευμένης συχνότητας"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1006
+msgid "Ανά ημέρες"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1007
+msgid "Ανά ημέρα εβδομάδας"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1008
+msgid "Ποια ημέρα;"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1009
+msgid "Κάθε πόσες ημέρες;"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1010
+msgid "π.χ. 7"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1011
+msgid "Εβδομάδα (7)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1012
+msgid "2 εβδ. (14)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1013
+msgid "15 ημ."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1014
+msgid "Συμπληρώστε κάθε πόσες ημέρες γίνεται η λήψη (1–90)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1015
+msgid "Με αυτή τη διάρκεια δεν πέφτει καμία δόση — αυξήστε τη διάρκεια ή αλλάξτε την ημέρα. Φάρμακο: "
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1016
+msgid "Πελάτης"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1017
+msgid "ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1018
+#: includes/class-plandose-frontend.php:1261
+msgid "Φάρμακο"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1019
+msgid "Δοσολογία"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1021
+msgid "Σημειώσεις"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1022
+msgid "Τηλ."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1023
+msgid "ΦΑΡΜΑΚΕΙΟ"
+msgstr ""
+
+#. translators: %d: number of days of treatment, printed on the label.
+#: includes/class-plandose-frontend.php:1025
+#, php-format
+msgid "Για %d Μέρες"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1026
+msgid "Για 1 Μέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1027
+msgid "Δόση"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1029
+msgid "Τα Φάρμακά σας:"
+msgstr ""
+
+#. translators: %d: number of days the medicine is taken
+#: includes/class-plandose-frontend.php:1031
+#, php-format
+msgid "Για %d μέρες"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1032
+msgid "Για 1 μέρα"
+msgstr ""
+
+#. translators: %d: day number of the plan (1, 2, 3 …)
+#: includes/class-plandose-frontend.php:1034
+#, php-format
+msgid "Ημέρα %d"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1035
+msgid "Μέσα στην ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1036
+msgid "Μία φορά την εβδομάδα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1037
+msgid "Κάθε 2 εβδομάδες"
+msgstr ""
+
+#. translators: %d: number of days between doses.
+#: includes/class-plandose-frontend.php:1039
+#, php-format
+msgid "Κάθε %d ημέρες"
+msgstr ""
+
+#. translators: %s: weekday name, e.g. "Δευτέρα".
+#: includes/class-plandose-frontend.php:1041
+#, php-format
+msgid "Κάθε %s"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1043
+msgid "Σημειώσεις (προαιρετικό)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1044
+msgid "π.χ. Να λαμβάνεται μετά το φαγητό"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1045
+msgid "Διάρκεια (ημέρες)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1047
+msgid "Προσθήκη Φαρμάκου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1048
+msgid "Αποθήκευση Φαρμάκου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1050
+msgid "Έχετε συμπληρώσει φάρμακο που δεν έχει προστεθεί στο πλάνο. Πατήστε «Προσθήκη Φαρμάκου» ή καθαρίστε τη φόρμα πριν συνεχίσετε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1051
+msgid "Δεν έχετε αποθηκεύσει τις αλλαγές στο φάρμακο που επεξεργάζεστε. Πατήστε «Αποθήκευση Φαρμάκου» ή «Καθαρισμός» πριν συνεχίσετε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1053
+msgid "Καθαρισμός φόρμας φαρμάκου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1054
+msgid "Η φόρμα φαρμάκου καθαρίστηκε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1055
+msgid "Η επεξεργασία ακυρώθηκε — το φάρμακο στο πλάνο δεν άλλαξε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1056
+msgid "Επεξεργασία"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1057
+msgid "Διαγραφή"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1058
+msgid "Φάρμακα στο πλάνο"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1060
+msgid "Δεν έχουν προστεθεί φάρμακα ακόμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1061
+msgid "Προσθέστε τουλάχιστον ένα φάρμακο για να συνεχίσετε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1063
+msgid "Έλεγχος πλάνου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1064
+msgid "Ελέγξτε τα φάρμακα πριν την εκτύπωση."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1065
+msgid "Προεπισκόπηση Εκτύπωσης"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1066
+msgid "Αυτό είναι το πλάνο που θα εκτυπωθεί."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1068
+msgid "Εκτύπωση Πλάνου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1069
+msgid "Έλεγχος εκτύπωσης..."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1070
+msgid "Εκτύπωση..."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1071
+msgid "Παρακαλώ περιμένετε..."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1073
+msgid "Το φάρμακο προστέθηκε στο πλάνο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1074
+msgid "Το φάρμακο ενημερώθηκε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1075
+msgid "Δεν έγινε καμία αλλαγή στο φάρμακο."
+msgstr ""
+
+#. translators: %s: plan start date, e.g. 25/09
+#: includes/class-plandose-frontend.php:1077
+#, php-format
+msgid "Έναρξη: %s"
+msgstr ""
+
+#. translators: %s: part of the day of the first dose, e.g. Βράδυ
+#: includes/class-plandose-frontend.php:1079
+#, php-format
+msgid "1η δόση: %s"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1080
+msgid "Το πλάνο εκτυπώθηκε. Η φόρμα καθαρίστηκε — έτοιμη για τον επόμενο ασθενή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1082
+msgid "Συμπληρώστε το όνομα του φαρμάκου."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1083
+msgid "Λείπει η διάρκεια (ημέρες) για: "
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1084
+msgid "Επιλέξτε έγκυρο τρόπο εξειδικευμένης συχνότητας."
+msgstr ""
+
+#. translators: %d: max allowed days
+#: includes/class-plandose-frontend.php:1086
+#, php-format
+msgid "Η διάρκεια δεν μπορεί να ξεπερνά τις %d ημέρες."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1087
+msgid "Προσθέστε τουλάχιστον ένα φάρμακο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1089
+msgid "Κάτι πήγε στραβά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1090
+msgid "Είστε σίγουροι ότι θέλετε να τερματίσετε αυτή την ενέργεια; Οι πληροφορίες του πλάνου θα χαθούν και η ενέργεια αυτή δεν μπορεί να αναιρεθεί."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1093
+msgid "Πρόβλημα σύνδεσης. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1101
+msgid "Η εκτύπωση δεν καταγράφηκε. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1103
+msgid "Εκτύπωση ξανά"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1104
+msgid "Νέος ασθενής"
+msgstr ""
+
+#. translators: %d: free reprints left for this plan.
+#: includes/class-plandose-frontend.php:1106
+#, php-format
+msgid "Τυπώθηκε ξανά χωρίς νέα χρέωση. Δωρεάν επανεκτυπώσεις που απομένουν για αυτό το πλάνο: %d."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1107
+msgid "Το πλάνο εκτυπώθηκε. Αλλάξατε το πλάνο στο μεταξύ, οπότε η επόμενη εκτύπωση θα μετρήσει ως νέα."
+msgstr ""
+
+#. translators: %d: minutes of inactivity.
+#: includes/class-plandose-frontend.php:1109
+#, php-format
+msgid "Το πλάνο καθαρίστηκε αυτόματα μετά από %d λεπτά χωρίς δραστηριότητα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1110
+msgid "Το πλάνο θα καθαριστεί σε 1 λεπτό λόγω αδράνειας. Πατήστε «Κράτα το» ή συνεχίστε την εργασία σας για να μείνει στην οθόνη."
+msgstr ""
+
+#. translators: %d: minutes left before the plan is cleared.
+#: includes/class-plandose-frontend.php:1112
+#, php-format
+msgid "Το πλάνο θα καθαριστεί σε %d λεπτά λόγω αδράνειας. Πατήστε «Κράτα το» ή συνεχίστε την εργασία σας για να μείνει στην οθόνη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1113
+msgid "Κράτα το"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1114
+msgid "Η σελίδα ήταν ανοιχτή πολλή ώρα και η σύνδεσή σας έληξε. Κάντε ανανέωση της σελίδας (F5) και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1116
+msgid "ημέρες"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1117
+msgid "Ώρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1118
+msgid "Εβδομάδα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1120
+msgid "Πλάνο Δοσολογίας"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1121
+msgid "Στοιχεία Φαρμακείου"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1122
+msgid "Εκτυπώθηκε στις"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1125
+msgid "Ετικέτες Φαρμάκων"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1126
+msgid "Εκτυπώνονται χωριστά, στον ετικετογράφο, με το κουμπί «Εκτύπωση Ετικετών»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1128
+msgid "Μέγεθος ετικέτας (σε αυτόν τον υπολογιστή)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1129
+msgid "Όπως τώρα (από τον εκτυπωτή)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1130
+msgid "Άλλο μέγεθος…"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1131
+msgid "Πλάτος (mm)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1132
+msgid "Ύψος (mm)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1134
+msgid "Μη έγκυρο μέγεθος."
+msgstr ""
+
+#. translators: %1$s × %2$s: smallest label, %3$s × %4$s: largest label, in mm.
+#: includes/class-plandose-frontend.php:1136
+#, php-format
+msgid "Όπως γράφει το κουτί των ετικετών. Από %1$s × %2$s έως %3$s × %4$s mm."
+msgstr ""
+
+#. translators: %1$s × %2$s: label width × height in mm.
+#: includes/class-plandose-frontend.php:1138
+#, php-format
+msgid "Στις ρυθμίσεις του εκτυπωτή επιλέξτε ετικέτα %1$s × %2$s mm. Στο παράθυρο εκτύπωσης: Περιθώρια «Κανένα», Κλίμακα 100%."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1139
+msgid "Δοκιμαστική ετικέτα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1140
+msgid "ΔΟΚΙΜΑΣΤΙΚΗ ΕΤΙΚΕΤΑ"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1141
+msgid "ΔΟΚΙΜΗ — μετά το φαγητό, με ένα ποτήρι νερό, όχι γάλα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1142
+msgid "Επιλέξτε το μέγεθος των ετικετών σας: έτσι κάθε φάρμακο χωράει πάντα σε μία ετικέτα."
+msgstr ""
+
+#. translators: %s: what was shortened (e.g. «Σημειώσεις, Πελάτης»).
+#: includes/class-plandose-frontend.php:1144
+#, php-format
+msgid "Συντομεύτηκαν για να χωρέσουν: %s. Στο πλάνο Α4 τυπώνονται ολόκληρα."
+msgstr ""
+
+#. translators: %s: medicine names, comma separated
+#: includes/class-plandose-frontend.php:1146
+#, php-format
+msgid "Οι σημειώσεις δεν χωράνε ολόκληρες στην ετικέτα και θα κοπούν ή θα παραλειφθούν: %s. Ελέγξτε την προεπισκόπηση. Πατήστε ξανά «Εκτύπωση Ετικετών» για να τυπωθούν έτσι, ή επιλέξτε μεγαλύτερη ετικέτα."
+msgstr ""
+
+#. translators: %s: medicine name.
+#: includes/class-plandose-frontend.php:1148
+#, php-format
+msgid "Το «%s» με τη δοσολογία του δεν χωράει σε μία ετικέτα αυτού του μεγέθους. Συντομεύστε το όνομα ή επιλέξτε μεγαλύτερη ετικέτα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1149
+msgid "Εκτύπωση Ετικετών"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1150
+msgid "Ο browser μπλόκαρε το παράθυρο εκτύπωσης ετικετών. Επιτρέψτε τα αναδυόμενα παράθυρα για αυτό το site και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1151
+msgid "Το πλάνο εκτυπώθηκε. Μπορείτε ακόμη να τυπώσετε τις ετικέτες του με το «Εκτύπωση Ετικετών» — ή να ξεκινήσετε τον επόμενο ασθενή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1152
+#: includes/class-plandose-frontend.php:1264
+msgid "Διάρκεια"
+msgstr ""
+
+#. translators: %s: pharmacy name
+#: includes/class-plandose-frontend.php:1154
+#, php-format
+msgid "Το φαρμακείο %s ετοίμασε αυτό το πλάνο για να σας βοηθήσει στην καλύτερη οργάνωση και συνέπεια στη λήψη των φαρμάκων σας."
+msgstr ""
+
+#. translators: %d: remaining prints this month
+#: includes/class-plandose-frontend.php:1156
+#, php-format
+msgid "Απομένουν %d εκτυπώσεις αυτόν τον μήνα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1157
+msgid "Απεριόριστες εκτυπώσεις."
+msgstr ""
+
+#. translators: 1: number of free reprints, 2: free-reprint window in minutes.
+#: includes/class-plandose-frontend.php:1169
+#, php-format
+msgid "Η εκτύπωση μετράει μόλις ανοίξει το παράθυρο εκτύπωσης, ακόμη κι αν πατήσετε Ακύρωση. Χωρίς αλλαγές στο πλάνο, η επανεκτύπωση είναι δωρεάν έως %1$d φορές μέσα σε %2$d λεπτά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1176
+#: includes/class-plandose-settings.php:256
+msgid "Το πλάνο αυτό είναι βοήθημα υπενθύμισης δοσολογίας και δεν αντικαθιστά την οδηγία ιατρού ή φαρμακοποιού. Σε περίπτωση αμφιβολίας συμβουλευτείτε τον φαρμακοποιό σας."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1180
+#: includes/class-plandose-settings.php:263
+msgid "Ευχαριστούμε που εμπιστευτήκατε το φαρμακείο μας."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1184
+#: includes/class-plandose-settings.php:264
+msgid "Για οποιαδήποτε διευκρίνηση είμαστε πάντα στη διάθεσή σας!"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1187
+msgid "Πρωί"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1188
+msgid "Μεσημέρι"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1189
+msgid "Απόγευμα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1190
+msgid "Βράδυ"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1192
+msgid "Ισχύς σε μονάδες ανά ml σε μία προγεμισμένη σύριγγα: επιβεβαιώστε ότι η δόση είναι μία ένεση και ότι το φάρμακο δεν είναι ινσουλίνη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1193
+msgid "Ινσουλίνη: η δόση γράφεται σε μονάδες (IU). Επιλέξτε «Μονάδες (IU)» και συμπληρώστε τις μονάδες της συνταγής."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1194
+msgid "Ινσουλίνη: η δοσολογία δίνεται σε ενέσεις, όχι σε μονάδες — συμπληρώστε στη φόρμα τη δόση σε μονάδες (IU)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1195
+msgid "Ινσουλίνη: η δόση είναι γραμμένη σε ml ή mg, όχι σε μονάδες — συμπληρώστε στη φόρμα τη δόση σε μονάδες (IU)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1197
+msgid "Υπενθυμίσεις στο κινητό"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1198
+msgid "Σκανάρετε με την κάμερα του κινητού: οι δόσεις μπαίνουν στο ημερολόγιό σας με ειδοποίηση."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1199
+msgid "Δεν στέλνεται στο φαρμακείο. Το QR περιέχει τα φάρμακα του πλάνου."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1200
+msgid "Το πλάνο είναι πολύ μεγάλο για το QR «Υπενθυμίσεις στο κινητό»: το φύλλο θα τυπωθεί χωρίς QR."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1201
+msgid "Οι σημειώσεις των φαρμάκων δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: οι υπενθυμίσεις στο κινητό θα είναι χωρίς σημειώσεις. Στο τυπωμένο φύλλο υπάρχουν κανονικά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1202
+msgid "Το όνομα του φαρμακείου (και τυχόν σημειώσεις των φαρμάκων) δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: στο κινητό οι υπενθυμίσεις θα είναι χωρίς αυτά. Στο τυπωμένο φύλλο υπάρχουν κανονικά."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1203
+msgid "Η συνταγή λέει «κάθε … ώρες»: στο πλάνο οι δόσεις μπαίνουν Πρωί / Μεσημέρι / Βράδυ, όχι ανά ακριβές ωράριο. Αν πρέπει να απέχουν ακριβώς, γράψτε τις ώρες στις σημειώσεις."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1204
+msgid "Η δοσολογία δεν ταιριάζει με τη μορφή του φαρμάκου (π.χ. ένεση σε δισκία) — ελέγξτε ότι η γραμμή δοσολογίας ανήκει σε αυτό το φάρμακο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1205
+msgid "Η διάρκεια φαίνεται πολύ μικρή για την ποσότητα που χορηγείται — ελέγξτε τη διάρκεια."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1206
+msgid "Η περιεκτικότητα λείπει ή δεν διαβάστηκε ολόκληρη — συγκρίνετε το όνομα με τη συνταγή και επιβεβαιώστε."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1207
+msgid "Η περιεκτικότητα είναι γραμμένη χωρίς το αρχικό μηδέν (π.χ. «.25MG») και μπήκε με μηδέν μπροστά (0.25MG) — συγκρίνετε το όνομα με τη συνταγή στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1208
+msgid "Ο αριθμός της περιεκτικότητας είναι σπασμένος με κενό (π.χ. «0. 25MG», «1 . 5MG») και μπήκε ενωμένος (0.25MG, 1.5MG) — συγκρίνετε το όνομα με τη συνταγή στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1209
+msgid "Ακριβώς πριν από την περιεκτικότητα υπάρχει τελεία, κόμμα ή άλλος αριθμός (π.χ. «1X. 5MG», «0 25MG») — ίσως λείπει μηδέν ή υποδιαστολή. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1210
+msgid "ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα, εδώ είναι συχνότερα. Επαληθεύστε τη συχνότητα με τον γιατρό που το συνταγογράφησε."
+msgstr ""
+
+#. translators: %s: medicine name.
+#: includes/class-plandose-frontend.php:1212
+#, php-format
+msgid "ΠΡΟΣΟΧΗ: «%s» συχνότερα από μία φορά την εβδομάδα — συνήθως χορηγείται μία φορά την εβδομάδα. Αν η συχνότητα είναι επιβεβαιωμένη με τον γιατρό, πατήστε ξανά «Εκτύπωση»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1213
+msgid "Βρέθηκε 1 φάρμακο. Ελέγξτε το πριν μπει στο πλάνο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1214
+msgid "Η ποσότητα σε mg μπορεί να έχει έως 3 δεκαδικά ψηφία (π.χ. 0,125)."
+msgstr ""
+
+#. translators: %s: medicine name.
+#: includes/class-plandose-frontend.php:1216
+#, php-format
+msgid "Το «%s» υπάρχει ήδη στο πλάνο. Αν πρέπει να μπει δεύτερη φορά (π.χ. άλλη δόση άλλες ώρες), πατήστε ξανά το ίδιο κουμπί — αλλιώς πατήστε «Επεξεργασία» στο φάρμακο της λίστας."
+msgstr ""
+
+#. translators: %s: medicine names.
+#: includes/class-plandose-frontend.php:1218
+#, php-format
+msgid "ΠΡΟΣΟΧΗ: μεθοτρεξάτη σε περισσότερες από μία εγγραφές του πλάνου («%s») — μαζί μπορεί να δίνουν δόση συχνότερα από μία φορά την εβδομάδα. Αν είναι σωστό, πατήστε ξανά «Εκτύπωση»."
+msgstr ""
+
+#. translators: %s: medicine names.
+#: includes/class-plandose-frontend.php:1220
+#, php-format
+msgid "ΠΡΟΣΟΧΗ: «%s» σε περισσότερες από μία εγγραφές του πλάνου — συνήθως χορηγείται μία φορά την εβδομάδα. Αν είναι σωστό, πατήστε ξανά «Εκτύπωση»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1221
+msgid "ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα και υπάρχει ήδη σε άλλη εγγραφή του πλάνου. Επιβεβαιώστε ότι μαζί δεν δίνουν δόση συχνότερα από το σωστό."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1222
+msgid "Η ποσότητα που χορηγήθηκε δεν ταιριάζει με το πλάνο (πολύ περισσότερη ή πολύ λιγότερη) — ελέγξτε ποσότητα, συχνότητα και διάρκεια με τη συνταγή."
+msgstr ""
+
+#. translators: 1: units dispensed (e.g. «60 δισκία»), 2: units the plan needs.
+#: includes/class-plandose-frontend.php:1224
+#, php-format
+msgid "Χορηγούνται %1$s · το πλάνο χρειάζεται %2$s"
+msgstr ""
+
+#. translators: %d: number of once-daily medicines without a time.
+#: includes/class-plandose-frontend.php:1226
+#, php-format
+msgid "Ίδια ώρα για όλα τα 1×ημέρα (%d):"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1227
+msgid "(για όλα)"
+msgstr ""
+
+#. translators: 1: chosen time of day, 2: number of medicines.
+#: includes/class-plandose-frontend.php:1229
+#, php-format
+msgid "«%1$s»: ορίστηκε σε %2$d φάρμακα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1230
+msgid "Το όνομα έχει περισσότερες από μία λέξεις πριν από τη μορφή (τονίζονται) — επιβεβαιώστε ότι ανήκουν στο όνομα του φαρμάκου (π.χ. «PO», «HS» δεν ανήκουν)."
+msgstr ""
+
+#. translators: %s: the unread text, quoted.
+#: includes/class-plandose-frontend.php:1232
+#, php-format
+msgid "Υπάρχει κείμενο στη συνταγή που δεν διαβάστηκε: «%s — ελέγξτε τη συνταγή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1233
+msgid "Η συνταγή έχει σειρά από ποσότητες (π.χ. διαφορετική δόση ανά ημέρα) — δεν είναι σταθερή δόση. Συμπληρώστε το πρόγραμμα στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1234
+msgid "Αυτή η προσπάθεια εκτύπωσης έχει ήδη επαναληφθεί όσες φορές επιτρέπεται. Τώρα δεν χρεώθηκε και δεν τυπώθηκε τίποτα. Αν πατήσετε ξανά «Εκτύπωση», θα γίνει δωρεάν επανεκτύπωση αν απομένουν (δείτε τη γραμμή χρέωσης) — αλλιώς θα μετρήσει ως νέα εκτύπωση."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1235
+msgid "Το κείμενο είναι πολύ μεγάλο για μία συνταγή — αντιγράψτε μόνο τη συνταγή και ξαναδοκιμάστε."
+msgstr ""
+
+#. translators: %d: number of unread lines that look like dosage lines.
+#: includes/class-plandose-frontend.php:1237
+#, php-format
+msgid "Βρέθηκαν %d γραμμές που μοιάζουν με δοσολογία αλλά δεν διαβάστηκαν — κάποιο φάρμακο μπορεί να λείπει. Ελέγξτε τη συνταγή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1238
+msgid "Μία φορά τον μήνα: το πλήθος των δόσεων εξαρτάται από την ημέρα που θα επιλέξετε — ελέγξτε τις ημερομηνίες με όσα χορηγήθηκαν."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1239
+msgid "Ημέρα του μήνα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1240
+msgid "Ποια ημέρα του μήνα; (1–31)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1241
+msgid "π.χ. 15"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1242
+msgid "Η δόση πέφτει αυτή την ημέρα κάθε μήνα."
+msgstr ""
+
+#. translators: %1$d: chosen day of the month (29-31).
+#: includes/class-plandose-frontend.php:1244
+#, php-format
+msgid "Όταν ένας μήνας δεν έχει %1$d ημέρες (π.χ. Φεβρουάριος, Απρίλιος), η δόση πέφτει την τελευταία ημέρα εκείνου του μήνα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1245
+msgid "30 ημ."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1246
+msgid "Από τη συνταγή:"
+msgstr ""
+
+#. translators: %1$s: number of doses (always 1).
+#: includes/class-plandose-frontend.php:1248
+#, php-format
+msgid "Σύνολο: %1$s δόση"
+msgstr ""
+
+#. translators: 1: number of doses (1), 2: total quantity, 3: unit.
+#: includes/class-plandose-frontend.php:1250
+#, php-format
+msgid "Σύνολο: %1$s δόση • %2$s %3$s"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1251
+msgid "Κάθε ημέρα"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1252
+msgid "Μία φορά την εβδομάδα (επιλέξτε ημέρα)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1253
+msgid "Μία φορά τον μήνα (επιλέξτε ημέρα)"
+msgstr ""
+
+#. translators: %d: day of the month (1-28).
+#: includes/class-plandose-frontend.php:1255
+#, php-format
+msgid "Μία φορά τον μήνα, στις %d"
+msgstr ""
+
+#. translators: %d: day of the month (29-31).
+#: includes/class-plandose-frontend.php:1257
+#, php-format
+msgid "Μία φορά τον μήνα, στις %d (ή την τελευταία ημέρα του μήνα)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1258
+msgid "Ημέρα της εβδομάδας"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1259
+msgid "Ημέρα του μήνα (1–31)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1260
+msgid "Επιβεβαιώνω"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1265
+msgid "Στη συνταγή"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1266
+msgid "Για να ενεργοποιηθεί η «Προσθήκη», επιλέξτε ή επιβεβαιώστε τα σημειωμένα πεδία των επιλεγμένων φαρμάκων."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1267
+msgid "Έλεγξα τη συνταγή και ξέρω ποια φάρμακα λείπουν από τη λίστα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1268
+msgid "Επιβεβαιώνω ότι τα φάρμακα που επιλέγω είναι του ασθενή αυτού του πλάνου."
+msgstr ""
+
+#. translators: 1: medicines found on the prescription, 2: medicines read.
+#: includes/class-plandose-frontend.php:1270
+#, php-format
+msgid "Η συνταγή φαίνεται να έχει %1$d φάρμακα, διαβάστηκαν %2$d — ελέγξτε."
+msgstr ""
+
+#. translators: %s: the quantity as typed.
+#: includes/class-plandose-frontend.php:1272
+#, php-format
+msgid "Η ποσότητα «%s» δεν είναι έγκυρος μικτός αριθμός: ο αριθμητής του κλάσματος πρέπει να είναι μικρότερος από τον παρονομαστή (π.χ. 1 1/2). Ελέγξτε την τιμή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1273
+msgid "Επιλέξτε ώρα λήψης (Πρωί, Μεσημέρι, Απόγευμα ή Βράδυ)."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1274
+msgid "Επιλέξτε ημέρα της εβδομάδας."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1275
+msgid "Επιλέξτε ημέρα του μήνα (1–31)."
+msgstr ""
+
+#. translators: 1: quantity per intake, 2: unit.
+#: includes/class-plandose-frontend.php:1277
+#, php-format
+msgid "Ασυνήθιστα μεγάλη ποσότητα: %1$s %2$s ανά λήψη. Αν είναι σωστή, πατήστε ξανά το ίδιο κουμπί για επιβεβαίωση."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1278
+msgid "Η περιεκτικότητα δεν διαβάστηκε με βεβαιότητα και δεν μπήκε στο όνομα — ελέγξτε το όνομα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1279
+msgid "Βρέθηκε φάρμακο χωρίς γραμμή «ΔΟΣΟΛΟΓΙΑ» — συμπληρώστε τη δοσολογία από τη συνταγή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1280
+msgid "Η γραμμή της δοσολογίας είναι υπερβολικά μεγάλη και δεν διαβάστηκε — συμπληρώστε τη."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1281
+msgid "Ασυνήθιστα μεγάλη ποσότητα ανά λήψη — επιβεβαιώστε την με τη συνταγή."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1282
+msgid "Η συνταγή λέει «όταν χρειάζεται» (SOS / σε περίπτωση / εάν) — δεν είναι σταθερό πρόγραμμα. Γράψτε την οδηγία στις σημειώσεις."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1283
+msgid "Το ίδιο φάρμακο υπάρχει και με άλλη δοσολογία — επιλέξτε ποια ισχύει."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1284
+msgid "Μία φορά την εβδομάδα: επιλέξτε ημέρα της εβδομάδας."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1285
+msgid "«1 φορά τον μήνα»: επιλέξτε ημέρα του μήνα. Αν ένας μήνας δεν έχει αυτή την ημέρα, η δόση πέφτει την τελευταία ημέρα του μήνα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1286
+msgid "Ινσουλίνη: η ποσότητα διαβάστηκε ως μονάδες (IU) — επιβεβαιώστε την."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1287
+msgid "Οι ημέρες δεν είναι ακέραιος αριθμός εβδομάδων/διαστημάτων: ελέγξτε το πλήθος των δόσεων (π.χ. 30 ημέρες εβδομαδιαία = 4 ή 5 δόσεις) με όσα χορηγήθηκαν."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1288
+msgid "Μία φορά την ημέρα (επιλέξτε ώρα)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1289
+msgid "Στις ετικέτες μπορεί να χωρέσει μέρος των σημειώσεων· θα ζητηθεί επιβεβαίωση αν κοπούν. Στο πλάνο τυπώνονται ολόκληρες."
+msgstr ""
+
+#. translators: %s: local time the print was charged (HH:MM).
+#: includes/class-plandose-frontend.php:1291
+#, php-format
+msgid "Η εκτύπωση χρεώθηκε στις %s."
+msgstr ""
+
+#. translators: 1: free reprints left, 2: local time until which they are free (HH:MM).
+#: includes/class-plandose-frontend.php:1293
+#, php-format
+msgid "Δωρεάν επανεκτυπώσεις: %1$d, έως τις %2$s."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1294
+msgid "Δεν απομένουν δωρεάν επανεκτυπώσεις — η επόμενη εκτύπωση χρεώνεται."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1295
+msgid "Η επόμενη εκτύπωση χρεώνεται ως νέα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1296
+msgid "Ο browser δεν μπορεί να γνωρίζει αν ο εκτυπωτής ολοκλήρωσε την εκτύπωση — ελέγξτε το χαρτί."
+msgstr ""
+
+#. translators: 1: local time until which reprints are free (HH:MM), 2: number of free reprints.
+#: includes/class-plandose-frontend.php:1298
+#, php-format
+msgid "Η χρέωση καταγράφηκε· αν δεν άνοιξε ο διάλογος εκτύπωσης, πατήστε «Εκτύπωση ξανά» — δωρεάν έως τις %1$s (έως %2$d φορές), όσο το πλάνο μένει στην οθόνη."
+msgstr ""
+
+#. translators: %d: free-reprint window in minutes.
+#: includes/class-plandose-frontend.php:1300
+#, php-format
+msgid "Η εκτύπωση χρεώθηκε ως νέα: οι δωρεάν επανεκτυπώσεις αυτού του πλάνου εξαντλήθηκαν ή πέρασαν %d λεπτά από την πρώτη εκτύπωση."
+msgstr ""
+
+#. translators: 1: number of free reprints, 2: local time until which they are free (HH:MM), 3: minutes of inactivity before the plan is cleared.
+#: includes/class-plandose-frontend.php:1302
+#, php-format
+msgid "Η εκτύπωση καταγράφηκε. Αν δεν τυπώθηκε σωστά (π.χ. πατήσατε Ακύρωση ή διαλέξατε λάθος εκτυπωτή), πατήστε «Εκτύπωση ξανά» — χωρίς νέα χρέωση, έως %1$d φορές, μέχρι τις %2$s. Χωρίς δραστηριότητα για %3$d λεπτά το πλάνο καθαρίζεται αυτόματα. Για τον επόμενο ασθενή πατήστε «Νέος ασθενής»."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1303
+msgid "Η εκτύπωση ακυρώθηκε ή το παράθυρο μπλοκαρίστηκε — δεν καταγράφηκε νέα εκτύπωση. Πατήστε ξανά «Εκτύπωση»· αν το παράθυρο δεν ανοίγει, επιτρέψτε τα αναδυόμενα παράθυρα για αυτό το site."
+msgstr ""
+
+#. translators: 1: local time until which the retry is free (HH:MM), 2: number of free retries, 3: minutes of inactivity before the plan is cleared.
+#: includes/class-plandose-frontend.php:1305
+#, php-format
+msgid "Η εκτύπωση δεν άνοιξε, αλλά η χρέωση καταγράφηκε. Πατήστε ξανά «Εκτύπωση» έως τις %1$s — δεν θα χρεωθεί δεύτερη φορά (έως %2$d επαναλήψεις), ακόμη κι αν διορθώσετε πρώτα το πλάνο ή αυτό καθαριστεί μετά από %3$d λεπτά αδράνειας."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1306
+msgid "Το πλάνο άλλαξε ενώ καταγραφόταν η εκτύπωση, οπότε δεν τυπώθηκε. Η χρέωση καταγράφηκε: πατήστε ξανά «Εκτύπωση» για το τρέχον πλάνο — χωρίς νέα χρέωση."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1307
+msgid "Το πλάνο άλλαξε ενώ καταγραφόταν η επανεκτύπωση, οπότε δεν τυπώθηκε. Η επόμενη εκτύπωση θα μετρήσει ως νέα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1308
+msgid "Δεν βρέθηκαν τα στοιχεία του φαρμακείου (όνομα) για το φύλλο. Συμπληρώστε τα στο προφίλ του λογαριασμού σας και δοκιμάστε ξανά."
+msgstr ""
+
+#. translators: 1: local time until which the retry is free (HH:MM), 2: number of free retries.
+#: includes/class-plandose-frontend.php:1310
+#, php-format
+msgid "Πρόβλημα σύνδεσης. Δεν είναι βέβαιο αν η εκτύπωση χρεώθηκε. Πατήστε ξανά «Εκτύπωση» έως τις %1$s — αν είχε χρεωθεί, δεν θα χρεωθεί δεύτερη φορά (έως %2$d επαναλήψεις), ακόμη κι αν διορθώσετε πρώτα το πλάνο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1311
+msgid "Η εκτύπωση βρίσκεται σε εξέλιξη — το παράθυρο δεν μπορεί να κλείσει μέχρι να ολοκληρωθεί."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1312
+msgid "Το όνομα του πελάτη δεν χωράει και θα τυπωθούν μόνο τα αρχικά του. Πατήστε ξανά «Εκτύπωση Ετικετών» για να τυπωθεί έτσι, ή επιλέξτε μεγαλύτερη ετικέτα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1313
+msgid "(βλ. λίστα φαρμάκων)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1314
+msgid "(συνέχεια)"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2210
+#: includes/class-plandose-frontend.php:2211
+#: includes/class-plandose-settings.php:237
+msgid "Πλάνο Δόσεων"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2220
+msgid "Δημιουργεί πλάνο δοσολογίας για κάθε ασθενή σε λίγα δευτερόλεπτα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2221
+msgid "Δίνει στον ασθενή ένα καθαρό checklist για το σπίτι."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2222
+msgid "Μειώνει τις επαναλαμβανόμενες ερωτήσεις για το πότε λαμβάνεται κάθε φάρμακο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2223
+msgid "Προσφέρει πιο επαγγελματική εξυπηρέτηση μέσα από ένα απλό εκτυπώσιμο πλάνο."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2224
+msgid "Διαθέσιμο μόνο για εγγεγραμμένα φαρμακεία."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2263
+msgid "Κλείσιμο"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2272
+msgid "Διαθέσιμο στο Pro"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2274
+msgid "Αλλαγή γλώσσας"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2274
+msgid "Αλλαγή γλώσσας — διαθέσιμο στο Pro"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2291
+msgid "Τι είναι το"
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2302
+msgid "Δημιουργήστε καθαρά πλάνα δοσολογίας και βοηθήστε τον ασθενή να ακολουθεί σωστά την αγωγή του."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2316
+msgid "Δωρεάν περιβάλλον"
+msgstr ""
+
+#. translators: %d: free monthly print limit
+#: includes/class-plandose-frontend.php:2322
+#, php-format
+msgid "Στο δωρεάν περιβάλλον έχετε %d εκτυπώσεις τον μήνα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:2353
+msgid "Είσοδος"
+msgstr ""
+
+#: includes/class-plandose-invoice-migration.php:651
+msgid "Η μεταφορά τιμολογίων εκτελείται ήδη. Δοκιμάστε ξανά σε λίγα λεπτά."
+msgstr ""
+
+#. translators: 1: number of files copied, 2: number of subscriber rows updated
+#: includes/class-plandose-invoice-migration.php:1153
+#, php-format
+msgid "PlanDose: αντιγράφηκαν %1$d παλιά τιμολόγια (από τη Media Library) σε %2$d φαρμακεία στην προστατευμένη αποθήκευση τιμολογίων."
+msgstr ""
+
+#: includes/class-plandose-invoice-migration.php:1159
+msgid "Τα πρωτότυπα ΔΕΝ διαγράφηκαν: παραμένουν στη Media Library (wp-content/uploads/ΕΕΕΕ/ΜΜ/) με δημόσια διεύθυνση, μέχρι να τα ελέγξετε και να τα διαγράψετε με «Διαγραφή πρωτοτύπων»."
+msgstr ""
+
+#. translators: %d: number of files that could not be copied
+#: includes/class-plandose-invoice-migration.php:1165
+#, php-format
+msgid "%d αρχεία δεν ήταν δυνατό να αντιγραφούν και παρέμειναν όπως ήταν."
+msgstr ""
+
+#: includes/class-plandose-invoice-migration.php:1176
+msgid "Έλεγχος πρωτοτύπων"
+msgstr ""
+
+#. translators: 1: number of invoice files, 2: number of pharmacies
+#: includes/class-plandose-invoice-migration.php:1202
+#, php-format
+msgid "PlanDose: %1$d παλιά τιμολόγια (Media Library) σε %2$d φαρμακεία δεν μεταφέρθηκαν στην προστατευμένη αποθήκευση. Εξακολουθούν να ανοίγουν από τη λίστα τιμολογίων όσο υπάρχει το αρχείο τους στη Media Library. Αφού διορθώσετε την αιτία (π.χ. επαναφέρετε το αρχείο που λείπει), πατήστε «Επανάληψη μεταφοράς τιμολογίων». Αν ένα αρχείο λείπει οριστικά, μπορείτε να αφαιρέσετε την εγγραφή από τη λίστα τιμολογίων του φαρμακείου."
+msgstr ""
+
+#. translators: %s: comma-separated list of user IDs
+#: includes/class-plandose-invoice-migration.php:1213
+#, php-format
+msgid "Φαρμακεία (ID χρήστη): %s"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:187
+msgid "Δεν ήταν δυνατή η δημιουργία του ασφαλούς φακέλου τιμολογίων."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:192
+msgid "Ο ασφαλής φάκελος τιμολογίων δεν είναι εγγράψιμος από τον server."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:209
+msgid "Ο φάκελος PLANDOSE_INVOICE_DIR περιέχει ήδη άλλα αρχεία και δεν μπορεί να χρησιμοποιηθεί ως αποκλειστικός φάκελος τιμολογίων PlanDose. Χρησιμοποιήστε έναν νέο, κενό, αποκλειστικό φάκελο."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:232
+msgid "Δεν ήταν δυνατή η δημιουργία των αρχείων προστασίας του φακέλου τιμολογίων."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:252
+msgid "Δεν ήταν δυνατή η ασφαλής πιστοποίηση ιδιοκτησίας του φακέλου τιμολογίων."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:281
+msgid "Ο ασφαλής φάκελος τιμολογίων δεν βρέθηκε στον server."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:286
+msgid "Ο ασφαλής φάκελος τιμολογίων δεν είναι αναγνώσιμος από τον server."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:292
+msgid "Ο φάκελος PLANDOSE_INVOICE_DIR δεν φέρει το αρχείο ιδιοκτησίας του PlanDose, οπότε δεν διαβάζονται τιμολόγια από αυτόν. Ελέγξτε ότι η σταθερά δείχνει τον σωστό φάκελο τιμολογίων."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:764
+msgid "Δεν ήταν δυνατή η πρόσβαση στον φάκελο uploads. Ο διαχειριστής του site βλέπει τις λεπτομέρειες στο PlanDose → Διαγνωστικά."
+msgstr ""
+
+#. translators: %s: WordPress upload directory error.
+#: includes/class-plandose-invoice-storage.php:771
+#, php-format
+msgid "Δεν ήταν δυνατή η πρόσβαση στον φάκελο uploads: %s"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:780
+msgid "Ο φάκελος uploads δεν είναι διαθέσιμος."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:803
+msgid "Η σταθερά PLANDOSE_INVOICE_DIR πρέπει να είναι μια απόλυτη διαδρομή φακέλου."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:812
+msgid "Η διαδρομή PLANDOSE_INVOICE_DIR δεν επιτρέπεται να είναι symbolic link."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:830
+msgid "Η διαδρομή PLANDOSE_INVOICE_DIR δεν επιτρέπεται να είναι κρίσιμος φάκελος του συστήματος ή του WordPress."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:843
+msgid "Η διαδρομή PLANDOSE_INVOICE_DIR είναι υπερβολικά γενική· χρησιμοποιήστε έναν αποκλειστικό, βαθύτερο φάκελο."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1044
+msgid "Μη έγκυρη εγγραφή αρχείου τιμολογίου."
+msgstr ""
+
+#. translators: %s: reason the check could not be completed
+#: includes/class-plandose-invoice-storage.php:1658
+#, php-format
+msgid "Προσοχή: το τιμολόγιο αποθηκεύτηκε, αλλά δεν επιβεβαιώθηκε ότι ο φάκελος τιμολογίων είναι κλειστός για το internet (%s). Δείτε PlanDose → Διαγνωστικά."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1671
+msgid "Τα τιμολόγια που υπάρχουν ήδη ανοίγουν κανονικά."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1682
+msgid "Το τιμολόγιο δεν αποθηκεύτηκε: ο φάκελος τιμολογίων είναι ανοιχτός στο internet — ένα δοκιμαστικό αρχείο του κατέβηκε χωρίς σύνδεση."
+msgstr ""
+
+#. translators: %s: reason the check could not be completed
+#: includes/class-plandose-invoice-storage.php:1687
+#, php-format
+msgid "Το τιμολόγιο δεν αποθηκεύτηκε: δεν ήταν δυνατό να επιβεβαιωθεί ότι ο φάκελος τιμολογίων είναι κλειστός για το internet (%s)."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1700
+msgid "Ζητήστε από τον πάροχο φιλοξενίας να μεταφέρει τον φάκελο εκτός του δημόσιου χώρου του site (σταθερά PLANDOSE_INVOICE_DIR στο wp-config.php) ή να κλείσει την πρόσβαση σε αυτόν (οδηγίες στο αρχείο nginx-invoice-protection.txt του plugin), και μετά πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1703
+msgid "Ζητήστε από τον πάροχο φιλοξενίας να ορίσει τη σταθερά PLANDOSE_INVOICE_DIR σε φάκελο εκτός του δημόσιου χώρου του site, ή να επιτρέψει στο site να καλεί τον εαυτό του (loopback), και μετά πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά. Μόνο αν ο πάροχος επιβεβαιώσει ότι ο φάκελος είναι κλειστός: define( 'PLANDOSE_ALLOW_UNVERIFIED_INVOICE_DIR', true ); στο wp-config.php."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1715
+msgid "ο φάκελος είναι εκτός κάθε δημόσιου φακέλου του web server"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1716
+msgid "ο web server αρνήθηκε να παραδώσει δοκιμαστικό αρχείο του φακέλου, ενώ παρέδωσε κανονικά αρχείο σύγκρισης σε δημόσιο φάκελο"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1717
+msgid "ο web server παρέδωσε δοκιμαστικό αρχείο του φακέλου σε αίτημα χωρίς σύνδεση"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1718
+msgid "ο φάκελος είναι μέσα στο web root, αλλά δεν αντιστοιχεί σε γνωστή διεύθυνση του site"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1719
+msgid "ο φάκελος δεν έχει δημιουργηθεί ακόμη"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1720
+msgid "ο φάκελος τιμολογίων δεν είναι έγκυρος"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1721
+msgid "δεν ήταν δυνατή η εγγραφή δοκιμαστικού αρχείου στον φάκελο"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1722
+msgid "ο φάκελος uploads σερβίρεται από άλλο host (π.χ. CDN)"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1723
+msgid "το site δεν μπόρεσε να καλέσει τον εαυτό του — loopback"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1724
+msgid "ο server απάντησε με ανακατεύθυνση"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1725
+msgid "ο server απάντησε με σφάλμα"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1726
+msgid "δεν έχει γίνει ακόμη έλεγχος"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1727
+msgid "ο server δεν παρέδωσε ούτε ένα δοκιμαστικό αρχείο σε δημόσιο φάκελο, οπότε η άρνηση δεν αποδεικνύει τίποτα (π.χ. firewall ή μπλοκαρισμένο loopback)"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1728
+msgid "δεν βρέθηκε δημόσιος φάκελος για δοκιμή σύγκρισης"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1729
+msgid "δεν ήταν δυνατή η εγγραφή δοκιμαστικού αρχείου σύγκρισης"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1730
+msgid "ο server απάντησε χωρίς να αρνηθεί και χωρίς να παραδώσει το δοκιμαστικό αρχείο (π.χ. σελίδα firewall ή CDN), οπότε η ιδιωτικότητα δεν αποδεικνύεται"
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:1731
+msgid "ο έλεγχος έτρεξε χωρίς γνωστό DOCUMENT_ROOT (π.χ. WP-CLI ή cron από γραμμή εντολών) — θα επαναληφθεί από τον web server"
+msgstr ""
+
+#: includes/class-plandose-print-charges.php:721
+msgid "PlanDose: η βάση δεν υποστηρίζει συναλλαγές για τις χρεώσεις εκτυπώσεων."
+msgstr ""
+
+#. translators: %s: list of database tables and their storage engine
+#: includes/class-plandose-print-charges.php:725
+#, php-format
+msgid "Οι πίνακες %s δεν είναι InnoDB ή λείπουν. Οι εκτυπώσεις λειτουργούν, αλλά μετά από σφάλμα βάσης η χρέωση αναιρείται με το χέρι αντί για αυτόματα. Μετατρέψτε τους σε InnoDB (ALTER TABLE … ENGINE=InnoDB) αφού πάρετε backup."
+msgstr ""
+
+#: includes/class-plandose-print-result.php:88
+msgid "Μη έγκυρο αναγνωριστικό εκτύπωσης. Ανανεώστε τη σελίδα και δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-print-result.php:165
+msgid "Δεν ήταν δυνατή η καταγραφή της εκτύπωσης. Δοκιμάστε ξανά."
+msgstr ""
+
+#. translators: %d: monthly print limit
+#: includes/class-plandose-print-result.php:188
+#, php-format
+msgid "Έχετε φτάσει το όριο των %d εκτυπώσεων για αυτόν τον μήνα."
+msgstr ""
+
+#. translators: %d: how many times one print request may be repeated
+#: includes/class-plandose-print-result.php:211
+#, php-format
+msgid "Αυτή η εκτύπωση έχει ήδη επαναληφθεί %d φορές και δεν επαναλαμβάνεται ξανά. Δεν χρεώθηκε και δεν εκτυπώθηκε. Πατήστε ξανά «Εκτύπωση» για νέα εκτύπωση."
+msgstr ""
+
+#: includes/class-plandose-print-result.php:235
+msgid "Μη έγκυρο αίτημα εκτύπωσης. Δοκιμάστε ξανά."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:166
+msgid "Επωνυμία φαρμακείου"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:167
+msgid "Email"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:169
+msgid "Ημερομηνία διαγραφής λογαριασμού"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:184
+msgid "PlanDose — Στοιχεία διαγραμμένου λογαριασμού (τηρούνται με τα τιμολόγια)"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:366
+msgid "PlanDose — Πρόσβαση στο εργαλείο"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:370
+msgid "Χειροκίνητη ρύθμιση πρόσβασης"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:392
+msgid "Κατάσταση συνδρομής"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:396
+msgid "Ημερομηνία λήξης Pro"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:397
+#: includes/class-plandose-privacy.php:405
+#: includes/class-plandose-privacy.php:409
+msgid "—"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:400
+msgid "Εκτυπώσεις τρέχοντος μήνα"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:404
+msgid "Μηδενισμός μετρητή"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:408
+msgid "Τελευταία εκτύπωση"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:415
+msgid "PlanDose — Συνδρομή"
+msgstr ""
+
+#. translators: %d: WordPress attachment ID
+#: includes/class-plandose-privacy.php:456
+#, php-format
+msgid "Συνημμένο #%d"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:465
+msgid "PlanDose — Τιμολόγια"
+msgstr ""
+
+#. translators: %s: month YYYY-MM
+#: includes/class-plandose-privacy.php:507
+#, php-format
+msgid "%s (προς αρχειοθέτηση)"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:520
+msgid "PlanDose — Μηνιαίο ιστορικό εκτυπώσεων"
+msgstr ""
+
+#. translators: %d: free reprints used
+#: includes/class-plandose-privacy.php:562
+#, php-format
+msgid "Χρεωμένη εκτύπωση, δωρεάν επανεκτυπώσεις: %d"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:570
+msgid "PlanDose — Πρόσφατες χρεώσεις εκτυπώσεων"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:609
+msgid "Χρεωμένη εκτύπωση"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:616
+msgid "PlanDose — Ιστορικό εκτυπώσεων"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:704
+msgid "PlanDose — Ενέργειες διαχειριστή στον λογαριασμό σας"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:716
+msgid "Διεύθυνση IP"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:723
+msgid "PlanDose — Ενέργειες που πραγματοποιήσατε"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:859
+msgid "Σφάλμα βάσης δεδομένων: η εγγραφή συνδρομής και τα στοιχεία ταυτότητας ΔΕΝ διαγράφηκαν, επειδή δεν ήταν δυνατός ο έλεγχος για τιμολόγια. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#. translators: %s: last day of the Pro subscription (Y-m-d)
+#: includes/class-plandose-privacy.php:872
+#, php-format
+msgid "Διατηρήθηκε η εγγραφή της ενεργής συνδρομής Pro (λήξη: %s). Λόγος: είναι απαραίτητη για την εκτέλεση της σύμβασης που βρίσκεται σε ισχύ. Μπορεί να διαγραφεί με νέο αίτημα διαγραφής μετά τη λήξη της συνδρομής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:886
+#: includes/class-plandose-privacy.php:900
+msgid "Σφάλμα βάσης δεδομένων: η εγγραφή συνδρομής ΔΕΝ διαγράφηκε. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:891
+msgid "Διαγράφηκαν τα στοιχεία της συνδρομής (κατάσταση Pro, ημερομηνία λήξης, ώρα τελευταίας εκτύπωσης)."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:894
+msgid "Διατηρήθηκε μόνο ο μετρητής εκτυπώσεων του τρέχοντος μήνα (πλήθος εκτυπώσεων και μήνας), χωρίς άλλα στοιχεία. Λόγος: είναι το μηνιαίο όριο δωρεάν εκτυπώσεων του λογαριασμού, που παραμένει ενεργός· αν διαγραφόταν, το όριο θα ξεκινούσε ξανά από την αρχή. Από τον επόμενο μήνα ο μετρητής δεν αφορά πλέον το όριο και μπορεί να διαγραφεί με νέο αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:903
+msgid "Διαγράφηκε η εγγραφή συνδρομής (κατάσταση, ημερομηνία λήξης, μετρητές εκτυπώσεων)."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:914
+msgid "Διαγράφηκαν τα στοιχεία ταυτότητας (επωνυμία, email, ΑΦΜ) διαγραμμένου λογαριασμού, αφού δεν υπάρχουν πλέον τιμολόγια."
+msgstr ""
+
+#. translators: %d: number of invoice files kept
+#: includes/class-plandose-privacy.php:923
+#, php-format
+msgid "Διατηρήθηκε %d τιμολόγιο και η σχετική εγγραφή συνδρομής, λόγω της υποχρέωσης διατήρησης φορολογικών παραστατικών. Μετά τη λήξη της προβλεπόμενης περιόδου πρέπει να διαγραφούν χειροκίνητα, σύμφωνα με την πολιτική διατήρησης του υπευθύνου επεξεργασίας."
+msgid_plural "Διατηρήθηκαν %d τιμολόγια και η σχετική εγγραφή συνδρομής, λόγω της υποχρέωσης διατήρησης φορολογικών παραστατικών. Μετά τη λήξη της προβλεπόμενης περιόδου πρέπει να διαγραφούν χειροκίνητα, σύμφωνα με την πολιτική διατήρησης του υπευθύνου επεξεργασίας."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-plandose-privacy.php:934
+msgid "Για διαγραμμένο λογαριασμό φαρμακείου διατηρούνται μαζί με τα τιμολόγια η επωνυμία, το email και ο ΑΦΜ του, ώστε να είναι γνωστό σε ποιον ανήκουν. Διαγράφονται μαζί με τα τιμολόγια από το PlanDose → Συνδρομές → «Τιμολόγια διαγραμμένων λογαριασμών»."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:944
+msgid "Το PlanDose δεν είχε αποθηκευμένα δεδομένα προς διαγραφή για αυτό το πρόσωπο."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:976
+msgid "Διατηρήθηκε η χειροκίνητη απαγόρευση πρόσβασης στο PlanDose. Λόγος: είναι απόφαση ελέγχου πρόσβασης του υπευθύνου επεξεργασίας, για την πρόληψη καταχρήσεων και απάτης· αν διαγραφόταν, ο λογαριασμός θα αποκτούσε ξανά πρόσβαση."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:992
+msgid "Διαγράφηκε η χειροκίνητη ρύθμιση πρόσβασης στο PlanDose."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:995
+msgid "Σφάλμα βάσης δεδομένων: η χειροκίνητη ρύθμιση πρόσβασης ΔΕΝ διαγράφηκε. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1043
+msgid "Σφάλμα βάσης δεδομένων: οι εγγραφές του αρχείου ενεργειών (audit log) ΔΕΝ ανωνυμοποιήθηκαν πλήρως. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1050
+msgid "Ανωνυμοποιήθηκαν οι εγγραφές του αρχείου ενεργειών (audit log) που αφορούν το πρόσωπο: αφαιρέθηκαν οι λεπτομέρειες και οι διευθύνσεις IP του."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1057
+msgid "Σφάλμα βάσης δεδομένων: το μηνιαίο ιστορικό εκτυπώσεων ΔΕΝ διαγράφηκε. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1060
+msgid "Διαγράφηκε το μηνιαίο ιστορικό εκτυπώσεων."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1076
+msgid "Διαγράφηκαν τα προσωρινά τεχνικά αναγνωριστικά εκτυπώσεων."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1078
+msgid "Σφάλμα βάσης δεδομένων: τα προσωρινά τεχνικά αναγνωριστικά εκτυπώσεων ΔΕΝ διαγράφηκαν. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1094
+msgid "Σφάλμα βάσης δεδομένων: οι εγγραφές χρέωσης εκτυπώσεων ΔΕΝ διαγράφηκαν. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1097
+msgid "Διαγράφηκαν οι εγγραφές χρέωσης εκτυπώσεων (τεχνικά αναγνωριστικά και χρονοσημάνσεις)."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1107
+msgid "Σφάλμα βάσης δεδομένων: το ιστορικό εκτυπώσεων ΔΕΝ διαγράφηκε. Επαναλάβετε το αίτημα διαγραφής."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1109
+msgid "Διαγράφηκε το ιστορικό εκτυπώσεων (ημερομηνίες και είδος εκτύπωσης)."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1125
+msgid "Προτεινόμενο κείμενο για το PlanDose. Προσαρμόστε το στην πραγματική πρακτική του φαρμακείου σας."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1127
+msgid "Τι δεν αποθηκεύεται"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1128
+msgid "Τα δεδομένα του πλάνου δοσολογίας (όνομα ασθενή, φάρμακα, δόσεις, ημέρες, σημειώσεις) δεν αποστέλλονται και δεν αποθηκεύονται στον διακομιστή. Υπάρχουν μόνο προσωρινά στον browser του φαρμακοποιού, για όσο διαρκεί η δημιουργία και η εκτύπωση του πλάνου."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1129
+msgid "Τι αποθηκεύεται"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1130
+msgid "Για κάθε εγγεγραμμένο φαρμακείο τηρούνται: η κατάσταση της συνδρομής και η ημερομηνία λήξης της, ο μηνιαίος μετρητής εκτυπώσεων και το ιστορικό του ανά μήνα (μόνο συνολικοί αριθμοί, χωρίς καμία πληροφορία για ασθενείς ή φάρμακα), για 30 λεπτά ένα τεχνικό αναγνωριστικό κάθε εκτύπωσης (ώστε μια επανάληψη να μη χρεώνεται δεύτερη φορά), για 12 μήνες ένα ιστορικό εκτυπώσεων (ημερομηνία και ώρα, αν χρεώθηκε ή ήταν δωρεάν επανεκτύπωση, Free/Pro — χωρίς καμία πληροφορία για ασθενείς ή φάρμακα), τυχόν χειροκίνητη ρύθμιση πρόσβασης, καθώς και τα τιμολόγια που έχει ανεβάσει ο διαχειριστής μαζί με τα μεταδεδομένα τους. Τηρείται επίσης αρχείο ενεργειών διαχειριστή, το οποίο μπορεί να περιλαμβάνει διεύθυνση IP."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1131
+msgid "Χρόνος διατήρησης"
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1132
+msgid "Το αρχείο ενεργειών διαγράφεται αυτόματα μετά το διάστημα που ορίζεται στις ρυθμίσεις του PlanDose. Τα τιμολόγια διατηρούνται για όσο χρόνο επιβάλλει η φορολογική νομοθεσία και δεν διαγράφονται με αίτημα διαγραφής δεδομένων. Αν διαγραφεί ο λογαριασμός ενός φαρμακείου, μαζί με τα τιμολόγιά του διατηρούνται η επωνυμία, το email και ο ΑΦΜ του, μέχρι να διαγραφούν τα τιμολόγια."
+msgstr ""
+
+#: includes/class-plandose-privacy.php:1133
+msgid "Με αίτημα διαγραφής δεδομένων επίσης δεν διαγράφονται: τυχόν απαγόρευση πρόσβασης που έχει ορίσει ο διαχειριστής (για την πρόληψη καταχρήσεων), η εγγραφή μιας ενεργής συνδρομής Pro, μέχρι τη λήξη της, και, για λογαριασμό που παραμένει ενεργός, ο μετρητής εκτυπώσεων του τρέχοντος μήνα (μόνο το πλήθος), ώστε να ισχύει το μηνιαίο όριο. Οι εγγραφές του αρχείου ενεργειών που αφορούν το πρόσωπο ανωνυμοποιούνται."
+msgstr ""
+
+#: includes/class-plandose-settings.php:232
+msgid "Συνδεθείτε για να δημιουργήσετε το πλάνο δόσεων σας."
+msgstr ""
+
+#: includes/class-plandose-settings.php:280
+msgid "Οριζόντια (προτείνεται)"
+msgstr ""
+
+#: includes/class-plandose-settings.php:281
+msgid "Κάθετη"
+msgstr ""
+
+#: includes/class-plandose-settings.php:282
+msgid "Αυτόματα (όπως ο οδηγός του εκτυπωτή)"
+msgstr ""
+
+#: includes/class-plandose-settings.php:708
+msgid "Σε όλες τις σελίδες"
+msgstr ""
+
+#: includes/class-plandose-settings.php:709
+msgid "Μόνο στην αρχική σελίδα"
+msgstr ""
+
+#: includes/class-plandose-settings.php:710
+msgid "Μόνο σε επιλεγμένες σελίδες"
+msgstr ""
+
+#: includes/class-plandose-settings.php:818
+msgid "PlanDose: η ρύθμιση «Μόνο σε επιλεγμένες σελίδες» δεν αποθηκεύτηκε, γιατί δεν επιλέχθηκε καμία σελίδα. Διατηρήθηκε η προηγούμενη ρύθμιση εμφάνισης. Επιλέξτε τουλάχιστον μία σελίδα και αποθηκεύστε ξανά."
+msgstr ""
+
+#. translators: %s: missing plugin file
+#: plandose.php:233
+#, php-format
+msgid "Το PlanDose δεν μπορεί να ξεκινήσει επειδή λείπει ή δεν είναι αναγνώσιμο το αρχείο: %s"
+msgstr ""
+
+#: plandose.php:245
+msgid "Το PlanDose δεν μπόρεσε να ολοκληρώσει την αναβάθμιση της βάσης δεδομένων. Ελέγξτε τα δικαιώματα του χρήστη της βάσης και το error log."
+msgstr ""
+
+#: plandose.php:286
+msgid "Το PlanDose δεν υποστηρίζεται σε multisite: οι λίστες φαρμακείων μετράνε χρήστες όλου του δικτύου και η απεγκατάσταση καθαρίζει μόνο αυτό το site."
+msgstr ""
+
+#: plandose.php:300
+msgid "Το PlanDose δεν υποστηρίζεται σε εγκατάσταση multisite. Χρησιμοποιήστε το σε απλή (single site) εγκατάσταση WordPress."
+msgstr ""
+
+#: plandose.php:318
+msgid "Το PlanDose δεν μπόρεσε να δημιουργήσει ή να επιβεβαιώσει τους απαιτούμενους πίνακες βάσης δεδομένων."
+msgstr ""

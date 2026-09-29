@@ -1,0 +1,201 @@
+# PlanDose CI. Repository layout: plandose/ (the plugin), tests/, build/.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-lint:
+    name: php -l (PHP ${{ matrix.php }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.0', '8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: none
+      - name: php -l on every PHP file
+        run: |
+          status=0
+          while IFS= read -r -d '' f; do
+            php -l "$f" >/dev/null || { php -l "$f"; status=1; }
+          done < <(find plandose tests -name '*.php' -not -path '*/node_modules/*' -print0)
+          exit $status
+
+  php-qa:
+    name: PHP static analysis (PHPStan, PHPCS/WPCS)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: tests/tools/php-qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+      - id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: php-qa-composer-${{ hashFiles('tests/tools/php-qa/composer.lock') }}
+          restore-keys: php-qa-composer-
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G --error-format=github
+      - name: PHP_CodeSniffer (WordPress security/DB/i18n sniffs)
+        run: vendor/bin/phpcs --report-full --report-checkstyle=phpcs-checkstyle.xml
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpcs-checkstyle
+          path: tests/tools/php-qa/phpcs-checkstyle.xml
+          if-no-files-found: ignore
+
+  js-tests:
+    name: JS tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      # i18n-keys.test.js reads the PHP dictionaries with php (preinstalled on the runner).
+      - run: php -v
+      - run: npm ci
+      - run: npm test
+
+  visual:
+    name: A4 visual regression (Chromium)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils fonts-dejavu-core
+      - run: npm ci
+      - name: Install Chromium for playwright-core
+        run: npx playwright-core install --with-deps chromium
+      # Layout checks (overflow, overlap, split cards, full text) always run.
+      # The pixel baselines depend on the fonts of the machine that made
+      # them: set the repository variable PD_VISUAL_PIXELS=1 once they were
+      # regenerated on this runner image (download the visual-out artifact of
+      # a run with `npm run test:visual -- --update` and commit the PNGs).
+      - run: npm run test:visual
+        env:
+          PD_VISUAL_PIXELS: ${{ vars.PD_VISUAL_PIXELS || '0' }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-out
+          path: tests/visual/out/
+          if-no-files-found: ignore
+
+  wp-integration:
+    name: WordPress + MariaDB integration
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      PD_WP_PATH: ${{ github.workspace }}/wpenv
+      PD_BASE: http://127.0.0.1:8899
+      PD_DB_HOST: 127.0.0.1
+      DB_ROOT_USER: root
+      DB_ROOT_PASS: root
+      WP_LOAD: ${{ github.workspace }}/wpenv/wp-load.php
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, intl, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y mariadb-client
+      - name: Install WordPress, wp-cli, the plugin and the test users
+        run: tests/tools/setup-wp.sh
+      - working-directory: tests
+        run: npm ci
+      - name: PHP tests (tests/php)
+        run: |
+          if [ -x tests/php/run.sh ] || [ -f tests/php/run.sh ]; then sh tests/php/run.sh; else echo "no tests/php/run.sh"; fi
+      # 1.27.5: the admin checks (nonces, capabilities, invoice storage) ran nowhere before.
+      - name: Admin PHP checks (tests/php/admin)
+        run: php tests/php/admin/storage-admin-1270.php "$WP_LOAD"
+      - name: Admin HTTP checks (tests/php/admin)
+        working-directory: tests
+        run: node --test --test-concurrency=1 php/admin/diagnostics-http-1270.test.js
+      - name: Charges and settings (npm run test:wp)
+        working-directory: tests
+        run: npm run test:wp
+      - name: Install Chromium for playwright-core
+        working-directory: tests
+        run: npx playwright-core install --with-deps chromium
+      - name: Browser checks (npm run test:browser)
+        working-directory: tests
+        run: npm run test:browser
+      - if: always()
+        name: WordPress debug.log
+        run: cat "$PD_WP_PATH/debug.log" 2>/dev/null || true
+
+  build:
+    name: Build plandose.zip
+    needs: [php-lint, php-qa, js-tests, visual, wp-integration]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: build/build-zip.sh
+      - id: version
+        run: echo "version=$(sed -n 's/^[[:space:]/*#@]*Version:[[:space:]]*\([^[:space:]]*\).*/\1/p' plandose/plandose.php | head -n1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plandose-${{ steps.version.outputs.version }}
+          path: build/plandose-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
