@@ -1,6 +1,6 @@
 {
   "name": "plandose-tests",
-  "version": "1.30.0",
+  "version": "1.30.1",
   "private": true,
   "description": "Tests for the PlanDose WordPress plugin (not shipped with the plugin).",
   "license": "GPL-2.0-or-later",
@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test *.test.js",
+    "test": "TZ=${PD_TZ:-Europe/Athens} node --test *.test.js",
     "test:wp": "node --test --test-concurrency=1 wp-integration/*.test.js; s=$?; php wp-integration/settings-frontend-1242.php \"${PD_WP_PATH:-/home/claude/wpenv}/wp-load.php\" || s=1; exit $s",
     "test:browser": "node tools/run-scripts.js wp-integration/browser-smoke.mjs wp-integration/units-1242.mjs wp-integration/rx-import-e2e.mjs",
     "test:visual": "node visual/a4-regression.mjs",

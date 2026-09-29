@@ -115,6 +115,8 @@ test('patient page: the limits are still enforced, by characters', () => {
 
 test('patient page: cache-busting follows the changed calendar.js', () => {
 	const html = fs.readFileSync(path.join(PUBLIC, 'calendar.html'), 'utf8');
-	assert.match(html, /<script src="calendar\.js\?v=1\.30\.0"><\/script>/);
-	assert.match(html, /<link rel="stylesheet" href="calendar\.css\?v=1\.30\.0">/);
+	/* The plugin version: bumped with every release that changes the page. */
+	const version = /define\( 'PLANDOSE_VERSION', '([^']+)' \)/.exec(fs.readFileSync(path.join(PUBLIC, '..', 'plandose.php'), 'utf8'))[1];
+	assert.ok(html.includes('<script src="calendar.js?v=' + version + '"></script>'), 'calendar.js?v=' + version);
+	assert.ok(html.includes('<link rel="stylesheet" href="calendar.css?v=' + version + '">'), 'calendar.css?v=' + version);
 });

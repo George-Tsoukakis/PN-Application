@@ -8,14 +8,14 @@
 # touching the code.
 msgid ""
 msgstr ""
-"Project-Id-Version: PlanDose 1.30.0\n"
+"Project-Id-Version: PlanDose 1.30.1\n"
 "Report-Msgid-Bugs-To: https://pharmacyneeds.gr\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-29T15:59:09+00:00\n"
+"POT-Creation-Date: 2026-09-29T18:06:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: PlanDose make-pot.php\n"
 "X-Domain: plandose\n"
@@ -27,9 +27,9 @@ msgstr ""
 #: includes/class-plandose-admin.php:411
 #: includes/class-plandose-admin.php:412
 #: includes/class-plandose-diagnostics.php:115
-#: includes/class-plandose-frontend.php:2234
-#: includes/class-plandose-frontend.php:2248
-#: includes/class-plandose-frontend.php:2292
+#: includes/class-plandose-frontend.php:2236
+#: includes/class-plandose-frontend.php:2250
+#: includes/class-plandose-frontend.php:2294
 #: includes/class-plandose-privacy.php:74
 #: includes/class-plandose-privacy.php:87
 #: includes/class-plandose-privacy.php:1135
@@ -796,7 +796,7 @@ msgstr ""
 
 #: includes/class-plandose-admin-settings.php:259
 #: includes/class-plandose-frontend.php:864
-#: includes/class-plandose-frontend.php:2294
+#: includes/class-plandose-frontend.php:2296
 msgid "Δημιουργία Πλάνου Δοσολογίας"
 msgstr ""
 
@@ -2341,7 +2341,7 @@ msgid "Δεν ήταν δυνατή η φόρτωση του PlanDose. Ελέγ�
 msgstr ""
 
 #: includes/class-plandose-frontend.php:865
-#: includes/class-plandose-frontend.php:2305
+#: includes/class-plandose-frontend.php:2307
 msgid "Συμπληρώστε τα φάρμακα του ασθενή και εκτυπώστε ένα καθαρό πλάνο υπενθύμισης."
 msgstr ""
 
@@ -2639,7 +2639,7 @@ msgid "π.χ. Depon 500mg"
 msgstr ""
 
 #: includes/class-plandose-frontend.php:961
-#: includes/class-plandose-frontend.php:1262
+#: includes/class-plandose-frontend.php:1263
 msgid "Ποσότητα"
 msgstr ""
 
@@ -2704,7 +2704,7 @@ msgid "Μονάδες (IU)"
 msgstr ""
 
 #: includes/class-plandose-frontend.php:981
-#: includes/class-plandose-frontend.php:1263
+#: includes/class-plandose-frontend.php:1264
 msgid "Συχνότητα"
 msgstr ""
 
@@ -2833,7 +2833,7 @@ msgid "ημέρα"
 msgstr ""
 
 #: includes/class-plandose-frontend.php:1018
-#: includes/class-plandose-frontend.php:1261
+#: includes/class-plandose-frontend.php:1262
 msgid "Φάρμακο"
 msgstr ""
 
@@ -3226,7 +3226,7 @@ msgid "Το πλάνο εκτυπώθηκε. Μπορείτε ακόμη να τ
 msgstr ""
 
 #: includes/class-plandose-frontend.php:1152
-#: includes/class-plandose-frontend.php:1264
+#: includes/class-plandose-frontend.php:1265
 msgid "Διάρκεια"
 msgstr ""
 
@@ -3348,426 +3348,430 @@ msgid "Ο αριθμός της περιεκτικότητας είναι σπα
 msgstr ""
 
 #: includes/class-plandose-frontend.php:1209
-msgid "Ακριβώς πριν από την περιεκτικότητα υπάρχει τελεία, κόμμα ή άλλος αριθμός (π.χ. «1X. 5MG», «0 25MG») — ίσως λείπει μηδέν ή υποδιαστολή. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα."
+msgid "Η περιεκτικότητα έχει τελεία ή κόμμα και τρία ψηφία (π.χ. «1.000MG») — μπορεί να σημαίνει χίλια ή ένα. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα."
 msgstr ""
 
 #: includes/class-plandose-frontend.php:1210
+msgid "Ακριβώς πριν από την περιεκτικότητα υπάρχει τελεία, κόμμα ή άλλος αριθμός (π.χ. «1X. 5MG», «0 25MG») — ίσως λείπει μηδέν ή υποδιαστολή. Συγκρίνετε το όνομα με τη συνταγή στη φόρμα."
+msgstr ""
+
+#: includes/class-plandose-frontend.php:1211
 msgid "ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα, εδώ είναι συχνότερα. Επαληθεύστε τη συχνότητα με τον γιατρό που το συνταγογράφησε."
 msgstr ""
 
 #. translators: %s: medicine name.
-#: includes/class-plandose-frontend.php:1212
+#: includes/class-plandose-frontend.php:1213
 #, php-format
 msgid "ΠΡΟΣΟΧΗ: «%s» συχνότερα από μία φορά την εβδομάδα — συνήθως χορηγείται μία φορά την εβδομάδα. Αν η συχνότητα είναι επιβεβαιωμένη με τον γιατρό, πατήστε ξανά «Εκτύπωση»."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1213
+#: includes/class-plandose-frontend.php:1214
 msgid "Βρέθηκε 1 φάρμακο. Ελέγξτε το πριν μπει στο πλάνο."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1214
+#: includes/class-plandose-frontend.php:1215
 msgid "Η ποσότητα σε mg μπορεί να έχει έως 3 δεκαδικά ψηφία (π.χ. 0,125)."
 msgstr ""
 
 #. translators: %s: medicine name.
-#: includes/class-plandose-frontend.php:1216
+#: includes/class-plandose-frontend.php:1217
 #, php-format
 msgid "Το «%s» υπάρχει ήδη στο πλάνο. Αν πρέπει να μπει δεύτερη φορά (π.χ. άλλη δόση άλλες ώρες), πατήστε ξανά το ίδιο κουμπί — αλλιώς πατήστε «Επεξεργασία» στο φάρμακο της λίστας."
 msgstr ""
 
 #. translators: %s: medicine names.
-#: includes/class-plandose-frontend.php:1218
+#: includes/class-plandose-frontend.php:1219
 #, php-format
 msgid "ΠΡΟΣΟΧΗ: μεθοτρεξάτη σε περισσότερες από μία εγγραφές του πλάνου («%s») — μαζί μπορεί να δίνουν δόση συχνότερα από μία φορά την εβδομάδα. Αν είναι σωστό, πατήστε ξανά «Εκτύπωση»."
 msgstr ""
 
 #. translators: %s: medicine names.
-#: includes/class-plandose-frontend.php:1220
+#: includes/class-plandose-frontend.php:1221
 #, php-format
 msgid "ΠΡΟΣΟΧΗ: «%s» σε περισσότερες από μία εγγραφές του πλάνου — συνήθως χορηγείται μία φορά την εβδομάδα. Αν είναι σωστό, πατήστε ξανά «Εκτύπωση»."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1221
+#: includes/class-plandose-frontend.php:1222
 msgid "ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα και υπάρχει ήδη σε άλλη εγγραφή του πλάνου. Επιβεβαιώστε ότι μαζί δεν δίνουν δόση συχνότερα από το σωστό."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1222
+#: includes/class-plandose-frontend.php:1223
 msgid "Η ποσότητα που χορηγήθηκε δεν ταιριάζει με το πλάνο (πολύ περισσότερη ή πολύ λιγότερη) — ελέγξτε ποσότητα, συχνότητα και διάρκεια με τη συνταγή."
 msgstr ""
 
 #. translators: 1: units dispensed (e.g. «60 δισκία»), 2: units the plan needs.
-#: includes/class-plandose-frontend.php:1224
+#: includes/class-plandose-frontend.php:1225
 #, php-format
 msgid "Χορηγούνται %1$s · το πλάνο χρειάζεται %2$s"
 msgstr ""
 
 #. translators: %d: number of once-daily medicines without a time.
-#: includes/class-plandose-frontend.php:1226
+#: includes/class-plandose-frontend.php:1227
 #, php-format
 msgid "Ίδια ώρα για όλα τα 1×ημέρα (%d):"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1227
+#: includes/class-plandose-frontend.php:1228
 msgid "(για όλα)"
 msgstr ""
 
 #. translators: 1: chosen time of day, 2: number of medicines.
-#: includes/class-plandose-frontend.php:1229
+#: includes/class-plandose-frontend.php:1230
 #, php-format
 msgid "«%1$s»: ορίστηκε σε %2$d φάρμακα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1230
+#: includes/class-plandose-frontend.php:1231
 msgid "Το όνομα έχει περισσότερες από μία λέξεις πριν από τη μορφή (τονίζονται) — επιβεβαιώστε ότι ανήκουν στο όνομα του φαρμάκου (π.χ. «PO», «HS» δεν ανήκουν)."
 msgstr ""
 
 #. translators: %s: the unread text, quoted.
-#: includes/class-plandose-frontend.php:1232
+#: includes/class-plandose-frontend.php:1233
 #, php-format
 msgid "Υπάρχει κείμενο στη συνταγή που δεν διαβάστηκε: «%s — ελέγξτε τη συνταγή."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1233
+#: includes/class-plandose-frontend.php:1234
 msgid "Η συνταγή έχει σειρά από ποσότητες (π.χ. διαφορετική δόση ανά ημέρα) — δεν είναι σταθερή δόση. Συμπληρώστε το πρόγραμμα στη φόρμα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1234
+#: includes/class-plandose-frontend.php:1235
 msgid "Αυτή η προσπάθεια εκτύπωσης έχει ήδη επαναληφθεί όσες φορές επιτρέπεται. Τώρα δεν χρεώθηκε και δεν τυπώθηκε τίποτα. Αν πατήσετε ξανά «Εκτύπωση», θα γίνει δωρεάν επανεκτύπωση αν απομένουν (δείτε τη γραμμή χρέωσης) — αλλιώς θα μετρήσει ως νέα εκτύπωση."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1235
+#: includes/class-plandose-frontend.php:1236
 msgid "Το κείμενο είναι πολύ μεγάλο για μία συνταγή — αντιγράψτε μόνο τη συνταγή και ξαναδοκιμάστε."
 msgstr ""
 
 #. translators: %d: number of unread lines that look like dosage lines.
-#: includes/class-plandose-frontend.php:1237
+#: includes/class-plandose-frontend.php:1238
 #, php-format
 msgid "Βρέθηκαν %d γραμμές που μοιάζουν με δοσολογία αλλά δεν διαβάστηκαν — κάποιο φάρμακο μπορεί να λείπει. Ελέγξτε τη συνταγή."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1238
+#: includes/class-plandose-frontend.php:1239
 msgid "Μία φορά τον μήνα: το πλήθος των δόσεων εξαρτάται από την ημέρα που θα επιλέξετε — ελέγξτε τις ημερομηνίες με όσα χορηγήθηκαν."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1239
+#: includes/class-plandose-frontend.php:1240
 msgid "Ημέρα του μήνα"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1240
+#: includes/class-plandose-frontend.php:1241
 msgid "Ποια ημέρα του μήνα; (1–31)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1241
+#: includes/class-plandose-frontend.php:1242
 msgid "π.χ. 15"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1242
+#: includes/class-plandose-frontend.php:1243
 msgid "Η δόση πέφτει αυτή την ημέρα κάθε μήνα."
 msgstr ""
 
 #. translators: %1$d: chosen day of the month (29-31).
-#: includes/class-plandose-frontend.php:1244
+#: includes/class-plandose-frontend.php:1245
 #, php-format
 msgid "Όταν ένας μήνας δεν έχει %1$d ημέρες (π.χ. Φεβρουάριος, Απρίλιος), η δόση πέφτει την τελευταία ημέρα εκείνου του μήνα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1245
+#: includes/class-plandose-frontend.php:1246
 msgid "30 ημ."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1246
+#: includes/class-plandose-frontend.php:1247
 msgid "Από τη συνταγή:"
 msgstr ""
 
 #. translators: %1$s: number of doses (always 1).
-#: includes/class-plandose-frontend.php:1248
+#: includes/class-plandose-frontend.php:1249
 #, php-format
 msgid "Σύνολο: %1$s δόση"
 msgstr ""
 
 #. translators: 1: number of doses (1), 2: total quantity, 3: unit.
-#: includes/class-plandose-frontend.php:1250
+#: includes/class-plandose-frontend.php:1251
 #, php-format
 msgid "Σύνολο: %1$s δόση • %2$s %3$s"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1251
+#: includes/class-plandose-frontend.php:1252
 msgid "Κάθε ημέρα"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1252
+#: includes/class-plandose-frontend.php:1253
 msgid "Μία φορά την εβδομάδα (επιλέξτε ημέρα)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1253
+#: includes/class-plandose-frontend.php:1254
 msgid "Μία φορά τον μήνα (επιλέξτε ημέρα)"
 msgstr ""
 
 #. translators: %d: day of the month (1-28).
-#: includes/class-plandose-frontend.php:1255
+#: includes/class-plandose-frontend.php:1256
 #, php-format
 msgid "Μία φορά τον μήνα, στις %d"
 msgstr ""
 
 #. translators: %d: day of the month (29-31).
-#: includes/class-plandose-frontend.php:1257
+#: includes/class-plandose-frontend.php:1258
 #, php-format
 msgid "Μία φορά τον μήνα, στις %d (ή την τελευταία ημέρα του μήνα)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1258
+#: includes/class-plandose-frontend.php:1259
 msgid "Ημέρα της εβδομάδας"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1259
+#: includes/class-plandose-frontend.php:1260
 msgid "Ημέρα του μήνα (1–31)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1260
+#: includes/class-plandose-frontend.php:1261
 msgid "Επιβεβαιώνω"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1265
+#: includes/class-plandose-frontend.php:1266
 msgid "Στη συνταγή"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1266
+#: includes/class-plandose-frontend.php:1267
 msgid "Για να ενεργοποιηθεί η «Προσθήκη», επιλέξτε ή επιβεβαιώστε τα σημειωμένα πεδία των επιλεγμένων φαρμάκων."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1267
+#: includes/class-plandose-frontend.php:1268
 msgid "Έλεγξα τη συνταγή και ξέρω ποια φάρμακα λείπουν από τη λίστα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1268
+#: includes/class-plandose-frontend.php:1269
 msgid "Επιβεβαιώνω ότι τα φάρμακα που επιλέγω είναι του ασθενή αυτού του πλάνου."
 msgstr ""
 
 #. translators: 1: medicines found on the prescription, 2: medicines read.
-#: includes/class-plandose-frontend.php:1270
+#: includes/class-plandose-frontend.php:1271
 #, php-format
 msgid "Η συνταγή φαίνεται να έχει %1$d φάρμακα, διαβάστηκαν %2$d — ελέγξτε."
 msgstr ""
 
 #. translators: %s: the quantity as typed.
-#: includes/class-plandose-frontend.php:1272
+#: includes/class-plandose-frontend.php:1273
 #, php-format
 msgid "Η ποσότητα «%s» δεν είναι έγκυρος μικτός αριθμός: ο αριθμητής του κλάσματος πρέπει να είναι μικρότερος από τον παρονομαστή (π.χ. 1 1/2). Ελέγξτε την τιμή."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1273
+#: includes/class-plandose-frontend.php:1274
 msgid "Επιλέξτε ώρα λήψης (Πρωί, Μεσημέρι, Απόγευμα ή Βράδυ)."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1274
+#: includes/class-plandose-frontend.php:1275
 msgid "Επιλέξτε ημέρα της εβδομάδας."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1275
+#: includes/class-plandose-frontend.php:1276
 msgid "Επιλέξτε ημέρα του μήνα (1–31)."
 msgstr ""
 
 #. translators: 1: quantity per intake, 2: unit.
-#: includes/class-plandose-frontend.php:1277
+#: includes/class-plandose-frontend.php:1278
 #, php-format
 msgid "Ασυνήθιστα μεγάλη ποσότητα: %1$s %2$s ανά λήψη. Αν είναι σωστή, πατήστε ξανά το ίδιο κουμπί για επιβεβαίωση."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1278
+#: includes/class-plandose-frontend.php:1279
 msgid "Η περιεκτικότητα δεν διαβάστηκε με βεβαιότητα και δεν μπήκε στο όνομα — ελέγξτε το όνομα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1279
+#: includes/class-plandose-frontend.php:1280
 msgid "Βρέθηκε φάρμακο χωρίς γραμμή «ΔΟΣΟΛΟΓΙΑ» — συμπληρώστε τη δοσολογία από τη συνταγή."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1280
+#: includes/class-plandose-frontend.php:1281
 msgid "Η γραμμή της δοσολογίας είναι υπερβολικά μεγάλη και δεν διαβάστηκε — συμπληρώστε τη."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1281
+#: includes/class-plandose-frontend.php:1282
 msgid "Ασυνήθιστα μεγάλη ποσότητα ανά λήψη — επιβεβαιώστε την με τη συνταγή."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1282
+#: includes/class-plandose-frontend.php:1283
 msgid "Η συνταγή λέει «όταν χρειάζεται» (SOS / σε περίπτωση / εάν) — δεν είναι σταθερό πρόγραμμα. Γράψτε την οδηγία στις σημειώσεις."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1283
+#: includes/class-plandose-frontend.php:1284
 msgid "Το ίδιο φάρμακο υπάρχει και με άλλη δοσολογία — επιλέξτε ποια ισχύει."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1284
+#: includes/class-plandose-frontend.php:1285
 msgid "Μία φορά την εβδομάδα: επιλέξτε ημέρα της εβδομάδας."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1285
+#: includes/class-plandose-frontend.php:1286
 msgid "«1 φορά τον μήνα»: επιλέξτε ημέρα του μήνα. Αν ένας μήνας δεν έχει αυτή την ημέρα, η δόση πέφτει την τελευταία ημέρα του μήνα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1286
+#: includes/class-plandose-frontend.php:1287
 msgid "Ινσουλίνη: η ποσότητα διαβάστηκε ως μονάδες (IU) — επιβεβαιώστε την."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1287
+#: includes/class-plandose-frontend.php:1288
 msgid "Οι ημέρες δεν είναι ακέραιος αριθμός εβδομάδων/διαστημάτων: ελέγξτε το πλήθος των δόσεων (π.χ. 30 ημέρες εβδομαδιαία = 4 ή 5 δόσεις) με όσα χορηγήθηκαν."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1288
+#: includes/class-plandose-frontend.php:1289
 msgid "Μία φορά την ημέρα (επιλέξτε ώρα)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1289
+#: includes/class-plandose-frontend.php:1290
 msgid "Στις ετικέτες μπορεί να χωρέσει μέρος των σημειώσεων· θα ζητηθεί επιβεβαίωση αν κοπούν. Στο πλάνο τυπώνονται ολόκληρες."
 msgstr ""
 
 #. translators: %s: local time the print was charged (HH:MM).
-#: includes/class-plandose-frontend.php:1291
+#: includes/class-plandose-frontend.php:1292
 #, php-format
 msgid "Η εκτύπωση χρεώθηκε στις %s."
 msgstr ""
 
 #. translators: 1: free reprints left, 2: local time until which they are free (HH:MM).
-#: includes/class-plandose-frontend.php:1293
+#: includes/class-plandose-frontend.php:1294
 #, php-format
 msgid "Δωρεάν επανεκτυπώσεις: %1$d, έως τις %2$s."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1294
+#: includes/class-plandose-frontend.php:1295
 msgid "Δεν απομένουν δωρεάν επανεκτυπώσεις — η επόμενη εκτύπωση χρεώνεται."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1295
+#: includes/class-plandose-frontend.php:1296
 msgid "Η επόμενη εκτύπωση χρεώνεται ως νέα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1296
+#: includes/class-plandose-frontend.php:1297
 msgid "Ο browser δεν μπορεί να γνωρίζει αν ο εκτυπωτής ολοκλήρωσε την εκτύπωση — ελέγξτε το χαρτί."
 msgstr ""
 
 #. translators: 1: local time until which reprints are free (HH:MM), 2: number of free reprints.
-#: includes/class-plandose-frontend.php:1298
+#: includes/class-plandose-frontend.php:1299
 #, php-format
 msgid "Η χρέωση καταγράφηκε· αν δεν άνοιξε ο διάλογος εκτύπωσης, πατήστε «Εκτύπωση ξανά» — δωρεάν έως τις %1$s (έως %2$d φορές), όσο το πλάνο μένει στην οθόνη."
 msgstr ""
 
 #. translators: %d: free-reprint window in minutes.
-#: includes/class-plandose-frontend.php:1300
+#: includes/class-plandose-frontend.php:1301
 #, php-format
 msgid "Η εκτύπωση χρεώθηκε ως νέα: οι δωρεάν επανεκτυπώσεις αυτού του πλάνου εξαντλήθηκαν ή πέρασαν %d λεπτά από την πρώτη εκτύπωση."
 msgstr ""
 
 #. translators: 1: number of free reprints, 2: local time until which they are free (HH:MM), 3: minutes of inactivity before the plan is cleared.
-#: includes/class-plandose-frontend.php:1302
+#: includes/class-plandose-frontend.php:1303
 #, php-format
 msgid "Η εκτύπωση καταγράφηκε. Αν δεν τυπώθηκε σωστά (π.χ. πατήσατε Ακύρωση ή διαλέξατε λάθος εκτυπωτή), πατήστε «Εκτύπωση ξανά» — χωρίς νέα χρέωση, έως %1$d φορές, μέχρι τις %2$s. Χωρίς δραστηριότητα για %3$d λεπτά το πλάνο καθαρίζεται αυτόματα. Για τον επόμενο ασθενή πατήστε «Νέος ασθενής»."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1303
+#: includes/class-plandose-frontend.php:1304
 msgid "Η εκτύπωση ακυρώθηκε ή το παράθυρο μπλοκαρίστηκε — δεν καταγράφηκε νέα εκτύπωση. Πατήστε ξανά «Εκτύπωση»· αν το παράθυρο δεν ανοίγει, επιτρέψτε τα αναδυόμενα παράθυρα για αυτό το site."
 msgstr ""
 
 #. translators: 1: local time until which the retry is free (HH:MM), 2: number of free retries, 3: minutes of inactivity before the plan is cleared.
-#: includes/class-plandose-frontend.php:1305
+#: includes/class-plandose-frontend.php:1306
 #, php-format
 msgid "Η εκτύπωση δεν άνοιξε, αλλά η χρέωση καταγράφηκε. Πατήστε ξανά «Εκτύπωση» έως τις %1$s — δεν θα χρεωθεί δεύτερη φορά (έως %2$d επαναλήψεις), ακόμη κι αν διορθώσετε πρώτα το πλάνο ή αυτό καθαριστεί μετά από %3$d λεπτά αδράνειας."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1306
+#: includes/class-plandose-frontend.php:1307
 msgid "Το πλάνο άλλαξε ενώ καταγραφόταν η εκτύπωση, οπότε δεν τυπώθηκε. Η χρέωση καταγράφηκε: πατήστε ξανά «Εκτύπωση» για το τρέχον πλάνο — χωρίς νέα χρέωση."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1307
+#: includes/class-plandose-frontend.php:1308
 msgid "Το πλάνο άλλαξε ενώ καταγραφόταν η επανεκτύπωση, οπότε δεν τυπώθηκε. Η επόμενη εκτύπωση θα μετρήσει ως νέα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1308
+#: includes/class-plandose-frontend.php:1309
 msgid "Δεν βρέθηκαν τα στοιχεία του φαρμακείου (όνομα) για το φύλλο. Συμπληρώστε τα στο προφίλ του λογαριασμού σας και δοκιμάστε ξανά."
 msgstr ""
 
 #. translators: 1: local time until which the retry is free (HH:MM), 2: number of free retries.
-#: includes/class-plandose-frontend.php:1310
+#: includes/class-plandose-frontend.php:1311
 #, php-format
 msgid "Πρόβλημα σύνδεσης. Δεν είναι βέβαιο αν η εκτύπωση χρεώθηκε. Πατήστε ξανά «Εκτύπωση» έως τις %1$s — αν είχε χρεωθεί, δεν θα χρεωθεί δεύτερη φορά (έως %2$d επαναλήψεις), ακόμη κι αν διορθώσετε πρώτα το πλάνο."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1311
+#: includes/class-plandose-frontend.php:1312
 msgid "Η εκτύπωση βρίσκεται σε εξέλιξη — το παράθυρο δεν μπορεί να κλείσει μέχρι να ολοκληρωθεί."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1312
+#: includes/class-plandose-frontend.php:1313
 msgid "Το όνομα του πελάτη δεν χωράει και θα τυπωθούν μόνο τα αρχικά του. Πατήστε ξανά «Εκτύπωση Ετικετών» για να τυπωθεί έτσι, ή επιλέξτε μεγαλύτερη ετικέτα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1313
+#: includes/class-plandose-frontend.php:1314
 msgid "(βλ. λίστα φαρμάκων)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:1314
+#: includes/class-plandose-frontend.php:1315
 msgid "(συνέχεια)"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2210
-#: includes/class-plandose-frontend.php:2211
+#: includes/class-plandose-frontend.php:2212
+#: includes/class-plandose-frontend.php:2213
 #: includes/class-plandose-settings.php:237
 msgid "Πλάνο Δόσεων"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2220
+#: includes/class-plandose-frontend.php:2222
 msgid "Δημιουργεί πλάνο δοσολογίας για κάθε ασθενή σε λίγα δευτερόλεπτα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2221
+#: includes/class-plandose-frontend.php:2223
 msgid "Δίνει στον ασθενή ένα καθαρό checklist για το σπίτι."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2222
+#: includes/class-plandose-frontend.php:2224
 msgid "Μειώνει τις επαναλαμβανόμενες ερωτήσεις για το πότε λαμβάνεται κάθε φάρμακο."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2223
+#: includes/class-plandose-frontend.php:2225
 msgid "Προσφέρει πιο επαγγελματική εξυπηρέτηση μέσα από ένα απλό εκτυπώσιμο πλάνο."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2224
+#: includes/class-plandose-frontend.php:2226
 msgid "Διαθέσιμο μόνο για εγγεγραμμένα φαρμακεία."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2263
+#: includes/class-plandose-frontend.php:2265
 msgid "Κλείσιμο"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2272
+#: includes/class-plandose-frontend.php:2274
 msgid "Διαθέσιμο στο Pro"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2274
+#: includes/class-plandose-frontend.php:2276
 msgid "Αλλαγή γλώσσας"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2274
+#: includes/class-plandose-frontend.php:2276
 msgid "Αλλαγή γλώσσας — διαθέσιμο στο Pro"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2291
+#: includes/class-plandose-frontend.php:2293
 msgid "Τι είναι το"
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2302
+#: includes/class-plandose-frontend.php:2304
 msgid "Δημιουργήστε καθαρά πλάνα δοσολογίας και βοηθήστε τον ασθενή να ακολουθεί σωστά την αγωγή του."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2316
+#: includes/class-plandose-frontend.php:2318
 msgid "Δωρεάν περιβάλλον"
 msgstr ""
 
 #. translators: %d: free monthly print limit
-#: includes/class-plandose-frontend.php:2322
+#: includes/class-plandose-frontend.php:2324
 #, php-format
 msgid "Στο δωρεάν περιβάλλον έχετε %d εκτυπώσεις τον μήνα."
 msgstr ""
 
-#: includes/class-plandose-frontend.php:2353
+#: includes/class-plandose-frontend.php:2355
 msgid "Είσοδος"
 msgstr ""
 
