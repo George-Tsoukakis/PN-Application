@@ -1,0 +1,88 @@
+<?php
+/**
+ * Marks the wpdb query methods impure: each call rewrites $wpdb->last_error
+ * (and insert_id, num_rows), so a value narrowed before a query, typically
+ * `$wpdb->last_error = ''`, must not survive it. Only read by PHPStan.
+ */
+class wpdb {
+	/**
+	 * @phpstan-impure
+	 * @param string $query
+	 * @return int|bool
+	 */
+	public function query( $query ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string|null $query
+	 * @param int         $x
+	 * @param int         $y
+	 * @return string|null
+	 */
+	public function get_var( $query = null, $x = 0, $y = 0 ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string|null $query
+	 * @param string      $output
+	 * @param int         $y
+	 * @return array|object|null|void
+	 * @phpstan-return null|void|($output is 'ARRAY_A' ? array<array-key, mixed> : ($output is 'ARRAY_N' ? list<mixed> : \stdClass))
+	 */
+	public function get_row( $query = null, $output = OBJECT, $y = 0 ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string|null $query
+	 * @param int         $x
+	 * @return array<int, string|null>
+	 */
+	public function get_col( $query = null, $x = 0 ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string|null $query
+	 * @param string      $output
+	 * @return array|object|null
+	 * @phpstan-return null|($output is 'ARRAY_A' ? list<array<array-key, mixed>> : ($output is 'ARRAY_N' ? list<array<int, mixed>> : ($output is 'OBJECT_K' ? array<array-key, \stdClass> : list<\stdClass>)))
+	 */
+	public function get_results( $query = null, $output = OBJECT ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string            $table
+	 * @param array<string, mixed> $data
+	 * @param string[]|string   $format
+	 * @return int|false
+	 */
+	public function insert( $table, $data, $format = null ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string            $table
+	 * @param array<string, mixed> $data
+	 * @param string[]|string   $format
+	 * @return int|false
+	 */
+	public function replace( $table, $data, $format = null ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string            $table
+	 * @param array<string, mixed> $data
+	 * @param array<string, mixed> $where
+	 * @param string[]|string   $format
+	 * @param string[]|string   $where_format
+	 * @return int|false
+	 */
+	public function update( $table, $data, $where, $format = null, $where_format = null ) {}
+
+	/**
+	 * @phpstan-impure
+	 * @param string            $table
+	 * @param array<string, mixed> $where
+	 * @param string[]|string   $where_format
+	 * @return int|false
+	 */
+	public function delete( $table, $where, $where_format = null ) {}
+}

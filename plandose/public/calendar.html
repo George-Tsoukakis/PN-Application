@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  PlanDose — «Υπενθυμίσεις στο κινητό» (patient page of the QR).
+
+  A static file: no WordPress, no PHP, no database. The plan is in the
+  address after «#», which browsers never send to the server. The CSP below
+  forbids every network request (connect-src 'none') and every script or
+  style that is not one of this folder's own files, so the page cannot send
+  the plan anywhere even if something were injected into it.
+
+  Server headers recommended for this folder (a <meta> CSP cannot set
+  them): X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer,
+  Content-Security-Policy: frame-ancestors 'none'. See readme.txt.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Το πλάνο μου</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="calendar.css?v=1.30.1">
+</head>
+<body>
+<main id="app" aria-live="polite">
+	<noscript><p>Ενεργοποιήστε τη JavaScript για να δείτε το πλάνο σας. / Please enable JavaScript to see your plan.</p></noscript>
+</main>
+<script src="calendar.js?v=1.30.1"></script>
+</body>
+</html>

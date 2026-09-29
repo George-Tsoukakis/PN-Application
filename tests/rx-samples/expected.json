@@ -1,0 +1,584 @@
+{
+ "01-dexa-rhinaspray-3x7.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "DEXA-RHINASPRAY-N NASPR.SUS (0,028+0,1717)MG/δόση",
+    1,
+    "spray",
+    "8h",
+    7,
+    ""
+   ]
+  ]
+ },
+ "02-zinadol-2x7.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "ZINADOL F.C.TAB 500MG",
+    1,
+    "tablet",
+    "12h",
+    7,
+    ""
+   ]
+  ]
+ },
+ "03-bespar-1x30-qty2.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "BESPAR TAB 10MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ]
+  ]
+ },
+ "04-nine-drugs-weekly-injection-2pages.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "ATROST F.C.TAB 40MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "NEXIUM GR.TAB 20MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "COLCHICINA/ACARPIA TAB 1MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "ELEVEON F.C.TAB 50MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "COZAAR F.C.TAB 100MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "PLAVIX F.C.TAB 75MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "OZEMPIC INJ.SOL 1MG",
+    1,
+    "injection",
+    "weekday?",
+    30,
+    "weekDay,intervalCount"
+   ],
+   [
+    "INDERAL F.C.TAB 40MG",
+    1,
+    "tablet",
+    "12h",
+    30,
+    ""
+   ],
+   [
+    "SYNJARDY F.C.TAB (12,5+1000)MG",
+    1,
+    "tablet",
+    "12h",
+    30,
+    ""
+   ]
+  ]
+ },
+ "05-tetagam-efapax-wrapped.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "TETAGAM P INJ.SO.PFS 250 IU/ML",
+    1,
+    "injection",
+    "24h",
+    1,
+    "time"
+   ]
+  ]
+ },
+ "06-two-drugs-30-28-antigrafi.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "LIPOPEN F.C.TAB (20+10)MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "PARIET GR.TAB 20MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ]
+  ]
+ },
+ "07-three-drugs-duplicated-form.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "GLUCOPHAGE F.C.TAB 850MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "CELMANTIN F.C.TAB 5MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "XOZAL F.C.TAB 5MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ]
+  ]
+ },
+ "08-quarter-tablet-3x.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "INDERAL F.C.TAB 40MG",
+    0.25,
+    "tablet",
+    "8h",
+    30,
+    ""
+   ]
+  ]
+ },
+ "09-ciproxin-greek-btx.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "CIPROXIN F.C.TAB 500MG",
+    1,
+    "tablet",
+    "12h",
+    7,
+    ""
+   ]
+  ]
+ },
+ "10-nordimet-methotrexate-weekly-qty4.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "NORDIMET INJ.SOL 15MG/0,6ML",
+    1,
+    "injection",
+    "weekday?",
+    30,
+    "weekDay,intervalCount"
+   ]
+  ]
+ },
+ "11-half-tablet-capsule-three-drugs.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "XADAGO F.C.TAB 50MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "MADOPAR TAB (200+50)MG",
+    0.5,
+    "tablet",
+    "8h",
+    30,
+    ""
+   ],
+   [
+    "LADOSE CAPS 20MG",
+    1,
+    "capsule",
+    "12h",
+    30,
+    ""
+   ]
+  ]
+ },
+ "12-augmentin-ultralevure-spaced-mg.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "AUGMENTIN F.C.TAB (875+125)MG",
+    1,
+    "tablet",
+    "12h",
+    10,
+    ""
+   ],
+   [
+    "ULTRA-LEVURE CAPS 250MG",
+    1,
+    "capsule",
+    "12h",
+    10,
+    ""
+   ]
+  ]
+ },
+ "13-injections-powder-vial-amp.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "DYNASTAT PS.INJ.SOL 40MG",
+    1,
+    "injection",
+    "24h",
+    5,
+    "time"
+   ],
+   [
+    "RELIEF INJ.SOL 4MG/2ML",
+    1,
+    "injection",
+    "24h",
+    5,
+    "time"
+   ]
+  ]
+ },
+ "14-insulin-units-as-injection-six-drugs.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "ZESIMVIA TAB (10+40)MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "TOUJEO (SOLOSTAR) IN.SO.PF.P 300 IU/ML",
+    22,
+    "iu",
+    "24h",
+    30,
+    "iuConfirm,time"
+   ],
+   [
+    "GLUCOPHAGE F.C.TAB 1000MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "OZEMPIC INJ.SOL 1MG",
+    1,
+    "injection",
+    "weekday?",
+    30,
+    "weekDay,intervalCount"
+   ],
+   [
+    "UROREC CAPS 8MG",
+    1,
+    "capsule",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "FINASTIR F.C.TAB 5MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ]
+  ]
+ },
+ "15-trulicity-weekly.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "TRULICITY INJ.SOL 1,5MG",
+    1,
+    "injection",
+    "weekday?",
+    30,
+    "weekDay,intervalCount"
+   ]
+  ]
+ },
+ "16-three-drugs-two-sprays.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "AUGMENTIN F.C.TAB (500+125)MG",
+    1,
+    "tablet",
+    "8h",
+    10,
+    ""
+   ],
+   [
+    "DEXA-RHINASPRAY-N NASPR.SUS (0,028+0,1717)MG/δόση",
+    2,
+    "spray",
+    "8h",
+    10,
+    ""
+   ],
+   [
+    "ULTRA-LEVURE CAPS 250MG",
+    1,
+    "capsule",
+    "12h",
+    10,
+    ""
+   ]
+  ]
+ },
+ "17-inhaler-mcg.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "AUGMENTIN F.C.TAB (500+125)MG",
+    1,
+    "tablet",
+    "8h",
+    10,
+    ""
+   ],
+   [
+    "FLIXOTIDE AER.MD.INH 250MCG/δόση",
+    2,
+    "inhale",
+    "12h",
+    10,
+    ""
+   ],
+   [
+    "ULTRA-LEVURE CAPS 250MG",
+    1,
+    "capsule",
+    "12h",
+    10,
+    ""
+   ]
+  ]
+ },
+ "18-cream-percent.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "FAMVIR F.C.TAB 500MG",
+    1,
+    "tablet",
+    "8h",
+    7,
+    ""
+   ],
+   [
+    "ZOVIRAX CREAM 5%",
+    1,
+    "application",
+    "12h",
+    10,
+    ""
+   ]
+  ]
+ },
+ "19-foster-oral-solution-ml.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΔΟΚΙΜΗ-ΔΕΥΤΕΡΗ",
+  "items": [
+   [
+    "FOSTER NEXTHALER PD.INH.MD (100+6)MCG/δόση",
+    2,
+    "inhale",
+    "12h",
+    10,
+    ""
+   ],
+   [
+    "AUGMENTIN F.C.TAB (500+125)MG",
+    1,
+    "tablet",
+    "8h",
+    10,
+    ""
+   ],
+   [
+    "PRENODOM ORAL.SOL 10MG/ML",
+    3,
+    "ml",
+    "24h",
+    2,
+    "time"
+   ]
+  ]
+ },
+ "20-five-drugs-dose-line-split.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "DELIPOST F.C.TAB 10MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ],
+   [
+    "CARVEDILEN F.C.TAB 12,5MG",
+    1,
+    "tablet",
+    "24h",
+    30,
+    "time"
+   ],
+   [
+    "XARELTO F.C.TAB 15MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ],
+   [
+    "ADENURIC F.C.TAB 80MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ],
+   [
+    "OLARTAN F.C.TAB 40MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ]
+  ]
+ },
+ "21-four-drugs-prolonged-release.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "COVERSYL F.C.TAB 5MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ],
+   [
+    "LIPTRUZET F.C.TAB (10+20)MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ],
+   [
+    "OMNIC TOCAS PR.TAB 0,4MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ],
+   [
+    "FILICINE TAB 5MG",
+    1,
+    "tablet",
+    "24h",
+    28,
+    "time"
+   ]
+  ]
+ },
+ "22-seretide-diskus-mc-latin-o.txt": {
+  "patient": "ΑΣΘΕΝΟΥΣ ΑΣΘΕΝΗΣ",
+  "items": [
+   [
+    "SERETIDE DISKUS INH.PD.DOS (250+50)MCG/δόση",
+    1,
+    "inhale",
+    "12h",
+    10,
+    ""
+   ],
+   [
+    "DEXA-RHINASPRAY-N NASPR.SUS (0,028+0,1717)MG/δόση",
+    1,
+    "spray",
+    "12h",
+    8,
+    ""
+   ],
+   [
+    "FLAXIDEL F.C.TAB 500MG",
+    1,
+    "tablet",
+    "24h",
+    10,
+    "time"
+   ],
+   [
+    "ULTRA-LEVURE CAPS 250MG",
+    1,
+    "capsule",
+    "24h",
+    10,
+    "time"
+   ]
+  ]
+ }
+}

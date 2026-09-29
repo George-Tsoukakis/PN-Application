@@ -1,0 +1,21 @@
+rx-corpus anonymisation verification (2026-09-26)
+files: 311 prescriptions x 2 browsers
+identifying values checked per file (sum over all files), by kind:
+  _changed_lines   16162
+  address          2360
+  aitia            12
+  date             1866
+  diagword         2898
+  firstname        1286
+  glyph            622
+  icd              1042
+  number           4018
+  rxno             622
+  specialty        70
+  sticker          4054
+  surname          1262
+  yob              622
+corpus-wide name grep: 403 distinct surnames/first names, 0 found in the corpus, 0 equal to a placeholder word
+file-name surnames of all 311 originals grepped over tests/: 483 distinct, 0 found
+allowed coincidences (value also inside the drug/dose text, or a generic address word equal to a placeholder): 2
+RESULT: PASS (0 problem(s))

@@ -1,0 +1,243 @@
+PlanDose — Nginx server rule for the protected invoice directory
+==================================================================
+
+This file is NOT loaded or executed by WordPress or by PlanDose. It's a
+copy-paste reference kept inside the plugin folder so the required Nginx
+rule below survives server migrations, redeployments, and staff changes —
+instead of living only in a chat log or a server admin's memory.
+
+AUTOMATIC CHECK (1.27.0) — PLANDOSE TESTS THE REAL SERVER
+---------------------------------------------------------
+PlanDose no longer relies on .htaccess, on SERVER_SOFTWARE or on this
+file having been followed. It asks the live web server:
+
+  * it writes a random canary file into the invoice folder, requests its
+    public URL anonymously (no cookies, no redirects off the site), and
+    deletes it again;
+  * if the canary's content comes back, the folder is PUBLIC. A refusal
+    (403, 404, …) counts as private only when a control file in a public
+    folder IS served in the same check — so a firewall or a site that
+    refuses every anonymous request is reported «unverified», not
+    private. A folder outside every public path (PLANDOSE_INVOICE_DIR
+    outside the web root) has no URL and is private without a request.
+    (1.28.2: text brought in line with the code since 1.27.x.)
+
+Because it is an HTTP request, it tests whatever actually answers —
+Apache, Nginx, LiteSpeed, IIS, a proxy in front — so it is also the
+automatic check that the Nginx rule below is in force. The verdict is
+cached for 24 hours (re-checked by the daily cron) and can be re-run at
+any time from wp-admin → PlanDose → Διαγνωστικά → «Επανέλεγχος».
+
+IN PRODUCTION, UPLOADS ARE REFUSED UNLESS THE FOLDER IS VERIFIED PRIVATE.
+wp_get_environment_type() is 'production' unless WP_ENVIRONMENT_TYPE says
+otherwise. If the check finds the folder public, or cannot run (the
+server cannot request its own URL — "loopback" blocked, a CDN serving
+uploads, …), new invoice uploads are refused with a message; existing
+invoices keep opening, since downloads always go through PHP. Fixes, best
+first:
+
+  1. define( 'PLANDOSE_INVOICE_DIR', '/home/account/private/plandose-invoices' );
+     (outside the web root — see below);
+  2. add the Nginx rule below (or the equivalent for your server), then
+     «Επανέλεγχος»;
+  3. only if the check cannot run on your host and you have verified the
+     protection yourself (step 4 of APPLYING IT):
+         define( 'PLANDOSE_ALLOW_UNVERIFIED_INVOICE_DIR', true );
+     This never overrides a folder the check found PUBLIC.
+
+On staging/development sites (WP_ENVIRONMENT_TYPE = 'staging', 'local',
+'development') the same findings are warnings only.
+
+`wp plandose check` runs the same probe from the command line (WP-CLI
+has no DOCUMENT_ROOT; pass --docroot=/path/to/document/root for a folder
+that has no WordPress URL).
+
+READ THIS FIRST — YOU MAY NOT NEED ANY OF IT
+---------------------------------------------
+Everything below exists to protect invoices that are stored INSIDE the
+public web root. That is the fallback location, not the recommended one.
+
+The recommended setup is to put them outside it entirely, by adding one
+line to wp-config.php before uploading your first invoice:
+
+    define( 'PLANDOSE_INVOICE_DIR', '/home/account/private/plandose-invoices' );
+
+With that in place the files have no public URL, so there is nothing for a
+web-server rule to protect and nothing to get wrong during the next server
+migration. The rest of this file becomes unnecessary. Prefer it: a rule
+that must be correct on every server the site ever moves to is a weaker
+guarantee than a path the web server cannot reach at all.
+
+Use a dedicated, new or empty folder. PlanDose refuses to adopt a folder
+that already contains other files, and writes a `.plandose-invoice-storage`
+marker inside the one it does use. Setting the constant only changes where
+NEW invoices go and where the plugin looks — move existing files yourself.
+
+MOVING EXISTING INVOICES INTO PLANDOSE_INVOICE_DIR — ORDER MATTERS
+(1.24.0). The folder must be ADOPTED by PlanDose before any invoice is
+copied into it. If you copy the files first, the folder is no longer empty,
+PlanDose refuses it ("περιέχει ήδη άλλα αρχεία") and every invoice upload
+and download stops working. Do it in this order:
+
+  1. Create the new folder EMPTY (no .htaccess, no index.php, nothing),
+     readable and writable by the PHP user.
+  2. Add the define() to wp-config.php.
+  3. Let PlanDose adopt it: in wp-admin → PlanDose → Συνδρομές, click any
+     existing invoice button («Τιμολόγιο N»). PlanDose resolves the new
+     folder, finds it empty, and writes its `.plandose-invoice-storage`
+     marker and its protection files; the download itself then says the
+     file was not found, which is expected at this point. Uploading an
+     invoice also works. Merely loading an admin page is NOT enough, and
+     `wp plandose check` is read-only and does not adopt the folder either.
+     Confirm the marker is there:
+         ls -la /home/account/private/plandose-invoices/.plandose-invoice-storage
+  4. Only now move the existing invoice files from the old folder
+     (wp-content/uploads/plandose-invoices/) into the new one, keeping
+     their file names exactly, and make them readable by the PHP user.
+     Do not copy the old folder's .htaccess / web.config / index.* files.
+  5. Open a few invoices from PlanDose → Συνδρομές to confirm, then delete
+     the old folder so no public copy remains.
+
+LEGACY MEDIA LIBRARY ORIGINALS ARE NOT COVERED BY ANY RULE HERE. Sites
+that used PlanDose before invoices had their own folder kept them in the
+Media Library. The one-time migration COPIED those files into the invoice
+folder; the originals are still in wp-content/uploads/YYYY/MM/ with a
+public URL. Neither PLANDOSE_INVOICE_DIR nor the Nginx rule below touches
+those paths (and blocking all of uploads/ would break the site's images).
+Remove them from wp-admin: PlanDose → Συνδρομές shows the notice «πρωτότυπα
+παλιών τιμολογίων παραμένουν δημόσια στη Media Library» with the button
+«Διαγραφή πρωτοτύπων». It deletes an original only after checking that
+the protected copy exists and is byte-identical (SHA-256) and that the
+attachment is not used anywhere else, up to 50 per press; anything it
+skips stays listed with the reason. It needs an administrator
+(manage_options) and never runs by itself.
+
+Continue below only if you cannot edit wp-config.php.
+
+WHY THIS IS NEEDED
+-------------------
+PlanDose stores uploaded invoice files (which contain AFM/tax IDs, phone
+numbers and pharmacy identity — see includes/class-plandose-invoice-storage.php,
+Plandose_Invoice_Storage::invoice_dir()) outside the WordPress Media Library, under:
+
+    wp-content/uploads/plandose-invoices/
+
+The plugin automatically creates a .htaccess file in that directory with
+"Require all denied" / "Deny from all". That file only has any effect on
+an Apache server. On Nginx it is completely inert — Nginx never reads
+.htaccess files at all.
+
+PlanDose normally serves invoices only through the gated
+Plandose_Admin_Invoices::handle_view_invoice() endpoint, which performs nonce and
+capability checks. That PHP protection does NOT, however, apply to a direct request
+for a file inside the public uploads directory: Nginx serves such a file itself,
+without invoking WordPress at all, so no nonce or capability check runs. Uploaded
+invoices are given unpredictable random filenames, so they can't be reached by
+guessing — but a filename that leaks (via access logs, backups, a Referer header,
+etc.) would then be directly downloadable on an unprotected Nginx server.
+
+The rule below therefore blocks direct web access at the server level and is
+REQUIRED when invoices are stored under the public uploads path — it is what makes
+sure an invoice can only ever be downloaded through the protected PHP endpoint. It
+is not merely a "second layer" in that case; on Nginx it is the only thing stopping
+direct file access, since the .htaccess above does nothing there.
+
+If PLANDOSE_INVOICE_DIR points to a directory completely OUTSIDE the public web
+root, this Nginx location rule is not required for that custom directory, because
+those files have no public URL to reach in the first place. In that setup, just make
+sure the chosen directory isn't accidentally re-exposed by some other Nginx alias or
+location block that maps a URL onto it.
+
+THE RULE
+--------
+Add this inside the `server { ... }` block for this WordPress site (the
+same block that already contains your other `location` directives —
+NOT nested inside another location block), then test and reload Nginx.
+
+    location ^~ /wp-content/uploads/plandose-invoices/ {
+        return 404; # use `return 403;` instead if you'd rather show an explicit "forbidden"
+    }
+
+`return 404;` (or `403;`) already terminates the request and refuses to
+serve anything from that path, so no separate `deny all;` line is needed —
+`return` short-circuits before any file is read. `^~` gives this rule
+prefix-match priority, so it takes effect regardless of where it sits
+relative to the standard WordPress
+`location / { try_files $uri $uri/ /index.php?$args; }` block.
+
+IMPORTANT — ADJUST THE PATH TO YOUR INSTALL
+-------------------------------------------
+The `/wp-content/uploads/...` path above is the WordPress default. It is
+NOT correct as-is for every install. Adjust it if any of the following
+apply, otherwise the invoices stay publicly reachable:
+
+* Custom uploads or content directory (`UPLOADS`, `WP_CONTENT_DIR`,
+  `wp-config.php` overrides): use your real uploads path.
+* Multisite: PlanDose refuses to activate on multisite since 1.27.6, so
+  this applies only to installs from before that. Per-site uploads live under
+  `/wp-content/uploads/sites/<id>/plandose-invoices/`. Add one `^~` prefix
+  block per site that uses PlanDose, next to the main one:
+
+      location ^~ /wp-content/uploads/sites/2/plandose-invoices/ { return 404; }
+      location ^~ /wp-content/uploads/sites/3/plandose-invoices/ { return 404; }
+
+  Do NOT use a regex block (`location ~ ...(sites/\d+/)?plandose-invoices/`)
+  for this. Nginx checks regex locations in the order they appear in the
+  file and uses the FIRST one that matches, so a typical earlier block such
+  as `location ~* \.(pdf|jpe?g|png|webp)$ { expires 30d; }` would win and
+  serve the invoice. When the longest matching prefix location carries
+  `^~`, Nginx does not look at regex locations at all, which is why these
+  blocks are safe regardless of their position in the file. (If you
+  really must use one regex for all sites, it has to be placed ABOVE every
+  other regex location in the server block — and must stay there through
+  every future edit, which is exactly the kind of guarantee this file is
+  trying to avoid.) Also add a block for every site whose uploads are
+  mapped elsewhere (e.g. `/files/` on old multisite installs).
+* A reverse proxy / subdirectory install: prefix the path with the same
+  base that maps to this WordPress site.
+
+To find the real, absolute directory this plugin is actually writing to,
+run on the server with WP-CLI, from the WordPress directory (add
+`--url=<site URL>` on multisite; there is no way to run this from inside
+wp-admin):
+
+    wp plandose check
+
+It reports the invoice folder and whether the web server actually refuses
+a canary file in it. It does not create the folder or write protection
+files as a side effect (the only thing it writes is the canary, deleted
+at once).
+
+Then translate that filesystem path to the matching public URL path for
+your server block. If it reports a path OUTSIDE the web root, you are using
+PLANDOSE_INVOICE_DIR and do not need this rule at all.
+
+APPLYING IT
+-----------
+1. Find the config file for this site:
+       sudo nginx -T | grep -n "server_name\|include" | grep -i <your-domain>
+
+2. Add the location block above inside that file's server { } block.
+
+3. Test the config, then reload:
+       sudo nginx -t && sudo systemctl reload nginx
+
+4. Verify by requesting a REAL file in the folder (not the folder itself —
+   a folder request can return 403/404 simply because directory listing is
+   off, which proves nothing about the files inside). PlanDose writes
+   `web.config` and `index.html` into the folder — static files, served
+   exactly the way an invoice PDF would be — so use those:
+       curl -sI https://<your-domain>/wp-content/uploads/plandose-invoices/web.config
+       curl -sI https://<your-domain>/wp-content/uploads/plandose-invoices/index.html
+   Expected: 404 (or 403) for BOTH. A 200 on either means the rule is not
+   in force and invoices can be downloaded directly. On multisite repeat
+   with `/wp-content/uploads/sites/<id>/plandose-invoices/web.config`.
+
+5. Then press «Επανέλεγχος» in wp-admin → PlanDose → Διαγνωστικά: the
+   automatic check (see the top of this file) must report the folder as
+   private before uploads are accepted in production.
+
+The PlanDose admin screens show a notice whenever the last check found the
+folder public or could not verify it (see
+Plandose_Admin_Invoices::render_nginx_invoice_notice()) — this file is the
+durable, take-with-you version of that same reminder.
