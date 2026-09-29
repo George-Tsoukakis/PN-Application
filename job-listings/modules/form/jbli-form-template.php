@@ -46,7 +46,9 @@ $jbli_partials = __DIR__ . '/template-parts/';
 
 <?php if ( ! empty( $jbli_notice ) ) { echo wp_kses_post( (string) $jbli_notice ); } ?>
 
-<div class="jbli_form_wrap jbli_form_wrap_simple jbli_form_wrap_compact">
+<div class="jbli_form_wrap jbli_form_wrap_simple jbli_form_wrap_compact jbli_form_layout">
+
+	<div class="jbli_form_main">
 
 	<?php include $jbli_partials . 'jbli-header.php'; ?>
 
@@ -95,5 +97,9 @@ $jbli_partials = __DIR__ . '/template-parts/';
 		</div>
 
 	</form>
+
+	</div>
+
+	<?php include $jbli_partials . 'jbli-form-media.php'; ?>
 
 </div>

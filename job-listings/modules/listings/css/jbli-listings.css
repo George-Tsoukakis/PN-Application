@@ -928,3 +928,84 @@
     white-space: normal;
   }
 }
+/* ==========================================================================
+   9.9.45 — Listings page background.
+   A green hero band with a soft dot pattern sits behind the search panel;
+   the cards sit on a light mint surface below it.
+   ========================================================================== */
+
+.jbli_listings {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(22px, 3.2vw, 44px) clamp(14px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
+  border-radius: 32px;
+  border: 1px solid rgba(5, 150, 105, .10);
+  background:
+    radial-gradient(900px 420px at 0% 100%, rgba(16, 185, 129, .10), transparent 65%),
+    radial-gradient(700px 360px at 100% 60%, rgba(59, 130, 246, .06), transparent 65%),
+    linear-gradient(180deg, #f0fdf7 0%, #f6faf9 55%, #ffffff 100%);
+}
+
+/* Hero band */
+.jbli_listings::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  inset: 0 0 auto 0;
+  height: clamp(210px, 22vw, 260px);
+  background:
+    radial-gradient(520px 240px at 88% -10%, rgba(255, 255, 255, .20), transparent 70%),
+    radial-gradient(480px 260px at 8% 120%, rgba(52, 211, 153, .45), transparent 70%),
+    linear-gradient(125deg, #064e3b 0%, #065f46 35%, #047857 70%, #10b981 100%);
+}
+
+/* Dot pattern over the band, fading out downwards */
+.jbli_listings::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto 0;
+  height: clamp(210px, 22vw, 260px);
+  background-image: radial-gradient(rgba(255, 255, 255, .18) 1.2px, transparent 1.6px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .35) 70%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .35) 70%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Search panel floats on the band */
+.jbli_listings .jbli_filters {
+  position: relative;
+  background: rgba(255, 255, 255, .97);
+  border: 1px solid rgba(255, 255, 255, .7);
+  box-shadow: 0 24px 60px rgba(2, 44, 34, .20), 0 4px 14px rgba(2, 44, 34, .08);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+}
+
+.jbli_listings .jbli_filters_title {
+  color: #064e3b;
+}
+
+/* Cards read better on the tinted surface with a slightly firmer edge */
+.jbli_listings .jbli_card {
+  border-color: rgba(5, 150, 105, .12);
+  box-shadow: 0 10px 30px rgba(2, 44, 34, .07);
+}
+
+.jbli_listings .jbli_card:hover {
+  border-color: rgba(5, 150, 105, .28);
+}
+
+@media (max-width: 640px) {
+  .jbli_listings {
+    border-radius: 22px;
+    padding: 18px 12px 26px;
+  }
+
+  .jbli_listings::before,
+  .jbli_listings::after {
+    height: 170px;
+  }
+}

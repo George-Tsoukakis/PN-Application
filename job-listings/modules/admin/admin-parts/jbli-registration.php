@@ -39,6 +39,9 @@ function jbli_admin_panel_assets( string $jbli_hook ): void {
 		return;
 	}
 
+	/* Media Library picker for the form image/video setting. */
+	if ( false !== strpos( $jbli_hook, 'jbli_settings' ) && function_exists( 'wp_enqueue_media' ) ) { wp_enqueue_media(); }
+
 	$jbli_css_file = JBLI_DIR . 'modules/admin/jbli-admin-panel.css';
 	$jbli_version  = is_readable( $jbli_css_file )
 		? JBLI_VERSION . '.' . (string) filemtime( $jbli_css_file )

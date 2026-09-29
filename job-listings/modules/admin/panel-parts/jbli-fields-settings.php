@@ -39,6 +39,7 @@ $jbli_def_subj 		= function_exists( 'jbli_apply_default_subject' ) ? jbli_apply_
 $jbli_def_body 		= function_exists( 'jbli_apply_default_body' )    ? jbli_apply_default_body()    : '';
 
 $jbli_google_map_api_key = (string) get_option( 'jbli_google_map_api_key', '' );
+$jbli_form_media_url     = (string) get_option( 'jbli_form_media_url', '' );
 ?>
 <?php /* The "saved" notice is printed once by jbli-settings-template.php. */ ?>
 
@@ -219,6 +220,84 @@ $jbli_google_map_api_key = (string) get_option( 'jbli_google_map_api_key', '' );
 		</p>
 
 	</form>
+
+</div>
+
+<?php /* 9.9.45: media shown next to the new-listing form. */ ?>
+
+<div class="jbli_ap_tools">
+
+	<h2 class="jbli_ap_tools_heading">
+		<?php esc_html_e( 'Εικόνα / Video φόρμας νέας αγγελίας', 'job-listings' ); ?>
+	</h2>
+
+	<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">
+		<?php esc_html_e( 'Εμφανίζεται δεξιά από τη φόρμα. Δεκτά: εικόνα (JPG, PNG, WebP), video MP4/WebM, ή σύνδεσμος YouTube / Vimeo. Αν μείνει κενό, εμφανίζεται μια έτοιμη πράσινη εικονογράφηση.', 'job-listings' ); ?>
+	</p>
+
+	<form method="post" action="<?php echo esc_url( $jbli_form_url ); ?>">
+		<input type="hidden" name="jbli_fields_action" value="save_form_media">
+		<?php wp_nonce_field( 'jbli_fields_save', 'jbli_fields_nonce' ); ?>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">
+					<label for="jbli_form_media_url"><?php esc_html_e( 'URL εικόνας ή video', 'job-listings' ); ?></label>
+				</th>
+				<td>
+					<input
+						type="url"
+						id="jbli_form_media_url"
+						name="jbli_form_media_url"
+						value="<?php echo esc_attr( $jbli_form_media_url ); ?>"
+						class="large-text"
+						placeholder="https://"
+					>
+					<p style="margin-top:8px;">
+						<button type="button" class="button" id="jbli_form_media_pick"><?php esc_html_e( 'Επιλογή από τα Πολυμέσα', 'job-listings' ); ?></button>
+						<button type="button" class="button-link" id="jbli_form_media_clear" style="margin-left:8px;"><?php esc_html_e( 'Καθαρισμός', 'job-listings' ); ?></button>
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<p>
+			<button type="submit" class="button button-primary">
+				<?php esc_html_e( 'Αποθήκευση εικόνας / video', 'job-listings' ); ?>
+			</button>
+		</p>
+
+	</form>
+
+	<script>
+		( function () {
+			var pick  = document.getElementById( 'jbli_form_media_pick' );
+			var clear = document.getElementById( 'jbli_form_media_clear' );
+			var input = document.getElementById( 'jbli_form_media_url' );
+
+			if ( clear ) { clear.addEventListener( 'click', function () { input.value = ''; } ); }
+
+			if ( ! pick ) { return; }
+
+			if ( ! window.wp || ! wp.media ) { pick.style.display = 'none'; return; }
+
+			var frame;
+			pick.addEventListener( 'click', function () {
+				if ( ! frame ) {
+					frame = wp.media( {
+						title: <?php echo wp_json_encode( __( 'Εικόνα ή video για τη φόρμα', 'job-listings' ) ); ?>,
+						library: { type: [ 'image', 'video' ] },
+						multiple: false
+					} );
+					frame.on( 'select', function () {
+						var file = frame.state().get( 'selection' ).first().toJSON();
+						input.value = file.url || '';
+					} );
+				}
+				frame.open();
+			} );
+		}() );
+	</script>
 
 </div>
 

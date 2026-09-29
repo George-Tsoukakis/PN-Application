@@ -53,6 +53,11 @@ function jbli_rocket_css_exclusions(): array {
 		'jbli-form\.css',
 		'/job-listings/modules/form/css/jbli-form.css',
 
+		'jbli-apply.css',
+		'jbli-apply\\.css',
+		'/job-listings/modules/apply/css/jbli-apply.css',
+		'jbli_apply_style',
+
 		'jbli-dashboard.css',
 		'jbli-dashboard\.css',
 		'/job-listings/modules/dashboard/css/jbli-dashboard.css',
@@ -112,6 +117,15 @@ function jbli_rocket_rucss_safelist_selectors(): array {
 		'.jbli_recent .jbli_btn_primary',
 		'.jbli_recent .jbli_views',
 		'.jbli_recent .jbli_featured_ribbon',
+		/* Apply modal: hidden on load, so RUCSS would otherwise drop it. */
+		'.jbli_apply_modal',
+		'.jbli_apply_modal *',
+		'.jbli_apply_(.*)',
+		/* Listings page background and form media panel (9.9.45). */
+		'.jbli_listings',
+		'.jbli_form_layout',
+		'.jbli_form_aside',
+		'.jbli_form_media(.*)',
 	);
 
 }

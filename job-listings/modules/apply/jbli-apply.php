@@ -210,6 +210,9 @@ function jbli_apply_modal_html( int $jbli_post_id ): string {
 	$jbli_nonce    = wp_create_nonce( 'jbli_apply_' . $jbli_post_id );
 	$jbli_modal_id = 'jbli_apply_modal_' . $jbli_post_id;
 
+	$jbli_job_position = sanitize_text_field( (string) get_post_meta( $jbli_post_id, JBLI_META_POSITION, true ) );
+	$jbli_job_pharmacy = sanitize_text_field( (string) get_post_meta( $jbli_post_id, JBLI_META_PHARMACY_NAME, true ) );
+
 	ob_start();
 	?>
 	<div
@@ -235,12 +238,28 @@ function jbli_apply_modal_html( int $jbli_post_id ): string {
 				</svg>
 			</button>
 
-			<h2 id="<?php echo esc_attr( $jbli_modal_id ); ?>_title" class="jbli_apply_modal_title">
-				<?php esc_html_e( 'Εκδήλωση Ενδιαφέροντος', 'job-listings' ); ?>
-			</h2>
-			<p class="jbli_apply_modal_sub">
-				<?php esc_html_e( 'Συμπληρώστε τα στοιχεία σας και θα τα λάβει άμεσα το φαρμακείο.', 'job-listings' ); ?>
-			</p>
+			<div class="jbli_apply_modal_head">
+
+				<span class="jbli_apply_modal_icon" aria-hidden="true">
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+				</span>
+
+				<h2 id="<?php echo esc_attr( $jbli_modal_id ); ?>_title" class="jbli_apply_modal_title">
+					<?php esc_html_e( 'Εκδήλωση Ενδιαφέροντος', 'job-listings' ); ?>
+				</h2>
+
+				<?php if ( '' !== $jbli_job_position ) { ?>
+					<p class="jbli_apply_modal_job">
+						<strong><?php echo esc_html( $jbli_job_position ); ?></strong>
+						<?php if ( '' !== $jbli_job_pharmacy ) { ?><span><?php echo esc_html( $jbli_job_pharmacy ); ?></span><?php } ?>
+					</p>
+				<?php } ?>
+
+				<p class="jbli_apply_modal_sub">
+					<?php esc_html_e( 'Συμπληρώστε τα στοιχεία σας και θα τα λάβει άμεσα το φαρμακείο.', 'job-listings' ); ?>
+				</p>
+
+			</div>
 
 			<div class="jbli_apply_modal_notice" aria-live="polite" hidden></div>
 
@@ -250,21 +269,30 @@ function jbli_apply_modal_html( int $jbli_post_id ): string {
 					<label for="<?php echo esc_attr( $jbli_modal_id ); ?>_name">
 						<?php esc_html_e( 'Ονοματεπώνυμο', 'job-listings' ); ?> <span aria-hidden="true">*</span>
 					</label>
-					<input type="text"  id="<?php echo esc_attr( $jbli_modal_id ); ?>_name"  name="applicant_name"  class="jbli_apply_input" autocomplete="name"  required>
+					<div class="jbli_apply_input_wrap">
+						<span class="jbli_apply_input_icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+						<input type="text" id="<?php echo esc_attr( $jbli_modal_id ); ?>_name" name="applicant_name" class="jbli_apply_input" autocomplete="name" placeholder="<?php esc_attr_e( 'Π.χ. Μαρία Παπαδοπούλου', 'job-listings' ); ?>" required>
+					</div>
 				</div>
 
 				<div class="jbli_apply_field">
 					<label for="<?php echo esc_attr( $jbli_modal_id ); ?>_phone">
 						<?php esc_html_e( 'Κινητό τηλέφωνο', 'job-listings' ); ?> <span aria-hidden="true">*</span>
 					</label>
-					<input type="tel"   id="<?php echo esc_attr( $jbli_modal_id ); ?>_phone" name="applicant_phone" class="jbli_apply_input" autocomplete="tel"   required>
+					<div class="jbli_apply_input_wrap">
+						<span class="jbli_apply_input_icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
+						<input type="tel" id="<?php echo esc_attr( $jbli_modal_id ); ?>_phone" name="applicant_phone" class="jbli_apply_input" autocomplete="tel" inputmode="tel" placeholder="<?php esc_attr_e( 'Π.χ. 69xxxxxxxx', 'job-listings' ); ?>" required>
+					</div>
 				</div>
 
 				<div class="jbli_apply_field">
 					<label for="<?php echo esc_attr( $jbli_modal_id ); ?>_email">
 						<?php esc_html_e( 'Email', 'job-listings' ); ?> <span aria-hidden="true">*</span>
 					</label>
-					<input type="email" id="<?php echo esc_attr( $jbli_modal_id ); ?>_email" name="applicant_email" class="jbli_apply_input" autocomplete="email" required>
+					<div class="jbli_apply_input_wrap">
+						<span class="jbli_apply_input_icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></span>
+						<input type="email" id="<?php echo esc_attr( $jbli_modal_id ); ?>_email" name="applicant_email" class="jbli_apply_input" autocomplete="email" inputmode="email" placeholder="<?php esc_attr_e( 'Π.χ. maria@email.gr', 'job-listings' ); ?>" required>
+					</div>
 				</div>
 
 				<input type="hidden" name="post_id" value="<?php echo esc_attr( (string) $jbli_post_id ); ?>">
@@ -280,6 +308,11 @@ function jbli_apply_modal_html( int $jbli_post_id ): string {
 						<?php esc_html_e( 'Αποστολή...', 'job-listings' ); ?>
 					</span>
 				</button>
+
+				<p class="jbli_apply_modal_privacy">
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+					<?php esc_html_e( 'Τα στοιχεία σας αποστέλλονται μόνο στο φαρμακείο της αγγελίας.', 'job-listings' ); ?>
+				</p>
 
 			</div>
 

@@ -132,6 +132,17 @@
 		if ( jbli_s ) { jbli_submit_apply( jbli_s.getAttribute( 'data-jbli_apply_submit' ) ); return; }
 	} );
 
+	/* Enter in a field sends the application (the modal is not a <form>). */
+	document.addEventListener( 'keydown', function ( jbli_e ) {
+		if ( jbli_e.key !== 'Enter' || ! jbli_e.target.classList || ! jbli_e.target.classList.contains( 'jbli_apply_input' ) ) { return; }
+		var jbli_modal = jbli_e.target.closest( '.jbli_apply_modal' );
+		var jbli_btn   = jbli_modal && jbli_modal.querySelector( '.jbli_apply_modal_submit' );
+		if ( jbli_btn && ! jbli_btn.disabled ) {
+			jbli_e.preventDefault();
+			jbli_submit_apply( jbli_modal.id );
+		}
+	} );
+
 	document.addEventListener( 'keydown', function ( jbli_e ) {
 		if ( jbli_e.key !== 'Escape' ) { return; }
 		var jbli_open = document.querySelector( '.jbli_apply_modal:not([hidden])' );

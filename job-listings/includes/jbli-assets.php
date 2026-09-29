@@ -42,7 +42,8 @@ if ( ! function_exists( 'jbli_enqueue_assets' ) ) {
 					wp_enqueue_style(
 						"jbli_{$jbli_mod}_style",
 						JBLI_URL . "modules/{$jbli_mod}/css/jbli-{$jbli_mod}.css",
-						array( 'jbli_tokens' ),
+						/* apply overrides the older modal rules in jbli-recent.css, so it loads after them. */
+						'apply' === $jbli_mod && in_array( 'recent', $jbli_css_modules, true ) ? array( 'jbli_tokens', 'jbli_recent_style' ) : array( 'jbli_tokens' ),
 						jbli_asset_version( $jbli_css_file )
 					);
 				}
@@ -167,7 +168,14 @@ if ( ! function_exists( 'jbli_required_css_modules' ) ) {
 			return array();
 		}
 
-		return array_values( array_intersect( $jbli_css, $jbli_with_css ) );
+		$jbli_css = array_values( array_intersect( $jbli_css, $jbli_with_css ) );
+
+		/* The apply modal has its own stylesheet (9.9.45), loaded after the module CSS. */
+		if ( in_array( 'apply', $jbli_modules, true ) ) {
+			$jbli_css[] = 'apply';
+		}
+
+		return $jbli_css;
 	}
 }
 
@@ -179,7 +187,7 @@ if ( ! function_exists( 'jbli_asset_css_module_slugs' ) ) {
 	 * @return string[]
 	 */
 	function jbli_asset_css_module_slugs() {
-		return array( 'single', 'listings', 'recent', 'form', 'dashboard' );
+		return array( 'single', 'listings', 'recent', 'form', 'dashboard', 'apply' );
 	}
 }
 

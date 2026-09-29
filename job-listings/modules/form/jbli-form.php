@@ -212,6 +212,50 @@ function jbli_render_form() {
 
 add_shortcode( 'new-listing', 'jbli_render_form' );
 
+/**
+ * Classify the form side-panel media URL.
+ *
+ * @since 9.9.45
+ *
+ * @param string $jbli_url Media URL from the settings.
+ * @return array{type:string,embed?:string} type is 'image', 'video', 'embed' or '' (none/unknown).
+ */
+function jbli_form_media_type( $jbli_url ) {
+
+	$jbli_url = trim( (string) $jbli_url );
+
+	if ( '' === $jbli_url ) { return array( 'type' => '' ); }
+
+	if ( preg_match( '~(?:youtube\.com/(?:watch\?(?:.*&)?v=|shorts/|embed/)|youtu\.be/)([A-Za-z0-9_-]{6,})~', $jbli_url, $jbli_m ) )
+	{
+		$jbli_id = $jbli_m[1];
+
+		return array(
+			'type'  => 'embed',
+			'embed' => 'https://www.youtube-nocookie.com/embed/' . rawurlencode( $jbli_id )
+				. '?autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&playsinline=1&playlist=' . rawurlencode( $jbli_id ),
+		);
+	}
+
+	if ( preg_match( '~vimeo\.com/(?:video/)?(\d+)~', $jbli_url, $jbli_m ) )
+	{
+		return array(
+			'type'  => 'embed',
+			'embed' => 'https://player.vimeo.com/video/' . rawurlencode( $jbli_m[1] ) . '?background=1&autoplay=1&muted=1&loop=1',
+		);
+	}
+
+	$jbli_path = strtolower( (string) wp_parse_url( $jbli_url, PHP_URL_PATH ) );
+
+	if ( preg_match( '~\.(mp4|webm|ogv|mov)$~', $jbli_path ) ) { return array( 'type' => 'video' ); }
+
+	if ( preg_match( '~\.(jpe?g|png|webp|avif|gif|svg)$~', $jbli_path ) ) { return array( 'type' => 'image' ); }
+
+	/* Unknown extension (e.g. a CDN URL without one): treat as an image. */
+	return array( 'type' => 'image' );
+
+}
+
 function jbli_form_adminpost_handler() {
 
 	if ( ! is_user_logged_in( ) )

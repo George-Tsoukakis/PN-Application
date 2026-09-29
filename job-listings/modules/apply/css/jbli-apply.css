@@ -1,0 +1,355 @@
+/* ==========================================================================
+   Apply modal ("Εκδήλωση Ενδιαφέροντος") — 9.9.45 redesign.
+   Loaded after jbli-recent.css (which still carries the older modal rules);
+   every selector is scoped under .jbli_apply_modal so these win.
+   ========================================================================== */
+
+.jbli_apply_modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: var(--jbli_font, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+}
+
+.jbli_apply_modal[hidden] {
+  display: none;
+}
+
+.jbli_apply_modal .jbli_apply_modal_backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 25, 20, .55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: jbli_apply_fade .2s ease-out;
+}
+
+.jbli_apply_modal .jbli_apply_modal_box {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 24px;
+  padding: 0 28px 24px;
+  box-shadow: 0 30px 80px rgba(2, 44, 34, .35), 0 2px 8px rgba(2, 44, 34, .12);
+  animation: jbli_apply_pop .26s cubic-bezier(.2, .9, .3, 1.2);
+  box-sizing: border-box;
+}
+
+.jbli_apply_modal .jbli_apply_modal_box *,
+.jbli_apply_modal .jbli_apply_modal_box *::before,
+.jbli_apply_modal .jbli_apply_modal_box *::after {
+  box-sizing: border-box;
+}
+
+/* Green header band with the icon, title and the listing it is for. */
+.jbli_apply_modal .jbli_apply_modal_head {
+  margin: 0 -28px 22px;
+  padding: 28px 28px 22px;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(260px 120px at 85% 0%, rgba(255, 255, 255, .18), transparent 70%),
+    radial-gradient(220px 120px at 0% 100%, rgba(16, 185, 129, .45), transparent 70%),
+    linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%);
+  border-radius: 24px 24px 0 0;
+}
+
+.jbli_apply_modal .jbli_apply_modal_icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .28);
+  color: #fff;
+}
+
+.jbli_apply_modal .jbli_apply_modal_title {
+  margin: 0;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.jbli_apply_modal .jbli_apply_modal_job {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 10px 0 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .14);
+  font-size: .82rem;
+  line-height: 1.35;
+}
+
+.jbli_apply_modal .jbli_apply_modal_job strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.jbli_apply_modal .jbli_apply_modal_job span {
+  color: rgba(255, 255, 255, .8);
+}
+
+.jbli_apply_modal .jbli_apply_modal_sub {
+  margin: 12px auto 0;
+  max-width: 340px;
+  color: rgba(255, 255, 255, .86);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
+.jbli_apply_modal .jbli_apply_modal_close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  cursor: pointer;
+  transition: background .18s ease, transform .18s ease;
+}
+
+.jbli_apply_modal .jbli_apply_modal_close:hover,
+.jbli_apply_modal .jbli_apply_modal_close:focus-visible {
+  background: rgba(255, 255, 255, .28);
+  transform: rotate(90deg);
+  outline: none;
+}
+
+/* Fields */
+.jbli_apply_modal .jbli_apply_field {
+  margin: 0 0 14px;
+}
+
+.jbli_apply_modal .jbli_apply_field label {
+  display: block;
+  margin: 0 0 6px;
+  color: #1f2937;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.jbli_apply_modal .jbli_apply_field label span {
+  color: #dc2626;
+}
+
+.jbli_apply_modal .jbli_apply_input_wrap {
+  position: relative;
+}
+
+.jbli_apply_modal .jbli_apply_input_icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  display: inline-flex;
+  color: #9ca3af;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: color .18s ease;
+}
+
+.jbli_apply_modal .jbli_apply_input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin: 0;
+  padding: 0 14px 0 44px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+  color: #111827;
+  font: inherit;
+  font-size: .95rem;
+  box-shadow: none;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.jbli_apply_modal .jbli_apply_input::placeholder {
+  color: #9ca3af;
+}
+
+.jbli_apply_modal .jbli_apply_input:hover {
+  border-color: #d1d5db;
+}
+
+.jbli_apply_modal .jbli_apply_input:focus {
+  outline: none;
+  border-color: #059669;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, .14);
+}
+
+.jbli_apply_modal .jbli_apply_input_wrap:focus-within .jbli_apply_input_icon {
+  color: #059669;
+}
+
+/* Submit */
+.jbli_apply_modal .jbli_apply_modal_submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 50px;
+  margin: 8px 0 0;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(5, 150, 105, .32);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.jbli_apply_modal .jbli_apply_modal_submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(5, 150, 105, .4);
+  filter: brightness(1.04);
+}
+
+.jbli_apply_modal .jbli_apply_modal_submit:disabled {
+  cursor: wait;
+  opacity: .8;
+  transform: none;
+}
+
+.jbli_apply_modal .jbli_apply_modal_submit_loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jbli_apply_modal .jbli_apply_modal_submit_loading[hidden],
+.jbli_apply_modal .jbli_apply_modal_submit_label[hidden] {
+  display: none;
+}
+
+.jbli_apply_modal .jbli_apply_modal_privacy {
+  display: block;
+  margin: 14px 0 0;
+  color: #6b7280;
+  font-size: .76rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.jbli_apply_modal .jbli_apply_modal_privacy svg {
+  display: inline-block;
+  margin: 0 4px -2px 0;
+  color: #059669;
+}
+
+/* Notices (success replaces the form, error sits above it) */
+.jbli_apply_modal .jbli_apply_modal_notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: .88rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.jbli_apply_modal .jbli_apply_modal_notice[hidden] {
+  display: none;
+}
+
+.jbli_apply_modal .jbli_apply_modal_notice_error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.jbli_apply_modal .jbli_apply_modal_notice_success {
+  padding: 22px 16px 20px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  text-align: center;
+  font-size: .95rem;
+}
+
+.jbli_apply_modal .jbli_apply_modal_notice_success::before {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 24px no-repeat,
+    linear-gradient(135deg, #047857, #10b981);
+  box-shadow: 0 8px 20px rgba(5, 150, 105, .3);
+  animation: jbli_apply_pop .3s cubic-bezier(.2, .9, .3, 1.3);
+}
+
+@keyframes jbli_apply_fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes jbli_apply_pop {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes jbli_apply_sheet {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+/* Phones: bottom sheet */
+@media (max-width: 560px) {
+  .jbli_apply_modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .jbli_apply_modal .jbli_apply_modal_box {
+    max-width: none;
+    max-height: 92vh;
+    padding: 0 18px calc(20px + env(safe-area-inset-bottom, 0px));
+    border-radius: 24px 24px 0 0;
+    animation: jbli_apply_sheet .28s cubic-bezier(.2, .9, .3, 1);
+  }
+
+  .jbli_apply_modal .jbli_apply_modal_head {
+    margin: 0 -18px 18px;
+    padding: 24px 18px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jbli_apply_modal .jbli_apply_modal_backdrop,
+  .jbli_apply_modal .jbli_apply_modal_box,
+  .jbli_apply_modal .jbli_apply_modal_notice_success::before {
+    animation: none;
+  }
+}

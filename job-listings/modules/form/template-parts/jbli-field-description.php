@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
 	<textarea
 		id="job_description"
 		name="job_description"
-		rows="6"
+		rows="4"
 		class="jbli_textarea"
 		autocomplete="off"
 		enterkeyhint="done"

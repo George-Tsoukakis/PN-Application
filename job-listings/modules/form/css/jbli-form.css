@@ -501,3 +501,279 @@
 .jbli_field_error::before {
   content: '⚠ ';
 }
+
+/* ==========================================================================
+   9.9.45 — Compact form with a media panel on the right.
+   ========================================================================== */
+
+.jbli_form_wrap_simple.jbli_form_layout {
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
+  gap: 28px;
+  align-items: start;
+  padding-top: var(--jbli_space_xl);
+}
+
+.jbli_form_main {
+  min-width: 0;
+}
+
+/* Header: a slim bar instead of the tall banner */
+.jbli_form_layout .jbli_form_header {
+  padding: 18px 24px;
+  margin-bottom: 16px;
+  border-radius: 18px;
+}
+
+.jbli_form_layout .jbli_form_header::before {
+  top: -70px;
+  right: -60px;
+  width: 140px;
+  height: 140px;
+}
+
+.jbli_form_layout .jbli_form_header_title {
+  margin-bottom: 4px;
+  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
+}
+
+.jbli_form_layout .jbli_form_header_sub {
+  font-size: .86rem;
+}
+
+/* Tighter card and controls */
+.jbli_form_layout .jbli_form_card {
+  --jbli_form_row_gap: 14px;
+  --jbli_form_col_gap: 14px;
+  --jbli_form_control_height: 46px;
+  --jbli_form_control_radius: 12px;
+  --jbli_form_control_pad_x: 14px;
+  --jbli_form_label_gap: 6px;
+  padding: 22px 24px;
+  border-radius: 18px;
+}
+
+.jbli_form_layout .jbli_field label,
+.jbli_form_layout .jbli_form_field label,
+.jbli_form_layout .jbli_field_label {
+  font-size: .8rem;
+}
+
+.jbli_form_layout .jbli_textarea,
+.jbli_form_layout textarea {
+  min-height: 96px;
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.jbli_form_layout .jbli_field_hint {
+  font-size: .72rem;
+}
+
+.jbli_form_layout .jbli_form_consent {
+  margin: 4px 0 0;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.jbli_form_layout .jbli_checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.jbli_form_layout .jbli_checkbox input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--jbli_green);
+}
+
+.jbli_form_layout .jbli_form_footer {
+  padding-top: 16px;
+  margin-top: 14px;
+}
+
+.jbli_form_layout .jbli_btn_primary {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Media panel */
+.jbli_form_aside {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+
+.jbli_form_media {
+  position: relative;
+  overflow: hidden;
+  height: clamp(520px, 78vh, 700px);
+  border-radius: 24px;
+  background:
+    radial-gradient(360px 220px at 90% 0%, rgba(255, 255, 255, .16), transparent 70%),
+    radial-gradient(340px 260px at 0% 100%, rgba(52, 211, 153, .5), transparent 70%),
+    linear-gradient(150deg, #064e3b 0%, #047857 55%, #10b981 100%);
+  box-shadow: 0 24px 60px rgba(2, 44, 34, .22);
+}
+
+.jbli_form_media_el {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+  display: block;
+}
+
+/* An embedded player is scaled up so its edges/controls stay out of view. */
+.jbli_form_media_embed .jbli_form_media_el {
+  width: 180%;
+  height: 100%;
+  left: -40%;
+  pointer-events: none;
+}
+
+.jbli_form_media_art {
+  position: absolute;
+  inset: 8% 8% 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jbli_form_media_shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0) 35%, rgba(2, 44, 34, .78) 100%);
+  pointer-events: none;
+}
+
+.jbli_form_media_default .jbli_form_media_shade {
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0) 50%, rgba(2, 44, 34, .35) 100%);
+}
+
+.jbli_form_media_card {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  padding: 20px 20px 18px;
+  border-radius: 18px;
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .24);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+.jbli_form_media_kicker {
+  margin: 0 0 6px;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #a7f3d0;
+}
+
+.jbli_form_media_title {
+  margin: 0 0 12px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  color: #fff;
+}
+
+.jbli_form_media_list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.jbli_form_media_list li {
+  position: relative;
+  padding-left: 28px;
+  font-size: .88rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, .92);
+}
+
+.jbli_form_media_list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23064e3b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 11px no-repeat,
+    #6ee7b7;
+}
+
+/* Tablet/phone: the form comes first; the media becomes a short banner under the header */
+@media (max-width: 960px) {
+  .jbli_form_wrap_simple.jbli_form_layout {
+    grid-template-columns: 1fr;
+    max-width: 720px;
+    gap: 16px;
+  }
+
+  .jbli_form_aside {
+    position: static;
+    order: -1;
+  }
+
+  .jbli_form_media {
+    height: 210px;
+    border-radius: 18px;
+  }
+
+  .jbli_form_media_art {
+    inset: 6% 55% 6% 4%;
+  }
+
+  .jbli_form_media_card {
+    left: auto;
+    right: 12px;
+    bottom: 12px;
+    top: 12px;
+    width: min(62%, 360px);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .jbli_form_media_title {
+    font-size: .98rem;
+    margin-bottom: 8px;
+  }
+
+  .jbli_form_media_list li {
+    font-size: .8rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .jbli_form_aside {
+    display: none;
+  }
+
+  .jbli_form_layout .jbli_form_card {
+    padding: 18px 16px;
+  }
+
+  .jbli_form_layout .jbli_form_grid_2,
+  .jbli_form_layout .jbli_form_grid_category_nomos {
+    grid-template-columns: 1fr;
+  }
+}
