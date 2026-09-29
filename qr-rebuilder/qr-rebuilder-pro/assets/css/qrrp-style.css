@@ -1,0 +1,995 @@
+/*
+ * QR ReBuilder Pro — εμφάνιση του front-end εργαλείου [qr_rebuilder_pro]:
+ * panels, σαρωτής, φόρμες, κουμπιά, έξοδος DataMatrix, warnings, μηνύματα
+ * κατάστασης, οθόνες πρόσβασης, μετρητές χρήσης, responsive και εκτύπωση.
+ *
+ * Συνεργάζεται με:
+ * - includes/class-qrrp-shortcode.php: το markup των qrrp-* στοιχείων.
+ * - includes/class-qrrp-stats.php: οι μετρητές χρήσης (.qrrp-usage).
+ * - assets/js/qrrp-app.js: δυναμικές καταστάσεις και το <img> του DataMatrix.
+ * Το admin χρησιμοποιεί ξεχωριστά το qrrp-admin-style.css.
+ */
+
+.qrrp-wrapper {
+	--qrrp-primary: #2271b1;
+	--qrrp-primary-dark: #135e96;
+	--qrrp-text: #1d2327;
+	--qrrp-muted: #646970;
+	--qrrp-border: #dcdcde;
+	--qrrp-border-soft: #e2e4e7;
+	--qrrp-surface: #fff;
+	--qrrp-soft: #f6f7f7;
+	--qrrp-danger: #d63638;
+	--qrrp-radius: 12px;
+	color-scheme: light;
+	max-width: 720px;
+	/*
+	 * Οριζόντιο padding σε κάθε πλάτος (όχι μόνο σε breakpoint), ώστε σε στενή
+	 * οθόνη οι κάρτες να μην ακουμπούν στις άκρες. Με border-box το εξωτερικό
+	 * πλάτος μένει 720px.
+	 */
+	padding-right: 16px;
+	padding-left: 16px;
+	/* Απόσταση από sticky header του theme. */
+	margin: 48px auto 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+	color: var(--qrrp-text);
+}
+.qrrp-wrapper,
+.qrrp-wrapper * {
+	box-sizing: border-box;
+}
+.qrrp-wrapper [hidden] {
+	display: none !important;
+}
+.qrrp-panel {
+	margin-bottom: 20px;
+	padding: 22px 24px;
+	border: 1px solid var(--qrrp-border-soft);
+	border-radius: var(--qrrp-radius);
+	background: var(--qrrp-surface);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: box-shadow 0.2s ease;
+}
+.qrrp-panel:hover {
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+}
+.qrrp-panel-heading {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 16px;
+}
+.qrrp-panel-heading-sub {
+	margin-top: 26px;
+	padding-top: 20px;
+	border-top: 1px solid var(--qrrp-border-soft);
+}
+.qrrp-panel-heading h3 {
+	margin: 0;
+	font-size: 1.1em;
+	line-height: 1.35;
+}
+.qrrp-step-badge {
+	display: inline-flex;
+	flex: 0 0 26px;
+	width: 26px;
+	height: 26px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--qrrp-primary), #1a5a8e);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.35);
+}
+.qrrp-btn {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 40px;
+	padding: 9px 18px;
+	border: 1px solid #cfd2d6;
+	border-radius: 8px;
+	background: var(--qrrp-soft);
+	color: var(--qrrp-text);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		transform 0.12s ease,
+		box-shadow 0.15s ease,
+		background 0.15s ease,
+		border-color 0.15s ease;
+}
+.qrrp-btn:not(:disabled):hover {
+	border-color: #b4b9be;
+	background: #eceef0;
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+	transform: translateY(-1px);
+}
+.qrrp-btn:not(:disabled):active {
+	transform: translateY(0);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.qrrp-wrapper .qrrp-btn:focus-visible,
+.qrrp-wrapper .qrrp-link-btn:focus-visible,
+.qrrp-wrapper input:focus-visible,
+.qrrp-wrapper textarea:focus-visible,
+.qrrp-wrapper select:focus-visible {
+	outline: 2px solid var(--qrrp-primary);
+	outline-offset: 2px;
+}
+.qrrp-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+/*
+ * 2.15.2: λευκό κείμενο ≥ 4.5:1 σε όλο το gradient (WCAG 1.4.3). Κανονικό:
+ * #2271b1 5.17:1 → #1c6aa6 5.74:1. Hover: #1f75b3 4.94:1 → #135e96 6.84:1.
+ */
+.qrrp-btn-primary {
+	background: linear-gradient(135deg, #2271b1, #1c6aa6);
+	border-color: #1c6aa6;
+	color: #fff;
+}
+.qrrp-btn-primary:not(:disabled):hover {
+	background: linear-gradient(135deg, #1f75b3, #135e96);
+	border-color: #135e96;
+	box-shadow: 0 4px 14px rgba(28, 106, 166, 0.35);
+	color: #fff;
+}
+.qrrp-link-btn {
+	appearance: none;
+	-webkit-appearance: none;
+	padding: 4px 0;
+	border: 0;
+	background: transparent;
+	color: var(--qrrp-primary);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: color 0.15s ease;
+}
+.qrrp-link-btn:hover,
+.qrrp-link-btn:focus,
+.qrrp-link-btn:active {
+	background: transparent;
+	color: var(--qrrp-primary-dark);
+	text-decoration: underline;
+}
+.qrrp-manual-toggle-row {
+	margin-top: 4px;
+}
+.qrrp-hw-scanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 18px;
+	border: 1px solid #cfe0f0;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #f6f9fc 0%, #eef4fa 100%);
+}
+.qrrp-hw-scanner-body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.qrrp-hw-scanner label {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 14px;
+	font-weight: 600;
+}
+.qrrp-wrapper .qrrp-hw-scanner input,
+.qrrp-wrapper .qrrp-manual-entry textarea,
+.qrrp-wrapper .qrrp-field-group input,
+.qrrp-wrapper .qrrp-field-group textarea,
+.qrrp-wrapper .qrrp-email-row input[type="email"] {
+	width: 100%;
+	min-width: 0;
+	min-height: 40px;
+	padding: 9px 11px;
+	border: 1px solid #cfd2d6;
+	border-radius: 6px;
+	background: #fff;
+	color: var(--qrrp-text);
+	font: inherit;
+	font-size: 14px;
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease;
+}
+.qrrp-wrapper .qrrp-hw-scanner input:focus,
+.qrrp-wrapper .qrrp-manual-entry textarea:focus,
+.qrrp-wrapper .qrrp-field-group input:focus,
+.qrrp-wrapper .qrrp-field-group textarea:focus,
+.qrrp-wrapper .qrrp-email-row input[type="email"]:focus {
+	border-color: var(--qrrp-primary);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15);
+}
+/*
+ * Χωρίς outline μόνο στην εστίαση με ποντίκι (αρκεί το box-shadow). Με
+ * πληκτρολόγιο μένει το outline, που τηρείται και σε forced-colors, όπου το
+ * box-shadow αγνοείται.
+ */
+.qrrp-wrapper .qrrp-hw-scanner input:focus:not(:focus-visible),
+.qrrp-wrapper .qrrp-manual-entry textarea:focus:not(:focus-visible),
+.qrrp-wrapper .qrrp-field-group input:focus:not(:focus-visible),
+.qrrp-wrapper .qrrp-field-group textarea:focus:not(:focus-visible),
+.qrrp-wrapper .qrrp-email-row input[type="email"]:focus:not(:focus-visible) {
+	outline: none;
+}
+.qrrp-wrapper .qrrp-hw-scanner input {
+	border: 1px solid var(--qrrp-primary);
+	border-left: 4px solid var(--qrrp-primary);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+}
+.qrrp-wrapper .qrrp-hw-scanner input:focus {
+	box-shadow: 0 0 0 4px rgba(34, 113, 177, 0.22);
+}
+.qrrp-hw-hint {
+	margin: 8px 0 0;
+	color: var(--qrrp-muted);
+	font-size: 12px;
+	line-height: 1.5;
+}
+.qrrp-manual-entry {
+	margin-top: 14px;
+}
+.qrrp-wrapper .qrrp-manual-entry textarea {
+	min-height: 72px;
+	margin-bottom: 8px;
+	overflow-wrap: anywhere;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	resize: vertical;
+}
+/*
+ * Οδηγία αριστερά, «Ανάλυση» δεξιά· σε στενή οθόνη το κουμπί πέφτει από κάτω
+ * (βλ. @media 480px).
+ */
+.qrrp-manual-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+.qrrp-manual-actions .qrrp-hw-hint {
+	margin: 0;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.qrrp-manual-actions .qrrp-btn {
+	flex: 0 0 auto;
+}
+.qrrp-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 14px;
+	min-width: 0;
+}
+.qrrp-field-group label {
+	font-size: 13px;
+	font-weight: 600;
+}
+.qrrp-wrapper .qrrp-field-group textarea {
+	resize: vertical;
+}
+.qrrp-fields-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0 16px;
+}
+.qrrp-warnings {
+	margin-bottom: 16px;
+	overflow-wrap: anywhere;
+	padding: 10px 14px;
+	border-left: 4px solid var(--qrrp-danger);
+	border-radius: 0 6px 6px 0;
+	background: #fcf0f1;
+	font-size: 13px;
+	line-height: 1.5;
+}
+.qrrp-warnings ul {
+	margin: 6px 0 0 18px;
+	padding: 0;
+}
+.qrrp-loading-indicator {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 16px;
+	padding: 10px 14px;
+	border: 1px solid var(--qrrp-border);
+	border-left: 4px solid var(--qrrp-primary);
+	border-radius: 0 6px 6px 0;
+	background: var(--qrrp-soft);
+	color: var(--qrrp-text);
+	font-size: 13px;
+	line-height: 1.4;
+}
+.qrrp-spinner {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--qrrp-border);
+	border-top-color: var(--qrrp-primary);
+	border-radius: 50%;
+	animation: qrrp-spin 0.7s linear infinite;
+}
+@keyframes qrrp-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+.qrrp-ambiguous-confirm {
+	margin-bottom: 16px;
+	overflow-wrap: anywhere;
+	padding: 10px 14px;
+	border-left: 4px solid #dba617;
+	border-radius: 0 6px 6px 0;
+	background: #fcf9e8;
+	font-size: 13px;
+	line-height: 1.5;
+}
+.qrrp-ambiguous-confirm label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	cursor: pointer;
+}
+.qrrp-ambiguous-confirm input[type="checkbox"] {
+	margin-top: 2px;
+	flex: 0 0 auto;
+}
+
+/*
+ * Επιλογέας αμφισβητούμενων τιμών. Τα label του κληρονομούν το flex του
+ * .qrrp-ambiguous-confirm label. Οι τιμές σε monospace, ώστε οι εναλλακτικές
+ * (συνήθως κοψίματα της ίδιας συμβολοσειράς) να στοιχίζονται.
+ */
+.qrrp-contested {
+	margin-bottom: 10px;
+}
+.qrrp-contested-group {
+	margin: 0 0 8px;
+	padding: 8px 10px;
+	border: 1px solid #dba617;
+	border-radius: 6px;
+	background: #fffdf5;
+}
+.qrrp-contested-group:last-child {
+	margin-bottom: 0;
+}
+.qrrp-contested-group legend {
+	padding: 0 4px;
+	font-weight: 600;
+}
+.qrrp-contested-option {
+	padding: 4px 2px;
+}
+.qrrp-contested-option input[type="radio"] {
+	margin-top: 2px;
+	flex: 0 0 auto;
+}
+.qrrp-contested-value {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	overflow-wrap: anywhere;
+}
+/*
+ * Ληγμένο προϊόν: κόκκινο, σκόπιμα διαφορετικό από την κίτρινη επιβεβαίωση
+ * ανάγνωσης, ώστε να ξεχωρίζει με μια ματιά.
+ */
+.qrrp-expiry-confirm {
+	margin-bottom: 16px;
+	overflow-wrap: anywhere;
+	padding: 10px 14px;
+	border-left: 4px solid #d63638;
+	border-radius: 0 6px 6px 0;
+	background: #fcf0f1;
+	font-size: 13px;
+	line-height: 1.5;
+	font-weight: 600;
+}
+.qrrp-expiry-confirm label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	cursor: pointer;
+}
+.qrrp-expiry-confirm input[type="checkbox"] {
+	margin-top: 2px;
+	flex: 0 0 auto;
+}
+.qrrp-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 10px;
+}
+.qrrp-output-flex {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 24px;
+	padding: 20px;
+	border: 1px solid #e2e4e7;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #fafcff, #f3f7fb);
+}
+.qrrp-qr-output {
+	flex: 0 0 auto;
+}
+.qrrp-qr-output img {
+	display: block;
+	width: 100%;
+	max-width: 220px;
+	height: auto;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	image-rendering: pixelated;
+}
+.qrrp-output-summary {
+	flex: 1 1 220px;
+	min-width: 0;
+}
+.qrrp-output-summary p {
+	margin: 4px 0;
+	font-size: 14px;
+	overflow-wrap: anywhere;
+}
+/* 2.15.2: σήμανση χειροκίνητης αλλαγής (κείμενο 15:1 στο κίτρινο φόντο). */
+.qrrp-wrapper .qrrp-summary-provenance {
+	margin-top: 10px;
+	padding: 8px 10px;
+	border: 1px solid #dba617;
+	border-left-width: 4px;
+	border-radius: 6px;
+	background: #fcf9e8;
+	color: #1d2327;
+	font-weight: 600;
+}
+.qrrp-email-box {
+	margin-top: 20px;
+	padding: 18px;
+	border: 1px solid #cfe0f0;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #f8fbfe 0%, #eef5fb 100%);
+}
+.qrrp-email-heading {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.qrrp-email-heading-text {
+	min-width: 0;
+}
+.qrrp-email-heading-text h4 {
+	margin: 0 0 4px;
+	font-size: 15px;
+	line-height: 1.35;
+}
+.qrrp-email-heading-text p {
+	margin: 0;
+	color: var(--qrrp-muted);
+	font-size: 12px;
+	line-height: 1.5;
+}
+.qrrp-email-contents {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+	margin-bottom: 16px;
+}
+.qrrp-email-contents span {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px 9px;
+	border: 1px solid #d7e5f2;
+	border-radius: 999px;
+	background: #fff;
+	color: #3c434a;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+.qrrp-email-box > label {
+	display: block;
+	margin-bottom: 7px;
+	font-size: 13px;
+	font-weight: 600;
+}
+.qrrp-email-row {
+	display: flex;
+	align-items: stretch;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.qrrp-wrapper .qrrp-email-row input[type="email"] {
+	flex: 1 1 260px;
+	border-color: #b8cfe2;
+}
+.qrrp-email-row .qrrp-btn-primary {
+	min-width: 150px;
+}
+.qrrp-email-note {
+	margin: 10px 0 0;
+	color: var(--qrrp-muted);
+	font-size: 11px;
+	line-height: 1.5;
+}
+
+.qrrp-status {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	overflow-wrap: anywhere;
+	border-left: 4px solid var(--qrrp-primary);
+	border-radius: 4px;
+	background: #f0f6fc;
+	color: var(--qrrp-primary-dark);
+	font-size: 13px;
+	line-height: 1.5;
+}
+/* Οδηγία της χειροκίνητης δημιουργίας από το μηδέν. */
+.qrrp-manual-entry-note {
+	margin: 0 0 14px;
+	padding: 10px 12px;
+	border-left: 4px solid var(--qrrp-primary);
+	background: #f0f6fc;
+	border-radius: 4px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+.qrrp-status:empty {
+	display: none;
+}
+/* 2.15.3: ορατό μόνο σε screen readers (live regions του εργαλείου). */
+.qrrp-sr-only {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+.qrrp-status-error {
+	border-left-color: var(--qrrp-danger);
+	background: #fcf0f1;
+	color: #b32d2e;
+}
+/* Δήλωση ευθύνης: διακριτική, κάτω από όλο το εργαλείο. */
+.qrrp-disclaimer {
+	margin: 4px 0 0;
+	padding: 12px 14px;
+	border: 1px solid var(--qrrp-border-soft);
+	border-radius: 8px;
+	background: var(--qrrp-soft);
+	color: var(--qrrp-muted);
+	font-size: 12.5px;
+	line-height: 1.6;
+}
+.qrrp-disclaimer p {
+	margin: 0 0 8px;
+}
+.qrrp-disclaimer p:last-child {
+	margin-bottom: 0;
+}
+.qrrp-disclaimer strong {
+	color: var(--qrrp-text);
+	font-weight: 600;
+}
+/*
+ * Οθόνες χωρίς εργαλείο (άρνηση πρόσβασης, διπλό shortcode): μικρότερο
+ * margin-top από το εργαλείο. Η κλάση .qrrp-denied μένει ως έχει· οι
+ * παραλλαγές μπαίνουν δίπλα της.
+ */
+.qrrp-wrapper-notice {
+	margin-top: 24px;
+}
+.qrrp-denied {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	margin-bottom: 0;
+	border-left: 4px solid var(--qrrp-border);
+}
+.qrrp-notice-icon {
+	display: inline-flex;
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: var(--qrrp-soft);
+	color: var(--qrrp-muted);
+}
+.qrrp-notice-body {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+/* Δύο κλάσεις, ώστε ο τίτλος να μένει έντονος ανεξάρτητα από τα h1-h6 του theme. */
+.qrrp-wrapper .qrrp-notice-title {
+	margin: 2px 0 6px;
+	font-size: 1.05em;
+	font-weight: 700;
+	line-height: 1.35;
+}
+.qrrp-notice-text {
+	margin: 0;
+	color: var(--qrrp-muted);
+	font-size: 14px;
+	line-height: 1.55;
+}
+.qrrp-notice-actions {
+	margin-top: 14px;
+}
+/* Χρειάζεται σύνδεση: ενέργεια που λύνει το πρόβλημα, άρα βασικό χρώμα. */
+.qrrp-notice-login {
+	border-left-color: var(--qrrp-primary);
+}
+.qrrp-notice-login .qrrp-notice-icon {
+	background: rgba(34, 113, 177, 0.1);
+	color: var(--qrrp-primary);
+}
+/* Λείπει δικαίωμα — φραγμός, όχι ενέργεια. */
+.qrrp-notice-capability {
+	border-left-color: var(--qrrp-danger);
+}
+.qrrp-notice-capability .qrrp-notice-icon {
+	background: rgba(214, 54, 56, 0.1);
+	color: var(--qrrp-danger);
+}
+/*
+ * Κάρτα «Μόνο για φαρμακεία». Χτίζεται πάνω στο .qrrp-denied και ακυρώνει
+ * το flex/border του.
+ */
+.qrrp-wrapper .qrrp-gate {
+	position: relative;
+	display: block;
+	overflow: hidden;
+	padding: 26px 26px 22px;
+	border: 1px solid var(--qrrp-border-soft);
+	border-radius: var(--qrrp-radius);
+	background: #fff;
+	box-shadow: 0 10px 30px rgba(16, 24, 40, 0.07);
+}
+.qrrp-gate::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 4px;
+	background: linear-gradient(90deg, #2271b1, #18a0a0);
+}
+.qrrp-gate-head {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-bottom: 12px;
+}
+.qrrp-gate-icon {
+	display: flex;
+	flex: 0 0 48px;
+	width: 48px;
+	height: 48px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 14px;
+	background: rgba(34, 113, 177, 0.1);
+	color: var(--qrrp-primary);
+}
+.qrrp-gate-kicker {
+	display: inline-block;
+	margin-bottom: 2px;
+	color: var(--qrrp-primary);
+	font-size: 13px;
+	font-weight: 700;
+}
+.qrrp-wrapper .qrrp-gate-title {
+	margin: 0;
+	color: var(--qrrp-text);
+	font-size: 19px;
+	font-weight: 800;
+	line-height: 1.3;
+}
+.qrrp-wrapper .qrrp-gate-text {
+	margin: 0 0 16px;
+	color: var(--qrrp-muted);
+	font-size: 14.5px;
+	line-height: 1.6;
+}
+.qrrp-gate-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: #e8f1fb;
+	color: #0e3f7a;
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.qrrp-gate-steps {
+	display: grid;
+	gap: 10px;
+	margin: 0 0 20px;
+	padding: 0;
+	list-style: none;
+}
+.qrrp-gate-steps li {
+	display: grid;
+	grid-template-columns: 28px 1fr;
+	gap: 10px;
+	align-items: start;
+	margin: 0;
+	color: var(--qrrp-text);
+	font-size: 14px;
+	line-height: 1.5;
+}
+.qrrp-gate-num {
+	display: flex;
+	width: 26px;
+	height: 26px;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--qrrp-border-soft);
+	border-radius: 50%;
+	background: var(--qrrp-soft);
+	color: var(--qrrp-primary);
+	font-size: 12.5px;
+	font-weight: 700;
+}
+.qrrp-wrapper .qrrp-gate-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 0;
+}
+.qrrp-gate-actions .qrrp-btn {
+	padding: 11px 20px;
+	font-size: 15px;
+	text-decoration: none;
+}
+.qrrp-gate-note {
+	color: var(--qrrp-muted);
+	font-size: 12.5px;
+}
+.qrrp-gate--account::before {
+	background: linear-gradient(90deg, #d63638, #e7892b);
+}
+.qrrp-gate--account .qrrp-gate-icon {
+	background: rgba(214, 54, 56, 0.1);
+	color: var(--qrrp-danger);
+}
+.qrrp-gate--account .qrrp-gate-kicker {
+	color: var(--qrrp-danger);
+}
+/*
+ * Κλειδωμένη θέση: κάρτα, δήλωση ευθύνης και μετρητές στη θέση του εργαλείου.
+ * Τα εσωτερικά .qrrp-wrapper δεν ξαναπροσθέτουν περιθώρια/πλάτος.
+ */
+.qrrp-slot > .qrrp-wrapper {
+	max-width: none;
+	margin-top: 0;
+	padding-left: 0;
+	padding-right: 0;
+}
+.qrrp-slot > .qrrp-disclaimer {
+	margin-top: 16px;
+}
+/* Διαγνωστικό προς συντάκτες — ουδέτερο, δεν εμποδίζεται κανείς. */
+.qrrp-notice-info {
+	border-left-color: var(--qrrp-muted);
+}
+@media (max-width: 480px) {
+	.qrrp-wrapper .qrrp-gate {
+		padding: 22px 18px 18px;
+	}
+	.qrrp-gate-actions .qrrp-btn {
+		width: 100%;
+		text-align: center;
+	}
+	.qrrp-denied {
+		flex-direction: column;
+		gap: 10px;
+	}
+	.qrrp-manual-actions {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+}
+@media (max-width: 640px) {
+	.qrrp-panel {
+		padding: 18px;
+	}
+	.qrrp-fields-grid {
+		grid-template-columns: 1fr;
+	}
+	.qrrp-output-flex {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.qrrp-qr-output {
+		display: flex;
+		justify-content: center;
+	}
+	.qrrp-actions .qrrp-btn {
+		flex: 1 1 180px;
+	}
+	.qrrp-email-row {
+		flex-direction: column;
+	}
+	.qrrp-email-row .qrrp-btn {
+		width: 100%;
+	}
+
+	.qrrp-email-box {
+		padding: 16px;
+	}
+
+	.qrrp-email-contents {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
+@media (max-width: 420px) {
+	.qrrp-panel {
+		padding: 16px;
+		border-radius: 10px;
+	}
+	.qrrp-hw-scanner {
+		padding: 14px;
+	}
+	.qrrp-actions {
+		flex-direction: column;
+	}
+	.qrrp-actions .qrrp-btn {
+		width: 100%;
+		flex-basis: auto;
+	}
+	.qrrp-output-flex {
+		padding: 16px;
+	}
+	.qrrp-qr-output img {
+		max-width: 100%;
+	}
+}
+@media (hover: none) {
+	.qrrp-panel:hover {
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+
+	.qrrp-btn:not(:disabled):hover {
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.qrrp-wrapper *,
+	.qrrp-wrapper *::before,
+	.qrrp-wrapper *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+	.qrrp-wrapper .qrrp-btn:not(:disabled):hover,
+	.qrrp-wrapper .qrrp-btn:not(:disabled):active {
+		transform: none;
+	}
+	.qrrp-spinner {
+		border-top-color: var(--qrrp-border);
+	}
+}
+/*
+ * Μετρητής χρήσης: δημόσιος και read-only, διακριτικός ώστε να μη μοιάζει με
+ * βήμα του εργαλείου ούτε να ανταγωνίζεται τη δήλωση ευθύνης.
+ */
+.qrrp-usage {
+	display: flex;
+	align-items: stretch;
+	justify-content: center;
+	margin: 14px 0 0;
+	padding: 14px 10px;
+	border-radius: var(--qrrp-radius);
+	background: var(--qrrp-soft);
+}
+
+/* Το διαχωριστικό είναι border-left του δεύτερου στοιχείου, όχι κενό element. */
+.qrrp-usage-item {
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 0 12px;
+	text-align: center;
+}
+
+.qrrp-usage-item + .qrrp-usage-item {
+	border-left: 1px solid var(--qrrp-border);
+}
+
+.qrrp-usage-value {
+	display: block;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--qrrp-text);
+}
+
+.qrrp-usage-value-total {
+	color: var(--qrrp-primary);
+}
+
+.qrrp-usage-label {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--qrrp-muted);
+}
+
+/* Το wrapper εδώ υπάρχει μόνο για τις μεταβλητές CSS· χωρίς το margin-top. */
+.qrrp-wrapper-usage {
+	margin: 0 auto;
+}
+/*
+ * Διαδρομή ανάκτησης provenance: εμφανίζεται μετά από 409 με challenge, για να
+ * δηλώσει ο χρήστης ότι διάβασε τις τιμές από τη συσκευασία.
+ */
+.qrrp-provenance-confirm {
+	margin: 1rem 0 0;
+	padding: 0.9rem 1rem;
+	border: 1px solid #d19b00;
+	border-left-width: 4px;
+	border-radius: 4px;
+	background: #fff8e5;
+}
+
+.qrrp-provenance-note {
+	margin: 0 0 0.75rem;
+	line-height: 1.5;
+}
+
+.qrrp-provenance-confirm-button {
+	cursor: pointer;
+}
+/* Εκτύπωση της σελίδας (Ctrl+P): μόνο το αποτέλεσμα, χωρίς τη φόρμα. */
+@media print {
+	.qrrp-wrapper {
+		max-width: none;
+		margin: 0;
+		padding: 0;
+	}
+	.qrrp-wrapper .qrrp-loading-indicator,
+	.qrrp-wrapper .qrrp-status,
+	.qrrp-wrapper .qrrp-scan-panel,
+	.qrrp-wrapper .qrrp-results-panel,
+	.qrrp-wrapper .qrrp-panel-heading,
+	.qrrp-wrapper .qrrp-output-panel .qrrp-actions,
+	.qrrp-wrapper .qrrp-email-box,
+	.qrrp-wrapper .qrrp-usage {
+		display: none !important;
+	}
+	.qrrp-wrapper .qrrp-panel,
+	.qrrp-wrapper .qrrp-output-flex {
+		padding: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+	}
+	.qrrp-wrapper .qrrp-qr-output img {
+		box-shadow: none;
+	}
+}

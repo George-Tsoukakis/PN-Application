@@ -1,0 +1,256 @@
+/*
+ * QR ReBuilder Pro — εμφάνιση της σελίδας «QR ReBuilder Pro → Ρυθμίσεις».
+ *
+ * Συνεργάζεται με:
+ * - includes/class-qrrp-admin.php: φορτώνει το stylesheet στη σελίδα ρυθμίσεων.
+ * - admin/views/settings-page.php: χρησιμοποιεί τα qrrp-admin-* classes.
+ */
+
+.qrrp-admin-wrap {
+	--qrrp-admin-primary: #2271b1;
+	--qrrp-admin-text: #1d2327;
+	--qrrp-admin-muted: #646970;
+	--qrrp-admin-border-soft: #e2e4e7;
+	--qrrp-admin-surface: #fff;
+	max-width: 820px;
+	margin-top: 20px;
+	color: var(--qrrp-admin-text);
+}
+
+.qrrp-admin-wrap,
+.qrrp-admin-wrap * {
+	box-sizing: border-box;
+}
+
+.qrrp-admin-header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	margin-bottom: 20px;
+	padding: 26px 24px;
+	border: 1px solid var(--qrrp-admin-border-soft);
+	border-radius: 10px;
+	background: var(--qrrp-admin-surface);
+	text-align: center;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.qrrp-admin-header-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 44px;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: #f0f6fc;
+	color: var(--qrrp-admin-primary);
+	font-size: 26px;
+	line-height: 1;
+}
+
+.qrrp-admin-header h1 {
+	margin: 0 0 4px;
+	padding: 0;
+	font-size: 1.4em;
+}
+
+.qrrp-admin-header p {
+	margin: 0;
+	color: var(--qrrp-admin-muted);
+	line-height: 1.5;
+}
+
+.qrrp-admin-card {
+	margin-bottom: 20px;
+	padding: 4px 24px 20px;
+	border: 1px solid var(--qrrp-admin-border-soft);
+	border-radius: 10px;
+	background: var(--qrrp-admin-surface);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.qrrp-admin-card h2 {
+	margin: 22px 0 4px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--qrrp-admin-border-soft);
+	font-size: 1.05em;
+}
+
+.qrrp-admin-card table.form-table {
+	margin-top: 0;
+}
+
+.qrrp-admin-card table.form-table th {
+	padding-left: 0;
+	font-weight: 600;
+}
+
+.qrrp-admin-card input[type="text"],
+.qrrp-admin-card input[type="email"],
+.qrrp-admin-card input[type="number"],
+.qrrp-admin-card select {
+	max-width: 100%;
+}
+
+.qrrp-admin-card input[type="text"],
+.qrrp-admin-card input[type="email"] {
+	width: min(100%, 420px);
+}
+
+.qrrp-admin-card input[type="number"] {
+	width: 90px;
+}
+
+.qrrp-admin-card .description {
+	max-width: 680px;
+	color: var(--qrrp-admin-muted);
+	line-height: 1.55;
+}
+
+.qrrp-admin-card input:focus-visible,
+.qrrp-admin-card select:focus-visible {
+	outline: 2px solid var(--qrrp-admin-primary);
+	outline-offset: 1px;
+}
+
+.qrrp-admin-usage h2 {
+	margin-top: 20px;
+}
+
+.qrrp-admin-usage code {
+	display: inline-block;
+	max-width: 100%;
+	padding: 2px 8px;
+	overflow-wrap: anywhere;
+	border-radius: 4px;
+	background: #f0f0f1;
+}
+
+@media (max-width: 782px) {
+	.qrrp-admin-wrap {
+		max-width: none;
+		margin-right: 10px;
+	}
+
+	.qrrp-admin-card {
+		padding: 4px 18px 18px;
+	}
+
+	.qrrp-admin-card table.form-table th,
+	.qrrp-admin-card table.form-table td {
+		display: block;
+		width: 100%;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.qrrp-admin-card table.form-table th {
+		padding-bottom: 6px;
+	}
+
+	.qrrp-admin-card table.form-table td {
+		padding-top: 0;
+	}
+
+	.qrrp-admin-card input[type="text"],
+	.qrrp-admin-card input[type="email"],
+	.qrrp-admin-card select {
+		width: 100%;
+	}
+}
+
+@media (max-width: 480px) {
+	.qrrp-admin-header {
+		padding: 20px 16px;
+	}
+
+	.qrrp-admin-card {
+		padding: 4px 14px 16px;
+	}
+}
+
+/*
+ * Νούμερα χρήσης (read-only). Το auto-fit κρατά τη διάταξη σωστή είτε είναι
+ * δύο κάρτες είτε τρεις.
+ */
+.qrrp-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 12px;
+	margin: 16px 0;
+}
+
+.qrrp-stat-card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px;
+	border-radius: 8px;
+	background: #f6f7f7;
+}
+
+.qrrp-stat-label {
+	font-size: 13px;
+	color: #50575e;
+}
+
+.qrrp-stat-value {
+	font-size: 24px;
+	font-weight: 500;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.qrrp-stats-meta {
+	width: 100%;
+	max-width: 520px;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.qrrp-stats-meta th {
+	padding: 6px 0;
+	font-weight: 400;
+	text-align: start;
+	color: #50575e;
+}
+
+.qrrp-stats-meta td {
+	padding: 6px 0;
+	text-align: end;
+}
+/* 2.15.2: προειδοποίηση πεδίου (π.χ. μη δημοσιευμένη σελίδα εργαλείου). */
+.qrrp-admin-wrap .qrrp-field-warning {
+	color: #8a2424;
+	font-weight: 600;
+}
+
+/* 2.15.6: κάρτα «Βιβλιοθήκη DataMatrix». */
+.qrrp-admin-wrap .qrrp-vendor-table {
+	margin: 12px 0;
+}
+
+.qrrp-admin-wrap .qrrp-vendor-form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 8px 0;
+}
+
+.qrrp-admin-wrap .qrrp-vendor-ok {
+	color: #1e7a4f;
+	font-weight: 600;
+}
+
+.qrrp-admin-wrap .qrrp-vendor-new {
+	color: #9a5b00;
+}
+
+.qrrp-admin-wrap .qrrp-vendor-error {
+	color: #8a2424;
+	font-weight: 600;
+}
