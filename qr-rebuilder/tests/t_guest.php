@@ -131,7 +131,9 @@ QRRP_Rate_Limiter::$log  = array();
 call( 'send_email', $mail + array( 'email' => 'order@pharmacyneeds.gr' ) );
 $pos_q = array_search( 'hit:global:guest_email_global', QRRP_Rate_Limiter::$log, true );
 $pos_r = array_search( 'subject:guest_email_recipient', QRRP_Rate_Limiter::$log, true );
-check( 'recipient limit is charged after the global quota', false !== $pos_q && false !== $pos_r && $pos_q < $pos_r );
+$pos_p = array_search( 'peek:guest_email_global', QRRP_Rate_Limiter::$log, true );
+/* 2.15.7: peek του ταβανιού → όριο παραλήπτη → χρέωση του ταβανιού. */
+check( 'global quota is peeked before and charged after the recipient limit', false !== $pos_p && false !== $pos_q && false !== $pos_r && $pos_p < $pos_r && $pos_r < $pos_q );
 QRRP_Rate_Limiter::$full = array( 'guest_email_global' => true );
 QRRP_Rate_Limiter::$log  = array();
 $e = call( 'send_email', $mail + array( 'email' => 'info2@pharmacyneeds.gr' ) );

@@ -3,11 +3,12 @@ require __DIR__.'/bootp.php';
 define('MINUTE_IN_SECONDS',60); define('HOUR_IN_SECONDS',3600); define('DAY_IN_SECONDS',86400);
 define('QRRP_DEFAULT_EMAIL_CAPABILITY','qrrp_pharmacist');
 class JsonExit extends Exception { public $ok,$data,$status; function __construct($ok,$d,$s){$this->ok=$ok;$this->data=$d;$this->status=$s;parent::__construct('json');} }
-function add_action(...$a){} function qrrp_gs1_minimum_print_width_mm(...$a){return false;} function qrrp_gs1_minimum_x_dimension_mm(...$a){return false;} function qrrp_x_dimension_mm(...$a){return false;} function qrrp_print_barcode_mm(...$a){return false;} function add_filter(...$a){}
+function add_action(...$a){ $GLOBALS['__actions'][]=$a[0]; } function qrrp_gs1_minimum_print_width_mm(...$a){return false;} function qrrp_gs1_minimum_x_dimension_mm(...$a){return false;} function qrrp_x_dimension_mm(...$a){return false;} function qrrp_print_barcode_mm(...$a){return false;} function add_filter(...$a){}
 function sanitize_text_field($s){return trim(preg_replace('/[\r\n\t ]+/',' ',strip_tags((string)$s)));}
-function wp_unslash($v){return $v;} function sanitize_key($k){return preg_replace('/[^a-z0-9_\-]/','',strtolower($k));} function user_can(...$a){return true;} function get_userdata($i){return false;} function get_current_user_id(){return $GLOBALS['__uid'] ?? 1;} function get_user_meta(...$a){return '';}
-function check_ajax_referer(...$a){return true;}
-function current_user_can($c){return true;}
+function wp_unslash($v){return $v;} function sanitize_key($k){return preg_replace('/[^a-z0-9_\-]/','',strtolower($k));} function user_can($u,$c,...$a){ return $GLOBALS['__caps'][$c] ?? true; } function get_userdata($i){return false;} function get_current_user_id(){return $GLOBALS['__uid'] ?? 1;} function get_user_meta(...$a){return '';}
+/* 2.15.7: ρυθμιζόμενα, ώστε να ελέγχονται και οι διαδρομές άρνησης (t_ajax_denials). */
+function check_ajax_referer(...$a){ return $GLOBALS['__nonce_ok'] ?? true; }
+function current_user_can($c){ return $GLOBALS['__caps'][$c] ?? true; }
 function is_user_logged_in(){return $GLOBALS['__logged_in'] ?? true;}
 function has_filter($t){return isset($GLOBALS['__filters'][$t]);} function nocache_headers(){} function wp_create_nonce($a){return 'abcdef1234';}
 function sanitize_email($e){return trim($e);} function is_email($e){return (bool)filter_var($e,FILTER_VALIDATE_EMAIL);}

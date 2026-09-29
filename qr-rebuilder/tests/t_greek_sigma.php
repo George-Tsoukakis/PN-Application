@@ -57,4 +57,9 @@ $p=QRRP_GS1_Parser::parse("{$P}17280331"."10ΛΟΤ{$GS}21ΑΒΓσς");
 ok($p['fields']['SN']==='ABGsw' && empty($p['contested_fields']) && empty($p['normalization']['ambiguous_sigma']), 'lowercase σ/ς unambiguous (s/w), no contest');
 $p=QRRP_GS1_Parser::parse("{$P}17280331"."10LOT1{$GS}21ABS12");
 ok($p['confidence']==='high' && !$p['requires_confirmation'] && empty($p['contested_fields']), 'Latin S unaffected: high confidence, no confirmation');
+// 7. 2.15.7: «ΐ»/«ΰ» = νεκρό πλήκτρο «΅» (Shift+W στα Windows) + i/y → W κρατιέται
+$p=QRRP_GS1_Parser::parse("{$P}17280331"."10LOT1{$GS}21ΑΒΐ9");
+ok($p['fields']['SN']==='ABWi9' && $p['requires_confirmation'], 'ΐ → Wi (not i), confirmation required');
+$p=QRRP_GS1_Parser::parse("{$P}17280331"."10LOT1{$GS}21ΑΒΰ9");
+ok($p['fields']['SN']==='ABWy9' && $p['requires_confirmation'], 'ΰ → Wy (not y), confirmation required');
 echo $fail? "FAILURES: $fail\n" : "ALL PASS\n";

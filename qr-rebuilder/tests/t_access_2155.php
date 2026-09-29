@@ -45,10 +45,12 @@ QRRP_Mailer::$sent           = 0;
 $e = call( 'send_email', $mail + array( 'email' => 'Victim@Example.org' ) );
 check( 'user: first email sent', 200 === $e->status && 1 === QRRP_Mailer::$sent );
 $log  = QRRP_Rate_Limiter::$log;
+$pp   = array_search( 'peek:authenticated_email_global', $log, true );
 $pq   = array_search( 'hit:global:authenticated_email_global', $log, true );
 $pd   = array_search( 'hit:actor:send_email_daily', $log, true );
 $pr   = array_search( 'subject:user_email_recipient', $log, true );
-check( 'user: order = site quota → per recipient → daily per user', false !== $pq && false !== $pd && false !== $pr && $pq < $pr && $pr < $pd );
+/* 2.15.7: το ταβάνι του site ελέγχεται πρώτο χωρίς μέτρηση και χρεώνεται τελευταίο. */
+check( 'user: order = site quota peek → per recipient → daily per user → site quota charge', false !== $pp && false !== $pq && false !== $pd && false !== $pr && $pp < $pr && $pr < $pd && $pd < $pq );
 check( 'user: per-recipient window is 24 h', array( 86400 ) === QRRP_Rate_Limiter::$windows );
 
 for ( $i = 2; $i <= 10; $i++ ) {
@@ -66,6 +68,12 @@ $GLOBALS['__uid'] = 1;
 QRRP_Rate_Limiter::$log = array();
 $e = call( 'send_email', $mail + array( 'email' => 'victim@example.org' ) );
 check( 'per-recipient refusal does not charge the daily counter', 429 === $e->status && ! in_array( 'hit:actor:send_email_daily', QRRP_Rate_Limiter::$log, true ) );
+check( '2.15.7: per-recipient refusal does not charge the site-wide quota', ! in_array( 'hit:global:authenticated_email_global', QRRP_Rate_Limiter::$log, true ) );
+QRRP_Rate_Limiter::$full = array( 'authenticated_email_global' => true );
+QRRP_Rate_Limiter::$log  = array();
+$e = call( 'send_email', $mail + array( 'email' => 'fresh@example.org' ) );
+check( '2.15.7: full site quota → 429 before any per-recipient or daily counter', 429 === $e->status && ! in_array( 'subject:user_email_recipient', QRRP_Rate_Limiter::$log, true ) && ! in_array( 'hit:actor:send_email_daily', QRRP_Rate_Limiter::$log, true ) );
+QRRP_Rate_Limiter::$full = array();
 
 $GLOBALS['__filters']['qrrp_user_email_per_recipient_limit'] = static fn( $v ) => 0;
 $e = call( 'send_email', $mail + array( 'email' => 'other@example.org' ) );

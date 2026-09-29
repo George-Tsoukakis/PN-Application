@@ -842,12 +842,12 @@ final class QRRP_Ajax {
 		self::check_email_permissions();
 
 		/*
-		 * 2.15.3: με εξαντλημένο το συνολικό ταβάνι επισκεπτών δεν γράφεται νέα
-		 * γραμμή ανά IP. Το ίδιο το ταβάνι μετρά παρακάτω (enforce_email_quota()).
+		 * 2.15.3: με εξαντλημένο το συνολικό ταβάνι δεν γράφεται νέα γραμμή ανά
+		 * IP/χρήστη. 2.15.7: και για συνδεδεμένους, και πριν από τα όρια ανά
+		 * παραλήπτη/ημέρα. Το ίδιο το ταβάνι μετρά παρακάτω (enforce_email_quota()),
+		 * μόνο αφού περάσουν όλα τα όρια.
 		 */
-		if ( ! is_user_logged_in() && ! QRRP_Rate_Limiter::has_capacity( 'guest_email_global', self::guest_email_global_limit(), 15 * MINUTE_IN_SECONDS ) ) {
-			self::rate_limit_error();
-		}
+		self::enforce_email_quota_capacity();
 
 		self::enforce_rate_limit( 'send_email', 5, 15 * MINUTE_IN_SECONDS );
 
@@ -1028,8 +1028,13 @@ final class QRRP_Ajax {
 			self::dependency_error();
 		}
 
-		self::enforce_email_quota();
+		/*
+		 * 2.15.7: το συνολικό ταβάνι χρεώνεται αφού περάσουν τα όρια ανά
+		 * παραλήπτη και ανά ημέρα. Πριν χρεωνόταν πρώτο, οπότε και αίτημα που
+		 * απορρίφθηκε ως recipient_rate_limited κατανάλωνε το ταβάνι του site.
+		 */
 		self::enforce_recipient_limit( $to );
+		self::enforce_email_quota();
 
 		/*
 		 * 2.15.2: τα single-use handles (email token, challenge) καίγονται ΠΡΙΝ από
@@ -1269,16 +1274,29 @@ final class QRRP_Ajax {
 	 * qrrp_authenticated_email_global_limit.
 	 */
 	private static function enforce_email_quota() {
-		if ( ! is_user_logged_in() ) {
-			self::enforce_rate_limit( 'guest_email_global', self::guest_email_global_limit(), 15 * MINUTE_IN_SECONDS, 'global' );
+		list( $action, $limit ) = self::email_quota();
 
-			return;
+		self::enforce_rate_limit( $action, $limit, 15 * MINUTE_IN_SECONDS, 'global' );
+	}
+
+	/** 2.15.7: έλεγχος του συνολικού ταβανιού χωρίς μέτρηση (το οριστικό όχι το δίνει το enforce_email_quota()). */
+	private static function enforce_email_quota_capacity() {
+		list( $action, $limit ) = self::email_quota();
+
+		if ( ! QRRP_Rate_Limiter::has_capacity( $action, $limit, 15 * MINUTE_IN_SECONDS, 'global' ) ) {
+			self::rate_limit_error();
+		}
+	}
+
+	/** @return array{0:string, 1:int} Ενέργεια και όριο του συνολικού ταβανιού email για τον τρέχοντα actor. */
+	private static function email_quota() {
+		if ( ! is_user_logged_in() ) {
+			return array( 'guest_email_global', self::guest_email_global_limit() );
 		}
 
 		$limit = (int) apply_filters( 'qrrp_authenticated_email_global_limit', 200 );
-		$limit = max( 20, $limit );
 
-		self::enforce_rate_limit( 'authenticated_email_global', $limit, 15 * MINUTE_IN_SECONDS, 'global' );
+		return array( 'authenticated_email_global', max( 20, $limit ) );
 	}
 
 	private static function rate_limit_error() {
