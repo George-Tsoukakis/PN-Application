@@ -91,6 +91,7 @@ final class Plugin {
 			'includes/jbli-view-counter.php',
 			'includes/jbli-featured.php',
 			'includes/jbli-rocket-compat.php',
+			'includes/jbli-cache-invalidation.php',
 			'includes/jbli-no-cache-headers.php',
 			'includes/compat/jbli-job-listing-oop-bridges.php',
 			'modules/form/jbli-form.php',

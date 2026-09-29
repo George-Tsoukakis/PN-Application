@@ -291,7 +291,7 @@ if ( ! function_exists( 'jbli_rocket_purge_on_save' ) )
 	}
 }
 
-add_action( 'save_post_' . JBLI_CPT, 'jbli_rocket_purge_on_save' );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'save_post_' . JBLI_CPT, 'jbli_rocket_purge_on_save' );
 
 if ( ! function_exists( 'jbli_rocket_purge_listings' ) )
 {
@@ -303,7 +303,7 @@ if ( ! function_exists( 'jbli_rocket_purge_listings' ) )
 	}
 }
 
-add_action( 'transition_post_status', 'jbli_rocket_purge_listings', 10, 3 );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'transition_post_status', 'jbli_rocket_purge_listings', 10, 3 );
 
 function jbli_rocket_purge_on_expiry(): void {
 
@@ -311,7 +311,7 @@ function jbli_rocket_purge_on_expiry(): void {
 
 }
 
-add_action( 'jbli_expired', 'jbli_rocket_purge_on_expiry' );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'jbli_expired', 'jbli_rocket_purge_on_expiry' );
 
 function jbli_rocket_purge_on_renewal(): void {
 
@@ -319,7 +319,7 @@ function jbli_rocket_purge_on_renewal(): void {
 
 }
 
-add_action( 'jbli_renewed', 'jbli_rocket_purge_on_renewal' );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'jbli_renewed', 'jbli_rocket_purge_on_renewal' );
 
 function jbli_rocket_purge_on_activation(): void {
 
@@ -327,7 +327,7 @@ function jbli_rocket_purge_on_activation(): void {
 
 }
 
-add_action( 'jbli_activated', 'jbli_rocket_purge_on_activation' );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'jbli_activated', 'jbli_rocket_purge_on_activation' );
 
 function jbli_rocket_purge_on_deactivation(): void {
 
@@ -335,7 +335,7 @@ function jbli_rocket_purge_on_deactivation(): void {
 
 }
 
-add_action( 'jbli_deactivated', 'jbli_rocket_purge_on_deactivation' );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'jbli_deactivated', 'jbli_rocket_purge_on_deactivation' );
 
 function jbli_rocket_purge_on_featured_change( int $jbli_post_id, int $jbli_new_value ): void {
 
@@ -343,7 +343,7 @@ function jbli_rocket_purge_on_featured_change( int $jbli_post_id, int $jbli_new_
 
 }
 
-add_action( 'jbli_featured_changed', 'jbli_rocket_purge_on_featured_change', 10, 2 );
+/* 9.9.55: handled by includes/jbli-cache-invalidation.php */ // add_action( 'jbli_featured_changed', 'jbli_rocket_purge_on_featured_change', 10, 2 );
 
 /**
  * IDs of published pages that render listings ([listings], [recent-listings],

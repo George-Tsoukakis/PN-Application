@@ -422,7 +422,8 @@ add_action( 'trashed_post', 'jbli_recent_flush_page_url_cache' );
  */
 function jbli_recent_flush_listings_cache(): void {
 
-	update_option( 'jbli_recent_cache_version', time(), false );
+	/* Always moves forward, even for two changes within the same second (9.9.55). */
+	update_option( 'jbli_recent_cache_version', max( time(), (int) get_option( 'jbli_recent_cache_version', 1 ) + 1 ), false );
 
 }
 

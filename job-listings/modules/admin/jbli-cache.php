@@ -103,7 +103,7 @@ if ( ! function_exists( 'jbli_do_clear_cache' ) )
 					} 
 					else 
 					{
-						update_option( 'jbli_recent_cache_version', time(), false );
+						update_option( 'jbli_recent_cache_version', max( time(), (int) get_option( 'jbli_recent_cache_version', 1 ) + 1 ), false );
 					}
 
 					$jbli_cleared[] = 'jbli_transients';
