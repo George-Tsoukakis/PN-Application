@@ -940,9 +940,6 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  /* Keep clear of the site header (9.9.46). */
-  margin-top: clamp(24px, 4vw, 56px);
-  margin-bottom: clamp(24px, 4vw, 56px);
   padding: clamp(22px, 3.2vw, 44px) clamp(14px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
   border-radius: 32px;
   border: 1px solid rgba(5, 150, 105, .10);
@@ -1025,4 +1022,15 @@
 .jbli_apply_modal_job span {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/*
+ * 9.9.48 — keep clear of the site header.
+ * ID selector on purpose: jbli-form.css / jbli-dashboard.css load after this
+ * file and reset .jbli_listings to "margin: 0 auto", which silently undid
+ * the 9.9.46 spacing.
+ */
+#jbli_listings_root.jbli_listings {
+  margin-top: clamp(28px, 4.5vw, 64px);
+  margin-bottom: clamp(28px, 4.5vw, 64px);
 }

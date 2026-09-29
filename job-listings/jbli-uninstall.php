@@ -81,6 +81,7 @@ $jbli_options = array(
 	'jbli_dashboard_page_id',
 	'jbli_form_page_id',
 	'jbli_form_media_url',
+	'jbli_title_max_chars',
 	'jbli_listings_page_id',
 	'jbli_apply_email_subject',
 	'jbli_apply_email_body',

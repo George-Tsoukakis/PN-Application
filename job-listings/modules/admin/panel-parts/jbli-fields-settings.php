@@ -40,6 +40,7 @@ $jbli_def_body 		= function_exists( 'jbli_apply_default_body' )    ? jbli_apply_
 
 $jbli_google_map_api_key = (string) get_option( 'jbli_google_map_api_key', '' );
 $jbli_form_media_url     = (string) get_option( 'jbli_form_media_url', '' );
+$jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_title_max_chars() : (int) get_option( 'jbli_title_max_chars', 15 );
 ?>
 <?php /* The "saved" notice is printed once by jbli-settings-template.php. */ ?>
 
@@ -216,6 +217,53 @@ $jbli_form_media_url     = (string) get_option( 'jbli_form_media_url', '' );
 		<p>
 			<button type="submit" class="button button-primary">
 				<?php esc_html_e( 'Αποθήκευση Google Map', 'job-listings' ); ?>
+			</button>
+		</p>
+
+	</form>
+
+</div>
+
+<?php /* 9.9.48: title length limit. */ ?>
+
+<div class="jbli_ap_tools">
+
+	<h2 class="jbli_ap_tools_heading">
+		<?php esc_html_e( 'Τίτλος αγγελίας', 'job-listings' ); ?>
+	</h2>
+
+	<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">
+		<?php esc_html_e( 'Μέγιστος αριθμός χαρακτήρων (μαζί με τα κενά) για τον τίτλο της αγγελίας. Π.χ. «Φαρμακοποιός» = 12, «Βοηθός Φαρμακείου» = 17. Οι υπάρχουσες αγγελίες δεν αλλάζουν.', 'job-listings' ); ?>
+	</p>
+
+	<form method="post" action="<?php echo esc_url( $jbli_form_url ); ?>">
+		<input type="hidden" name="jbli_fields_action" value="save_title_limit">
+		<?php wp_nonce_field( 'jbli_fields_save', 'jbli_fields_nonce' ); ?>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">
+					<label for="jbli_title_max_chars"><?php esc_html_e( 'Μέγιστοι χαρακτήρες', 'job-listings' ); ?></label>
+				</th>
+				<td>
+					<input
+						type="number"
+						id="jbli_title_max_chars"
+						name="jbli_title_max_chars"
+						value="<?php echo esc_attr( (string) $jbli_title_max_chars ); ?>"
+						min="5"
+						max="120"
+						step="1"
+						class="small-text"
+					>
+					<span style="margin-left:8px;color:#6b7280;"><?php esc_html_e( '(5 – 120)', 'job-listings' ); ?></span>
+				</td>
+			</tr>
+		</table>
+
+		<p>
+			<button type="submit" class="button button-primary">
+				<?php esc_html_e( 'Αποθήκευση ορίου τίτλου', 'job-listings' ); ?>
 			</button>
 		</p>
 

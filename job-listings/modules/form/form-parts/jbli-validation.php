@@ -46,7 +46,10 @@ function jbli_form_error_fields( $jbli_fields = null ) {
  */
 function jbli_title_max_chars() {
 
-	return max( 5, (int) apply_filters( 'jbli_title_max_chars', 15 ) );
+	/* Set in Αγγελίες → Ρυθμίσεις → «Τίτλος αγγελίας» (9.9.48); the filter still wins. */
+	$jbli_max = (int) get_option( 'jbli_title_max_chars', 15 );
+
+	return min( 120, max( 5, (int) apply_filters( 'jbli_title_max_chars', $jbli_max > 0 ? $jbli_max : 15 ) ) );
 
 }
 

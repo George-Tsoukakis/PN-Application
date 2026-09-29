@@ -35,6 +35,7 @@ $jbli_cache_url 			= admin_url('admin.php?page=jbli_cache');
 			'backfilled' => __('Οι αγγελίες συγχρονίστηκαν επιτυχώς.', 'job-listings'),
 			'google_map' => __('Οι ρυθμίσεις του Google Map αποθηκεύτηκαν.', 'job-listings'),
 			'form_media' => __('Η εικόνα / το video της φόρμας αποθηκεύτηκε.', 'job-listings'),
+			'title_limit' => __('Το όριο χαρακτήρων του τίτλου αποθηκεύτηκε.', 'job-listings'),
 		);
 	
 

@@ -320,6 +320,19 @@ if ( ! function_exists( 'jbli_fields_handle_save' ) )
 			exit;
 		}
 
+		if ( 'save_title_limit' === $jbli_sub_action )
+		{
+			update_option( 'jbli_title_max_chars', min( 120, max( 5, absint( $_POST['jbli_title_max_chars'] ?? 15 ) ) ), false );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array( 'page' => 'jbli_settings', 'jbli_saved' => 'title_limit' ),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
 		if ( 'save_form_media' === $jbli_sub_action )
 		{
 			update_option( 'jbli_form_media_url', esc_url_raw( trim( wp_unslash( (string) ( $_POST['jbli_form_media_url'] ?? '' ) ) ) ), false );
