@@ -22,6 +22,9 @@ QR ReBuilder Pro 2.15.6 — regression scripts (εκτός πακέτου plugin
   php t_access_2155.php  2.15.5: όρια email συνδεδεμένων (50/ημέρα, 10/παραλήπτη, εξαίρεση διαχειριστών), χειροκίνητη δημιουργία επισκεπτών κλειστή + μετάπτωση, webmail στο endpoint
   php t_vendor_check.php 2.15.6: κουμπί «Έλεγχος για νέα έκδοση» (Packagist p2, dev/RC, σφάλματα δικτύου, admin/nonce/POST, escape, συνέπεια με το vendor) — χωρίς δίκτυο
   php t_admin_webmail.php 2.15.5: δημόσιες υπηρεσίες email στη λίστα domains επισκεπτών (sanitizer, πεδίο, φίλτρα)
+  php t_invented_field.php 2.16.0: χωρίς GS, απίθανα κοντό SN/LOT (επινοημένο πεδίο) → επιβεβαίωση, ποτέ αυτόματα· φίλτρο qrrp_auto_inference_min_length
+  php t_verified_email.php 2.16.0: email μόνο από εγκεκριμένους φαρμακοποιούς (δικαίωμα, έγκριση στο προφίλ, στήλη χρηστών, μετάπτωση)
+  php golden.php > out.json && cmp out.json golden-2.16.0.json   (αναμενόμενη έξοδος 2.16.0· golden-2.15.7.json = πριν)
 
 Renderer (2.15.4, lib/renderer.php): τα tests λογικής (t_guest, t_mailer, t_expiry_dd00) χρησιμοποιούν
 ψεύτικο renderer και τρέχουν χωρίς GD· τα integration (t_rebuild, t_datamatrix_gd) βγαίνουν SKIP χωρίς GD.

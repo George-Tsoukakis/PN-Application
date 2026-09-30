@@ -1,1 +1,5 @@
 build/*.zip
+qr-rebuilder/tests/browser/node_modules/
+qr-rebuilder/tests/browser/fixture.html
+qr-rebuilder/tests/browser/package-lock.json
+qr-rebuilder/tests/tmpmail/

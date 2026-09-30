@@ -337,6 +337,8 @@ function qrrp_activate_plugin() {
 
 	qrrp_maybe_migrate_guest_manual_entry( $installed_version );
 
+	qrrp_maybe_migrate_verified_email( $installed_version );
+
 	qrrp_remove_obsolete_options();
 
 	qrrp_maybe_cleanup_legacy_data();
@@ -362,7 +364,49 @@ function qrrp_maybe_upgrade() {
 
 	qrrp_maybe_migrate_guest_manual_entry( $installed_version );
 
+	qrrp_maybe_migrate_verified_email( $installed_version );
+
 	update_option( 'qrrp_version', QRRP_VERSION );
+}
+
+/**
+ * 2.16.0: το email από αυτο-δηλωμένους φαρμακοποιούς (ή από κάθε συνδεδεμένο)
+ * ήταν ανοιχτό relay: όποιος γραφόταν ως «Φαρμακείο» έστελνε σε οποιαδήποτε
+ * διεύθυνση από το domain του site. Γίνεται «Μόνο εγκεκριμένοι φαρμακοποιοί»:
+ *   qrrp_pharmacist                                   → qrrp_verified_pharmacist
+ *   '' (ίδιο με το εργαλείο), εργαλείο read ή
+ *   qrrp_pharmacist, χωρίς email επισκεπτών           → qrrp_verified_pharmacist
+ * Μόνο προς το αυστηρότερο. Το «Ελεύθερο για όλους» (email επισκεπτών ανοιχτό)
+ * είναι ρητή επιλογή και μένει. Μία φορά, από έκδοση < 2.16.0 (ή άγνωστη).
+ *
+ * @param string $installed_version Έκδοση πριν από αυτό το πέρασμα ('' αν λείπει).
+ * @return bool Αν άλλαξε η τιμή.
+ */
+function qrrp_maybe_migrate_verified_email( $installed_version ) {
+	$installed_version = is_scalar( $installed_version ) ? trim( (string) $installed_version ) : '';
+
+	if ( '' !== $installed_version && version_compare( $installed_version, '2.16.0', '>=' ) ) {
+		return false;
+	}
+
+	$email = get_option( 'qrrp_email_capability', null );
+
+	if ( ! is_string( $email ) ) {
+		return false;
+	}
+
+	$email       = trim( $email );
+	$guest_email = '1' === get_option( 'qrrp_allow_guest_email', '0' );
+	$tool        = qrrp_tool_capability();
+
+	$migrate = 'qrrp_pharmacist' === $email
+		|| ( '' === $email && ! $guest_email && in_array( $tool, array( 'read', 'qrrp_pharmacist' ), true ) );
+
+	if ( ! $migrate ) {
+		return false;
+	}
+
+	return (bool) update_option( 'qrrp_email_capability', 'qrrp_verified_pharmacist' );
 }
 
 /**

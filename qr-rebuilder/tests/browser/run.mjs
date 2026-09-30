@@ -53,7 +53,7 @@ function rebuildOkFor(p, extra = {}) {
 }
 
 // ---------------------------------------------------------------- harness
-async function newTool(browser) {
+async function newTool(browser, opts = {}) {
   const context = await browser.newContext();
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
@@ -64,7 +64,10 @@ async function newTool(browser) {
     const req = route.request();
     const url = req.url();
     if (url === ORIGIN + '/tool/') {
-      return route.fulfill({ status: 200, contentType: 'text/html; charset=UTF-8', body: fs.readFileSync(FIXTURE) });
+      let body = fs.readFileSync(FIXTURE, 'utf8');
+      // 2.16.0: optional server-resolved email-link prefill (QRRP.prefill), as the shortcode emits it.
+      if (opts.prefill) body = body.replace(';</script>\n<script src="', ';window.QRRP.prefill=' + JSON.stringify(opts.prefill) + ';</script>\n<script src="');
+      return route.fulfill({ status: 200, contentType: 'text/html; charset=UTF-8', body });
     }
     if (url.startsWith(PLUGIN_PREFIX)) {
       const rel = url.slice(PLUGIN_PREFIX.length).split('?')[0];
@@ -108,7 +111,7 @@ const state = (page) => page.evaluate(() => {
     active: document.activeElement ? document.activeElement.id : null,
     exp: $('qrrp-field-exp').value,
     warnings: $('qrrp-warnings').hidden ? '' : $('qrrp-warnings').textContent,
-    provenance: $('qrrp-summary-provenance').hidden ? null : $('qrrp-summary-provenance').textContent,
+    outputText: $('qrrp-output-panel').textContent,
     summaryExp: $('qrrp-summary-exp').textContent,
   };
 });
@@ -404,12 +407,41 @@ tests['e. Fix 6 DD=00 UI'] = async (browser) => {
   await t.context.close();
 };
 
-tests['f. user_declared provenance note'] = async (browser) => {
+tests['f. 2.16.0: no provenance note on screen or on the printed label'] = async (browser) => {
   const t = await newTool(browser);
   await scanAndBuild(t, 1, { provenance: 'user_declared' });
   const s = await state(t.page);
-  check('[f] #qrrp-summary-provenance visible and contains «Δηλωμένο»', s.provenance !== null && s.provenance.includes('Δηλωμένο'), s.provenance);
+  check('[f] no «Δηλωμένο» note in the output panel', !/Δηλωμένο|Χειροκίνητη αλλαγή|Μη επαληθευμένη/.test(s.outputText), s.outputText);
+  const [popup] = await Promise.all([t.page.waitForEvent('popup'), t.page.click('#qrrp-print-qr')]);
+  await popup.waitForSelector('.qrrp-print-qr');
+  const html = await popup.content();
+  check('[f] printed label has no provenance block', !/qrrp-print-provenance|Δηλωμένο/.test(html));
+  // 2.16.0: html/body carry height, so height:100% binds the label to one page.
+  const pdf = await popup.pdf({ width: '62mm', height: '29mm', printBackground: true });
+  const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  check('[f] one label prints on exactly one page (62x29 mm)', pages === 1, pages);
+  check('[f] no JS errors', t.errors.length === 0, t.errors);
   await t.context.close();
+};
+
+tests['h. 2.16.0: a new scan does not spend the email link token'] = async (browser) => {
+  const token = 'a'.repeat(32);
+  const f0 = fieldsFor(1);
+  const t = await newTool(browser, { prefill: { pc: f0.PC, sn: f0.SN, lot: f0.LOT, exp: f0.EXP, token } });
+  // Rebuild straight from the email link: the token is sent.
+  t.handlers.qrrp_rebuild = async (p) => rebuildOkFor(p);
+  await t.page.click('#qrrp-regenerate');
+  await waitRequests(t, 'qrrp_rebuild', 1);
+  check('[h] rebuild from the email link carries rebuild_token', t.requests.filter((r) => r.action === 'qrrp_rebuild')[0].params.get('rebuild_token') === token);
+
+  // Fresh tool from the same link, but the user scans a different pack first.
+  const t2 = await newTool(browser, { prefill: { pc: f0.PC, sn: f0.SN, lot: f0.LOT, exp: f0.EXP, token } });
+  await scanAndBuild(t2, 2);
+  const rb = t2.requests.filter((r) => r.action === 'qrrp_rebuild');
+  check('[h] rebuild of a newly scanned pack does not send the old link token', rb.length === 1 && rb[0].params.get('rebuild_token') === null, rb[0] && rb[0].params.get('rebuild_token'));
+  check('[h] no JS errors', t.errors.length === 0 && t2.errors.length === 0, t.errors.concat(t2.errors));
+  await t.context.close();
+  await t2.context.close();
 };
 
 tests['g. 2.15.7: Greek passthrough, parse announcement, stale email status'] = async (browser) => {

@@ -9,6 +9,7 @@ $PD = getenv( 'PDIR' ) ?: dirname( __DIR__ ) . '/qr-rebuilder-pro';
 $GLOBALS['__errors'] = array();
 $GLOBALS['__umeta']  = array();
 function add_action( ...$a ) {}
+if ( ! function_exists( 'add_filter' ) ) { function add_filter( ...$a ) {} }
 function add_settings_error( $s, $c, $m, $t = 'error' ) { $GLOBALS['__errors'][] = array( $c, $m, $t ); }
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function sanitize_key( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $k ) ); }
@@ -105,7 +106,7 @@ check( 'notice only on dashboard / plugins / settings', '' === $notice() );
 $un = file_get_contents( $PD . '/uninstall.php' );
 $blk = substr( $un, (int) strpos( $un, 'WHERE meta_key IN (' ), 400 );
 $blk = substr( $blk, 0, (int) strpos( $blk, ');' ) );
-check( 'uninstall deletes qrrp_hide_pharmacist_warning user meta (5 placeholders, 5 keys)', false !== strpos( $blk, "'qrrp_hide_pharmacist_warning'" ) && 5 === substr_count( $blk, '%s' ) && 5 === preg_match_all( "/'qrrp_[a-z_]+'/", $blk ) );
+check( 'uninstall deletes qrrp_hide_pharmacist_warning + 2.16.0 qrrp_verified_pharmacist user meta (6 placeholders, 6 keys)', false !== strpos( $blk, "'qrrp_hide_pharmacist_warning'" ) && false !== strpos( $blk, "'qrrp_verified_pharmacist'" ) && 6 === substr_count( $blk, '%s' ) && 6 === preg_match_all( "/'qrrp_[a-z_]+'/", $blk ) );
 
 /* Η απόκρυψη αλλάζει μόνο την εμφάνιση: ο έλεγχος πρόσβασης μένει ίδιος. */
 $src = file_get_contents( $PD . '/includes/class-qrrp-admin.php' );

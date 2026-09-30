@@ -5,7 +5,7 @@ Tags: gs1, datamatrix, barcode, pharmacy, scanner
 Requires at least: 6.1
 Requires PHP: 8.2
 Tested up to: 7.1
-Stable tag: 2.15.7
+Stable tag: 2.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,7 +91,7 @@ Alternatively choose manual entry and paste the raw GS1 data. Both a real ASCII 
 
 "Manual entry" also opens the four fields - PC, SN, LOT and EXP - empty, so a pharmacist can type them from the printed text on the pack (for example when the 2D code is damaged and cannot be scanned) and create a new GS1 DataMatrix without any scan.
 
-Before anything is generated the server asks for an explicit declaration that the four values were read from the pack itself. The declaration is bound to the exact four values: changing any of them requires a new one. The result is labelled as a manual reconstruction, never as a scan. Every other server-side check still applies (GTIN check digit, date, character set, expiry confirmation). Logged-in users can always use it. Guests can use it when guest access is enabled and the setting "Manual creation by guests" is on (the default since 2.13.2); switching that setting off limits manual creation to logged-in users.
+Before anything is generated the server asks for an explicit declaration that the four values were read from the pack itself. The declaration is bound to the exact four values: changing any of them requires a new one. Since 2.16.0 the result carries no provenance note on screen, on the label or in the email, so the label stays compact. Every other server-side check still applies (GTIN check digit, date, character set, expiry confirmation). Logged-in users can always use it. Guests can use it only when guest access is enabled and the setting "Manual creation by guests" is on. That setting has been off by default since 2.15.5, so manual creation is normally reserved for logged-in users.
 
 = Reviewing the fields =
 
@@ -114,7 +114,7 @@ After reviewing the fields, press the generate button. The data is validated aga
 
 = Email =
 
-When email is allowed for the current user, the message can include:
+Email is available to verified pharmacists: administrators, plus users an administrator has approved with the "Verified pharmacist" checkbox on their profile (Users → Edit user; the Users list shows a "QR email" column with the pending requests). A self-declared "Φαρμακείο" registration alone no longer allows email. When email is allowed for the current user, the message can include:
 
 * The PNG image, with a solid white background.
 * PC / GTIN.
@@ -141,7 +141,7 @@ QR ReBuilder Pro applies several layers of control:
 * WordPress nonce verification on AJAX requests.
 * Capability checks for authenticated users. The access setting offers "Free for everyone", "Logged-in users only", "Pharmacists only" and "Administrators only".
 * "Pharmacists only" means administrators plus accounts whose registration category is "Φαρμακείο" (Pharmacy). That category is self-declared by the user at registration; sites that verify pharmacies elsewhere can plug their own check into the `qrrp_is_pharmacist` filter (arguments: `bool $is`, `int $user_id`).
-* A separate permission check for email. A missing email-permission setting defaults to pharmacists only (`qrrp_pharmacist`); an already saved value, including the explicit empty value meaning "same as the tool capability", is preserved.
+* A separate permission check for email. Since 2.16.0 the default is "Verified pharmacists only" (`qrrp_verified_pharmacist`): administrators plus users an administrator approved on their profile. Self-declared pharmacies can use the tool but cannot send email until approved, so free registrations cannot turn the site into a spam relay. Sites with their own verification can use the `qrrp_is_verified_pharmacist` filter (arguments: `bool $is`, `int $user_id`).
 * Optional guest access, disabled by default.
 * A separate optional switch for guest email.
 * Server-side GS1 validation.
@@ -220,6 +220,17 @@ In practice small labels, for example 54 × 25 mm, cannot fit the content with a
 If your label is borderline, the two settings that save height are "Show note" and "Show fields" («Εμφάνιση σημείωσης», «Εμφάνιση στοιχείων»). If the label is still too small, the code is shrunk to fit, but never below the minimum printable size for GS1 DataMatrix (a floor of about 14 mm with the default settings); below that it overflows visibly instead of printing unreadably small.
 
 == Changelog ==
+
+= 2.16.0 =
+
+**Review release: email only from verified pharmacists, no provenance notes on labels, safer reading of codes without separators.**
+
+* Email: new default "Verified pharmacists only". An administrator approves each pharmacy once with the "Verified pharmacist" checkbox on the user's profile; the Users list gets a "QR email" column showing approved users and pending "Φαρμακείο" registrations. Before, anyone who registered for free as "Φαρμακείο" could email any address from the site's domain, with their own text in the customer field. The update moves "Pharmacists only" and "same as the tool" (for logged-in tools) to the new setting; "Free for everyone" and "Administrators only" are kept. Unapproved pharmacies see a short note instead of the email form.
+* Labels: provenance notes ("User-declared…", "Manual change…", "Unverified reading…") are no longer shown in the summary, on the printed label, in the saved image or in the email. The confirmation steps before generating a code are unchanged.
+* Parsing: a code without Group Separators is no longer accepted automatically when the most likely reading gives an SN or LOT shorter than 4 characters. Such a split usually means a field that is not on the pack was invented from another value (for example `21AB10CD` read as SN "AB" plus LOT "CD" when the pack has no LOT). It now asks for confirmation. Filter `qrrp_auto_inference_min_length` (1–20). Normal codes without separators are accepted as before.
+* Email links: scanning a different pack after opening an emailed link no longer uses up that link.
+* Printing: one label now reliably fits one page; before, a label taller than the page could spill onto a second and third sheet.
+* Readme: corrected the default for guest manual creation, and added the missing 2.15.7 upgrade notice.
 
 = 2.15.7 =
 
@@ -394,14 +405,20 @@ The full history is in CHANGELOG.md, shipped with the plugin.
 
 == Upgrade Notice ==
 
+= 2.16.0 =
+Email is now limited to verified pharmacists. After updating, approve each real pharmacy once under Users (column "QR email", checkbox on the profile); until then only administrators can send email. Provenance notes no longer appear on labels.
+
+= 2.15.7 =
+Temporary email images are deleted right after sending. If your mail plugin queues messages and sends them later, return true from `qrrp_mail_attachment_deferred`, or emails may go out without the image.
+
 = 2.15.6 =
 Adds a "Check for a new version" button for the bundled DataMatrix library in the settings. No change to scanning, parsing or email.
 
 = 2.15.5 =
-Stricter defaults: logged-in users get daily and per-recipient email limits (administrators exempt), public email domains such as gmail.com are ignored in the guest domain list, and manual creation by guests is off by default. Also updates the barcode library for strictly conformant DataMatrix padding. Recommended for all sites.
+Stricter defaults: daily and per-recipient email limits for logged-in users, public email domains ignored in the guest domain list, manual creation by guests off by default. Updates the barcode library for conformant DataMatrix padding.
 
 = 2.15.4 =
-Cleans up expired tokens on sites without WP-Cron, and tightens guest email to 3 messages per recipient per day. If you allow guest recipients through the `qrrp_guest_email_recipient_allowed` filter without a domain list, also return true from `qrrp_guest_email_open_recipients`, or guest email stops. Recommended for all sites.
+Cleans up expired tokens without WP-Cron; guest email limited to 3 per recipient per day. If you allow guest recipients via `qrrp_guest_email_recipient_allowed` without a domain list, also return true from `qrrp_guest_email_open_recipients`.
 
 = 2.15.3 =
 Guest email becomes deny-by-default: if guests send email on your site, add the allowed domains in the settings after updating, otherwise guest email stays off. Also fixes a stale label that could remain printable after a failed scan. Recommended for all sites.

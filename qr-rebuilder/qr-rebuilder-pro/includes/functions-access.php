@@ -37,7 +37,35 @@ function qrrp_allowed_tool_capabilities() {
 
 /** Μη κενές τιμές δικαιώματος email· το '' («ίδιο με το εργαλείο») είναι επίσης θεμιτό. */
 function qrrp_allowed_email_capabilities() {
-	return array( 'edit_posts', 'manage_options', 'qrrp_pharmacist' );
+	return array( 'edit_posts', 'manage_options', 'qrrp_pharmacist', 'qrrp_verified_pharmacist' );
+}
+
+/** 2.16.0: user meta της έγκρισης φαρμακοποιού από διαχειριστή ('1' = εγκεκριμένος). */
+const QRRP_VERIFIED_PHARMACIST_META = 'qrrp_verified_pharmacist';
+
+/**
+ * 2.16.0: εγκεκριμένος φαρμακοποιός; Οι διαχειριστές πάντα· οι υπόλοιποι μόνο
+ * με έγκριση από διαχειριστή στο προφίλ τους (όχι με αυτο-δήλωση). Φίλτρο
+ * 'qrrp_is_verified_pharmacist' (bool, $user_id) για άλλη πηγή έγκρισης· δεν
+ * πρέπει να καλεί current_user_can( 'qrrp_verified_pharmacist' ).
+ *
+ * @param int $user_id
+ * @return bool
+ */
+function qrrp_user_is_verified_pharmacist( $user_id ) {
+	$user_id = (int) $user_id;
+
+	if ( $user_id < 1 ) {
+		return false;
+	}
+
+	if ( user_can( $user_id, 'manage_options' ) ) {
+		return true;
+	}
+
+	$is = '1' === get_user_meta( $user_id, QRRP_VERIFIED_PHARMACIST_META, true );
+
+	return (bool) apply_filters( 'qrrp_is_verified_pharmacist', $is, $user_id );
 }
 
 /** Δικαίωμα email για απούσα γραμμή: η σταθερά, αν είναι αποδεκτή, αλλιώς fail-closed. */
@@ -106,16 +134,23 @@ function qrrp_fold_greek( $text ) {
 }
 
 /**
- * user_has_cap: δίνει το qrrp_pharmacist σε φαρμακοποιούς, μόνο όταν ζητείται.
+ * user_has_cap: δίνει το qrrp_pharmacist σε φαρμακοποιούς και το
+ * qrrp_verified_pharmacist (2.16.0) σε εγκεκριμένους, μόνο όταν ζητείται.
  * Μόνο προσθέτει· δικαίωμα δοσμένο ρητά (π.χ. από role editor) μένει.
  */
 function qrrp_grant_pharmacist_cap( $allcaps, $caps, $args, $user ) {
-	if (
-		in_array( 'qrrp_pharmacist', (array) $caps, true )
-		&& empty( $allcaps['qrrp_pharmacist'] )
-		&& is_object( $user ) && isset( $user->ID )
-	) {
+	if ( ! is_object( $user ) || ! isset( $user->ID ) ) {
+		return $allcaps;
+	}
+
+	$caps = (array) $caps;
+
+	if ( in_array( 'qrrp_pharmacist', $caps, true ) && empty( $allcaps['qrrp_pharmacist'] ) ) {
 		$allcaps['qrrp_pharmacist'] = ! empty( $allcaps['manage_options'] ) || qrrp_user_is_pharmacist( (int) $user->ID );
+	}
+
+	if ( in_array( 'qrrp_verified_pharmacist', $caps, true ) && empty( $allcaps['qrrp_verified_pharmacist'] ) ) {
+		$allcaps['qrrp_verified_pharmacist'] = ! empty( $allcaps['manage_options'] ) || qrrp_user_is_verified_pharmacist( (int) $user->ID );
 	}
 
 	return $allcaps;

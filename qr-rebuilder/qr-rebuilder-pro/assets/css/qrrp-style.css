@@ -447,17 +447,6 @@
 	font-size: 14px;
 	overflow-wrap: anywhere;
 }
-/* 2.15.2: σήμανση χειροκίνητης αλλαγής (κείμενο 15:1 στο κίτρινο φόντο). */
-.qrrp-wrapper .qrrp-summary-provenance {
-	margin-top: 10px;
-	padding: 8px 10px;
-	border: 1px solid #dba617;
-	border-left-width: 4px;
-	border-radius: 6px;
-	background: #fcf9e8;
-	color: #1d2327;
-	font-weight: 600;
-}
 .qrrp-email-box {
 	margin-top: 20px;
 	padding: 18px;
@@ -522,6 +511,18 @@
 .qrrp-email-row .qrrp-btn-primary {
 	min-width: 150px;
 }
+/* 2.16.0: φαρμακείο χωρίς έγκριση για email. */
+.qrrp-wrapper .qrrp-email-awaiting {
+	margin: 16px 0 0;
+	padding: 10px 14px;
+	border: 1px solid #c3c4c7;
+	border-radius: 8px;
+	background: #f6f7f7;
+	color: #1d2327;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
 .qrrp-email-note {
 	margin: 10px 0 0;
 	color: var(--qrrp-muted);

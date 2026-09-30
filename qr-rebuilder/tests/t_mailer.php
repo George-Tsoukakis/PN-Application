@@ -25,7 +25,7 @@ $f=array('PC'=>'05012345678900','SN'=>'SN1','LOT'=>'LOT','EXP'=>'2028-03-31');
 $raw=QRRP_GS1_Parser::validate_and_build($f)['raw'];
 $args=array('a@b.gr',$f,'','',$raw,'',array());
 // success
-$r=QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'manual_reconstruction','changed_fields'=>array('SN'),'changed_fields_unknown'=>false))));
+$r=QRRP_Mailer::send(...$args);
 $left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
 printf("success: result=%s files_kept=%d scheduled=%d\n", $r===true?'true':'err', count($left), count($GLOBALS['sched']));
 /* 2.15.7: σύγχρονο wp_mail() → το PNG σβήνεται αμέσως, χωρίς sweep. */
@@ -34,20 +34,19 @@ $tag=(new ReflectionMethod('QRRP_Mailer','temp_site_tag'))->invoke(null);
 echo (preg_match('/\A[a-f0-9]{8}\z/',$tag) && basename((string)(is_array($GLOBALS['att'])?reset($GLOBALS['att']):''))!=='' && strpos(basename(reset($GLOBALS['att'])),'GS1-DataMatrix-'.$tag.'-')===0 ? 'PASS':'FAIL')," 2.15.7: attachment file carries this site's tag\n";
 /* Mailer με ουρά: το συνημμένο μένει για τον sweep. */
 $GLOBALS['__filters']['qrrp_mail_attachment_deferred']=function(){return true;};
-$r=QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'manual_reconstruction','changed_fields'=>array('SN'),'changed_fields_unknown'=>false))));
+$r=QRRP_Mailer::send(...$args);
 $left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
 echo ($r===true && count($left)===1 && count($GLOBALS['sched'])===1 ? 'PASS':'FAIL')," deferred (queue) mailer: attachment kept + sweep scheduled\n";
 unset($GLOBALS['__filters']['qrrp_mail_attachment_deferred']); $GLOBALS['sched']=array();
-echo (strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή: SN')!==false ? 'PASS':'FAIL')," email shows manual-change note\n";
+/* 2.16.0: καμία σήμανση προέλευσης στο email. */
+echo (strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή')===false && strpos($GLOBALS['last_body'],'Χειροκίνητη καταχώριση')===false && strpos($GLOBALS['last_body'],'Δηλωμένο')===false && strpos($GLOBALS['last_body'],'Μη επαληθευμένη')===false ? 'PASS':'FAIL')," 2.16.0: email carries no provenance note\n";
 // failure
 array_map('unlink', glob(__DIR__.'/tmpmail/*')); $GLOBALS['mail_ok']=false;
 $r=QRRP_Mailer::send(...$args);
 $left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
 printf("failure: result=%s files_kept=%d\n", is_wp_error($r)?$r->code:'true', count($left));
 echo (count($left)===0 ? 'PASS':'FAIL')," failed send deletes temp file immediately\n";
-// scan: no note
-$GLOBALS['__options']['admin_email']='shop@example.gr'; $GLOBALS['mail_ok']=true; QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'scan'))));
-echo ((strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή')===false && strpos($GLOBALS['last_body'],'Χειροκίνητη καταχώριση')===false) ? 'PASS':'FAIL')," scan email has no manual note\n";
+$GLOBALS['__options']['admin_email']='shop@example.gr'; $GLOBALS['mail_ok']=true;
 // sweep: old files deleted, young kept, >50 fresh files don't hide old ones
 array_map('unlink', glob(__DIR__.'/tmpmail/*'));
 for($i=0;$i<60;$i++){ $n=__DIR__.'/tmpmail/GS1-DataMatrix-'.sprintf('%012x',$i).'.png'; touch($n); }
@@ -75,18 +74,18 @@ echo (count($GLOBALS['sched'])===0 ? 'PASS':'FAIL')," no reschedule when directo
 touch($foreign); QRRP_Mailer::run_scheduled_sweep();
 echo (count($GLOBALS['sched'])===0 && file_exists($foreign) ? 'PASS':'FAIL')," 2.15.7: foreign-site files neither swept nor keep the sweep rescheduling\n";
 array_map('unlink', glob(__DIR__.'/tmpmail/*'));
-// 2.15.3: σύνδεσμος prefill μόνο για συνδεδεμένους, σήμανση user_declared, ΗΗ=00
+// 2.15.3: σύνδεσμος prefill μόνο για συνδεδεμένους, ΗΗ=00
 $GLOBALS['mail_ok']=true;
 $GLOBALS['__filters']['qrrp_email_tool_page_url']=null;
-QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array(),array('provenance'=>'scan'));
+QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array());
 $logged_link = strpos($GLOBALS['last_body'],'qrrp_token=')!==false;
 $GLOBALS['__logged_in']=false;
-QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array(),array('provenance'=>'user_declared','source_method'=>'scan'));
-echo (strpos($GLOBALS['last_body'],'Δηλωμένο από τον χρήστη')!==false ? 'PASS':'FAIL')," guest email shows user_declared note\n";
+QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array());
+echo (strpos($GLOBALS['last_body'],'Δηλωμένο από τον χρήστη')===false ? 'PASS':'FAIL')," 2.16.0: guest email has no user_declared note\n";
 $GLOBALS['__logged_in']=true;
 $f0=array('PC'=>'05012345678900','SN'=>'SN1','LOT'=>'LOT','EXP'=>'2028-02-00');
 $b0=QRRP_GS1_Parser::validate_and_build($f0);
-$r=QRRP_Mailer::send('a@b.gr',$f0,'','',$b0['raw']??'','',array(),array());
+$r=QRRP_Mailer::send('a@b.gr',$f0,'','',$b0['raw']??'','',array());
 echo ($r===true && strpos($b0['raw'],'17280200')!==false && strpos($GLOBALS['last_body'],'02/2028')!==false ? 'PASS':'FAIL')," DD=00: raw keeps 280200, email shows 02/2028\n";
 // build_html απευθείας με tool URL, για να φανεί ο σύνδεσμος
  if(!defined('HOUR_IN_SECONDS')) define('HOUR_IN_SECONDS',3600);

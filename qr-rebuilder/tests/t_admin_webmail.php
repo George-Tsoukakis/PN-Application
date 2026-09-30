@@ -10,6 +10,7 @@ $PD = getenv( 'PDIR' ) ?: dirname( __DIR__ ) . '/qr-rebuilder-pro';
 $GLOBALS['__errors'] = array();
 $GLOBALS['__umeta']  = array();
 function add_action( ...$a ) {}
+if ( ! function_exists( 'add_filter' ) ) { function add_filter( ...$a ) {} }
 function add_settings_error( $s, $c, $m, $t = 'error' ) { $GLOBALS['__errors'][] = array( $c, $m, $t ); }
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function sanitize_key( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $k ) ); }
