@@ -11,14 +11,17 @@ AUTOMATIC CHECK (1.27.0) — PLANDOSE TESTS THE REAL SERVER
 PlanDose no longer relies on .htaccess, on SERVER_SOFTWARE or on this
 file having been followed. It asks the live web server:
 
-  * it writes a random canary file into the invoice folder, requests its
-    public URL anonymously (no cookies, no redirects off the site), and
-    deletes it again;
-  * if the canary's content comes back, the folder is PUBLIC. A refusal
-    (403, 404, …) counts as private only when a control file in a public
-    folder IS served in the same check — so a firewall or a site that
-    refuses every anonymous request is reported «unverified», not
-    private. A folder outside every public path (PLANDOSE_INVOICE_DIR
+  * it writes random canary files into the invoice folder — one per
+    invoice extension (.pdf, .jpg, .jpeg, .png, .webp; 1.30.2), because a
+    per-extension rule can refuse PDFs while serving images — requests
+    their public URLs anonymously (no cookies, no redirects off the
+    site), and deletes them again. Canaries left behind by a check that
+    was killed half-way are deleted by the next check after an hour;
+  * if ANY canary's content comes back, the folder is PUBLIC. A refusal
+    (403, 404, …) of EVERY canary counts as private only when a control
+    file in a public folder IS served in the same check — so a firewall
+    or a site that refuses every anonymous request is reported
+    «unverified», not private. A folder outside every public path (PLANDOSE_INVOICE_DIR
     outside the web root) has no URL and is private without a request.
     (1.28.2: text brought in line with the code since 1.27.x.)
 
@@ -205,8 +208,8 @@ wp-admin):
 
 It reports the invoice folder and whether the web server actually refuses
 a canary file in it. It does not create the folder or write protection
-files as a side effect (the only thing it writes is the canary, deleted
-at once).
+files as a side effect (the only things it writes are the canaries,
+deleted at once).
 
 Then translate that filesystem path to the matching public URL path for
 your server block. If it reports a path OUTSIDE the web root, you are using
@@ -230,7 +233,9 @@ APPLYING IT
        curl -sI https://<your-domain>/wp-content/uploads/plandose-invoices/web.config
        curl -sI https://<your-domain>/wp-content/uploads/plandose-invoices/index.html
    Expected: 404 (or 403) for BOTH. A 200 on either means the rule is not
-   in force and invoices can be downloaded directly. On multisite repeat
+   in force and invoices can be downloaded directly. A rule written for
+   file types instead of the folder must cover .pdf, .jpg, .jpeg, .png
+   and .webp alike — the automatic check tests each of them. On multisite repeat
    with `/wp-content/uploads/sites/<id>/plandose-invoices/web.config`.
 
 5. Then press «Επανέλεγχος» in wp-admin → PlanDose → Διαγνωστικά: the

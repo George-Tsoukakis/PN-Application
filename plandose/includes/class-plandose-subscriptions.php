@@ -174,9 +174,14 @@ class Plandose_Subscriptions {
 			return;
 		}
 
+		// Decided on engines()'s own result, not on $wpdb->last_error:
+		// a failed or skipped lookup leaves every engine '' (nothing to
+		// convert below), while last_error can still hold an older,
+		// unrelated error when the lookup never reached the server
+		// (wpdb::query() only clears it for a query it actually runs).
 		$engines = Plandose_Print_Charges::engines();
 
-		if ( '' !== (string) $wpdb->last_error ) {
+		if ( ! is_array( $engines ) ) {
 			return;
 		}
 
@@ -502,6 +507,14 @@ class Plandose_Subscriptions {
 
 	/**
 	 * Update subscription row using whitelisted fields only.
+	 *
+	 * Updates an EXISTING row only; it never creates one (a caller that
+	 * needs the row makes sure of it with get_row() first, as every
+	 * caller does). A missing row → false.
+	 *
+	 * @param int   $user_id WordPress user ID.
+	 * @param array $fields  Column => value.
+	 * @return bool
 	 */
 	public static function update( $user_id, $fields ) {
 		global $wpdb;
@@ -512,11 +525,11 @@ class Plandose_Subscriptions {
 			return false;
 		}
 
-		// A row that already exists is updated even when its account
-		// is gone (get_row() with $create only refuses to CREATE a row for a
-		// missing user): the legacy invoice migration rewrites retained rows
-		// of deleted accounts.
-		if ( ! self::get_row( $user_id ) && ! self::get_row( $user_id, false ) ) {
+		// A read-only existence check (no INSERT as a side effect). A
+		// row that already exists is updated even when its account is gone:
+		// the legacy invoice migration rewrites retained rows of deleted
+		// accounts.
+		if ( ! self::get_row( $user_id, false ) ) {
 			return false;
 		}
 
@@ -600,8 +613,25 @@ class Plandose_Subscriptions {
 						continue;
 					}
 
+					// Numeric entries (legacy attachment IDs) are kept as
+					// they are. A file entry is stored only when it is
+					// already a clean bare filename — the same rule
+					// Plandose_Invoice_Storage::invoice_path() serves by —
+					// so a «../../x.pdf» is never written. It is dropped,
+					// not «cleaned» into x.pdf, which could be the name of
+					// some other invoice in the folder.
 					$decoded = array_values( array_filter( $decoded, static function ( $entry ) {
-						return is_numeric( $entry ) || ( is_string( $entry ) && '' !== sanitize_file_name( basename( $entry ) ) );
+						if ( is_numeric( $entry ) ) {
+							return true;
+						}
+
+						if ( ! is_string( $entry ) ) {
+							return false;
+						}
+
+						$name = sanitize_file_name( basename( $entry ) );
+
+						return '' !== $name && $name === $entry;
 					} ) );
 					$value   = wp_json_encode( $decoded );
 
@@ -959,11 +989,6 @@ class Plandose_Subscriptions {
 		return false;
 	}
 
-	/**
-	 * Reset monthly counter if month changed.
-	 *
-	 * @return bool True when this call zeroed an outgoing month's counter.
-	 */
 	/** How long a failing month archive may hold back the reset. */
 	const ARCHIVE_RETRY_SECONDS = HOUR_IN_SECONDS;
 
@@ -983,9 +1008,15 @@ class Plandose_Subscriptions {
 	 * The months waiting to be archived (see UNARCHIVED_OPTION),
 	 * oldest first, each with integer user_id / prints / at and a valid ym.
 	 *
+	 * @param bool $fresh Read the database, not this request's cached copy
+	 *                    (used under the lock before a write).
 	 * @return array<int,array{user_id:int,ym:string,prints:int,at:int}>
 	 */
-	public static function unarchived_months() {
+	public static function unarchived_months( $fresh = false ) {
+		if ( $fresh ) {
+			self::forget_cached_option( self::UNARCHIVED_OPTION );
+		}
+
 		$raw = get_option( self::UNARCHIVED_OPTION, array() );
 		$out = array();
 
@@ -1050,25 +1081,105 @@ class Plandose_Subscriptions {
 	 * @param int    $prints  Print total of that month.
 	 */
 	private static function remember_unarchived( $user_id, $ym, $prints ) {
-		$entries = self::unarchived_months();
+		$lock    = self::acquire_unarchived_lock();
+		$entries = self::unarchived_months( true );
+		$found   = false;
 
 		foreach ( $entries as $i => $entry ) {
 			if ( (int) $user_id === $entry['user_id'] && (string) $ym === $entry['ym'] ) {
 				$entries[ $i ]['prints'] = max( $entry['prints'], absint( $prints ) );
 				$entries[ $i ]['at']     = time();
-				self::save_unarchived( $entries );
-
-				return;
+				$found                   = true;
+				break;
 			}
 		}
 
-		$entries[] = array(
-			'user_id' => absint( $user_id ),
-			'ym'      => (string) $ym,
-			'prints'  => absint( $prints ),
-			'at'      => time(),
-		);
+		if ( ! $found ) {
+			$entries[] = array(
+				'user_id' => absint( $user_id ),
+				'ym'      => (string) $ym,
+				'prints'  => absint( $prints ),
+				'at'      => time(),
+			);
+		}
+
 		self::save_unarchived( $entries );
+		self::release_unarchived_lock( $lock );
+	}
+
+	/** Option row used as the lock of UNARCHIVED_OPTION. */
+	const UNARCHIVED_LOCK = 'plandose_unarchived_months_lock';
+
+	/** A holder older than this is taken to have died and is replaced. */
+	const UNARCHIVED_LOCK_TTL = 30;
+
+	/**
+	 * Lock the read-modify-write of UNARCHIVED_OPTION. Two requests
+	 * that each read the list, added their month and wrote it back would
+	 * otherwise keep only the last writer's entry. Held only for one read
+	 * and one write, so it waits at most ~5 s; a holder older than
+	 * UNARCHIVED_LOCK_TTL is reclaimed (compare-and-swap, see
+	 * Plandose_Lock).
+	 *
+	 * When the lock cannot be had the caller still writes (best effort):
+	 * dropping the figure for certain would be worse than the rare lost
+	 * update, and each entry is in the error log as well.
+	 *
+	 * @param int $tries Attempts, 200 ms apart.
+	 * @return int|false The value the lock was claimed with, or false.
+	 */
+	private static function acquire_unarchived_lock( $tries = 25 ) {
+		for ( $attempt = 0; $attempt < max( 1, (int) $tries ); $attempt++ ) {
+			$now = time();
+
+			if ( Plandose_Lock::claim( self::UNARCHIVED_LOCK, $now ) ) {
+				return $now;
+			}
+
+			// The lock row is written behind WordPress's back — read it
+			// straight from the database.
+			self::forget_cached_option( self::UNARCHIVED_LOCK );
+			$held_since = absint( get_option( self::UNARCHIVED_LOCK ) );
+
+			if ( $held_since > 0 && ( $now - $held_since ) >= self::UNARCHIVED_LOCK_TTL && Plandose_Lock::claim_if_unchanged( self::UNARCHIVED_LOCK, $held_since, $now ) ) {
+				return $now;
+			}
+
+			if ( $attempt + 1 < $tries ) {
+				usleep( 200000 );
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Release acquire_unarchived_lock() — only while it is still ours.
+	 *
+	 * @param int|false $lock What acquire_unarchived_lock() returned.
+	 */
+	private static function release_unarchived_lock( $lock ) {
+		if ( false !== $lock ) {
+			Plandose_Lock::release_if_owned( self::UNARCHIVED_LOCK, $lock );
+		}
+	}
+
+	/**
+	 * Drop this request's cached copy of an option (its own key and a
+	 * 'notoptions' miss), so the next get_option() reads the database —
+	 * another request may have written it since.
+	 *
+	 * @param string $name Option name.
+	 */
+	private static function forget_cached_option( $name ) {
+		wp_cache_delete( $name, 'options' );
+
+		$notoptions = wp_cache_get( 'notoptions', 'options' );
+
+		if ( is_array( $notoptions ) && isset( $notoptions[ $name ] ) ) {
+			unset( $notoptions[ $name ] );
+			wp_cache_set( 'notoptions', $notoptions, 'options' );
+		}
 	}
 
 	/**
@@ -1091,22 +1202,40 @@ class Plandose_Subscriptions {
 			);
 		}
 
-		$left     = array();
 		$archived = 0;
+		$done     = array(); // "user_id|ym" => prints archived (or PHP_INT_MAX: account gone).
 
+		// The archive writes run WITHOUT the lock (they may be slow);
+		// only the final list update is locked, and it removes just the
+		// entries handled here — a month added (or raised) meanwhile by
+		// another request stays.
 		foreach ( $entries as $entry ) {
+			$key = $entry['user_id'] . '|' . $entry['ym'];
+
 			if ( ! get_userdata( $entry['user_id'] ) ) {
+				$done[ $key ] = PHP_INT_MAX;
 				continue;
 			}
 
 			if ( self::record_month_history( $entry['user_id'], $entry['ym'], $entry['prints'] ) ) {
+				$done[ $key ] = $entry['prints'];
 				++$archived;
-			} else {
+			}
+		}
+
+		$lock = self::acquire_unarchived_lock();
+		$left = array();
+
+		foreach ( self::unarchived_months( true ) as $entry ) {
+			$key = $entry['user_id'] . '|' . $entry['ym'];
+
+			if ( ! isset( $done[ $key ] ) || $entry['prints'] > $done[ $key ] ) {
 				$left[] = $entry;
 			}
 		}
 
 		self::save_unarchived( $left );
+		self::release_unarchived_lock( $lock );
 
 		return array(
 			'archived' => $archived,
@@ -1124,7 +1253,8 @@ class Plandose_Subscriptions {
 	 */
 	public static function forget_unarchived( $user_id = 0 ) {
 		$user_id = absint( $user_id );
-		$entries = self::unarchived_months();
+		$lock    = self::acquire_unarchived_lock();
+		$entries = self::unarchived_months( true );
 		$kept    = $user_id
 			? array_filter(
 				$entries,
@@ -1138,6 +1268,8 @@ class Plandose_Subscriptions {
 			self::save_unarchived( $kept );
 		}
 
+		self::release_unarchived_lock( $lock );
+
 		if ( $user_id ) {
 			delete_transient( 'plandose_archive_fail_' . $user_id );
 		}
@@ -1145,6 +1277,13 @@ class Plandose_Subscriptions {
 		return count( $entries ) - count( $kept );
 	}
 
+	/**
+	 * Reset monthly counter if month changed.
+	 *
+	 * @param int    $user_id WordPress user ID.
+	 * @param string $today   Site-local 'Y-m-d' (empty → today).
+	 * @return bool True when this call zeroed an outgoing month's counter.
+	 */
 	public static function maybe_reset_month( $user_id, $today ) {
 		global $wpdb;
 

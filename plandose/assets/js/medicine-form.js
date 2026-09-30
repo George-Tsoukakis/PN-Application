@@ -545,7 +545,11 @@
 					var card = document.createElement('div');
 					card.className = 'plandose-med-card';
 					var deleteLabel = PD.txt('deleteAria', 'Διαγραφή') + ': ' + item.name;
-					card.innerHTML = '<div class="plandose-med-card-main">' + '<strong>' + PD.escapeHtml(item.name) + '</strong>' + '<span>' + PD.escapeHtml(PD.itemSummary(item)) + '</span>' + (PD.courseLine(item) ? '<small class="pd-med-course">' + PD.escapeHtml(PD.courseLine(item)) + '</small>' : '') + (item.notes ? '<small>' + PD.escapeHtml(item.notes) + '</small>' : '') + '</div>' + '<div class="plandose-med-card-actions">' + '<button type="button" class="plandose-mini-btn" data-action="edit">' + PD.escapeHtml(PD.txt('edit', 'Επεξεργασία')) + '</button>' + '<button type="button" class="plandose-mini-btn plandose-mini-btn-danger" data-action="delete" aria-label="' + PD.escapeAttr(deleteLabel) + '">×</button>' + '</div>';
+					/* Same pattern as delete: a screen-reader user tabbing
+					   through the list must hear WHICH drug «Επεξεργασία»
+					   opens, not the same word N times. */
+					var editLabel = PD.txt('edit', 'Επεξεργασία') + ': ' + item.name;
+					card.innerHTML = '<div class="plandose-med-card-main">' + '<strong>' + PD.escapeHtml(item.name) + '</strong>' + '<span>' + PD.escapeHtml(PD.itemSummary(item)) + '</span>' + (PD.courseLine(item) ? '<small class="pd-med-course">' + PD.escapeHtml(PD.courseLine(item)) + '</small>' : '') + (item.notes ? '<small>' + PD.escapeHtml(item.notes) + '</small>' : '') + '</div>' + '<div class="plandose-med-card-actions">' + '<button type="button" class="plandose-mini-btn" data-action="edit" aria-label="' + PD.escapeAttr(editLabel) + '">' + PD.escapeHtml(PD.txt('edit', 'Επεξεργασία')) + '</button>' + '<button type="button" class="plandose-mini-btn plandose-mini-btn-danger" data-action="delete" aria-label="' + PD.escapeAttr(deleteLabel) + '">×</button>' + '</div>';
 					card.querySelector('[data-action="edit"]').addEventListener('click', function () {
 						PD.editItem(index);
 					});

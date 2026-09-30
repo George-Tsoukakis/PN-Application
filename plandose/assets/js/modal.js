@@ -313,6 +313,9 @@
 		}
 		PD.overlay.hidden = true;
 		PD.setTriggerExpanded(false);
+		if (typeof PD.unwatchPreviewSheet === 'function') {
+			PD.unwatchPreviewSheet();
+		}
 		document.body.classList.remove('plandose-no-scroll');
 		/* Before focus goes back to the (inert) trigger below. */
 		PD.setBackgroundInert(false);

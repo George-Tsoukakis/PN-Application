@@ -28,9 +28,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Plandose_Frontend {
 
 	/**
-	 * Register frontend hooks.
-	 */
-	/**
 	 * Prevents the frontend hooks from being registered more than once.
 	 * Defensive, matching the other PlanDose classes. The flag is set only
 	 * after the dependency check, so a premature call (before
@@ -49,6 +46,12 @@ class Plandose_Frontend {
 	/** How many fingerprints (locale/version/settings) I18N_OPTION keeps. */
 	const I18N_KEEP = 6;
 
+	/** Stylesheets that only style the modal, loaded without blocking first paint (defer_main_stylesheet()). */
+	const DEFERRED_STYLES = array( 'plandose', 'plandose-guest' );
+
+	/**
+	 * Register frontend hooks.
+	 */
 	public static function init() {
 		if ( self::$initialized ) {
 			return;
@@ -378,11 +381,15 @@ class Plandose_Frontend {
 	}
 
 	/**
-	 * Load the large PlanDose stylesheet without blocking first paint.
+	 * Load the modal-only PlanDose stylesheets without blocking first paint.
 	 *
 	 * The small trigger stylesheet remains render-blocking so the floating
-	 * button is styled immediately; this one only styles the modal, which
-	 * nobody sees until they click.
+	 * button is styled immediately (it carries its own :root colours). The
+	 * deferred ones (DEFERRED_STYLES) only style the modal, which nobody
+	 * sees until they click: plandose.css, and plandose-guest.css — the
+	 * popup shell and the login teaser, printed on every page when the
+	 * button is shown to guests. The overlay is printed with the `hidden`
+	 * attribute, so it stays hidden before the stylesheet arrives.
 	 *
 	 * The rewrite preserves two attributes. `id` is what wp_dequeue_style()
 	 * and any script looking the tag up by handle rely on. `media` is worse
@@ -409,7 +416,7 @@ class Plandose_Frontend {
 	 * @return string
 	 */
 	public static function defer_main_stylesheet( $html, $handle, $href, $media ) {
-		if ( 'plandose' !== $handle ) {
+		if ( ! in_array( $handle, self::DEFERRED_STYLES, true ) ) {
 			return $html;
 		}
 
@@ -1171,17 +1178,20 @@ class Plandose_Frontend {
 					self::reprint_window_minutes()
 				),
 
+				// settings() always carries these (default_settings(), the
+				// one place the default texts are written), so no fallback
+				// copy of them here.
 				'disclaimer'          => self::plain_text( sanitize_textarea_field( (string) Plandose_Settings::setting(
 					'disclaimer',
-					__( 'Το πλάνο αυτό είναι βοήθημα υπενθύμισης δοσολογίας και δεν αντικαθιστά την οδηγία ιατρού ή φαρμακοποιού. Σε περίπτωση αμφιβολίας συμβουλευτείτε τον φαρμακοποιό σας.', 'plandose' )
+					''
 				) ) ),
 				'thanksLine1'         => self::plain_text( sanitize_text_field( (string) Plandose_Settings::setting(
 					'thanks_message_line1',
-					__( 'Ευχαριστούμε που εμπιστευτήκατε το φαρμακείο μας.', 'plandose' )
+					''
 				) ) ),
 				'thanksLine2'         => self::plain_text( sanitize_text_field( (string) Plandose_Settings::setting(
 					'thanks_message_line2',
-					__( 'Για οποιαδήποτε διευκρίνηση είμαστε πάντα στη διάθεσή σας!', 'plandose' )
+					''
 				) ) ),
 
 				'morning'             => __( 'Πρωί', 'plandose' ),
@@ -1200,6 +1210,8 @@ class Plandose_Frontend {
 				'calQrTooBig'         => __( 'Το πλάνο είναι πολύ μεγάλο για το QR «Υπενθυμίσεις στο κινητό»: το φύλλο θα τυπωθεί χωρίς QR.', 'plandose' ),
 				'calQrNoNotes'        => __( 'Οι σημειώσεις των φαρμάκων δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: οι υπενθυμίσεις στο κινητό θα είναι χωρίς σημειώσεις. Στο τυπωμένο φύλλο υπάρχουν κανονικά.', 'plandose' ),
 				'calQrNoPharmacy'     => __( 'Το όνομα του φαρμακείου (και τυχόν σημειώσεις των φαρμάκων) δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: στο κινητό οι υπενθυμίσεις θα είναι χωρίς αυτά. Στο τυπωμένο φύλλο υπάρχουν κανονικά.', 'plandose' ),
+				/* translators: %s: comma-separated names of the medicines whose text is shortened in the QR code. */
+				'calQrClipped'        => __( 'Στο QR «Υπενθυμίσεις στο κινητό» το όνομα, η δόση ή οι σημειώσεις αυτών των φαρμάκων είναι πολύ μεγάλα και κόβονται με «…»: %s. Στο τυπωμένο φύλλο υπάρχουν ολόκληρα· συντομεύστε τα αν χρειάζεται.', 'plandose' ),
 				'rxWarn_everyHours'   => __( 'Η συνταγή λέει «κάθε … ώρες»: στο πλάνο οι δόσεις μπαίνουν Πρωί / Μεσημέρι / Βράδυ, όχι ανά ακριβές ωράριο. Αν πρέπει να απέχουν ακριβώς, γράψτε τις ώρες στις σημειώσεις.', 'plandose' ),
 				'rxWarn_unitForm'     => __( 'Η δοσολογία δεν ταιριάζει με τη μορφή του φαρμάκου (π.χ. ένεση σε δισκία) — ελέγξτε ότι η γραμμή δοσολογίας ανήκει σε αυτό το φάρμακο.', 'plandose' ),
 				'rxWarn_shortDuration' => __( 'Η διάρκεια φαίνεται πολύ μικρή για την ποσότητα που χορηγείται — ελέγξτε τη διάρκεια.', 'plandose' ),
@@ -1229,7 +1241,7 @@ class Plandose_Frontend {
 				/* translators: 1: chosen time of day, 2: number of medicines. */
 				'rxBulkDone' => __( '«%1$s»: ορίστηκε σε %2$d φάρμακα.', 'plandose' ),
 				'rxWarn_brandWords' => __( 'Το όνομα έχει περισσότερες από μία λέξεις πριν από τη μορφή (τονίζονται) — επιβεβαιώστε ότι ανήκουν στο όνομα του φαρμάκου (π.χ. «PO», «HS» δεν ανήκουν).', 'plandose' ),
-				/* translators: %s: the unread text, quoted. */
+				/* translators: %s: up to three unread text excerpts, joined as «a» «b» by the script, which also appends the closing » (or » … when there are more). So the opening « before %s has no closing » here on purpose — keep it that way. */
 				'rxUnreadText' => __( 'Υπάρχει κείμενο στη συνταγή που δεν διαβάστηκε: «%s — ελέγξτε τη συνταγή.', 'plandose' ),
 				'rxWarn_variableDose' => __( 'Η συνταγή έχει σειρά από ποσότητες (π.χ. διαφορετική δόση ανά ημέρα) — δεν είναι σταθερή δόση. Συμπληρώστε το πρόγραμμα στη φόρμα.', 'plandose' ),
 				'printReplayLimitKeep' => __( 'Αυτή η προσπάθεια εκτύπωσης έχει ήδη επαναληφθεί όσες φορές επιτρέπεται. Τώρα δεν χρεώθηκε και δεν τυπώθηκε τίποτα. Αν πατήσετε ξανά «Εκτύπωση», θα γίνει δωρεάν επανεκτύπωση αν απομένουν (δείτε τη γραμμή χρέωσης) — αλλιώς θα μετρήσει ως νέα εκτύπωση.', 'plandose' ),
@@ -1409,11 +1421,14 @@ class Plandose_Frontend {
 	 * settings saved). A few fingerprints are kept for sites that serve
 	 * more than one locale.
 	 *
-	 * @param string[] $langs 'el' and/or 'en'.
+	 * @param string[]    $langs  'el' and/or 'en'.
+	 * @param string|null $locale Locale the dictionaries are built in (the
+	 *                            one currently loaded); null for
+	 *                            determine_locale().
 	 * @return array{locale: string, hashes: array<string,string>, site: array<string,string>}
 	 */
-	private static function i18n_state( $langs ) {
-		$locale      = determine_locale();
+	private static function i18n_state( $langs, $locale = null ) {
+		$locale      = null === $locale ? determine_locale() : $locale;
 		$fingerprint = self::i18n_fingerprint( $locale );
 		$stored      = get_option( self::I18N_OPTION, array() );
 		$stored      = is_array( $stored ) ? $stored : array();
@@ -1464,6 +1479,64 @@ class Plandose_Frontend {
 	}
 
 	/**
+	 * The stored content hash of one dictionary in $locale, without
+	 * building anything; '' when i18n_state() has not stored it for the
+	 * current fingerprint yet.
+	 *
+	 * @param string $lang   'el' or 'en'.
+	 * @param string $locale Locale.
+	 * @return string
+	 */
+	private static function i18n_stored_hash( $lang, $locale ) {
+		$stored      = get_option( self::I18N_OPTION, array() );
+		$fingerprint = self::i18n_fingerprint( $locale );
+
+		if ( ! is_array( $stored ) || ! isset( $stored[ $fingerprint ][ $lang ] ) || ! is_string( $stored[ $fingerprint ][ $lang ] ) ) {
+			return '';
+		}
+
+		return $stored[ $fingerprint ][ $lang ];
+	}
+
+	/**
+	 * URL of one dictionary script.
+	 *
+	 * @param string $lang   'el' or 'en'.
+	 * @param string $locale Locale.
+	 * @param string $hash   Content hash (i18n_hash()).
+	 * @return string
+	 */
+	private static function i18n_url( $lang, $locale, $hash ) {
+		return add_query_arg(
+			array(
+				'action' => self::I18N_ACTION,
+				'lang'   => $lang,
+				'locale' => $locale,
+				'v'      => $hash,
+			),
+			admin_url( 'admin-ajax.php' )
+		);
+	}
+
+	/**
+	 * The locale a dictionary request is answered in: the page's, when it
+	 * is the current one or an installed one (switch_to_locale() accepts
+	 * no other), otherwise the current one.
+	 *
+	 * @param string $locale Locale from the request.
+	 * @return string
+	 */
+	private static function i18n_request_locale( $locale ) {
+		$current = determine_locale();
+
+		if ( ! self::is_locale_name( $locale ) || $current === $locale ) {
+			return $current;
+		}
+
+		return in_array( $locale, array_merge( array( 'en_US' ), get_available_languages() ), true ) ? $locale : $current;
+	}
+
+	/**
 	 * URLs of the dictionary scripts for this page, by script handle, and
 	 * the pharmacy's printed texts to keep inline.
 	 *
@@ -1475,15 +1548,7 @@ class Plandose_Frontend {
 		$scripts = array();
 
 		foreach ( $state['hashes'] as $lang => $hash ) {
-			$scripts[ 'en' === $lang ? 'plandose-i18n-en' : 'plandose-i18n' ] = add_query_arg(
-				array(
-					'action' => self::I18N_ACTION,
-					'lang'   => $lang,
-					'locale' => $state['locale'],
-					'v'      => $hash,
-				),
-				admin_url( 'admin-ajax.php' )
-			);
+			$scripts[ 'en' === $lang ? 'plandose-i18n-en' : 'plandose-i18n' ] = self::i18n_url( $lang, $state['locale'], $hash );
 		}
 
 		return array(
@@ -1506,9 +1571,18 @@ class Plandose_Frontend {
 	 * The dictionary script: status, headers and body.
 	 *
 	 * Served with a year-long, immutable cache only when $version is the
-	 * hash of what is served now; a stale or missing version still gets
-	 * the current dictionary, but uncached, so an old URL can never pin
-	 * other content in a browser or CDN.
+	 * hash of what is served now. Any other version (a stale page, or a
+	 * random one that would bypass a CDN) is answered with an uncached 302
+	 * to the current URL, found in the stored hashes (i18n_state()) without
+	 * building the ~320-string dictionary or switching locale. Only when
+	 * no hash is stored yet for the current fingerprint (a settings save
+	 * or an update since the page was rendered) is the dictionary built,
+	 * once, and stored, as a page view would have done. A locale that is
+	 * not installed redirects to the current one, so made-up locales can
+	 * neither bypass a CDN nor flood the stored hashes. If the dictionary built for
+	 * the matching version still hashes differently (a filter changed its
+	 * strings), it is served uncached, so an old URL can never pin other
+	 * content in a browser or CDN — and never redirects twice.
 	 *
 	 * The English dictionary drives the Pro-only language toggle, so it is
 	 * refused (403) unless $en_allowed, and cached privately (per browser,
@@ -1545,14 +1619,38 @@ class Plandose_Frontend {
 			);
 		}
 
+		$version = is_string( $version ) ? $version : '';
+		$target  = self::i18n_request_locale( $locale );
+		$current = self::i18n_stored_hash( $lang, $target );
+
+		// Any URL but the page's own (other version, made-up locale)
+		// goes to it.
+		$canonical = $target === $locale;
+
+		if ( '' !== $current && ( ! $canonical || ! hash_equals( $current, $version ) ) ) {
+			return self::i18n_redirect( $lang, $target, $current, $headers );
+		}
+
 		$switched = false;
 
-		if ( self::is_locale_name( $locale ) && determine_locale() !== $locale ) {
+		if ( determine_locale() !== $target ) {
 			// admin-ajax.php runs in the user's admin locale; the page may
-			// have been rendered in another (the site's). A locale that is
-			// not installed is refused by switch_to_locale(), and the hash
-			// check below then keeps the answer uncached.
-			$switched = switch_to_locale( $locale );
+			// have been rendered in another (the site's).
+			$switched = switch_to_locale( $target );
+		}
+
+		if ( '' === $current ) {
+			// Nothing stored for this fingerprint: build and store it once.
+			$state   = self::i18n_state( array( $lang ), $switched || determine_locale() === $target ? $target : determine_locale() );
+			$current = $state['hashes'][ $lang ];
+
+			if ( ! $canonical || $state['locale'] !== $target || ! hash_equals( $current, $version ) ) {
+				if ( $switched ) {
+					restore_previous_locale();
+				}
+
+				return self::i18n_redirect( $lang, $state['locale'], $current, $headers );
+			}
 		}
 
 		$json = self::i18n_json( self::i18n_dictionary( $lang ) );
@@ -1564,7 +1662,7 @@ class Plandose_Frontend {
 
 		$body = 'window.PlandoseI18n=window.PlandoseI18n||{};window.PlandoseI18n.' . $lang . '=' . $json . ";\n";
 
-		if ( ! is_string( $version ) || '' === $version || ! hash_equals( $hash, $version ) ) {
+		if ( ! hash_equals( $hash, $version ) ) {
 			return array(
 				'status'  => 200,
 				'headers' => $headers,
@@ -1591,6 +1689,25 @@ class Plandose_Frontend {
 			'status'  => 200,
 			'headers' => $headers,
 			'body'    => $body,
+		);
+	}
+
+	/**
+	 * An uncached 302 to the current URL of a dictionary script.
+	 *
+	 * @param string               $lang    'el' or 'en'.
+	 * @param string               $locale  Locale.
+	 * @param string               $hash    Current content hash.
+	 * @param array<string,string> $headers Base (uncached) headers.
+	 * @return array{status: int, headers: array<string,string>, body: string}
+	 */
+	private static function i18n_redirect( $lang, $locale, $hash, $headers ) {
+		$headers['Location'] = self::i18n_url( $lang, $locale, $hash );
+
+		return array(
+			'status'  => 302,
+			'headers' => $headers,
+			'body'    => '',
 		);
 	}
 
@@ -1769,6 +1886,47 @@ class Plandose_Frontend {
 	}
 
 	/**
+	 * The default printed texts (disclaimer, the two thanks lines), each as
+	 * every form an untouched default may have been saved in: the Greek
+	 * source string and its translation in the current locale.
+	 *
+	 * Read from Plandose_Settings::default_settings(), the one place the
+	 * defaults are written. That method passes them through __(), so a
+	 * 'gettext_plandose' filter hands back the untranslated source for the
+	 * one call — a locale's translation must not make an untouched default
+	 * look like custom text.
+	 *
+	 * @return array<string,string[]> Setting key => sanitized candidates.
+	 */
+	private static function printed_text_defaults() {
+		$source = static function ( $translation, $text ) {
+			return $text;
+		};
+
+		add_filter( 'gettext_plandose', $source, PHP_INT_MAX, 2 );
+		$untranslated = Plandose_Settings::default_settings();
+		remove_filter( 'gettext_plandose', $source, PHP_INT_MAX );
+
+		$translated = Plandose_Settings::default_settings();
+		$defaults   = array();
+
+		foreach ( array( 'disclaimer', 'thanks_message_line1', 'thanks_message_line2' ) as $key ) {
+			$sanitize         = 'disclaimer' === $key ? 'sanitize_textarea_field' : 'sanitize_text_field';
+			$defaults[ $key ] = array_values(
+				array_unique(
+					array(
+						$sanitize( (string) ( isset( $untranslated[ $key ] ) ? $untranslated[ $key ] : '' ) ),
+						$sanitize( (string) ( isset( $translated[ $key ] ) ? $translated[ $key ] : '' ) ),
+					)
+				)
+			);
+			$defaults[ $key ] = array_values( array_diff( $defaults[ $key ], array( '' ) ) );
+		}
+
+		return $defaults;
+	}
+
+	/**
 	 * English counterpart of the localized 'i18n' array.
 	 *
 	 * Plain string literals (not wrapped in __()) on purpose: the Greek
@@ -1788,30 +1946,23 @@ class Plandose_Frontend {
 		$max_days = absint( $max_days );
 
 		/*
-		 * These fields are admin-editable. Compare their saved values with the
-		 * literal Greek defaults stored by default_settings(). Do not call __()
-		 * for this comparison: translated strings depend on the active WordPress
-		 * locale and could make untouched defaults look like custom text.
-		 * Genuine custom copy is kept verbatim because it cannot be translated
-		 * safely or predictably.
+		 * These fields are admin-editable. An untouched default (the Greek
+		 * source text, or its translation in the current locale) becomes
+		 * the English default below; genuine custom copy is kept verbatim
+		 * because it cannot be translated safely or predictably.
 		 */
-		$greek_disclaimer = sanitize_textarea_field(
-			'Το πλάνο αυτό είναι βοήθημα υπενθύμισης δοσολογίας και δεν αντικαθιστά την οδηγία ιατρού ή φαρμακοποιού. Σε περίπτωση αμφιβολίας συμβουλευτείτε τον φαρμακοποιό σας.'
-		);
-		$greek_thanks1 = sanitize_text_field( 'Ευχαριστούμε που εμπιστευτήκατε το φαρμακείο μας.' );
-		$greek_thanks2 = sanitize_text_field( 'Για οποιαδήποτε διευκρίνηση είμαστε πάντα στη διάθεσή σας!' );
-
+		$defaults         = self::printed_text_defaults();
 		$saved_disclaimer = sanitize_textarea_field( (string) Plandose_Settings::setting( 'disclaimer', '' ) );
 		$saved_thanks1    = sanitize_text_field( (string) Plandose_Settings::setting( 'thanks_message_line1', '' ) );
 		$saved_thanks2    = sanitize_text_field( (string) Plandose_Settings::setting( 'thanks_message_line2', '' ) );
 
-		$en_disclaimer = ( '' === $saved_disclaimer || $saved_disclaimer === $greek_disclaimer )
+		$en_disclaimer = ( '' === $saved_disclaimer || in_array( $saved_disclaimer, $defaults['disclaimer'], true ) )
 			? 'This plan is a dosage reminder aid and does not replace the guidance of a doctor or pharmacist. If in doubt, consult your pharmacist.'
 			: $saved_disclaimer;
-		$en_thanks1 = ( '' === $saved_thanks1 || $saved_thanks1 === $greek_thanks1 )
+		$en_thanks1 = ( '' === $saved_thanks1 || in_array( $saved_thanks1, $defaults['thanks_message_line1'], true ) )
 			? 'Thank you for trusting our pharmacy.'
 			: $saved_thanks1;
-		$en_thanks2 = ( '' === $saved_thanks2 || $saved_thanks2 === $greek_thanks2 )
+		$en_thanks2 = ( '' === $saved_thanks2 || in_array( $saved_thanks2, $defaults['thanks_message_line2'], true ) )
 			? 'We are always here for any clarification!'
 			: $saved_thanks2;
 
@@ -1959,7 +2110,6 @@ class Plandose_Frontend {
 			'every14Days'         => 'Every 2 weeks',
 			/* translators: %d: number of days between doses. */
 			'everyNDays'          => 'Every %d days',
-			/* translators: %d: number of hours between doses. */
 			/* translators: %s: weekday name, e.g. "Monday". */
 			'everyWeekday'        => 'Every %s',
 
@@ -2083,6 +2233,8 @@ class Plandose_Frontend {
 			'calQrTooBig'         => 'The plan is too large for the “Reminders on your phone” QR: the sheet will print without a QR.',
 			'calQrNoNotes'        => 'The medicine notes do not fit in the “Reminders on your phone” QR: the phone reminders will have no notes. The printed sheet has them as usual.',
 			'calQrNoPharmacy'     => 'The pharmacy name (and any medicine notes) do not fit in the “Reminders on your phone” QR: the phone reminders will be without them. The printed sheet has them as usual.',
+			/* translators: %s: comma-separated names of the medicines whose text is shortened in the QR code. */
+			'calQrClipped'        => 'In the “Reminders on your phone” QR, the name, dose or notes of these medicines are too long and are cut with “…”: %s. The printed sheet has them in full; shorten them if needed.',
 			'rxWarn_everyHours'   => 'The prescription says “every … hours”: the plan places the doses Morning / Midday / Night, not on an exact clock schedule. If they must be evenly spaced, write the times in the notes.',
 			'rxWarn_unitForm'     => 'The dose does not match the form of the medicine (e.g. an injection for tablets) — check that this dose line belongs to this medicine.',
 			'rxWarn_shortDuration' => 'The duration looks very short for the quantity dispensed — check the duration.',
@@ -2112,7 +2264,7 @@ class Plandose_Frontend {
 			/* translators: 1: chosen time of day, 2: number of medicines. */
 			'rxBulkDone' => '“%1$s”: set for %2$d medicines.',
 			'rxWarn_brandWords' => 'The name has more than one word before the dose form (highlighted) — confirm they belong to the medicine name (e.g. “PO”, “HS” do not).',
-			/* translators: %s: the unread text, quoted. */
+			/* translators: %s: up to three unread text excerpts, joined as «a» «b» by the script, which also appends the closing » (or » … when there are more). So the opening « before %s has no closing » here on purpose — keep it that way. */
 			'rxUnreadText' => 'The prescription has text that was not read: «%s — check the prescription.',
 			'rxWarn_variableDose' => 'The prescription has a series of quantities (e.g. a different dose per day) — not a fixed dose. Enter the schedule in the form.',
 			'printReplayLimitKeep' => 'This print attempt has already been repeated as many times as allowed. Nothing was charged or printed now. If you press “Print” again, it will be a free reprint if any are left (see the billing line) — otherwise it will count as a new print.',
@@ -2207,16 +2359,15 @@ class Plandose_Frontend {
 			return;
 		}
 
-		$position     = self::button_position();
-		$color        = self::button_color();
-		$text         = sanitize_text_field( (string) Plandose_Settings::setting( 'button_text', __( 'Πλάνο Δόσεων', 'plandose' ) ) );
-		$text         = $text ? $text : __( 'Πλάνο Δόσεων', 'plandose' );
-		$is_logged_in = is_user_logged_in();
-		$is_allowed   = $is_logged_in && self::current_user_is_allowed();
-		$is_guest_ui  = ! $is_allowed;
-		$is_pro       = $is_allowed && self::current_user_is_pro();
-		$free_limit   = Plandose_Settings::free_monthly_limit();
-		$login_url    = self::login_url();
+		$position    = self::button_position();
+		$color       = self::button_color();
+		$text        = sanitize_text_field( (string) Plandose_Settings::setting( 'button_text', __( 'Πλάνο Δόσεων', 'plandose' ) ) );
+		$text        = $text ? $text : __( 'Πλάνο Δόσεων', 'plandose' );
+		$is_allowed  = self::current_user_is_allowed(); // False for a guest (user id 0).
+		$is_guest_ui = ! $is_allowed;
+		$is_pro      = $is_allowed && self::current_user_is_pro();
+		$free_limit  = Plandose_Settings::free_monthly_limit();
+		$login_url   = self::login_url();
 
 		$guest_bullets = array(
 			__( 'Δημιουργεί πλάνο δοσολογίας για κάθε ασθενή σε λίγα δευτερόλεπτα.', 'plandose' ),

@@ -160,6 +160,9 @@ jobs:
       - working-directory: tests
         run: npm ci
       - name: PHP tests (tests/php)
+        # The admin checks run in their own steps below.
+        env:
+          PD_SKIP_ADMIN: '1'
         run: |
           if [ -x tests/php/run.sh ] || [ -f tests/php/run.sh ]; then sh tests/php/run.sh; else echo "no tests/php/run.sh"; fi
       # 1.27.5: the admin checks (nonces, capabilities, invoice storage) ran nowhere before.

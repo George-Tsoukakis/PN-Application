@@ -364,7 +364,6 @@
 		PD.beginDayPass();
 		for (var i = 0; i < PD.s.items.length; i++) {
 			var item = PD.s.items[i];
-			var bad = false;
 			/* Every medicine again, as the form checks it — dose,
 			   «Είδος», frequency and duration — whatever path put it in
 			   the plan (form, prescription import, an older version). */
@@ -375,20 +374,16 @@
 				PD.setMessage(PD.format(PD.txt('invalidItemForPrint', 'Ελέγξτε το φάρμακο «%s»: η ποσότητα, το «Είδος», η συχνότητα ή η διάρκεια δεν είναι έγκυρα. Πατήστε «Επεξεργασία».'), item.name), 'error');
 				return false;
 			}
-			if ('custom' === item.freq && 'days' === item.customMode) {
-				var raw = String(item.customIntervalDays == null ? '' : item.customIntervalDays).trim();
-				var n = Number(raw);
-				bad = !/^\d+$/.test(raw) || n < 1 || n > 90;
-			}
-			var totals = bad ? null : PD.doseTotals(item);
-			if (bad || !totals || totals.doses < 1) {
+			/* The «κάθε Ν ημέρες» interval (1–90) is already checked by
+			   planItemInvalid() above ('interval'), so only the dose
+			   count is left to check here. */
+			var totals = PD.doseTotals(item);
+			if (!totals || totals.doses < 1) {
 				if (PD.s.currentStep !== 1 && typeof PD.goToStep === 'function') {
 					PD.goToStep(1);
 				}
 				PD.setMessage(
-					bad
-						? PD.txt('missingIntervalDays', 'Συμπληρώστε κάθε πόσες ημέρες γίνεται η λήψη (1–90).') + ' ' + item.name
-						: PD.txt('noDosesInPeriod', 'Με αυτή τη διάρκεια δεν πέφτει καμία δόση — αυξήστε τη διάρκεια ή αλλάξτε την ημέρα. Φάρμακο: ') + item.name,
+					PD.txt('noDosesInPeriod', 'Με αυτή τη διάρκεια δεν πέφτει καμία δόση — αυξήστε τη διάρκεια ή αλλάξτε την ημέρα. Φάρμακο: ') + item.name,
 					'error'
 				);
 				return false;
@@ -652,7 +647,14 @@
 		/* An unusually large quantity per intake (PD.doseUnusual())
 		   is added only on a second press with the same values. */
 		var savedItem = PD.s.editingIndex !== null ? PD.s.items[PD.s.editingIndex] : null;
-		var alreadySaved = !!savedItem && Number(savedItem.doseAmount) === dose.value && savedItem.doseUnit === doseUnit;
+		/* Only the SAME medicine, amount and unit counts as already
+		   confirmed: an edit that renames the medicine (e.g. a 10 mg
+		   tablet overwritten with another drug) keeps the large amount but
+		   was never confirmed for the new name, so it asks again. */
+		var alreadySaved = !!savedItem &&
+			Number(savedItem.doseAmount) === dose.value &&
+			savedItem.doseUnit === doseUnit &&
+			String(savedItem.name == null ? '' : savedItem.name).trim() === name;
 		if (PD.doseUnusual(dose.value, doseUnit) && !alreadySaved) {
 			var qtyKey = name + '|' + dose.value + '|' + doseUnit;
 			if (PD.s.doseQtyAck !== qtyKey) {

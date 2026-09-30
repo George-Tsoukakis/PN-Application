@@ -15,6 +15,14 @@ npm run test:browser        # WordPress + Chromium: smoke, «Είδος», «Ε�
 sh php/run.sh               # δοκιμές PHP μέσα στο WordPress (WP_LOAD=/path/wp-load.php)
 ```
 
+`php/run.sh` τρέχει τα `php/test-*.php` και μετά, όπως το CI, τους ελέγχους διαχείρισης `php/admin/storage-admin-1270.php "$WP_LOAD"`
+και `node --test --test-concurrency=1 php/admin/diagnostics-http-1270.test.js` (από το `tests/`· `PD_WP_PATH` προεπιλογή ο φάκελος του
+`WP_LOAD`). `PD_SKIP_ADMIN=1`: χωρίς αυτούς. Έξοδος: 0 όλα πέρασαν, 1 αποτυχία, 2 δεν βρέθηκε WordPress.
+
+Αναμονή σε δοκιμές jsdom: `lib/until.js` (`until(cond, ms, what)`) αντί για σταθερό sleep ή τοπικό αντίγραφο.
+Ημερομηνίες: το `npm test` κλειδώνει τη ζώνη ώρας (`TZ`, αλλαγή με `PD_TZ`)· η «σημερινή» ημερομηνία (`isoAhead` του harness και
+το `Date` του plugin μέσα στο jsdom) είναι η πραγματική — δεν υπάρχει σταθερό «σήμερα».
+
 ## Ρυθμίσεις (μεταβλητές περιβάλλοντος, `lib/env.js`)
 
 | Μεταβλητή | Προεπιλογή | Τι |

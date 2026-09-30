@@ -8,6 +8,7 @@ const assert = require('node:assert');
 const env = require('./lib/env.js');
 const i18n = require('./lib/i18n.js');
 const { load, loadLoader, closeAll } = require('./harness.js');
+const { until } = require('./lib/until.js');
 
 test.afterEach(closeAll);
 
@@ -28,20 +29,6 @@ function script(lang, dict) {
 	return 'window.PlandoseI18n=window.PlandoseI18n||{};window.PlandoseI18n.' + lang + '=' + JSON.stringify(dict) + ';\n';
 }
 
-function until(cond, ms) {
-	const end = Date.now() + (ms || 5000);
-	return new Promise((resolve, reject) => {
-		(function poll() {
-			if (cond()) {
-				return resolve();
-			}
-			if (Date.now() > end) {
-				return reject(new Error('timed out'));
-			}
-			setTimeout(poll, 10);
-		})();
-	});
-}
 
 /* A page as the plugin now prints it: only the pharmacy's texts inline. */
 function page(opts) {

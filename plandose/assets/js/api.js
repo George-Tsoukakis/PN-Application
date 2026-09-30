@@ -112,6 +112,12 @@
 		return String(Date.now()) + '-' + String(PD.s.printWindowCounter) + '-' + String(Math.random()).slice(2);
 	};
 
+	/** A header object with at least the pharmacy's name. */
+	PD.isUsableHeader = function isUsableHeader(data) {
+		return !!data && typeof data === 'object' && !Array.isArray(data) &&
+			typeof data.name === 'string' && data.name.trim() !== '';
+	};
+
 	/**
 	 * Fetch the pharmacy header (name, address, phone, email) once per
 	 * session and cache it on PD.s.header.
@@ -130,12 +136,6 @@
 	 * @param {function(boolean)} [callback] Receives true when the header
 	 *        is loaded, false when it could not be fetched.
 	 */
-	/** A header object with at least the pharmacy's name. */
-	PD.isUsableHeader = function isUsableHeader(data) {
-		return !!data && typeof data === 'object' && !Array.isArray(data) &&
-			typeof data.name === 'string' && data.name.trim() !== '';
-	};
-
 	PD.loadHeader = function loadHeader(callback) {
 		if (PD.s.header) {
 			if (callback) {

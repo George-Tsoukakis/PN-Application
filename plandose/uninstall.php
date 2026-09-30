@@ -160,8 +160,11 @@ function plandose_uninstall_delete_known_files( $dir, $known_invoice_files ) {
 		$protection[ $name ] = true;
 	}
 
+	// Lower-cased once, not per invoice file.
+	$protection_lower = array_map( 'strtolower', array_keys( $protection ) );
+
 	foreach ( $known as $name => $unused ) {
-		if ( in_array( strtolower( $name ), array_map( 'strtolower', array_keys( $protection ) ), true ) ) {
+		if ( in_array( strtolower( $name ), $protection_lower, true ) ) {
 			unset( $known[ $name ] );
 		}
 	}
@@ -184,9 +187,14 @@ function plandose_uninstall_delete_known_files( $dir, $known_invoice_files ) {
 
 		$path = trailingslashit( $dir ) . $entry;
 
+		// A privacy-probe canary left by a probe that was killed mid-way
+		// (Plandose_Invoice_Storage::CANARY_PATTERN): PlanDose's own file,
+		// never in use now that the plugin is inactive.
+		$is_canary = (bool) preg_match( '/^plandose-probe-(?:control-)?[A-Za-z0-9]{24}\.(?:pdf|jpg|jpeg|png|webp)$/D', $entry );
+
 		// Delete only known regular files. Never recurse, follow links, or
 		// remove unknown entries from custom storage.
-		if ( ! isset( $known[ $entry ] ) || ! is_file( $path ) || is_link( $path ) ) {
+		if ( ( ! isset( $known[ $entry ] ) && ! $is_canary ) || ! is_file( $path ) || is_link( $path ) ) {
 			continue;
 		}
 
@@ -551,6 +559,7 @@ function plandose_run_uninstall() {
 				'plandose_cleanup_last_run',
 				'plandose_cleanup_skipped',
 				'plandose_unarchived_months',
+				'plandose_unarchived_months_lock',
 				'plandose_legacy_invoice_migration_pending',
 			) as $plandose_option_name
 		) {

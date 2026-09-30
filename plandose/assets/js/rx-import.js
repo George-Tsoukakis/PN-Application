@@ -4,8 +4,15 @@
  * Reads the text of a Greek e-prescription (ΗΔΙΚΑ print-out, pasted as
  * text) and turns every prescribed medicine into a PlanDose item for the
  * pharmacist to REVIEW. Runs entirely in the browser: the pasted text holds
- * the patient's ΑΜΚΑ and diagnosis, and nothing of it is sent anywhere or
- * kept after the parse.
+ * the patient's ΑΜΚΑ and diagnosis, and nothing of it is sent anywhere.
+ * The full pasted text is not kept in the page (the box is emptied at
+ * once), but what the parse read from it IS kept in memory while the
+ * panel is open: PD.s.rx (each row's drug / dose lines as `origText` and
+ * `source`, the unread lines shown for review, the patient name found)
+ * until the panel closes (PD.closeRxImport()) or the popup closes / the
+ * next patient starts (PD.resetPlanState()); and PD.s.rxSourceText (the
+ * lines of the medicine loaded into the form) until the form is cleared
+ * or reset. Never printed or stored.
  *
  * This file is the entry point: the paste box, the paste itself (read
  * at once and never left in the page) and the stages of the panel. The
@@ -119,7 +126,6 @@
 
 	function readText(text) {
 		var result = PD.parsePrescription(text);
-		text = '';
 		if (result.tooLarge) {
 			PD.s.rx = null;
 			PD.s.rxHint = t('rxTooLarge', 'Το κείμενο είναι πολύ μεγάλο για μία συνταγή — αντιγράψτε μόνο τη συνταγή και ξαναδοκιμάστε.');
@@ -272,6 +278,8 @@
 		var drop = document.getElementById('pd-rx-drop');
 		if (drop) {
 			wireDropOpen(drop);
+			/* Length at the last input event (see the input handler). */
+			var lastLength = drop.value.length;
 			drop.addEventListener('paste', function (e) {
 				var data = e.clipboardData || window.clipboardData;
 				var text = data ? data.getData('text') : '';
@@ -285,11 +293,20 @@
 				/* Pasted or dropped in (or set by a script): read at once.
 				   Ordinary typing is left alone. */
 				var type = e && e.inputType ? String(e.inputType) : '';
+				var grown = drop.value.length - lastLength;
+				lastLength = drop.value.length;
 				if (type && type.indexOf('insertFrom') !== 0) {
+					return;
+				}
+				/* No inputType (older engines, a script's synthetic
+				   event): one typed character is not a paste — only a
+				   chunk of more than one character inserted at once is. */
+				if (!type && grown <= 1) {
 					return;
 				}
 				var text = drop.value;
 				drop.value = '';
+				lastLength = 0;
 				if (text.trim()) {
 					readText(text);
 				}

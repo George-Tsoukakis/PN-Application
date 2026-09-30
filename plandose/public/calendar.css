@@ -69,6 +69,9 @@ input[type="time"] {
 .btn.secondary { background: transparent; color: var(--accent); font-weight: 600; min-height: 48px; justify-content: flex-start; text-align: left; }
 .btn:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .done { background: var(--soft); border-radius: 12px; padding: 12px 14px; font-size: .95rem; }
+/* Empty until «Add to calendar»: kept in the page (a live region must exist
+   before its text changes to be announced) but takes no room. */
+.done:empty { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
 .gcal-list { display: grid; gap: 8px; margin-top: 8px; }
 .gcal-list .when { display: block; font-size: .85rem; color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
 details summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }

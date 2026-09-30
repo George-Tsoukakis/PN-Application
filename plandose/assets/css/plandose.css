@@ -1848,12 +1848,6 @@
 	max-width: 8em;
 }
 
-@media print {
-	#plandose-modal .pd-rx-source {
-		display: none !important;
-	}
-}
-
 /* The modal is designed light only; a dark OS theme must not
    repaint form controls and scrollbars inside it. */
 #plandose-overlay,
@@ -1985,12 +1979,6 @@
 	font-size: 13px;
 	line-height: 1.45;
 	font-weight: 600;
-}
-
-@media print {
-	#plandose-modal .pd-preview-notice {
-		display: none !important;
-	}
 }
 
 /* The preview while the start date is unusable. */

@@ -51,47 +51,31 @@ class Plandose_Ajax {
 	const PRINT_DEBOUNCE_SECONDS = 60;
 
 	/**
-	 * Print receipts — the server's own record of which print tokens
-	 * it has already charged, kept per pharmacy in user meta, ONE META ROW
-	 * PER RECEIPT (so two prints of different plans at the same moment,
-	 * e.g. two PCs on one pharmacy login, never overwrite each other's
-	 * receipt).
+	 * Print receipts: which print tokens this pharmacy was already charged
+	 * for. Kept in the ledger (Plandose_Print_Charges: one charge row per
+	 * token, one request row per press of «Εκτύπωση»), never any plan data.
 	 *
 	 * The 60-second lock above only guards concurrent requests. Whether a
-	 * token was already paid for is decided here, for PRINT_RECEIPT_TTL
-	 * (30 minutes), and BEFORE
-	 * the monthly limit: a retry after a lost response (even for the last
-	 * free print of the month, even minutes later) is answered
-	 * `already_recorded` and never charged twice or refused.
+	 * token was already paid for is decided from the ledger, for
+	 * PRINT_RECEIPT_TTL (30 minutes), and BEFORE the monthly limit: a retry
+	 * after a lost response (even for the last free print of the month,
+	 * even minutes later) is answered `already_recorded` and never charged
+	 * twice or refused.
 	 *
 	 * Free reprints of the same plan go through the same check, so the
 	 * browser cannot grant itself a print: a token the server never
 	 * recorded is a new print, subject to the limit. At most
-	 * MAX_FREE_REPRINTS reprints per recorded plan are free; the next one is
-	 * charged as a new print.
+	 * MAX_FREE_REPRINTS reprints per recorded plan are free within
+	 * PRINT_RECEIPT_TTL; the next one is charged as a new print. The server
+	 * only ever sees a token, never the plan, so a reused token can print
+	 * a DIFFERENT plan on every free reprint: at most 3 prints per charge,
+	 * and only for half an hour. Each request id may also be answered again
+	 * up to Plandose_Print_Charges::MAX_REPLAYS times when its answer was
+	 * lost. The sheet itself is built in the browser, so the limit is an
+	 * honest-client limit in any case (see readme.txt, «Known limits»).
 	 *
-	 * Each row is "<md5 of token>:<unix time charged>:<free reprints used>" —
-	 * never any plan data. Rows older than PRINT_RECEIPT_TTL are pruned.
-	 *
-	 * The free-reprint window is 2 reprints within 30 minutes. The server
-	 * only ever sees a token, never the plan, so a reused token can print a
-	 * DIFFERENT plan on every free reprint. The window is still enough for
-	 * «I pressed Cancel / wrong printer / paper jam» (the plan itself is
-	 * wiped after 10 idle minutes anyway), while a reused token yields at
-	 * most 3 prints per charge, and only for half an hour.
-	 *
-	 * On top of those 3, each of the 3 request ids
-	 * may be answered again up to Plandose_Print_Charges::MAX_REPLAYS times
-	 * when its answer was lost, within the request record's own 30 minutes.
-	 * A client that fakes lost answers can therefore reach 3 × (1 + 2) = 9
-	 * sheets per charge within about an hour. The sheet itself is built in
-	 * the browser, so the limit is an honest-client limit in any case (see
-	 * readme.txt, «Known limits»); these bounds keep an honest client's
-	 * retries free without making abuse free.
-	 *
-	 * The user-meta receipts themselves are not read: the ledger
-	 * (Plandose_Print_Charges) holds this record, and they only ever counted
-	 * for PRINT_RECEIPT_TTL. The key stays so leftover rows are still
+	 * PRINT_RECEIPT_META_KEY is the user-meta key of the receipts before
+	 * the ledger. Nothing reads it; it stays so leftover rows are still
 	 * erased (privacy eraser, daily cleanup, uninstall).
 	 */
 	const PRINT_RECEIPT_META_KEY  = 'plandose_print_receipt';
@@ -319,8 +303,8 @@ class Plandose_Ajax {
 		if ( false === $count ) {
 			// Backend claimed ext-object-cache support but didn't actually
 			// implement incr/add usefully (shouldn't happen with a real
-			// Redis/Memcached backend, but fail open to the safe fallback
-			// rather than letting a request through unmetered).
+			// Redis/Memcached backend). Fall back to the transient counter
+			// below rather than letting the request through unmetered.
 			return self::is_rate_limited_non_atomic( $user_id, $bucket );
 		}
 

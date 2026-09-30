@@ -116,15 +116,11 @@ class Plandose_Admin_Subscriptions {
 	 * real, calendar-valid Y-m-d date.
 	 */
 	private static function sanitize_ymd_date( $value ) {
-		$value = sanitize_text_field( wp_unslash( (string) $value ) );
-
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ) {
+		if ( ! is_scalar( $value ) ) {
 			return '';
 		}
 
-		$dt = DateTime::createFromFormat( 'Y-m-d', $value );
-
-		return ( $dt && $dt->format( 'Y-m-d' ) === $value ) ? $value : '';
+		return Plandose_Settings::sanitize_ymd( sanitize_text_field( wp_unslash( (string) $value ) ) );
 	}
 
 	/**
@@ -197,8 +193,14 @@ class Plandose_Admin_Subscriptions {
 		 * would read as the generic «δεν αποθηκεύτηκε» database error.
 		 * make_free stays open to everyone so a legacy Pro row on a
 		 * non-pharmacy can still be closed.
+		 *
+		 * deny_access is refused the same way: a non-pharmacy has no
+		 * access to block (Plandose_Access::access_evaluation()), and the
+		 * dashboard renders that button disabled for one (action_button()).
+		 * reset_access stays open, so a leftover override on a
+		 * non-pharmacy can still be cleared.
 		 */
-		if ( in_array( $action, array( 'make_pro', 'extend' ), true ) && ! Plandose_Access::is_registered_pharmacist( $user_id ) ) {
+		if ( in_array( $action, array( 'make_pro', 'extend', 'deny_access' ), true ) && ! Plandose_Access::is_registered_pharmacist( $user_id ) ) {
 			self::redirect_with_result( 'not_pharmacy' );
 		}
 
@@ -372,14 +374,19 @@ class Plandose_Admin_Subscriptions {
 			@session_write_close(); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- no active session is normal; this only releases the session lock.
 		}
 
-		$page       = 1;
+		self::raise_export_limits();
+
+		$after_id   = 0;
 		$batch_size = min( 500, Plandose_Subscriber_Query::MAX_SUBSCRIBER_PAGE_SIZE );
 		$written    = 0;
 
 		do {
+			// Keyset batches by user ID (see query_subscribers()): an
+			// OFFSET over the name order would skip or repeat a pharmacy
+			// renamed, added or removed while the export runs.
 			$result = Plandose_Subscriber_Query::query_subscribers(
 				array(
-					'paged'      => $page,
+					'after_id'   => $after_id,
 					'per_page'   => $batch_size,
 					'with_total' => false,
 				)
@@ -424,26 +431,29 @@ class Plandose_Admin_Subscriptions {
 				break;
 			}
 
-			++$page;
+			$last_id = isset( $result['last_id'] ) ? (int) $result['last_id'] : 0;
 
 			/*
-			 * Continue while a page returned ANYTHING, rather than while it
-			 * returned a full batch.
+			 * Continue while the batch had any IDs, rather than while it
+			 * returned a full batch of items — and decided on the IDs, not
+			 * on the items.
 			 *
 			 * hydrate_subscriber_items() skips any ID whose user row
 			 * get_users() did not return — filtered out by another plugin,
-			 * or deleted between the two queries — so a full page of IDs can
-			 * legitimately come back as 499 items. Stopping on a short page
-			 * would read that as "the list has ended", silently truncating
-			 * the export with nothing on screen to say so — the same failure
-			 * the docblock on Plandose_Subscriber_Query::stats() describes.
+			 * or deleted between the two queries — so a full batch of IDs
+			 * can legitimately come back as 499 items (or none at all).
+			 * Stopping on a short or empty item list would read that as
+			 * "the list has ended", silently truncating the export with
+			 * nothing on screen to say so — the same failure the docblock
+			 * on Plandose_Subscriber_Query::stats() describes.
 			 *
-			 * Pagination is by ID offset, so the run ends on its own when a
-			 * page falls past the end of the result set and comes back
-			 * empty — at the cost of one extra query when the row count is
-			 * an exact multiple of the batch size.
+			 * The run ends when a batch past the last ID comes back empty
+			 * (last_id 0) — at the cost of one extra query when the row
+			 * count is an exact multiple of the batch size.
 			 */
-		} while ( count( $items ) > 0 );
+			$more     = $last_id > $after_id;
+			$after_id = $last_id;
+		} while ( $more );
 
 		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- CSV streamed to php://output; WP_Filesystem cannot write there.
 
@@ -456,6 +466,24 @@ class Plandose_Admin_Subscriptions {
 		}
 
 		exit;
+	}
+
+	/**
+	 * Give the CSV export room on a large site: the admin memory limit
+	 * (WP_MAX_MEMORY_LIMIT) and no execution time limit, where the host
+	 * allows them. Best effort — a host that disables set_time_limit()
+	 * keeps its own limit.
+	 */
+	private static function raise_export_limits() {
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+
+		$disabled = array_map( 'trim', explode( ',', (string) ini_get( 'disable_functions' ) ) );
+
+		if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', $disabled, true ) ) {
+			@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- a long export on a large site; a host that forbids it only warns.
+		}
 	}
 
 	/**
@@ -1100,7 +1128,7 @@ class Plandose_Admin_Subscriptions {
 	private static function render_manual_access_lookup() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only user lookup: these GET params only populate a search field and look a user up for display; the actual grant/deny action is a separate nonce-protected POST.
 		$query = isset( $_GET['manual_lookup'] ) ? sanitize_text_field( wp_unslash( $_GET['manual_lookup'] ) ) : '';
-		$page  = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'plandose-subscriptions';
+		$page  = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'plandose-subscriptions';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$found = null;
 

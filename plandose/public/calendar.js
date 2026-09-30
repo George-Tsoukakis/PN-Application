@@ -30,8 +30,8 @@
 			times: 'Τι ώρα θέλετε την υπενθύμιση;',
 			neutral: 'Να μη φαίνονται τα ονόματα των φαρμάκων στην ειδοποίηση (φαίνονται μόνο μέσα στο γεγονός)',
 			add: 'Προσθήκη στο ημερολόγιο',
-			addHelp: 'Στο iPhone ανοίγει το Ημερολόγιο: πατήστε «Προσθήκη όλων». Στο Android ανοίξτε το αρχείο με την εφαρμογή ημερολογίου σας.',
-			added: 'Έτοιμο. Αν δεν άνοιξε μόνο του, ανοίξτε το αρχείο «%s» από τις Λήψεις του κινητού.',
+			addHelp: 'Στο iPhone ανοίγει είτε το Ημερολόγιο (πατήστε «Προσθήκη όλων») είτε η λήψη του αρχείου: τότε ανοίξτε τις Λήψεις (εφαρμογή «Αρχεία»), πατήστε το αρχείο «%s» και μετά «Προσθήκη όλων». Στο Android ανοίξτε το αρχείο με την εφαρμογή ημερολογίου σας.',
+			added: 'Έτοιμο. Αν δεν άνοιξε μόνο του το Ημερολόγιο, ανοίξτε το αρχείο «%s» από τις Λήψεις του κινητού (στο iPhone: εφαρμογή «Αρχεία» → Λήψεις).',
 			google: 'Χρησιμοποιώ Google Calendar στο Android',
 			googleHelp: 'Ένα κουμπί για κάθε υπενθύμιση. Πατήστε το καθένα και μετά «Αποθήκευση». Με αυτά τα κουμπιά η υπενθύμιση (φάρμακα και δόση) αποθηκεύεται στον λογαριασμό σας στη Google.',
 			googleTooMany: 'Το πλάνο έχει πολλές ξεχωριστές υπενθυμίσεις: χρησιμοποιήστε το κουμπί «Προσθήκη στο ημερολόγιο».',
@@ -62,8 +62,8 @@
 			times: 'What time should the reminder come?',
 			neutral: 'Hide medicine names in the alert (they show only inside the event)',
 			add: 'Add to calendar',
-			addHelp: 'On iPhone the Calendar opens: tap “Add All”. On Android open the file with your calendar app.',
-			added: 'Done. If nothing opened, open the file “%s” from your phone’s Downloads.',
+			addHelp: 'On iPhone either Calendar opens (tap “Add All”) or the file is downloaded: then open Downloads (Files app), tap the file “%s”, then “Add All”. On Android open the file with your calendar app.',
+			added: 'Done. If Calendar did not open by itself, open the file “%s” from your phone’s Downloads (on iPhone: Files app → Downloads).',
 			google: 'I use Google Calendar on Android',
 			googleHelp: 'One button per reminder. Tap each one, then “Save”. With these buttons the reminder (medicines and dose) is saved in your Google account.',
 			googleTooMany: 'This plan has many separate reminders: use the “Add to calendar” button.',
@@ -294,7 +294,7 @@
 	/* Event text                                                          */
 	/* ---------------------------------------------------------------- */
 
-	function medLine(plan, i, T) {
+	function medLine(plan, i) {
 		var m = plan.meds[i];
 		return m[0] + (m[1] ? ': ' + m[1] : '') + (m[2] ? ' (' + m[2] + ')' : '');
 	}
@@ -307,7 +307,7 @@
 	}
 
 	function eventText(plan, seg, T) {
-		var lines = seg.meds.map(function (i) { return '• ' + medLine(plan, i, T); });
+		var lines = seg.meds.map(function (i) { return '• ' + medLine(plan, i); });
 		if (plan.pharmacy) {
 			lines.push('', T.from.replace('%s', plan.pharmacy));
 		}
@@ -378,7 +378,7 @@
 		var T = TEXT[plan.lang];
 		var dtstamp = (now || new Date()).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 		var uid = uidPart(plan);
-		var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PlanDose//Calendar 1.28.2//EL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'].concat(VTIMEZONE);
+		var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PlanDose//Calendar//EL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'].concat(VTIMEZONE);
 		segments(plan).forEach(function (seg, i) {
 			var time = times[seg.slot];
 			var day = addDays(plan.start, seg.from);
@@ -564,9 +564,15 @@
 
 		var timeBox = el('div', { 'class': 'times' });
 		used.forEach(function (s) {
+			var input = el('input', { type: 'time', id: 'pd-t-' + s, value: DEFAULT_TIME[s] });
+			/* Leaving a cleared field puts the default back in it. */
+			input.addEventListener('blur', function () {
+				times(true);
+				drawGoogle();
+			});
 			timeBox.appendChild(el('label', { 'for': 'pd-t-' + s }, [
 				document.createTextNode(T.slot[s]),
-				el('input', { type: 'time', id: 'pd-t-' + s, value: DEFAULT_TIME[s] })
+				input
 			]));
 		});
 		/* Unticked by default — the medicine names show in the alert
@@ -582,14 +588,16 @@
 		])));
 
 		var addBtn = el('button', { type: 'button', 'class': 'btn', text: T.add });
-		var done = el('p', { 'class': 'done', role: 'status', text: T.added.replace('%s', T.file) });
-		done.hidden = true;
+		/* The page's only live region: present (empty) from the start
+		   so that filling it is announced — a re-render of the whole
+		   page is not. */
+		var done = el('p', { 'class': 'done', role: 'status' });
 		var googleList = el('div', { 'class': 'gcal-list' });
 		var segs = segments(plan);
 		app.appendChild(el('section', { 'class': 'stack' }, [
 			addBtn,
 			done,
-			el('p', { 'class': 'muted', text: T.addHelp }),
+			el('p', { 'class': 'muted', text: T.addHelp.replace('%s', T.file) }),
 			el('details', { 'class': 'panel' }, [
 				el('summary', { text: T.google }),
 				segs.length > MAX_GOOGLE ? el('p', { 'class': 'muted', text: T.googleTooMany }) : googleList,
@@ -598,11 +606,20 @@
 		]));
 		app.appendChild(el('footer', { text: T.disclaimer }));
 
-		function times() {
+		/* A cleared (or unreadable) time falls back to the default,
+		   which is written back into the field (writeBack: when the
+		   patient leaves the field or adds to the calendar — not while
+		   typing, when a half-edited time is momentarily empty): the time
+		   used is always the time shown. */
+		function times(writeBack) {
 			var out = {};
 			SLOTS.forEach(function (s) {
 				var input = document.getElementById('pd-t-' + s);
-				out[s] = input && /^\d{2}:\d{2}$/.test(input.value) ? input.value : DEFAULT_TIME[s];
+				var ok = input && /^([01]\d|2[0-3]):[0-5]\d$/.test(input.value);
+				out[s] = ok ? input.value : DEFAULT_TIME[s];
+				if (writeBack && input && !ok) {
+					input.value = DEFAULT_TIME[s];
+				}
 			});
 			return out;
 		}
@@ -631,13 +648,13 @@
 		app.onchange = drawGoogle;
 
 		addBtn.addEventListener('click', function () {
-			var blob = new Blob([buildIcs(plan, times(), neutralBox.checked)], { type: 'text/calendar;charset=utf-8' });
+			var blob = new Blob([buildIcs(plan, times(true), neutralBox.checked)], { type: 'text/calendar;charset=utf-8' });
 			var url = URL.createObjectURL(blob);
 			var a = el('a', { href: url, download: T.file });
 			document.body.appendChild(a);
 			a.click();
 			a.remove();
-			done.hidden = false;
+			done.textContent = T.added.replace('%s', T.file);
 			setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
 		});
 	}

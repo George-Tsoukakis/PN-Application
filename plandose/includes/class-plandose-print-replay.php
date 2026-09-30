@@ -183,14 +183,12 @@ final class Plandose_Print_Replay {
 		$user_id      = $request->user_id;
 		$request_hash = $request->request_hash;
 
+		// Never '' since 1.30.1 (Plandose_Print_Request::read_post()
+		// refuses a request without an id). Kept fail-closed: a free
+		// reprint without its request record could not be told from a
+		// retry of it, so «try again», never a reprint.
 		if ( '' === $request_hash ) {
-			$used = Plandose_Print_Charges::use_reprint( $charge, Plandose_Ajax::MAX_FREE_REPRINTS );
-
-			if ( false === $used ) {
-				return 'error';
-			}
-
-			return 1 === $used ? 'used' : 'changed';
+			return 'error';
 		}
 
 		$tx = Plandose_Print_Transaction::begin();

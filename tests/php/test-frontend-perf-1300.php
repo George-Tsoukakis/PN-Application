@@ -230,7 +230,9 @@ $el_guest = Plandose_Frontend::i18n_response( 'el', $state['locale'], $state['ha
 pdt_same( 200, $el_guest['status'], 'el needs no permission' );
 
 $stale = Plandose_Frontend::i18n_response( 'el', $state['locale'], '0000000000000000' );
-pdt_same( 200, $stale['status'], 'stale version: still served' );
+// 1.30.2: an uncached redirect to the current URL, not an uncached build.
+pdt_same( 302, $stale['status'], 'stale version: redirected' );
+pdt_check( false !== strpos( (string) $stale['headers']['Location'], 'v=' . $state['hashes']['el'] ), 'stale version: to the current hash' );
 pdt_check( false !== strpos( $stale['headers']['Cache-Control'], 'no-cache' ) && ! isset( $stale['headers']['ETag'] ), 'stale version: not cached' );
 
 $none = Plandose_Frontend::i18n_response( 'el', $state['locale'], '' );
@@ -252,7 +254,8 @@ pdt_check( false !== strpos( $changed['body'], 'Πίσω!' ) && false !== strpos
 
 // An unusable locale parameter is ignored, not passed to switch_to_locale().
 $weird = Plandose_Frontend::i18n_response( 'el', '../../x', $state['hashes']['el'] );
-pdt_same( 200, $weird['status'], 'malformed locale: ignored' );
+pdt_same( 302, $weird['status'], 'malformed locale: ignored (redirected to the current locale, 1.30.2)' );
+pdt_check( false !== strpos( (string) $weird['headers']['Location'], 'locale=' . rawurlencode( $state['locale'] ) ), 'malformed locale: redirect names the real one' );
 
 pdt_same( true, has_action( 'wp_ajax_' . Plandose_Frontend::I18N_ACTION ) && has_action( 'wp_ajax_nopriv_' . Plandose_Frontend::I18N_ACTION ), 'endpoint registered for users and guests' );
 

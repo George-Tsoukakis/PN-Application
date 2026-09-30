@@ -94,7 +94,11 @@ body { margin: 0; background: #ffffff; color: #1a1a1a; font-family: Arial, Helve
 .pd-day-dose + .pd-day-dose { border-top: 0.5px solid #e7e7e3; }
 .pd-day-dose-name { flex: 1 1 auto; font-weight: 700; min-width: 0; }
 .pd-day-dose-notes { display: block; font-size: 10.5px; font-weight: 400; font-style: normal; color: #1a1a1a; margin-top: 1px; line-height: 1.3; }
-.pd-day-dose-amount { flex: 0 0 auto; font-weight: 900; white-space: nowrap; text-align: right; }
+/* The dose must never be clipped by the card (overflow: hidden): a
+   short one stays on one line (number and unit are joined by a no-break
+   space), a long one wraps within at most 60% of the line. break-word,
+   not anywhere, so «1 Δισκίο» is never split to make room for the name. */
+.pd-day-dose-amount { flex: 0 1 auto; max-width: 60%; font-weight: 900; white-space: normal; overflow-wrap: break-word; word-wrap: break-word; text-align: right; }
 .pd-day-dose .plandose-box { flex: 0 0 auto; margin-top: 1px; }
 .plandose-box { display: inline-block; width: 12px; height: 12px; border: 1.3px solid #333333; border-radius: 2px; background: #ffffff; }
 

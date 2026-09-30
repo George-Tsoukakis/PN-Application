@@ -4,8 +4,8 @@
      loader names content-versioned dictionary scripts (English for Pro only);
    - admin-ajax.php?action=plandose_i18n answers with JavaScript and a
      year-long public immutable cache for the current version, for a
-     logged-in pharmacy and for a guest alike; a stale version is served
-     uncached; an unknown dictionary is a 400;
+     logged-in pharmacy and for a guest alike; a stale version is an
+     uncached 302 to the current URL (1.30.2); an unknown dictionary is a 400;
    - locales: a page rendered in another locale (here a throw-away zz_ZZ
      translation) gets its own URL, and the script answers in the page's
      locale even when admin-ajax runs in the user's own (en_US). */
@@ -109,12 +109,13 @@ test('endpoint: JavaScript, cached for a year; Greek for everyone, English for P
 	}
 });
 
-test('endpoint: stale version uncached, unknown dictionary 400', async () => {
+test('endpoint: stale version redirected uncached, unknown dictionary 400', async () => {
 	const u = new URL(pages.free.loader.i18n[0]);
 	u.searchParams.set('v', '0000000000000000');
-	const stale = await fetch(u);
-	assert.strictEqual(stale.status, 200);
+	const stale = await fetch(u, { redirect: 'manual' });
+	assert.strictEqual(stale.status, 302);
 	assert.match(stale.headers.get('cache-control'), /no-cache/);
+	assert.strictEqual(new URL(stale.headers.get('location')).searchParams.get('v'), new URL(pages.free.loader.i18n[0]).searchParams.get('v'));
 	u.searchParams.set('lang', 'xx');
 	const bad = await fetch(u);
 	assert.strictEqual(bad.status, 400);

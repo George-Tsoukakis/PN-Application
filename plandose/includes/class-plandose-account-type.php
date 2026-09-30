@@ -582,7 +582,10 @@ class Plandose_Account_Type {
 			return;
 		}
 
-		$new = sanitize_text_field( wp_unslash( $raw ) );
+		// $raw is already unslashed above; a second wp_unslash() would
+		// strip a backslash the admin actually sent ("\\Φαρμακείο" would
+		// pass the whitelist as «Φαρμακείο»).
+		$new = sanitize_text_field( $raw );
 
 		if ( '__keep__' === $new || ! in_array( $new, array( '', self::PHARMACY, self::COMPANY ), true ) ) {
 			return;

@@ -173,17 +173,6 @@
 		}
 	];
 
-	/*
-	 * The four fixed frequencies, mapped to their dictionary keys.
-	 *
-	 * The labels count doses ("3 φορές την ημέρα"), not hours ("Κάθε
-	 * 24/12/8/6 ώρες"): the plan renders semantic dayparts (Πρωί /
-	 * Μεσημέρι / Απόγευμα / Βράδυ), and those are not spaced 8 hours
-	 * apart. The dose COUNT is 24h→1, 12h→2, 8h→3, 6h→4 boxes per day, so
-	 * "3 φορές την ημέρα" says exactly what the table below it shows. The
-	 * internal values ('24h', '8h', …) keep their hour-based names so
-	 * nothing else in the codebase has to change.
-	 */
 	/**
 	 * Fill %s / %d / %1$s / %2$d style placeholders in a translated
 	 * string. Translators may reorder numbered placeholders, so both
@@ -289,6 +278,16 @@
 	};
 
 	/**
+	 * Decimal places a dose quantity may have in this unit —
+	 * three for mg (0,125 mg), two for every other unit. Display-only
+	 * parsing (PD.DOSE_NO_LIMIT, see formatDose()) takes three, so a saved
+	 * 0,125 mg prints as «0,125», not as its raw «0.125».
+	 */
+	PD.doseDecimals = function doseDecimals(unit) {
+		return ('mg' === unit || PD.DOSE_NO_LIMIT === unit) ? 3 : 2;
+	};
+
+	/**
 	 * Check a dose quantity typed by the pharmacist and say
 	 * exactly what is wrong with it.
 	 *
@@ -308,16 +307,6 @@
 	 *         otherwise 'empty', 'format', 'thousands', 'mixed',
 	 *         'decimals', 'zero' or 'max'; value is NaN whenever error is set.
 	 */
-	/**
-	 * Decimal places a dose quantity may have in this unit —
-	 * three for mg (0,125 mg), two for every other unit. Display-only
-	 * parsing (PD.DOSE_NO_LIMIT, see formatDose()) takes three, so a saved
-	 * 0,125 mg prints as «0,125», not as its raw «0.125».
-	 */
-	PD.doseDecimals = function doseDecimals(unit) {
-		return ('mg' === unit || PD.DOSE_NO_LIMIT === unit) ? 3 : 2;
-	};
-
 	PD.checkDoseAmount = function checkDoseAmount(raw, unit) {
 		var fail = function (error) {
 			return { value: NaN, error: error };
@@ -462,6 +451,17 @@
 		notes: 500
 	};
 
+	/*
+	 * The four fixed frequencies, mapped to their dictionary keys.
+	 *
+	 * The labels count doses ("3 φορές την ημέρα"), not hours ("Κάθε
+	 * 24/12/8/6 ώρες"): the plan renders semantic dayparts (Πρωί /
+	 * Μεσημέρι / Απόγευμα / Βράδυ), and those are not spaced 8 hours
+	 * apart. The dose COUNT is 24h→1, 12h→2, 8h→3, 6h→4 boxes per day, so
+	 * "3 φορές την ημέρα" says exactly what the table below it shows. The
+	 * internal values ('24h', '8h', …) keep their hour-based names so
+	 * nothing else in the codebase has to change.
+	 */
 	PD.freqLabelKey = {
 		'24h': 'times1',
 		'12h': 'times2',
@@ -472,8 +472,18 @@
 	PD.AJAX_TIMEOUT_MS = 15000;
 	PD.NONCE_REFRESH_MS = 10 * 60 * 1000;
 
-	/* All mutable state in one place. Reassigning any of these across the
-	   other modules must go through PD.s.<name> so the change is shared. */
+	/* The shared mutable state. Reassigning any of these across the
+	   other modules must go through PD.s.<name> so the change is shared.
+	   Not everything is declared here: some fields are created on first
+	   use by the module that owns them and are deliberately NOT touched
+	   by resetPlanState() — bootstrapBound (app.js); focusTrapBound,
+	   inertChanged, modalInertRec, lastFocusedBeforeModal,
+	   lastFocusedBeforeConfirm (modal.js); headerEmpty, headerError
+	   (api.js); billing, printLocked, printedIdleBound (print.js);
+	   labelSizeFallback (pro-labels.js). A few more (methotrexateAck,
+	   planToday, planDayZero, labelCustomOpen, labelCustomError) are set
+	   by resetPlanState() and their modules. Search for "PD.s.<name> ="
+	   before assuming a field is listed below. */
 	PD.s = {
 		items: [],
 		currentStep: 1,

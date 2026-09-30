@@ -75,11 +75,17 @@
 		var l = latin(plain(text));
 		var g = greekAll(text);
 		return /(^|[^A-Z0-9])(SOS|PRN)(?=[^A-Z0-9]|$)/.test(l) ||
-			/(^|[^Α-ΩA-Z0-9])(ΕΑΝ|ΑΝ|ΕΦΟΣΟΝ|ΟΤΑΝ|ΕΠΙ)(?=[^Α-ΩA-Z0-9]|$)/.test(g) ||
+			/(^|[^Α-ΩA-Z0-9])(ΕΑΝ|ΑΝ|ΕΦΟΣΟΝ|ΟΤΑΝ)(?=[^Α-ΩA-Z0-9]|$)/.test(g) ||
+			/* «ΕΠΙ» is also plain «for» in a duration («ΕΠΙ 7 ΗΜΕΡΕΣ»,
+			   «ΕΠΙ ΔΥΟ ΕΒΔΟΜΑΔΕΣ», «ΕΠΙ ΜΑΚΡΟΝ»), which is not «when
+			   needed». Any OTHER «ΕΠΙ …» («επί πόνου / ανάγκης / εμέτου»,
+			   or «ΕΠΙ» at the very end) still counts — fail closed. */
+			/(^|[^Α-ΩA-Z0-9])ΕΠΙ(?=[^Α-ΩA-Z0-9]|$)(?![^Α-ΩA-Z0-9]+(?:\d|ΜΙΑ|ΕΝΑ|ΔΥΟ|ΤΡΕΙΣ|ΤΡΙΑ|ΤΕΣΣΕΡ|ΠΕΝΤΕ|ΕΞΙ|ΕΠΤΑ|ΕΦΤΑ|ΟΚΤΩ|ΟΧΤΩ|ΕΝΝΕΑ|ΕΝΝΙΑ|ΔΕΚΑ|ΕΙΚΟΣΙ|ΤΡΙΑΝΤΑ|ΗΜΕΡ|ΕΒΔΟΜΑΔ|ΜΗΝ|ΜΑΚΡΟΝ))/.test(g) ||
 			/ΣΕ ΠΕΡΙΠΤΩΣΗ|ΚΑΤ[^Α-Ω]*ΕΠΙΚΛΗΣ|ΑΝ ΧΡΕΙΑ|ΟΠΟΤΕ|ΟΤΑΝ ΧΡΕΙΑ/.test(g) ||
 			/* «επί δύσπνοιας / δυσπνοίας / βήχα / πυρετού / ναυτίας /
-			   αϋπνίας / κρίσεως» (the word «ΕΠΙ» alone is caught above too). */
-			/ΕΠΙ (ΔΥΣΠΝΟΙ|ΒΗΧΑ|ΠΥΡΕΤΟΥ|ΝΑΥΤΙΑΣ|ΑΥΠΝΙΑΣ|ΚΡΙΣΕΩΣ|ΠΟΝΟΥ)/.test(g) ||
+			   αϋπνίας / κρίσεως / πόνου / ανάγκης» — named explicitly, so
+			   even «ΕΠΙ 7 ΗΜΕΡΕΣ ΕΠΙ ΠΟΝΟΥ» is caught. */
+			/ΕΠΙ (ΔΥΣΠΝΟΙ|ΒΗΧΑ|ΠΥΡΕΤΟΥ|ΝΑΥΤΙΑΣ|ΑΥΠΝΙΑΣ|ΚΡΙΣΕΩΣ|ΠΟΝΟΥ|ΑΝΑΓΚΗΣ)/.test(g) ||
 			/PRO RE NATA|AS NEEDED|IF NEEDED|WHEN NEEDED|AS REQUIRED/.test(l);
 	}
 
@@ -943,7 +949,10 @@
 			}
 			item.source = m[0].replace(/^ΔΟΣΟΛΟΓΙΑ\s*:\s*/, '').replace(/ημέρ(?:ες|ας|α)?$/i, 'ημέρες');
 			var qtyRaw = m[1].replace(/\s+/g, ' ');
-			var qty = PD.checkDoseAmount ? PD.checkDoseAmount(qtyRaw, PD.DOSE_NO_LIMIT).value : parseFloat(qtyRaw);
+			/* Fail closed: without the shared checker (state.js) the
+			   amount is unread (NaN → the hard «amount» warning below),
+			   never parseFloat(), which reads «1/2» as 1 and «1,5» as 1. */
+			var qty = typeof PD.checkDoseAmount === 'function' ? PD.checkDoseAmount(qtyRaw, PD.DOSE_NO_LIMIT).value : NaN;
 			/* «1 - 2 ΔΙΣΚΙΑ», «1 ή 2», «1 ΕΩΣ 2», or a number left over at
 			   the start of the phrase: a range or a broken number. */
 			var range = /^([^A-ZΑ-Ω]|ΕΩΣ\s|ΜΕΧΡΙ\s|Η\s)/.test(plain(m[2]));

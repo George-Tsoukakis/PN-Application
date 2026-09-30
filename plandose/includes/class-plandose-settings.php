@@ -101,6 +101,10 @@ class Plandose_Settings {
 				// set PLANDOSE_FREE_MONTHLY_LIMIT in wp-config.php should be
 				// bumped to ITS chosen figure, not to the class default — otherwise the
 				// upgrade would quietly overrule a deliberate configuration.
+				// (With no such constant the old and current defaults are
+				// both 30, so this rewrites 30 → 30; the branch still
+				// matters for a site that sets the constant. The later
+				// 450 → 30 step is maybe_migrate_free_limit().)
 				$settings['free_monthly_limit'] = self::default_free_monthly_limit();
 				$changed = true;
 			}
@@ -322,6 +326,16 @@ class Plandose_Settings {
 		$settings['show_print_counter']  = empty( $settings['show_print_counter'] ) ? 0 : 1;
 		$settings['calendar_qr']         = empty( $settings['calendar_qr'] ) ? 0 : 1;
 		$settings['keep_data_on_uninstall'] = empty( $settings['keep_data_on_uninstall'] ) ? 0 : 1;
+
+		// A (string) cast of an array raises an «Array to string
+		// conversion» notice (and yields "Array"): a non-scalar value in
+		// a text setting (a tampered POST, a bad import) falls back to the
+		// default instead.
+		foreach ( array( 'login_page', 'guest_message', 'button_text', 'button_color', 'disclaimer', 'thanks_message_line1', 'thanks_message_line2', 'label_orientation' ) as $text_key ) {
+			if ( null !== $settings[ $text_key ] && ! is_scalar( $settings[ $text_key ] ) ) {
+				$settings[ $text_key ] = isset( $defaults[ $text_key ] ) ? $defaults[ $text_key ] : '';
+			}
+		}
 
 		$settings['login_page']    = self::safe_internal_url( (string) $settings['login_page'], '' );
 		$settings['guest_message'] = sanitize_textarea_field( (string) $settings['guest_message'] );

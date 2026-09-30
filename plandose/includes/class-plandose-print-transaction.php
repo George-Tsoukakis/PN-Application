@@ -11,7 +11,8 @@
  * TRANSACTION nor COMMIT reports that — a COMMIT re-run on the fresh
  * connection even "succeeds" with nothing to commit. The only trace is a
  * different connection id, so the id is read before START TRANSACTION
- * (lost()) and again around COMMIT (commit()). Callers decide what a lost
+ * and compared after the statements that matter (lost()) and after
+ * COMMIT (commit()). Callers decide what a lost
  * transaction means for their rows: see Plandose_Print_Replay and
  * Plandose_Print_New_Charge.
  *
@@ -80,18 +81,22 @@ final class Plandose_Print_Transaction {
 	}
 
 	/**
-	 * COMMIT. True only when COMMIT succeeded on the connection it was
-	 * sent on. False means «unknown»: COMMIT failed, or wpdb
-	 * re-ran it on a new connection after the old one was lost — the
-	 * transaction is then rolled back although COMMIT "succeeded". The
-	 * caller must then check its rows to know whether it went through.
+	 * COMMIT. True only when COMMIT succeeded on the connection the
+	 * transaction was begun on. False means «unknown»: COMMIT failed, or
+	 * wpdb re-ran it (or an earlier statement) on a new connection after
+	 * the old one was lost — the transaction is then rolled back although
+	 * COMMIT "succeeded". The caller must then check its rows to know
+	 * whether it went through.
+	 *
+	 * This only covers the transaction as a whole. A statement that
+	 * must not be lost silently (the print counter) is checked with
+	 * lost() by the caller right after it, before anything else runs —
+	 * see Plandose_Print_New_Charge::charge_locked().
 	 *
 	 * @return bool
 	 */
 	public function commit() {
-		$before_commit = Plandose_Print_Charges::connection_id();
-
-		return Plandose_Print_Charges::commit() && ! self::changed_since( $before_commit );
+		return Plandose_Print_Charges::commit() && ! $this->lost();
 	}
 
 	/**

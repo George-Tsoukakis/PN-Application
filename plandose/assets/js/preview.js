@@ -725,9 +725,12 @@
 			'Patch': 'Patches',
 			'Units': { one: 'IU', many: 'IU' }
 		};
+		/* Greek takes the singular up to one: «0,5 Δισκίο», «1 Δισκίο»,
+		   «1,5 Δισκία». English keeps it for exactly one («0.5 tablets»). */
+		var amount = PD.parseDoseAmount(item.doseAmount, PD.DOSE_NO_LIMIT);
+		var single = 1 === amount || ('en' !== PD.lang && amount > 0 && amount < 1);
 		if (m && Object.prototype.hasOwnProperty.call(irregular, m[1])) {
 			var forms = irregular[m[1]];
-			var single = 1 === PD.parseDoseAmount(item.doseAmount, PD.DOSE_NO_LIMIT);
 			if (typeof forms === 'string') {
 				return raw + '\u00a0' + (single ? m[1] : forms);
 			}
@@ -737,8 +740,7 @@
 		if (m) {
 			var base = m[1];
 			var suf = m[2];
-			var one = 1 === PD.parseDoseAmount(item.doseAmount, PD.DOSE_NO_LIMIT);
-			if (one) {
+			if (single) {
 				unit = base;
 			} else if ('s' === suf) {
 				unit = base + 's';
@@ -1199,6 +1201,14 @@
 	   each new sheet. */
 	var previewObserver = null;
 	var previewResizeBound = false;
+	/* Closing the popup (or starting over) drops the sheet from the page;
+	   stop observing it so the detached nodes are not kept alive. */
+	PD.unwatchPreviewSheet = function unwatchPreviewSheet() {
+		if (previewObserver) {
+			previewObserver.disconnect();
+			previewObserver = null;
+		}
+	};
 	PD.watchPreviewSheet = function watchPreviewSheet(area) {
 		var fit = function () {
 			PD.fitPreviewSheet(area);

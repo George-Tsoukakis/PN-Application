@@ -7,35 +7,18 @@
  * this file instead of the full tool stylesheet.
  *
  * Loaded for EVERYONE — guests and pharmacists alike — and always before
- * plandose.css, which depends on it. The :root custom properties live here
- * for the same reason: both stylesheets read them, so they must load first
- * and must not be duplicated. Never load plandose.css without this file.
+ * plandose.css, which depends on it. Never load plandose.css without this
+ * file.
+ *
+ * The :root custom properties (--pd-*) are NOT here: they live once, in
+ * plandose-trigger.css, which is render-blocking (the button needs them at
+ * first paint), always enqueued, and a dependency of this file — so every
+ * page that loads this file or plandose.css already has them. This file
+ * is deferred and must not redefine them.
  *
  * Rules were MOVED here verbatim, not copied: nothing below is duplicated
  * in plandose.css.
  */
-
-:root {
-	--pd-accent: #0f6e56;
-	/* 5.0:1 with white text, so the whole
-	   primary-button gradient passes AA with white text. */
-	--pd-accent-2: #0b7f61;
-	--pd-accent-light: #eef8f5;
-	--pd-accent-soft: rgba(15, 110, 86, 0.10);
-	--pd-border: #d8d8d5;
-	--pd-border-soft: #ececea;
-	--pd-text: #17201d;
-	--pd-muted: #6b6f6d;
-	--pd-danger: #a32d2d;
-	--pd-danger-soft: rgba(163, 45, 45, 0.08);
-	--pd-success: #0f6e56;
-	--pd-bg: #ffffff;
-	--pd-bg-soft: #fafaf9;
-	--pd-overlay: rgba(15, 20, 18, 0.58);
-	--pd-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
-	--pd-radius-lg: 22px;
-	--pd-radius-md: 16px;
-}
 
 .plandose-modal-icon,
 .pd-print-brand-icon {

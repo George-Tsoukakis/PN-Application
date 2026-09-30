@@ -1112,6 +1112,50 @@ class Plandose_Privacy {
 	}
 
 	/**
+	 * How long a print's technical id (receipt) is kept, from
+	 * Plandose_Ajax::PRINT_RECEIPT_TTL, e.g. «30 λεπτά».
+	 *
+	 * @return string
+	 */
+	public static function receipt_ttl_text() {
+		$seconds = class_exists( 'Plandose_Ajax' ) ? (int) Plandose_Ajax::PRINT_RECEIPT_TTL : 1800;
+		$minutes = max( 1, (int) round( $seconds / MINUTE_IN_SECONDS ) );
+
+		if ( 0 === $minutes % 60 ) {
+			$hours = (int) ( $minutes / 60 );
+
+			/* translators: %d: number of hours. */
+			return sprintf( _n( '%d ώρα', '%d ώρες', $hours, 'plandose' ), $hours );
+		}
+
+		/* translators: %d: number of minutes. */
+		return sprintf( _n( '%d λεπτό', '%d λεπτά', $minutes, 'plandose' ), $minutes );
+	}
+
+	/**
+	 * How long the print history is kept, from
+	 * Plandose_Print_Log::RETENTION_DAYS, e.g. «12 μήνες» (365 days).
+	 *
+	 * @return string
+	 */
+	public static function print_log_retention_text() {
+		$days = class_exists( 'Plandose_Print_Log' ) ? (int) Plandose_Print_Log::RETENTION_DAYS : 365;
+		$days = max( 1, $days );
+
+		// Whole months (365 days → 12) when the period is at least about a
+		// month and close to a whole number of them; otherwise days.
+		$months = (int) round( $days / 30.4375 );
+
+		if ( $months >= 1 && abs( $days - $months * 30.4375 ) <= 2 ) {
+			/* translators: %d: number of months. */
+			return sprintf( _n( '%d μήνα', '%d μήνες', $months, 'plandose' ), $months );
+		}
+
+		/* translators: %d: number of days. */
+		return sprintf( _n( '%d ημέρα', '%d ημέρες', $days, 'plandose' ), $days );
+	}
+
+	/**
 	 * Suggested privacy-policy text, shown to the admin in the Privacy
 	 * Policy Guide so they can paste it into their own policy.
 	 */
@@ -1127,7 +1171,14 @@ class Plandose_Privacy {
 			'<p><strong>' . esc_html__( 'Τι δεν αποθηκεύεται', 'plandose' ) . '</strong></p>' .
 			'<p>' . esc_html__( 'Τα δεδομένα του πλάνου δοσολογίας (όνομα ασθενή, φάρμακα, δόσεις, ημέρες, σημειώσεις) δεν αποστέλλονται και δεν αποθηκεύονται στον διακομιστή. Υπάρχουν μόνο προσωρινά στον browser του φαρμακοποιού, για όσο διαρκεί η δημιουργία και η εκτύπωση του πλάνου.', 'plandose' ) . '</p>' .
 			'<p><strong>' . esc_html__( 'Τι αποθηκεύεται', 'plandose' ) . '</strong></p>' .
-			'<p>' . esc_html__( 'Για κάθε εγγεγραμμένο φαρμακείο τηρούνται: η κατάσταση της συνδρομής και η ημερομηνία λήξης της, ο μηνιαίος μετρητής εκτυπώσεων και το ιστορικό του ανά μήνα (μόνο συνολικοί αριθμοί, χωρίς καμία πληροφορία για ασθενείς ή φάρμακα), για 30 λεπτά ένα τεχνικό αναγνωριστικό κάθε εκτύπωσης (ώστε μια επανάληψη να μη χρεώνεται δεύτερη φορά), για 12 μήνες ένα ιστορικό εκτυπώσεων (ημερομηνία και ώρα, αν χρεώθηκε ή ήταν δωρεάν επανεκτύπωση, Free/Pro — χωρίς καμία πληροφορία για ασθενείς ή φάρμακα), τυχόν χειροκίνητη ρύθμιση πρόσβασης, καθώς και τα τιμολόγια που έχει ανεβάσει ο διαχειριστής μαζί με τα μεταδεδομένα τους. Τηρείται επίσης αρχείο ενεργειών διαχειριστή, το οποίο μπορεί να περιλαμβάνει διεύθυνση IP.', 'plandose' ) . '</p>' .
+			'<p>' . esc_html(
+				sprintf(
+					/* translators: 1: how long a print's technical id is kept, e.g. «30 λεπτά»; 2: how long the print history is kept, e.g. «12 μήνες». */
+					__( 'Για κάθε εγγεγραμμένο φαρμακείο τηρούνται: η κατάσταση της συνδρομής και η ημερομηνία λήξης της, ο μηνιαίος μετρητής εκτυπώσεων και το ιστορικό του ανά μήνα (μόνο συνολικοί αριθμοί, χωρίς καμία πληροφορία για ασθενείς ή φάρμακα), για %1$s ένα τεχνικό αναγνωριστικό κάθε εκτύπωσης (ώστε μια επανάληψη να μη χρεώνεται δεύτερη φορά), για %2$s ένα ιστορικό εκτυπώσεων (ημερομηνία και ώρα, αν χρεώθηκε ή ήταν δωρεάν επανεκτύπωση, Free/Pro — χωρίς καμία πληροφορία για ασθενείς ή φάρμακα), τυχόν χειροκίνητη ρύθμιση πρόσβασης, καθώς και τα τιμολόγια που έχει ανεβάσει ο διαχειριστής μαζί με τα μεταδεδομένα τους. Τηρείται επίσης αρχείο ενεργειών διαχειριστή, το οποίο μπορεί να περιλαμβάνει διεύθυνση IP.', 'plandose' ),
+					self::receipt_ttl_text(),
+					self::print_log_retention_text()
+				)
+			) . '</p>' .
 			'<p><strong>' . esc_html__( 'Χρόνος διατήρησης', 'plandose' ) . '</strong></p>' .
 			'<p>' . esc_html__( 'Το αρχείο ενεργειών διαγράφεται αυτόματα μετά το διάστημα που ορίζεται στις ρυθμίσεις του PlanDose. Τα τιμολόγια διατηρούνται για όσο χρόνο επιβάλλει η φορολογική νομοθεσία και δεν διαγράφονται με αίτημα διαγραφής δεδομένων. Αν διαγραφεί ο λογαριασμός ενός φαρμακείου, μαζί με τα τιμολόγιά του διατηρούνται η επωνυμία, το email και ο ΑΦΜ του, μέχρι να διαγραφούν τα τιμολόγια.', 'plandose' ) . '</p>' .
 			'<p>' . esc_html__( 'Με αίτημα διαγραφής δεδομένων επίσης δεν διαγράφονται: τυχόν απαγόρευση πρόσβασης που έχει ορίσει ο διαχειριστής (για την πρόληψη καταχρήσεων), η εγγραφή μιας ενεργής συνδρομής Pro, μέχρι τη λήξη της, και, για λογαριασμό που παραμένει ενεργός, ο μετρητής εκτυπώσεων του τρέχοντος μήνα (μόνο το πλήθος), ώστε να ισχύει το μηνιαίο όριο. Οι εγγραφές του αρχείου ενεργειών που αφορούν το πρόσωπο ανωνυμοποιούνται.', 'plandose' ) . '</p>';
