@@ -224,22 +224,22 @@ if ( ! function_exists( 'jbli_required_asset_modules' ) ) {
 			return $jbli_modules;
 		}
 
-		$jbli_content = jbli_asset_searchable_content( $jbli_post );
+		$jbli_found = jbli_asset_post_shortcodes( $jbli_post );
 
-		if ( jbli_content_has_shortcode( $jbli_content, 'listings' ) ) {
+		if ( in_array( 'listings', $jbli_found, true ) ) {
 			$jbli_modules[] = 'listings';
 			$jbli_modules[] = 'apply';
 		}
 
-		if ( jbli_content_has_shortcode( $jbli_content, 'new-listing' ) ) {
+		if ( in_array( 'new-listing', $jbli_found, true ) ) {
 			$jbli_modules[] = 'form';
 		}
 
-		if ( jbli_content_has_shortcode( $jbli_content, 'dashboard' ) ) {
+		if ( in_array( 'dashboard', $jbli_found, true ) ) {
 			$jbli_modules[] = 'dashboard';
 		}
 
-		if ( jbli_content_has_shortcode( $jbli_content, 'recent-listings' ) ) {
+		if ( in_array( 'recent-listings', $jbli_found, true ) ) {
 			$jbli_modules[] = 'recent';
 			$jbli_modules[] = 'apply';
 		}
@@ -402,3 +402,87 @@ if ( ! function_exists( 'jbli_script_i18n' ) ) {
 		);
 	}
 }
+/* 9.9.58: which of the plugin's shortcodes a post contains, remembered per post. */
+defined( 'JBLI_META_SHORTCODES' ) || define( 'JBLI_META_SHORTCODES', '_jbli_shortcodes' );
+
+/**
+ * The plugin shortcodes found in a post's content and meta (page builders).
+ *
+ * Scanning every meta value (Elementor JSON can be hundreds of KB) for four
+ * shortcodes ran on each uncached request. The result is now stored in the
+ * post's meta and recomputed only after the post or its meta changes.
+ *
+ * @since 9.9.58
+ *
+ * @param WP_Post $jbli_post Post.
+ * @return string[] Shortcode tags.
+ */
+function jbli_asset_post_shortcodes( WP_Post $jbli_post ) {
+
+	$jbli_stored = 'page' === $jbli_post->post_type ? get_post_meta( $jbli_post->ID, JBLI_META_SHORTCODES, true ) : '';
+
+	if ( is_string( $jbli_stored ) && '' !== $jbli_stored ) {
+		return 'none' === $jbli_stored ? array() : array_values( array_filter( explode( ',', $jbli_stored ) ) );
+	}
+
+	$jbli_content = jbli_asset_searchable_content( $jbli_post );
+	$jbli_found   = array();
+
+	foreach ( jbli_asset_shortcodes() as $jbli_tag ) {
+		if ( jbli_content_has_shortcode( $jbli_content, $jbli_tag ) ) {
+			$jbli_found[] = $jbli_tag;
+		}
+	}
+
+	/*
+	 * Remembered for pages only (where the shortcodes and the heavy page-builder
+	 * data live), so visiting products or blog posts never writes to the database.
+	 */
+	if ( 'page' === $jbli_post->post_type && ! is_preview() ) {
+		update_post_meta( $jbli_post->ID, JBLI_META_SHORTCODES, $jbli_found ? implode( ',', $jbli_found ) : 'none' );
+	}
+
+	return $jbli_found;
+}
+
+/**
+ * Forget the stored shortcode list when a post or any of its meta changes.
+ *
+ * @since 9.9.58
+ * @param int $jbli_post_id Post ID.
+ * @return void
+ */
+function jbli_asset_forget_shortcodes( $jbli_post_id ) {
+
+	static $jbli_busy = false;
+
+	if ( $jbli_busy ) { return; }
+
+	$jbli_busy = true;
+	delete_post_meta( (int) $jbli_post_id, JBLI_META_SHORTCODES );
+	$jbli_busy = false;
+}
+
+add_action( 'save_post', 'jbli_asset_forget_shortcodes' );
+
+/**
+ * Page builders (Elementor & co.) may save their data as meta only.
+ *
+ * @param int    $jbli_meta_id   Meta ID(s).
+ * @param int    $jbli_object_id Post ID.
+ * @param string $jbli_meta_key  Meta key.
+ * @return void
+ */
+function jbli_asset_forget_shortcodes_on_meta( $jbli_meta_id, $jbli_object_id, $jbli_meta_key ) {
+
+	if ( JBLI_META_SHORTCODES === $jbli_meta_key ) { return; }
+
+	/* Frequent plugin-internal counters never contain shortcodes. */
+	if ( 0 === strpos( (string) $jbli_meta_key, 'jbli_' ) || '_edit_lock' === $jbli_meta_key ) { return; }
+
+	jbli_asset_forget_shortcodes( (int) $jbli_object_id );
+}
+
+add_action( 'added_post_meta',   'jbli_asset_forget_shortcodes_on_meta', 10, 3 );
+add_action( 'updated_post_meta', 'jbli_asset_forget_shortcodes_on_meta', 10, 3 );
+add_action( 'deleted_post_meta', 'jbli_asset_forget_shortcodes_on_meta', 10, 3 );

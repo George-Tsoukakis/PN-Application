@@ -22,7 +22,28 @@ function jbli_rocket_js_exclusions(): array {
 		'jbli_loaded',
 		/* Address autocomplete on the listing form. */
 		'maps.googleapis.com',
-		/* jQuery: jbli-form.js depends on it. */
+		/* View counter (9.9.58): must run without waiting for a click/scroll. */
+		'jbli_view_beacon',
+		'jbli_view',
+	);
+
+}
+
+/**
+ * jQuery exclusions, only where the listing form renders.
+ *
+ * jbli-form.js is the plugin's only jQuery script. Until 9.9.58 jQuery was
+ * kept out of Delay JS / defer on every page of the site; now only the form
+ * page opts out, and the rest of the site gets WP Rocket's full delay.
+ *
+ * @since 9.9.58
+ * @return string[]
+ */
+function jbli_rocket_jquery_exclusions(): array {
+
+	if ( is_admin() || ! function_exists( 'jbli_required_asset_modules' ) || ! in_array( 'form', jbli_required_asset_modules(), true ) ) { return array(); }
+
+	return array(
 		'/jquery-?[0-9.](.*)(.min|.slim|.slim.min)?.js',
 		'jquery-migrate',
 	);
@@ -165,7 +186,7 @@ if ( ! function_exists( 'jbli_rocket_delay_exclusions' ) )
 {
 	function jbli_rocket_delay_exclusions( array $jbli_exclusions ): array {
 
-		return jbli_rocket_add_exclusions( $jbli_exclusions, jbli_rocket_js_exclusions() );
+		return jbli_rocket_add_exclusions( $jbli_exclusions, array_merge( jbli_rocket_js_exclusions(), jbli_rocket_jquery_exclusions() ) );
 
 	}
 }
@@ -176,7 +197,7 @@ if ( ! function_exists( 'jbli_rocket_exclude_defer_js' ) )
 {
 	function jbli_rocket_exclude_defer_js( array $jbli_exclusions ): array {
 
-		return jbli_rocket_add_exclusions( $jbli_exclusions, jbli_rocket_js_exclusions() );
+		return jbli_rocket_add_exclusions( $jbli_exclusions, array_merge( jbli_rocket_js_exclusions(), jbli_rocket_jquery_exclusions() ) );
 
 	}
 }

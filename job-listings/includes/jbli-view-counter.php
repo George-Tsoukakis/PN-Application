@@ -113,129 +113,192 @@ function jbli_ip_in_ranges( string $jbli_ip, array $jbli_ranges ): bool {
 
 }
 
+/**
+ * Visitor key for de-duplication: HMAC of the IP (never stored raw).
+ *
+ * 9.9.58: the User-Agent is no longer part of it — changing the UA from one
+ * address produced a new "visitor" on every request.
+ *
+ * @return string
+ */
 function jbli_get_visitor_hash(): string {
 
 	static $jbli_hash = null;
 
 	if ( null !== $jbli_hash ) { return $jbli_hash; }
 
-	$jbli_ip = jbli_get_client_ip();
-
-	$jbli_user = ! empty( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-
-	$jbli_hash = substr( hash_hmac( 'sha256', $jbli_ip . '|' . $jbli_user, wp_salt( 'nonce' ) ), 0, 16 );
+	$jbli_hash = substr( hash_hmac( 'sha256', jbli_get_client_ip(), wp_salt( 'nonce' ) ), 0, 16 );
 
 	return $jbli_hash;
 
 }
 
-function jbli_track_view(): void {
+/**
+ * Transient key: one view per visitor per listing every 6 hours.
+ *
+ * @param int $jbli_post_id Listing ID.
+ * @return string
+ */
+function jbli_view_transient_key( int $jbli_post_id ): string {
 
-	if ( is_admin() || ! is_singular( JBLI_CPT ) )
-	{
-		return;
+	return 'jbli_view_' . $jbli_post_id . '_' . jbli_get_visitor_hash();
+
+}
+
+/**
+ * Whether the User-Agent is a bot, preview fetcher or monitor.
+ *
+ * @since 9.9.58 (list extended: generic "bot", link previews, WP Rocket preload, monitors)
+ * @param string $jbli_ua User-Agent.
+ * @return bool
+ */
+function jbli_is_bot_user_agent( string $jbli_ua ): bool {
+
+	$jbli_ua = strtolower( $jbli_ua );
+
+	if ( '' === trim( $jbli_ua ) ) { return true; }
+
+	$jbli_bots = (array) apply_filters( 'jbli_view_bot_signatures', array(
+		'bot', 'crawl', 'spider', 'slurp', 'preview', 'fetch', 'facebookexternalhit', 'whatsapp',
+		'telegram', 'viber', 'skype', 'discord', 'wp rocket', 'wp-rocket', 'wordpress', 'uptime',
+		'pingdom', 'monitor', 'headless', 'lighthouse', 'pagespeed', 'gtmetrix', 'curl', 'wget',
+		'python', 'java/', 'go-http', 'okhttp', 'axios', 'node-fetch', 'httpclient',
+	) );
+
+	foreach ( $jbli_bots as $jbli_bot ) {
+
+		if ( '' !== $jbli_bot && false !== strpos( $jbli_ua, strtolower( (string) $jbli_bot ) ) ) { return true; }
+
 	}
 
-	$jbli_post_id = absint(
-		get_queried_object_id()
-	);
+	return false;
 
-	if ( ! $jbli_post_id || JBLI_CPT !== get_post_type( $jbli_post_id ) )
+}
+
+/**
+ * AJAX: count one view of a listing.
+ *
+ * 9.9.58: views were counted in PHP while the page was built, so a page
+ * served from WP Rocket / CDN cache never counted, and the cached page kept
+ * showing an old number. The listing page now sends a small request after
+ * it has been visible for a moment; admin-ajax is never page-cached. Most
+ * bots don't run JavaScript, which also keeps them out of the count.
+ * The answer carries the current count so the page can show it.
+ *
+ * No nonce: a nonce inside a cached page expires. The request can only add
+ * one view per visitor (IP) per listing every 6 hours.
+ *
+ * @since 9.9.58
+ * @return void
+ */
+function jbli_ajax_count_view(): void {
+
+	$jbli_post_id = absint( $_POST['post_id'] ?? 0 );
+
+	if ( ! $jbli_post_id || JBLI_CPT !== get_post_type( $jbli_post_id ) || 'publish' !== get_post_status( $jbli_post_id ) )
 	{
-		return;
+		wp_send_json_error( null, 400 );
 	}
 
-	if ( current_user_can( 'manage_options' ) ) { return; }
+	$jbli_counted = false;
+	$jbli_ua      = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
 
+	$jbli_skip = current_user_can( 'manage_options' )
+		|| ( is_user_logged_in() && (int) get_current_user_id() === (int) get_post_field( 'post_author', $jbli_post_id ) )
+		|| jbli_is_bot_user_agent( $jbli_ua );
 
-	if ( is_user_logged_in() && (int) get_current_user_id() === (int) get_post_field( 'post_author', $jbli_post_id ) )
+	if ( ! $jbli_skip )
 	{
-		return;
-	}
+		$jbli_key = jbli_view_transient_key( $jbli_post_id );
 
-	if ( wp_doing_ajax() || wp_doing_cron() )
-	{
-		return;
-	}
-
-	if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) )
-	{
-
-
-		$jbli_ua = strtolower(
-			wp_unslash(
-				$_SERVER['HTTP_USER_AGENT']
-			)
-		);
-
-
-		$jbli_bots = array(
-			'googlebot',
-			'bingbot',
-			'yandexbot',
-			'ahrefsbot',
-			'semrushbot',
-			'mj12bot',
-			'duckduckbot',
-			'slurp',
-			'crawler',
-			'spider',
-		);
-
-		foreach ( $jbli_bots as $jbli_bot ) {
-
-			if ( false !== strpos( $jbli_ua, $jbli_bot ) )
-			{
-				return;
-			}
-
+		if ( false === get_transient( $jbli_key ) )
+		{
+			set_transient( $jbli_key, 1, 6 * HOUR_IN_SECONDS );
+			jbli_increment_views( $jbli_post_id );
+			$jbli_counted = true;
 		}
 	}
 
-	$jbli_transient_key =
-		jbli_view_transient_key(
-			$jbli_post_id
-		);
+	nocache_headers();
 
-	if ( false !== get_transient( $jbli_transient_key ) )
-	{
-		return;
-	}
+	wp_send_json_success( array( 'views' => jbli_get_views( $jbli_post_id, true ), 'counted' => $jbli_counted ) );
 
-	set_transient(
-		$jbli_transient_key,
-		true,
-		6 * HOUR_IN_SECONDS
-	);
+}
 
-	$jbli_current =
-		jbli_get_views(
-			$jbli_post_id
-		);
+add_action( 'wp_ajax_jbli_view',        'jbli_ajax_count_view' );
+add_action( 'wp_ajax_nopriv_jbli_view', 'jbli_ajax_count_view' );
 
-	$jbli_new_count = $jbli_current + 1;
+/**
+ * Add one view in a single UPDATE, so simultaneous visits are not lost.
+ *
+ * @since 9.9.58
+ * @param int $jbli_post_id Listing ID.
+ * @return void
+ */
+function jbli_increment_views( int $jbli_post_id ): void {
 
-	update_post_meta( (int) $jbli_post_id, JBLI_META_VIEWS, $jbli_new_count );
+	global $wpdb;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$jbli_rows = $wpdb->query( $wpdb->prepare(
+		"UPDATE {$wpdb->postmeta} SET meta_value = CAST(meta_value AS UNSIGNED) + 1 WHERE post_id = %d AND meta_key = %s",
+		$jbli_post_id,
+		JBLI_META_VIEWS
+	) );
+
+	if ( ! $jbli_rows ) { add_post_meta( $jbli_post_id, JBLI_META_VIEWS, 1, true ); }
 
 	wp_cache_delete( $jbli_post_id, 'post_meta' );
 
+}
 
-	jbli_get_views( $jbli_post_id, true );
+/**
+ * Print the view beacon on single listing pages.
+ *
+ * @since 9.9.58
+ * @return void
+ */
+function jbli_print_view_beacon(): void {
+
+	if ( is_admin() || ! is_singular( JBLI_CPT ) ) { return; }
+
+	$jbli_post_id = absint( get_queried_object_id() );
+
+	if ( ! $jbli_post_id ) { return; }
+
+	$jbli_cfg = array( 'url' => admin_url( 'admin-ajax.php' ), 'id' => $jbli_post_id );
+	?>
+	<script id="jbli_view_beacon">
+	( function ( c ) {
+		var sent = false;
+		function send() {
+			if ( sent || document.visibilityState !== 'visible' || ! window.fetch || ! window.FormData ) { return; }
+			sent = true;
+			var fd = new FormData();
+			fd.append( 'action', 'jbli_view' );
+			fd.append( 'post_id', String( c.id ) );
+			fetch( c.url, { method: 'POST', body: fd, credentials: 'same-origin', keepalive: true } )
+				.then( function ( r ) { return r.json(); } )
+				.then( function ( j ) {
+					if ( ! j || ! j.success || ! j.data ) { return; }
+					var n = parseInt( j.data.views, 10 );
+					if ( ! n ) { return; }
+					var t = n.toLocaleString( 'el-GR' );
+					document.querySelectorAll( '[data-jbli_views_count="' + c.id + '"]' ).forEach( function ( el ) { el.textContent = t; } );
+				} )
+				.catch( function () {} );
+		}
+		/* Counted after the page has been visible for 2 seconds. */
+		function arm() { setTimeout( send, 2000 ); }
+		if ( document.visibilityState === 'visible' ) { arm(); }
+		else { document.addEventListener( 'visibilitychange', function v() { if ( document.visibilityState === 'visible' ) { document.removeEventListener( 'visibilitychange', v ); arm(); } } ); }
+	} )( <?php echo wp_json_encode( $jbli_cfg ); ?> );
+	</script>
+	<?php
 
 }
 
-add_action( 'template_redirect', 'jbli_track_view', 20 );
-
-function jbli_view_transient_key(
-	int $jbli_post_id
-): string {
-
-	return
-		'jbli_view_'
-		. $jbli_post_id
-		. '_'
-		. jbli_get_visitor_hash();
-}
+add_action( 'wp_footer', 'jbli_print_view_beacon', 50 );
 
 /**
  * Get listing views.
@@ -253,14 +316,9 @@ function jbli_get_views( int $jbli_post_id, bool $jbli_force_refresh = false ): 
 
 	if ( ! $jbli_force_refresh && isset( $jbli_cache[ $jbli_post_id ] ) ) { return $jbli_cache[ $jbli_post_id ]; }
 
-	if ( $jbli_force_refresh ) { wp_cache_delete( 'jbli_views_' . $jbli_post_id, 'job-listings' ); }
-
 	$jbli_value = max( 0, (int) get_post_meta( $jbli_post_id, JBLI_META_VIEWS, true ) );
 
 	$jbli_cache[ $jbli_post_id ] = $jbli_value;
-
-
-	wp_cache_set( 'jbli_views_' . $jbli_post_id, $jbli_value, 'job-listings', HOUR_IN_SECONDS );
 
 	return $jbli_value;
 
@@ -290,9 +348,6 @@ function jbli_views_label(
 				$jbli_views
 			)
 		),
-		esc_html__(
-			'προβολές',
-			'job-listings'
-		)
+		esc_html( _n( 'προβολή', 'προβολές', $jbli_views, 'job-listings' ) )
 	);
 }

@@ -56,7 +56,8 @@ function jbli_render_recent_listings( $jbli_atts ) {
 	$jbli_show_paging    = ( 'false' !== strtolower( (string) $jbli_atts['pagination'] ) );
 
 
-	$jbli_paged = max( 1, (int) ( $_GET['jbli_page'] ?? get_query_var( 'paged', 1 ) ) );
+	/* Capped: each page number is its own cached copy (9.9.58). */
+	$jbli_paged = min( 50, max( 1, (int) ( $_GET['jbli_page'] ?? get_query_var( 'paged', 1 ) ) ) );
 
 
 	$jbli_view_all_url = (string) $jbli_atts['view_all_url'];
@@ -72,6 +73,14 @@ function jbli_render_recent_listings( $jbli_atts ) {
 		(int) $jbli_featured_first . '|' . $jbli_view_all_url . '|' . $jbli_paged . '|' . (int) $jbli_show_paging
 	);
 
+
+	/*
+	 * 9.9.58: the stylesheets are enqueued for every render, cached or not.
+	 * The whole jbli-recent.css used to be printed inline inside the cached
+	 * HTML, so the cache held 38 KB of CSS or none at all, depending on which
+	 * request filled it. Styles enqueued after <head> print in the footer.
+	 */
+	jbli_recent_enqueue_styles();
 
 	$jbli_cached_data = get_transient( $jbli_cache_key );
 
@@ -97,25 +106,6 @@ function jbli_render_recent_listings( $jbli_atts ) {
 	}
 
 
-	$jbli_css_file        = JBLI_DIR . 'includes/jbli-tokens.css';
-	$jbli_recent_css_file = JBLI_DIR . 'modules/recent/css/jbli-recent.css';
-
-	if ( ! wp_style_is( 'jbli_tokens', 'enqueued' ) && ! wp_style_is( 'jbli_tokens', 'done' ) )
-	{
-		if ( is_readable( $jbli_css_file ) )
-		{
-			wp_enqueue_style(
-				'jbli_tokens',
-				JBLI_URL . 'includes/jbli-tokens.css',
-				array(),
-				function_exists( 'jbli_asset_version' )
-					? jbli_asset_version( $jbli_css_file )
-					: JBLI_VERSION . '.' . (string) filemtime( $jbli_css_file )
-			);
-		}
-	}
-
-	if ( function_exists( 'jbli_enqueue_recent_inline_styles' ) ) { jbli_enqueue_recent_inline_styles(); }
 
 
 	$jbli_query_args = array(
@@ -218,19 +208,6 @@ function jbli_render_recent_listings( $jbli_atts ) {
 
 	ob_start();
 	
-		if ( ! wp_style_is( 'jbli_recent_style', 'enqueued' ) && ! wp_style_is( 'jbli_recent_style', 'done' ) )
-		{
-			$jbli_recent_body_css = is_readable( $jbli_recent_css_file ) ? file_get_contents( $jbli_recent_css_file ) : '';
-
-			if ( is_string( $jbli_recent_body_css ) && '' !== trim( $jbli_recent_body_css ) )
-			{
-				?>
-				<style id="jbli_recent_shortcode_inline_css">
-					<?php echo str_replace( '</style', '<\/style', $jbli_recent_body_css ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Outputting safe CSS stylesheet content. ?>
-				</style>
-				<?php
-			}
-		}
 	?>
 
 	<section class="jbli_recent" aria-label="<?php esc_attr_e( 'Πρόσφατες αγγελίες', 'job-listings' ); ?>">
@@ -343,6 +320,32 @@ function jbli_render_recent_listings( $jbli_atts ) {
 }
 
 add_shortcode( 'recent-listings', 'jbli_render_recent_listings' );
+
+/**
+ * Enqueue the tokens + recent-listings stylesheets (no-op when already enqueued).
+ *
+ * Covers [recent-listings] placed where the head-time shortcode detection
+ * cannot see it (widgets, theme templates, do_shortcode()).
+ *
+ * @since 9.9.58
+ * @return void
+ */
+function jbli_recent_enqueue_styles() {
+
+	$jbli_tokens_file = JBLI_DIR . 'includes/jbli-tokens.css';
+	$jbli_recent_file = JBLI_DIR . 'modules/recent/css/jbli-recent.css';
+
+	if ( ! wp_style_is( 'jbli_tokens', 'enqueued' ) && ! wp_style_is( 'jbli_tokens', 'done' ) && is_readable( $jbli_tokens_file ) )
+	{
+		wp_enqueue_style( 'jbli_tokens', JBLI_URL . 'includes/jbli-tokens.css', array(), jbli_asset_version( $jbli_tokens_file ) );
+	}
+
+	if ( ! wp_style_is( 'jbli_recent_style', 'enqueued' ) && ! wp_style_is( 'jbli_recent_style', 'done' ) && is_readable( $jbli_recent_file ) )
+	{
+		wp_enqueue_style( 'jbli_recent_style', JBLI_URL . 'modules/recent/css/jbli-recent.css', array( 'jbli_tokens' ), jbli_asset_version( $jbli_recent_file ) );
+	}
+
+}
 
 /**
  * Auto-detect the URL of the page that contains [listings] shortcode.

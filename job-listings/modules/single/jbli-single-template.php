@@ -177,7 +177,7 @@ get_header();
 									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
 									<circle cx="12" cy="12" r="3"/>
 								</svg>
-								<?php echo esc_html( number_format_i18n( $jbli_views ) ) . ' ' . esc_html__( 'προβολές', 'job-listings' ); ?>
+								<span data-jbli_views_count="<?php echo esc_attr( (string) $jbli_id ); ?>"><?php echo esc_html( number_format_i18n( $jbli_views ) ); ?></span> <?php echo esc_html( _n( 'προβολή', 'προβολές', $jbli_views, 'job-listings' ) ); ?>
 							</span>
 							<?php
 						}
