@@ -13,6 +13,10 @@ npm run test:visual -- --update   # ξαναγράφει τα baselines — ελ
 npm run test:wp             # WordPress + MariaDB: χρεώσεις, ρυθμίσεις
 npm run test:browser        # WordPress + Chromium: smoke, «Είδος», «Επικόλληση συνταγής»
 sh php/run.sh               # δοκιμές PHP μέσα στο WordPress (WP_LOAD=/path/wp-load.php)
+npm run lint:js             # ESLint στη JS του plugin (assets/js/*.js, public/calendar.js)
+npm run pot:check           # το plandose/languages/plandose.pot συμφωνεί με τον κώδικα; (npm run pot:update: το ξαναγράφει)
+npm run qa:php              # PHPStan (level 6 + baseline) και PHPCS
+bash tools/zip-smoke.sh     # το zip του build/ σε καθαρό WordPress (βλ. «Εργαλεία»)
 ```
 
 `php/run.sh` τρέχει τα `php/test-*.php` και μετά, όπως το CI, τους ελέγχους διαχείρισης `php/admin/storage-admin-1270.php "$WP_LOAD"`
@@ -28,7 +32,8 @@ sh php/run.sh               # δοκιμές PHP μέσα στο WordPress (WP_L
 
 Όρια χρόνου (έλεγχοι για «καταστροφικό backtracking» σε regex): `lib/perf.js` (`linearWithin(run, n, budgetMs)`) — περνά αν η
 δουλειά μένει κάτω από το όριο ή, σε φορτωμένο μηχάνημα, αν μεγαλώνει γραμμικά (το πλήρες μέγεθος έναντι του 1/8, μετρημένα
-διαδοχικά). Πολύ αργό μηχάνημα: `PD_PERF_FACTOR` (βλ. πίνακα).
+διαδοχικά). Πολύ αργό μηχάνημα: `PD_PERF_FACTOR` (βλ. πίνακα). Κανένα σκέτο όριο wall-clock (`Date.now() - t0 < …`) σε νέες δοκιμές:
+πάντα `linearWithin` (ή τουλάχιστον `… * perf.factor()`).
 
 ## Ρυθμίσεις (μεταβλητές περιβάλλοντος, `lib/env.js`)
 
@@ -87,7 +92,8 @@ sh php/run.sh               # δοκιμές PHP μέσα στο WordPress (WP_L
 
 ## WordPress + MariaDB (`wp-integration/`)
 
-Στήσιμο: `tools/setup-wp.sh` (το χρησιμοποιεί και το CI) ή, στο περιβάλλον ανάπτυξης, `/home/claude/wpenv/start.sh`
+Στήσιμο: `tools/setup-wp.sh` (το χρησιμοποιεί και το CI· `WP_VERSION=6.3` για άλλη έκδοση, `PD_DB_HOST=host:port` για άλλη θύρα,
+`PD_DB_AUTH_PLUGIN` για άλλο auth plugin του χρήστη της βάσης — προεπιλογή του server, σε MySQL 8 `caching_sha2_password`) ή, στο περιβάλλον ανάπτυξης, `/home/claude/wpenv/start.sh`
 (MariaDB + `php -S 127.0.0.1:8899`, βλ. `/home/claude/wpenv/READY`). Χρειάζεται:
 
 - `wp-config.php`: `WP_ENVIRONMENT_TYPE` = `'local'` **και** `PLANDOSE_TESTS` = `true`, `PLANDOSE_TEST_USERS` = `'pharm1,pharmpro,pdt_*'`·
@@ -106,22 +112,47 @@ sh php/run.sh               # δοκιμές PHP μέσα στο WordPress (WP_L
 
 ## Εργαλεία (`tools/`)
 
-- `make-pot.php <plugin-dir> <out.pot>`: POT χωρίς WP-CLI (`npm run pot:check` → `../build/plandose.pot.check`).
+- `make-pot.php <plugin-dir> <out.pot>`: POT χωρίς WP-CLI.
+- `pot-check.js` (`npm run pot:check`): φτιάχνει το `../build/plandose.pot.check` με το `make-pot.php` και το συγκρίνει με το
+  `plandose/languages/plandose.pot`, αγνοώντας ό,τι βγαίνει από το ρολόι (`POT-Creation-Date`, `PO-Revision-Date`, έτος του
+  «Copyright»). Διαφορά → `diff -u` και exit 1· αποτυχία του `make-pot.php` → exit 2. `npm run pot:update` (`--update`) ξαναγράφει
+  το `.pot` του plugin — ελέγξτε το diff πριν το κρατήσετε. Αλλαγή σε κείμενο `__()` ή σε αριθμό γραμμής χρειάζεται νέο `.pot`.
+- `zip-smoke.sh [<zip>]`: το zip όπως θα το εγκαθιστούσε ο ιδιοκτήτης ενός site (χωρίς mu-plugin, χρήστες ή `PLANDOSE_TESTS`),
+  σε καινούργιο WordPress και βάση (σβήνονται και ξαναφτιάχνονται σε κάθε εκτέλεση): όνομα zip = `Version:` του `plandose.php`, ένας
+  φάκελος `plandose/`· `wp plugin install <zip> --activate`, ενεργό, ίδια έκδοση· 200 σε `/` και `wp-login.php`·
+  `wp plandose check --docroot=…` χωρίς τερματικό (ο έλεγχος cache με συνδεδεμένο λογαριασμό γίνεται WARN)· περνά με exit 0 και
+  «0 FAIL», τα WARN επιτρέπονται· `deactivate` + `uninstall`· στο `debug.log` κανένα PHP Fatal/Parse error και κανένα
+  Warning/Notice/Deprecated από αρχεία του plugin. Προεπιλογή το νεότερο `build/plandose-*.zip`. Τοπικά:
+  `bash build/build-zip.sh && SMOKE_WP_PATH=/tmp/pdsmoke DB_ROOT_PASS=root bash tests/tools/zip-smoke.sh` (μεταβλητές στην αρχή του
+  script: `SMOKE_BASE`, `SMOKE_DB_*`, `WP_VERSION`, `WP_CLI_PHAR`, `SMOKE_KEEP=1`).
 - `extract-i18n.php <plugin-dir>`: τα δύο λεξικά της JS σε JSON· το `Plandose_Settings::setting('x', …)` δίνει την προεπιλογή του
   `default_settings()` (όπως σε site που δεν άλλαξε τις ρυθμίσεις).
 - `make-rx-expected.js`: διαφορές parser ↔ `rx-samples/expected.json` (exit 1 αν υπάρχουν)· `--write` για ενημέρωση.
 - `setup-wp.sh`: δοκιμαστικό WordPress. `upgrade-check.sh [<commit>]`: αναβάθμιση από παλιό commit (προεπιλογή το «baseline») σε προσωρινό site/βάση — σχήμα (InnoDB, replay_count), δεδομένα, εκτύπωση, debug.log· καθαρίζει μόνο του. `run-scripts.js`: τρέχει σειριακά scripts με κοινό αποτέλεσμα.
 - `php-qa/`: στατική ανάλυση PHP (μόνο για ανάπτυξη, δεν μπαίνει στο zip). `npm run qa:php` ή, μέσα στον φάκελο,
-  `composer install && vendor/bin/phpstan && vendor/bin/phpcs`. PHPStan level 5 με stubs WordPress/WP-CLI (`phpstan.neon`·
+  `composer install && vendor/bin/phpstan && vendor/bin/phpcs`. PHPStan level 6 με stubs WordPress/WP-CLI (`phpstan.neon`·
   εξαιρέσεις μόνο στοχευμένες, με αιτιολόγηση) και PHPCS με τους κανόνες ασφάλειας/DB/i18n του WPCS 3 και PHPCompatibilityWP
-  (`phpcs.xml`· χωρίς κανόνες μορφοποίησης). Χωρίς baseline· εξαιρέσεις στον κώδικα μόνο ως
+  (`phpcs.xml`· χωρίς κανόνες μορφοποίησης). Το υπάρχον χρέος του level 6 (τύποι παραμέτρων/επιστροφής/πινάκων που λείπουν) είναι
+  στο `phpstan-baseline.neon`: νέος κώδικας πρέπει να περνά το level 6. Το baseline έχει μόνο `missingType.*` (ποτέ σφάλμα level 0–5),
+  κάθε εγγραφή για ένα αρχείο με `count` — το ελέγχει το `php-qa-1300.test.js`. Όταν προσθέτετε τύπους, το PHPStan αναφέρει τις
+  εγγραφές που δεν ταιριάζουν πια: ξαναφτιάξτε το με `vendor/bin/phpstan analyse --memory-limit=2G --generate-baseline phpstan-baseline.neon`
+  (μόνο για να μικρύνει, όχι για να κρύψει νέα σφάλματα). Εξαιρέσεις PHPCS στον κώδικα μόνο ως
   `// phpcs:ignore Sniff.Name -- αιτία` (το ελέγχει το `php-qa-1300.test.js`). Τα Composer plugins είναι κλειστά (τρέχει και ως root).
+- `eslint.config.js` (στο `tests/`, όχι στο `tools/`· `npm run lint:js`): ESLint 9 (flat config) στα `plandose/assets/js/*.js` και
+  `plandose/public/calendar.js` — `eslint:recommended`, globals browser και του plugin (`PlandoseConfig`, `PlandoseAdminConfig`,
+  `__PlandoseNS`, …), `ecmaVersion` 2020, κλασικά scripts (όχι modules). Εκτός: `no-unused-vars` για ορίσματα, `catch (e)` και
+  `_ονόματα`· `no-useless-escape` (στυλ στα regex)· `no-redeclare` μόνο στο `calendar-qr.js` (ενσωματωμένο qrcode-generator 1.4.4).
+  Τρέχει από τη ρίζα του repository (`-c tests/eslint.config.js`), αλλιώς το plugin μένει έξω από το base path του ESLint.
 - `visual/rx-a4-preview.mjs`, `visual/rx-labels-preview.mjs`, `visual/rx-review-shot.mjs`: εικόνες/PDF για έλεγχο με το μάτι
   (χωρίς assertions), στο `visual/out/tools/`.
 
 ## CI (`.github/workflows/ci.yml`)
 
-`php-lint` (PHP 8.0–8.4), `php-qa` (PHPStan + PHPCS, `tools/php-qa/`), `js-tests` (Node 20/22), `visual` (Chromium· σύγκριση pixel μόνο με τη μεταβλητή `PD_VISUAL_PIXELS=1`),
-`wp-integration` (MariaDB service, `tools/setup-wp.sh`, `php/run.sh`, `test:wp`, `test:browser`) και `build`
-(`build/build-zip.sh`: ίδια έκδοση σε header, `PLANDOSE_VERSION`, readme «Stable tag», CHANGELOG· `php -l`· κανένα αρχείο δοκιμών στο
-πακέτο· artifact `plandose-<version>.zip`).
+`php-lint` (PHP 8.0–8.4), `php-qa` (PHPStan level 6 + baseline, PHPCS, `pot:check`, `tools/php-qa/`), `js-tests` (Node 20/22· `lint:js`
+και `npm test`), `visual` (Chromium· σύγκριση pixel μόνο με τη μεταβλητή `PD_VISUAL_PIXELS=1`),
+`wp-integration` (`tools/setup-wp.sh`, `php/run.sh` — αν λείπει, το βήμα αποτυγχάνει —, `test:wp`, `test:browser`) σε matrix:
+τελευταίο WordPress + PHP 8.3 + MariaDB 10.11· WordPress 6.3 (το «Requires at least») + PHP 8.0 + MariaDB 10.11· τελευταίο WordPress +
+PHP 8.3 + MySQL 8.0 (healthcheck `mysqladmin ping`, client `mysql-client`)· image, healthcheck και client της βάσης ανά γραμμή του
+`include:`. Μετά `build` (`build/build-zip.sh`: ίδια έκδοση σε header, `PLANDOSE_VERSION`, readme «Stable tag», CHANGELOG· `php -l`·
+κανένα αρχείο δοκιμών στο πακέτο· artifact `plandose-<version>.zip`) και `zip-smoke` (κατεβάζει το artifact και τρέχει
+`tools/zip-smoke.sh` σε καθαρό WordPress με MariaDB).

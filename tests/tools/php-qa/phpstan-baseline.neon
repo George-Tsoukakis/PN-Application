@@ -1,0 +1,2701 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method Plandose_Access\:\:account_type_meta_keys\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_account_type\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_account_type\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_manual_access\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_manual_access\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_meta_with_fallback\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_meta_with_fallback\(\) has parameter \$keys with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:get_meta_with_fallback\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:lowercase\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:lowercase\(\) has parameter \$text with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:normalize_text\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:normalize_text\(\) has parameter \$text with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:set_manual_access\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:set_manual_access\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:set_manual_access\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:titlecase\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:titlecase\(\) has parameter \$text with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:uppercase\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Access\:\:uppercase\(\) has parameter \$text with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-access.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:apply_pending\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:guard_delete\(\) has parameter \$delete_all with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:guard_delete\(\) has parameter \$meta_value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:log_blocked\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:mark_registering\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:mark_registering\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:mark_registering_id\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:render_profile_field\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Account_Type\:\:save_profile_field\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-account-type.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:forget_legacy_originals\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:forget_legacy_originals\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_delete_deleted_account_invoices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_delete_invoice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_delete_legacy_original_uncopied\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_delete_legacy_originals\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_invoice_upload\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_invoice_upload\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_upload_invoice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:handle_view_invoice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:legacy_copy_names\(\) has parameter \$entry with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:legacy_original_block_reason\(\) has parameter \$entry with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:legacy_original_block_reason\(\) has parameter \$referenced with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:legacy_original_block_reason\(\) has parameter \$require_copy with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:legacy_originals\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:legacy_originals_contain\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:mark_legacy_copy_removed\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:maybe_dismiss_nginx_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:maybe_dismiss_upload_size_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:on_plandose_screen\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:record_legacy_originals\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:release_invoice_list_lock\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:release_invoice_list_lock\(\) has parameter \$lock with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_error_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_link_item\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_link_item\(\) has parameter \$allow_delete with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_link_item\(\) has parameter \$entry with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_link_item\(\) has parameter \$index with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_link_item\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_links\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_links\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_links\(\) has parameter \$invoices with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_invoice_warning_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_legacy_originals_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_nginx_invoice_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:render_upload_size_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:validate_invoice_upload\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Invoices\:\:validate_invoice_upload\(\) has parameter \$file with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-invoices.php
+
+		-
+			message: '#^Method Plandose_Admin_Prints\:\:render_filters\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-prints.php
+
+		-
+			message: '#^Method Plandose_Admin_Prints\:\:render_filters\(\) has parameter \$f with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-prints.php
+
+		-
+			message: '#^Method Plandose_Admin_Prints\:\:render_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-prints.php
+
+		-
+			message: '#^Method Plandose_Admin_Prints\:\:render_pagination\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-prints.php
+
+		-
+			message: '#^Method Plandose_Admin_Prints\:\:render_summary\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-prints.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:checkbox_group\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:checkbox_group\(\) has parameter \$choices with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:checkbox_group\(\) has parameter \$name with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:checkbox_group\(\) has parameter \$selected with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:display_scope_field\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:display_scope_field\(\) has parameter \$s with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:handle_save_settings\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:maybe_dismiss_display_scope_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:mime_choices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:number\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:number\(\) has parameter \$disabled with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:number\(\) has parameter \$help with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:number\(\) has parameter \$label with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:number\(\) has parameter \$name with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:number\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:render_display_pages_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:render_display_scope_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:render_settings_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:role_choices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:role_choices\(\) has parameter \$roles with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_card_end\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_card_start\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_card_start\(\) has parameter \$class with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_card_start\(\) has parameter \$desc with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_card_start\(\) has parameter \$icon with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_card_start\(\) has parameter \$title with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_changes\(\) has parameter \$after with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_changes\(\) has parameter \$before with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:settings_changes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:text\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:text\(\) has parameter \$help with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:text\(\) has parameter \$label with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:text\(\) has parameter \$name with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:text\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:textarea\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:textarea\(\) has parameter \$label with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:textarea\(\) has parameter \$name with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:textarea\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:toggle\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:toggle\(\) has parameter \$disabled with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:toggle\(\) has parameter \$label with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:toggle\(\) has parameter \$name with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Settings\:\:toggle\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-settings.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:access_override_control\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:action_button\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:action_button\(\) has parameter \$action with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:action_button\(\) has parameter \$disabled_reason with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:action_button\(\) has parameter \$label with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:action_button\(\) has parameter \$state_token with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:action_button\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:ajax_uncounted_users\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:csv_row_from_item\(\) has parameter \$history with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:csv_row_from_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:csv_safe\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:csv_safe\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:effective_pro_days\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:effective_pro_days\(\) has parameter \$requested_days with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:handle_export_csv\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:handle_subscription_action\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:invoice_upload_form\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:invoice_upload_form\(\) has parameter \$invoice_list with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:invoice_upload_form\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:kpi\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:kpi\(\) has parameter \$icon with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:kpi\(\) has parameter \$label with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:kpi\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pagination\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pagination\(\) has parameter \$paged with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pagination\(\) has parameter \$per_page with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pagination\(\) has parameter \$total with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pro_action_form\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pro_action_form\(\) has parameter \$is_pro with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pro_action_form\(\) has parameter \$state_token with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:pro_action_form\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:raise_export_limits\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:redirect_url\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:redirect_with_result\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:redirect_with_result\(\) has parameter \$result with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_action_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_audit_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_dashboard_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_debug_panel\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_deleted_account_invoices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_free_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_manual_access_lookup\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_pro_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_subscriptions_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_subscriptions_page\(\) has parameter \$title with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_uncounted_details\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:render_uncounted_users\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:sanitize_ymd_date\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin_Subscriptions\:\:sanitize_ymd_date\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:admin_assets\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:admin_assets\(\) has parameter \$hook with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:admin_menu\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:capability\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:cleanup_audit_log\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:forget_deleted_account\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:handle_user_deleted\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:page_footer\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:page_header\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:remember_screen\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Admin\:\:snapshot_before_delete\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-admin.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:check_print\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:delete_print_receipts\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:delete_rate_limit_for_user\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:delete_rate_limit_for_user\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:effective_limit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:effective_limit\(\) has parameter \$is_pro with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:get_current_print_context\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:get_current_print_context\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:get_header\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:guard\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:guard\(\) has parameter \$bucket with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited\(\) has parameter \$bucket with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited_atomic\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited_atomic\(\) has parameter \$bucket with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited_atomic\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited_non_atomic\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited_non_atomic\(\) has parameter \$bucket with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:is_rate_limited_non_atomic\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:rate_limit_key\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:rate_limit_key\(\) has parameter \$bucket with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:rate_limit_key\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:refresh_nonce\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:register_print\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_Ajax\:\:require_post_request\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-ajax.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:cache_status_headers\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:cache_status_result\(\) has parameter \$extra with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:cache_status_result\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:cache_status_result\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:check\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:check\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:check\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:check_cache\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:check_cache_settings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:check_invoices\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:close_test_session\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:detected_cache_layer\(\) has parameter \$extra with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:detected_cache_layer\(\) has parameter \$responses with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:header_list\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:http_get\(\) has parameter \$cookies with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:http_get\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:report\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:report\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:response_came_from_cache\(\) has parameter \$extra with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:response_came_from_cache\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:result\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:result\(\) has parameter \$details with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:result\(\) has parameter \$message with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:result\(\) has parameter \$status with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_CLI\:\:result\(\) has parameter \$title with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-cli.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_caching\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_cron\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_database\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_environment\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_history\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_object_cache\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_storage\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:check_storage\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:columns_result\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:gate_daily_jobs\(\) has parameter \$jobs with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:gate_daily_jobs\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:handle_reprobe\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:handle_unarchived\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:init_standalone_menu\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:privacy_result\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:privacy_result\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:protection_files_result\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:record_cron_run\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:register_standalone_menu\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:render_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:render_unarchived_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:run_all\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Diagnostics\:\:standalone_assets\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-diagnostics.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:add_config_script\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:add_config_script\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:assets\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:assets_available\(\) has parameter \$for_guest with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:button_color\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:button_position\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:current_url\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:i18n_json\(\) has parameter \$dictionary with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:login_url\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:maybe_send_nocache_headers\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:render_modal\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:serve_i18n\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Frontend\:\:should_render\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-frontend.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:add_result\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:failed_state\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:handle_retry_migration\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:init_cron\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:journal_copy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:maybe_migrate_legacy_invoices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:maybe_schedule_1210_rerun\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:maybe_schedule_1240_rerun\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:migrate_single_attachment_to_file\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:migrate_single_attachment_to_file\(\) has parameter \$attachment_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:migrate_single_attachment_to_file\(\) has parameter \$dir with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:record_failures\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:record_failures\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:release_legacy_migration_lock\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:render_legacy_migration_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:render_retry_form\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:run_cron_batch\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:save_journal\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:schedule_next_batch\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Migration\:\:unjournal\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-migration.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:canary_served\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:delete_invoice_files\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:delete_invoice_files\(\) has parameter \$dir with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:delete_invoice_files\(\) has parameter \$entries with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:finish_probe\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:finish_probe\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_chmod\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_chmod\(\) has parameter \$context with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_chmod\(\) has parameter \$mode with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_chmod\(\) has parameter \$path with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_copy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_copy\(\) has parameter \$context with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_copy\(\) has parameter \$source with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_copy\(\) has parameter \$target with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_delete\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_delete\(\) has parameter \$context with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_delete\(\) has parameter \$path with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_put_contents\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_put_contents\(\) has parameter \$contents with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_put_contents\(\) has parameter \$context with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:fs_put_contents\(\) has parameter \$path with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:invoice_dir\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:invoice_path\(\) has parameter \$entry with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:log_fs_error\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:log_fs_error\(\) has parameter \$context with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:log_fs_error\(\) has parameter \$path with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:privacy_reason_label\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:privacy_status\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:probe_request\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:refusal_fix\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:refusal_message\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:refusal_problem\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:set_document_root_override\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Invoice_Storage\:\:using_custom_invoice_dir\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-invoice-storage.php
+
+		-
+			message: '#^Method Plandose_Lock\:\:forget_cached\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Charges\:\:forget_request\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-charges.php
+
+		-
+			message: '#^Method Plandose_Print_Charges\:\:render_engine_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-charges.php
+
+		-
+			message: '#^Method Plandose_Print_Charges\:\:undo_charge\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-charges.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_atomic\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_atomic\(\) has parameter \$token with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_atomic\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_atomic\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_non_atomic\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_non_atomic\(\) has parameter \$token with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_non_atomic\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:acquire_non_atomic\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Lock\:\:release\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-lock.php
+
+		-
+			message: '#^Method Plandose_Print_Log\:\:query\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-log.php
+
+		-
+			message: '#^Method Plandose_Print_Request\:\:log_print\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-request.php
+
+		-
+			message: '#^Method Plandose_Print_Result\:\:send\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-result.php
+
+		-
+			message: '#^Method Plandose_Print_Transaction\:\:rollback\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-print-transaction.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:add_privacy_policy_content\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:audit_export_items\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:deleted_account_export_item\(\) has parameter \$snapshot with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:deleted_account_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:erase\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:erase_account_data\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:erase_account_data\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:erase_manual_access\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:erase_manual_access\(\) has parameter \$state with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:export\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:invoices_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:manual_access_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:print_charges_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:print_history_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:print_log_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:register_eraser\(\) has parameter \$erasers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:register_eraser\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:register_exporter\(\) has parameter \$exporters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:register_exporter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Privacy\:\:subscription_export_item\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-privacy.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:allowed_invoice_mimes\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:default_settings\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:expiring_days\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:free_monthly_limit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:invoice_max_bytes\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:label_orientations\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:max_add_days\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:max_plan_days\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:maybe_migrate_free_limit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:maybe_migrate_legacy_defaults\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:pro_print_limit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:render_scope_refused_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:sanitize_roles_array\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:sanitize_roles_array\(\) has parameter \$roles with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:sanitize_settings\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:setting\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:setting\(\) has parameter \$fallback with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:setting\(\) has parameter \$key with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Settings\:\:settings\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-settings.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:count_cache_id\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:debug_account_types\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:debug_account_types\(\) has parameter \$limit with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:filters_where_sql\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:filters_where_sql\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:init_cache_hooks\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:invalidate_subscriber_cache\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:invalidate_subscriber_cache_hook\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:maybe_invalidate_on_meta_change\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:maybe_invalidate_on_meta_change\(\) has parameter \$meta_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:maybe_invalidate_on_meta_change\(\) has parameter \$meta_key with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:maybe_invalidate_on_meta_change\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:membership_candidates_sql\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:membership_predicate_sql\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:query_subscriber_ids\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:query_subscribers\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:query_subscribers\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:subscriber_where_sql\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:subscriber_where_sql\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:uncounted_base_sql\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:uncounted_cache\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:uncounted_groups\(\) has parameter \$base_params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:uncounted_rows\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriber_Query\:\:uncounted_users\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriber-query.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:audit_table_name\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:cleanup_stale_print_locks\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:current_month_bounds\(\) has parameter \$today with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:decode_invoices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:decode_invoices\(\) has parameter \$invoices with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:default_row_stub\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:default_row_stub\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:delete_row\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:delete_row\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:ensure_innodb\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:forget_cached_option\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:get_print_history_for_users\(\) has parameter \$user_ids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:get_row\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:get_row\(\) has parameter \$create with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:get_row\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:history_table_name\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:increment_print_count_unconditionally\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:increment_print_count_unconditionally\(\) has parameter \$today with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:increment_print_count_unconditionally\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:is_pro_active\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:is_pro_active\(\) has parameter \$row with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:maybe_seed_default_settings\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:release_unarchived_lock\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:remember_unarchived\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:save_unarchived\(\) has parameter \$entries with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:seed_default_settings\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:table_name\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:tables_exist\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:try_increment_print_count\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:try_increment_print_count\(\) has parameter \$limit with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:try_increment_print_count\(\) has parameter \$today with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:try_increment_print_count\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Method Plandose_Subscriptions\:\:update\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/includes/class-plandose-subscriptions.php
+
+		-
+			message: '#^Function plandose_activate\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_activate\(\) has parameter \$network_wide with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_deactivate\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_gate_daily_jobs\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_init\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_load_textdomain\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_register_daily_jobs\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_render_bootstrap_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_render_multisite_notice\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_required_files\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/plandose.php
+
+		-
+			message: '#^Function plandose_run_uninstall\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: ../../../plandose/uninstall.php
+
+		-
+			message: '#^Function plandose_uninstall_custom_dir_deletable\(\) has parameter \$upload_dir with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: ../../../plandose/uninstall.php

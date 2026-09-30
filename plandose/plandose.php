@@ -3,7 +3,7 @@
  * Plugin Name: PlanDose
  * Plugin URI: https://pharmacyneeds.gr
  * Description: Δημιουργεί εκτυπώσιμα πλάνα δοσολογίας για ασθενείς μέσα από ένα popup εργαλείο στην αρχική οθόνη.
- * Version: 1.31.0
+ * Version: 1.31.1
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * PlanDose constants.
  */
 if ( ! defined( 'PLANDOSE_VERSION' ) ) {
-	define( 'PLANDOSE_VERSION', '1.31.0' );
+	define( 'PLANDOSE_VERSION', '1.31.1' );
 }
 
 if ( ! defined( 'PLANDOSE_FILE' ) ) {

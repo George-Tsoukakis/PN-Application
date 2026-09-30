@@ -7,6 +7,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const { load, closeAll } = require('./harness');
+const perf = require('./lib/perf.js');
 
 test.afterEach(closeAll);
 
@@ -213,10 +214,14 @@ test('a strength found only after the pack is never the strength (never «3ML»)
 /* (7) */
 test('a very long dose line is refused quickly with a warning', () => {
 	const { PD } = load();
-	const long = '1 ' + 'ΔΙΣΚΙΑ ΕΠΙΚΑΛ x 1 '.repeat(4000) + ' x 3 ημέρες';
-	const t0 = Date.now();
-	const r = PD.parsePrescription(one('FOO TAB 5MG/TAB BTx30', long) + one(ZIN, DOSE2));
-	assert.ok(Date.now() - t0 < 1500, 'took ' + (Date.now() - t0) + ' ms');
+	/* Under 1.5 s on an idle machine; under load, linear growth is enough
+	   (lib/perf.js) — a backtracking regex grows at least quadratically. */
+	const t = perf.linearWithin((n) => {
+		const long = '1 ' + 'ΔΙΣΚΙΑ ΕΠΙΚΑΛ x 1 '.repeat(n) + ' x 3 ημέρες';
+		return PD.parsePrescription(one('FOO TAB 5MG/TAB BTx30', long) + one(ZIN, DOSE2));
+	}, 4000, 1500);
+	assert.ok(t.ok, t.why);
+	const r = t.result;
 	assert.deepStrictEqual(J(r.items[0].warnings), ['tooLong']);
 	assert.ok(r.items[0].source.length < 300);
 	assert.strictEqual(PD.rxItemProblem(r.items[0]), 'warnings');

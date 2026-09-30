@@ -61,6 +61,11 @@ jobs:
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G --error-format=github
       - name: PHP_CodeSniffer (WordPress security/DB/i18n sniffs)
         run: vendor/bin/phpcs --report-full --report-checkstyle=phpcs-checkstyle.xml
+      # plandose/languages/plandose.pot must match the sources (ignoring
+      # POT-Creation-Date and the copyright year); prints a diff otherwise.
+      - name: POT up to date (npm run pot:check)
+        working-directory: tests
+        run: node tools/pot-check.js
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -88,6 +93,8 @@ jobs:
       # i18n-keys.test.js reads the PHP dictionaries with php (preinstalled on the runner).
       - run: php -v
       - run: npm ci
+      - name: ESLint on the plugin JS (npm run lint:js)
+        run: npm run lint:js
       - run: npm test
 
   visual:
@@ -123,19 +130,45 @@ jobs:
           if-no-files-found: ignore
 
   wp-integration:
-    name: WordPress + MariaDB integration
+    name: WordPress ${{ matrix.wp }} + PHP ${{ matrix.php }} + ${{ matrix.db_image }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Current: latest WordPress, PHP 8.3, MariaDB 10.11.
+          - wp: latest
+            php: '8.3'
+            db_image: mariadb:10.11
+            db_health: healthcheck.sh --connect --innodb_initialized
+            db_client: mariadb-client
+          # The plugin's minimum ("Requires at least: 6.3", "Requires PHP: 8.0").
+          - wp: '6.3'
+            php: '8.0'
+            db_image: mariadb:10.11
+            db_health: healthcheck.sh --connect --innodb_initialized
+            db_client: mariadb-client
+          # MySQL 8.0 (default auth caching_sha2_password; the image has no
+          # healthcheck.sh). The runner's own mysql client is used.
+          - wp: latest
+            php: '8.3'
+            db_image: mysql:8.0
+            db_health: mysqladmin ping -h 127.0.0.1 -uroot -proot
+            db_client: mysql-client
     services:
-      mariadb:
-        image: mariadb:10.11
+      db:
+        image: ${{ matrix.db_image }}
         env:
+          # MYSQL_ROOT_PASSWORD is read by both the mysql and the mariadb image.
+          MYSQL_ROOT_PASSWORD: root
           MARIADB_ROOT_PASSWORD: root
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=5s --health-timeout=5s --health-retries=20
+          --health-cmd="${{ matrix.db_health }}"
+          --health-interval=5s --health-timeout=5s --health-retries=30
     env:
+      WP_VERSION: ${{ matrix.wp }}
       PD_WP_PATH: ${{ github.workspace }}/wpenv
       PD_BASE: http://127.0.0.1:8899
       PD_DB_HOST: 127.0.0.1
@@ -146,7 +179,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php }}
           extensions: mysqli, mbstring, intl, zip
           coverage: none
       - uses: actions/setup-node@v4
@@ -154,8 +187,9 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: tests/package-lock.json
-      - run: sudo apt-get update && sudo apt-get install -y mariadb-client
-      - name: Install WordPress, wp-cli, the plugin and the test users
+      - run: sudo apt-get update && sudo apt-get install -y ${{ matrix.db_client }}
+      - run: mysql -h127.0.0.1 -uroot -proot -e 'SELECT VERSION()'
+      - name: Install WordPress ${{ matrix.wp }}, wp-cli, the plugin and the test users
         run: tests/tools/setup-wp.sh
       - working-directory: tests
         run: npm ci
@@ -163,8 +197,7 @@ jobs:
         # The admin checks run in their own steps below.
         env:
           PD_SKIP_ADMIN: '1'
-        run: |
-          if [ -x tests/php/run.sh ] || [ -f tests/php/run.sh ]; then sh tests/php/run.sh; else echo "no tests/php/run.sh"; fi
+        run: sh tests/php/run.sh
       # 1.27.5: the admin checks (nonces, capabilities, invoice storage) ran nowhere before.
       - name: Admin PHP checks (tests/php/admin)
         run: php tests/php/admin/storage-admin-1270.php "$WP_LOAD"
@@ -188,6 +221,8 @@ jobs:
     name: Build plandose.zip
     needs: [php-lint, php-qa, js-tests, visual, wp-integration]
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -202,3 +237,43 @@ jobs:
           name: plandose-${{ steps.version.outputs.version }}
           path: build/plandose-${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
+
+  # The built zip, installed as a site owner would: fresh WordPress, no test
+  # mu-plugin or users; install --activate, version, wp plandose check (no
+  # FAIL; WARN accepted), uninstall, and no PHP error in debug.log.
+  zip-smoke:
+    name: Smoke-test the built zip
+    needs: build
+    runs-on: ubuntu-24.04
+    services:
+      db:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      PD_DB_HOST: 127.0.0.1
+      DB_ROOT_USER: root
+      DB_ROOT_PASS: root
+      SMOKE_WP_PATH: ${{ github.workspace }}/smoke-wp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, intl, zip
+          coverage: none
+      - run: sudo apt-get update && sudo apt-get install -y mariadb-client
+      - uses: actions/download-artifact@v4
+        with:
+          name: plandose-${{ needs.build.outputs.version }}
+          path: dist
+      - name: Install, activate, check and uninstall the zip (tests/tools/zip-smoke.sh)
+        run: bash tests/tools/zip-smoke.sh "dist/plandose-${{ needs.build.outputs.version }}.zip"
+      - if: always()
+        name: WordPress debug.log
+        run: cat "$SMOKE_WP_PATH/debug.log" 2>/dev/null || true

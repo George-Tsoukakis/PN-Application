@@ -7,7 +7,12 @@
 #   PD_WP_PATH      [/home/claude/wpenv]   where WordPress goes
 #   PD_BASE         [http://127.0.0.1:8899]
 #   PD_DB_HOST      [127.0.0.1]  PD_DB_NAME [wptest]  PD_DB_USER [wp]  PD_DB_PASS [wp]  PD_DB_PREFIX [wp_]
+#                   PD_DB_HOST may carry a port (127.0.0.1:3308), as DB_HOST in wp-config does.
 #   DB_ROOT_USER    [root]  DB_ROOT_PASS []   (to create the database and user)
+#   PD_DB_AUTH_PLUGIN []  authentication plugin for the WordPress DB user
+#                   (e.g. mysql_native_password); empty = the server's default
+#                   (MariaDB: mysql_native_password, MySQL 8: caching_sha2_password,
+#                   which PHP's mysqlnd supports).
 #   WP_VERSION      [latest]  a release tag; fetched with wp-cli, or from github.com/WordPress/WordPress by git
 #   WP_CLI_VERSION  [2.12.0]
 #   PLUGIN_DIR      [<repo>/plandose]
@@ -60,10 +65,18 @@ if [ ! -f wp-load.php ]; then
 fi
 
 # ---- database -----------------------------------------------------------------------
-mysql_root() { mysql -h"$DB_HOST" -u"$ROOT_USER" ${ROOT_PASS:+-p"$ROOT_PASS"} "$@"; }
+# Works with MariaDB 10.x/11.x and MySQL 8.x (CREATE USER IF NOT EXISTS,
+# no GRANT … IDENTIFIED BY, which MySQL 8 removed).
+DB_CLI_HOST="$DB_HOST"
+DB_CLI_PORT=""
+case "$DB_HOST" in
+	*:*) DB_CLI_HOST="${DB_HOST%%:*}"; DB_CLI_PORT="${DB_HOST##*:}" ;;
+esac
+DB_AUTH="${PD_DB_AUTH_PLUGIN:+WITH $PD_DB_AUTH_PLUGIN }"
+mysql_root() { mysql -h"$DB_CLI_HOST" ${DB_CLI_PORT:+-P"$DB_CLI_PORT"} -u"$ROOT_USER" ${ROOT_PASS:+-p"$ROOT_PASS"} "$@"; }
 mysql_root -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4;
-	CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
-	CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASS';
+	CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED ${DB_AUTH}BY '$DB_PASS';
+	CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED ${DB_AUTH}BY '$DB_PASS';
 	GRANT ALL ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
 	GRANT ALL ON \`$DB_NAME\`.* TO '$DB_USER'@'%';
 	FLUSH PRIVILEGES;"

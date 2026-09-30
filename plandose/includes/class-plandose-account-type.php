@@ -49,6 +49,17 @@ class Plandose_Account_Type {
 	private static $registering = array();
 
 	/**
+	 * User IDs whose account is being deleted in this request (see
+	 * mark_deleting()). Deleting THEIR category rows is let through,
+	 * whoever the current user is: wp_delete_user() removes every meta row
+	 * of the account, and refusing the category rows would only leave
+	 * orphaned rows behind (plus a misleading «blocked» audit entry).
+	 *
+	 * @var array<int,bool>
+	 */
+	private static $deleting = array();
+
+	/**
 	 * Set while this class itself writes the meta (admin profile save), so
 	 * its own writes pass the guard.
 	 *
@@ -84,6 +95,15 @@ class Plandose_Account_Type {
 		// and user_register runs after it.
 		add_filter( 'insert_user_meta', array( __CLASS__, 'mark_registering' ), 1, 3 );
 		add_action( 'user_register', array( __CLASS__, 'mark_registering_id' ), 0 );
+
+		// Account deletion (wp_delete_user(), and wpmu_delete_user() on
+		// multisite): both fire their action before removing the meta rows
+		// and 'deleted_user' after. Marked as early as possible, so a
+		// delete_user callback of another plugin that clears the category
+		// is covered too.
+		add_action( 'delete_user', array( __CLASS__, 'mark_deleting' ), PHP_INT_MIN );
+		add_action( 'wpmu_delete_user', array( __CLASS__, 'mark_deleting' ), PHP_INT_MIN );
+		add_action( 'deleted_user', array( __CLASS__, 'unmark_deleting' ), PHP_INT_MAX );
 
 		add_filter( 'add_user_metadata', array( __CLASS__, 'guard_write' ), 10, 4 );
 		add_filter( 'update_user_metadata', array( __CLASS__, 'guard_write' ), 10, 4 );
@@ -138,6 +158,37 @@ class Plandose_Account_Type {
 		if ( $born && ( time() - $born ) <= 10 * MINUTE_IN_SECONDS ) {
 			self::$registering[ $user_id ] = true;
 		}
+	}
+
+	/**
+	 * delete_user / wpmu_delete_user action: the account is being deleted in
+	 * this request, so its category rows may go with it.
+	 *
+	 * Whoever may call wp_delete_user() for an account (an administrator,
+	 * a role with delete_users, or a registration plugin's own «delete my
+	 * account») decides that; the category guard only stops a LIVING
+	 * account from changing its category. Only deletions are let through
+	 * this way, never writes.
+	 *
+	 * @param int $user_id User being deleted.
+	 * @return void
+	 */
+	public static function mark_deleting( $user_id ) {
+		$user_id = (int) $user_id;
+
+		if ( $user_id > 0 ) {
+			self::$deleting[ $user_id ] = true;
+		}
+	}
+
+	/**
+	 * deleted_user action: the deletion is over.
+	 *
+	 * @param int $user_id Deleted user.
+	 * @return void
+	 */
+	public static function unmark_deleting( $user_id ) {
+		unset( self::$deleting[ (int) $user_id ] );
 	}
 
 	/**
@@ -232,16 +283,182 @@ class Plandose_Account_Type {
 	 * @return bool
 	 */
 	private static function is_category_key( $meta_key ) {
-		if ( ! is_string( $meta_key ) ) {
+		if ( ! is_string( $meta_key ) || '' === $meta_key ) {
 			return false;
 		}
 
-		// MySQL compares meta keys case-insensitively and ignores trailing
-		// spaces, so 'Account_Type ' addresses the same row as
-		// 'account_type'. Match the key the way the database will.
-		$key = strtolower( rtrim( $meta_key ) );
+		// MySQL compares meta keys case-insensitively, ignores trailing
+		// spaces and (under the usual *_unicode_ci / *_ai_ci collations)
+		// accents, so 'Account_Type ' and 'account_typé' address the same
+		// row as 'account_type'. Match the key the way the database will.
+		$canonical = array_map( array( __CLASS__, 'key_form' ), Plandose_Access::account_type_meta_keys() );
 
-		return in_array( $key, array_map( 'strtolower', Plandose_Access::account_type_meta_keys() ), true );
+		if ( in_array( self::key_form( $meta_key ), $canonical, true ) ) {
+			return true;
+		}
+
+		// Printable ASCII has no other equivalences in MySQL's collations.
+		// Anything else (full-width letters, ignorable control characters,
+		// ligatures, …) is left to the database's own collation to decide.
+		if ( 1 !== preg_match( '/[^\x21-\x7E]/', rtrim( $meta_key ) ) ) {
+			return false;
+		}
+
+		return self::db_key_matches( $meta_key );
+	}
+
+	/**
+	 * A meta key folded the way MySQL's case- and accent-insensitive,
+	 * trailing-space-padding collations compare it.
+	 *
+	 * @param string $meta_key Meta key.
+	 * @return string
+	 */
+	private static function key_form( $meta_key ) {
+		$key = rtrim( (string) $meta_key );
+
+		if ( function_exists( 'remove_accents' ) ) {
+			$key = remove_accents( $key );
+		}
+
+		return strtolower( $key );
+	}
+
+	/**
+	 * Whether the usermeta.meta_key column's collation treats $meta_key as
+	 * equal to one of the category keys. Asked once per key and request.
+	 * A failed query counts as a match (fail closed: the key is guarded).
+	 *
+	 * @param string $meta_key Meta key.
+	 * @return bool
+	 */
+	private static function db_key_matches( $meta_key ) {
+		static $cache = array();
+
+		if ( isset( $cache[ $meta_key ] ) ) {
+			return $cache[ $meta_key ];
+		}
+
+		global $wpdb;
+
+		$keys      = Plandose_Access::account_type_meta_keys();
+		$collation = self::meta_key_collation();
+
+		if ( '' !== $collation ) {
+			$charset = (string) strstr( $collation, '_', true );
+			$operand = "CONVERT(%s USING {$charset}) COLLATE {$collation}";
+		} else {
+			$operand = '%s';
+		}
+
+		$sql = 'SELECT ' . $operand . ' IN (' . implode( ', ', array_fill( 0, count( $keys ), $operand ) ) . ')';
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sql holds only placeholders and a validated collation name; a comparison, no table read.
+		$result = $wpdb->get_var( $wpdb->prepare( $sql, array_merge( array( $meta_key ), $keys ) ) );
+
+		$cache[ $meta_key ] = ( null === $result ) ? true : ( '1' === (string) $result );
+
+		return $cache[ $meta_key ];
+	}
+
+	/**
+	 * Collation of usermeta.meta_key ('' when it cannot be read).
+	 *
+	 * @return string
+	 */
+	private static function meta_key_collation() {
+		static $collation = null;
+
+		if ( null !== $collation ) {
+			return $collation;
+		}
+
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- schema lookup, once per request and only for unusual meta keys.
+		$column    = $wpdb->get_row( "SHOW FULL COLUMNS FROM {$wpdb->usermeta} LIKE 'meta_key'", ARRAY_A );
+		$found     = ( is_array( $column ) && isset( $column['Collation'] ) ) ? (string) $column['Collation'] : '';
+		$collation = ( 1 === preg_match( '/^[A-Za-z0-9]+_[A-Za-z0-9_]+\z/', $found ) ) ? $found : '';
+
+		return $collation;
+	}
+
+	/**
+	 * The values of every row a query on ($user_id, $meta_key) hits, read
+	 * straight from the database so the column collation decides which
+	 * rows match — exactly the rows the pending write/delete will touch.
+	 * (The meta cache is keyed case-sensitively: under 'ACCOUNT_TYPE' it
+	 * finds nothing although the database changes the 'account_type' row.)
+	 *
+	 * @param int    $user_id  User ID.
+	 * @param string $meta_key Meta key as the caller spelled it.
+	 * @return array<int,mixed>|null Unserialized values, or null when the read failed.
+	 */
+	private static function db_values( $user_id, $meta_key ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- must see the rows the database will change, not the (case-sensitive) meta cache.
+		$rows = $wpdb->get_col( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s ORDER BY umeta_id", (int) $user_id, (string) $meta_key ) );
+
+		if ( '' !== (string) $wpdb->last_error ) {
+			return null;
+		}
+
+		return array_values( array_map( 'maybe_unserialize', (array) $rows ) );
+	}
+
+	/**
+	 * Whether writing $value under ($user_id, $meta_key) leaves the category
+	 * as it is: every row the key hits already holds that category, or no
+	 * row is hit and the value is empty. Fails closed on a read error.
+	 *
+	 * @param int    $user_id  User ID.
+	 * @param string $meta_key Meta key as the caller spelled it.
+	 * @param mixed  $value    New value.
+	 * @return bool
+	 */
+	private static function write_keeps_category( $user_id, $meta_key, $value ) {
+		$current = self::db_values( $user_id, $meta_key );
+
+		if ( null === $current ) {
+			return false;
+		}
+
+		if ( ! $current ) {
+			return self::same_category( '', $value );
+		}
+
+		foreach ( $current as $stored ) {
+			if ( ! self::same_category( $stored, $value ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Whether every row ($user_id, $meta_key) hits is empty, so deleting
+	 * them clears no category. Fails closed on a read error.
+	 *
+	 * @param int    $user_id  User ID.
+	 * @param string $meta_key Meta key as the caller spelled it.
+	 * @return bool
+	 */
+	private static function rows_are_empty( $user_id, $meta_key ) {
+		$current = self::db_values( $user_id, $meta_key );
+
+		if ( null === $current ) {
+			return false;
+		}
+
+		foreach ( $current as $stored ) {
+			if ( '' !== self::scalar( $stored ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -266,7 +483,7 @@ class Plandose_Account_Type {
 			return $check;
 		}
 
-		if ( self::same_category( get_user_meta( (int) $user_id, $meta_key, true ), $value ) ) {
+		if ( self::write_keeps_category( (int) $user_id, $meta_key, $value ) ) {
 			return $check;
 		}
 
@@ -306,11 +523,11 @@ class Plandose_Account_Type {
 			return false;
 		}
 
-		if ( self::may_change( $user_id ) ) {
+		if ( isset( self::$deleting[ (int) $user_id ] ) || self::may_change( $user_id ) ) {
 			return $check;
 		}
 
-		if ( '' === (string) self::scalar( get_user_meta( (int) $user_id, $meta_key, true ) ) ) {
+		if ( self::rows_are_empty( (int) $user_id, $meta_key ) ) {
 			return $check;
 		}
 
@@ -351,7 +568,7 @@ class Plandose_Account_Type {
 			return $check;
 		}
 
-		$same_key = strtolower( rtrim( $old_key ) ) === strtolower( rtrim( $new_key ) );
+		$same_key = self::key_form( $old_key ) === self::key_form( $new_key );
 
 		if ( $touches_old && $same_key && self::same_category( $meta->meta_value, $meta_value ) ) {
 			return $check;
@@ -359,7 +576,7 @@ class Plandose_Account_Type {
 
 		// A non-category row renamed to a category key: allowed only when
 		// it writes the value already in force.
-		if ( ! $touches_old && self::same_category( get_user_meta( $user_id, $new_key, true ), $meta_value ) ) {
+		if ( ! $touches_old && self::write_keeps_category( $user_id, $new_key, $meta_value ) ) {
 			return $check;
 		}
 
@@ -388,7 +605,7 @@ class Plandose_Account_Type {
 
 		$user_id = (int) $meta->user_id;
 
-		if ( self::may_change( $user_id ) || '' === self::scalar( $meta->meta_value ) ) {
+		if ( isset( self::$deleting[ $user_id ] ) || self::may_change( $user_id ) || '' === self::scalar( $meta->meta_value ) ) {
 			return $check;
 		}
 
