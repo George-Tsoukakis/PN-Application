@@ -456,6 +456,18 @@ if ( is_wp_error( $ping ) || 200 !== (int) wp_remote_retrieve_response_code( $pi
 	$big_pdf   = '%PDF-1.4' . "\n%" . str_repeat( 'A', $limit + 1 - 10 - 6 ) . "\n%%EOF";
 	$exact_pdf = '%PDF-1.4' . "\n%" . str_repeat( 'A', $limit - 10 - 6 ) . "\n%%EOF";
 
+	// Which gate refuses "junk before %PDF-" depends on the libmagic data PHP's
+	// fileinfo ships with: some builds are undecided (octet-stream), so WordPress
+	// lets it through and PlanDose's own content gate refuses it; others read the
+	// "MZ" prefix as application/x-dosexec and WordPress refuses it first. Ask
+	// WordPress (same PHP build as the server) which case this runner is.
+	$junk_bytes = "MZ\x90\x00" . $pdf_bytes;
+	$junk_tmp   = wp_tempnam( 'pdt1310-junk.pdf' );
+	file_put_contents( $junk_tmp, $junk_bytes );
+	$junk_wp    = wp_check_filetype_and_ext( $junk_tmp, 'invoice.pdf' );
+	@unlink( $junk_tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+	$junk_need  = ( 'application/pdf' === ( $junk_wp['type'] ?? '' ) ) ? 'Το περιεχόμενο του αρχείου δεν αντιστοιχεί' : 'Μη επιτρεπτός τύπος';
+
 	$refusals = array(
 		'size limit + 1 byte'                 => array( 'big.pdf', $big_pdf, 'application/pdf', 'όριο των 1MB' ),
 		'disallowed extension .txt'           => array( 'invoice.txt', "plain text\n", 'text/plain', 'Μη επιτρεπτός τύπος' ),
@@ -466,9 +478,9 @@ if ( is_wp_error( $ping ) || 200 !== (int) wp_remote_retrieve_response_code( $pi
 		'double extension report.html.pdf'    => array( 'report.html.pdf', $pdf_bytes, 'application/pdf', 'διπλή επέκταση' ),
 		// Refused by WordPress's own type check already (fileinfo says text/x-php).
 		'PHP text named .pdf'                 => array( 'invoice.pdf', $php_bytes, 'application/pdf', 'Μη επιτρεπτός τύπος' ),
-		// Passes wp_check_filetype_and_ext() (fileinfo is undecided), refused by
-		// PlanDose's own content gate (content_matches_mime()).
-		'junk before the %PDF- header'        => array( 'invoice.pdf', "MZ\x90\x00" . $pdf_bytes, 'application/pdf', 'Το περιεχόμενο του αρχείου δεν αντιστοιχεί' ),
+		// Refused either by wp_check_filetype_and_ext() or, when fileinfo is
+		// undecided, by PlanDose's own content gate (see $junk_need above).
+		'junk before the %PDF- header'        => array( 'invoice.pdf', $junk_bytes, 'application/pdf', $junk_need ),
 		'a PNG named .jpg'                    => array( 'photo.jpg', $png_bytes, 'image/jpeg', 'επέκταση του ονόματος' ),
 		'a GIF (not an allowed type) as .png' => array( 'x.png', "GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00!\xf9\x04\x00\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;", 'image/png', '' ),
 		'an empty file'                       => array( 'empty.pdf', '', 'application/pdf', 'κενό' ),

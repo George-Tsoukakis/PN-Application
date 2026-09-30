@@ -27,6 +27,18 @@ $screens = array(
 	'Διαγνωστικά' => array( 'Plandose_Diagnostics', 'render_page' ),
 );
 
+/**
+ * DOMNode::contains() is PHP 8.3+; walk the ancestors so PHP 8.0 works too.
+ */
+function pdt1300_node_contains( DOMNode $outer, DOMNode $inner ): bool {
+	for ( $n = $inner; null !== $n; $n = $n->parentNode ) {
+		if ( $n === $outer ) {
+			return true;
+		}
+	}
+	return false;
+}
+
 foreach ( $screens as $name => $callback ) {
 	if ( ! is_callable( $callback ) ) {
 		pdt_check( false, "$name: renderer exists" );
@@ -52,7 +64,7 @@ foreach ( $screens as $name => $callback ) {
 	pdt_same( 1, $ends->length, "$name: one <hr class=\"wp-header-end\">" );
 	pdt_check( $end && $wrap && $end->parentNode === $wrap, "$name: … directly inside .wrap" );
 	pdt_check( $end && $head && $head->parentNode === $wrap && $end->previousSibling && ( $end->previousSibling === $head || ( XML_TEXT_NODE === $end->previousSibling->nodeType && $end->previousSibling->previousSibling === $head ) ), "$name: … right after the header" );
-	pdt_check( $h1 && $head && $head->contains( $h1 ), "$name: the title is in the header" );
+	pdt_check( $h1 && $head && pdt1300_node_contains( $head, $h1 ), "$name: the title is in the header" );
 }
 
 // The CSV export sits in the header's action area, not in a floated box.
