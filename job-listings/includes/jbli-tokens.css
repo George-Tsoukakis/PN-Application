@@ -1,0 +1,82 @@
+
+:root {
+  --jbli_green: #059669;
+  --jbli_green_dk: #047857;
+  --jbli_green_lt: #ecfdf5;
+  --jbli_green_mid: #d1fae5;
+  --jbli_green_ink: #065f46;
+  --jbli_red: #dc2626;
+  --jbli_red_lt: #fef2f2;
+  --jbli_red_mid: #fecaca;
+  --jbli_red_ink: #991b1b;
+  --jbli_amber: #d97706;
+  --jbli_amber_lt: #fffbeb;
+  --jbli_amber_mid: #fde68a;
+  --jbli_amber_ink: #92400e;
+  --jbli_blue: #2563eb;
+  --jbli_blue_lt: #eff6ff;
+  --jbli_blue_mid: #bfdbfe;
+  --jbli_blue_ink: #1e40af;
+  --jbli_gray_50: #f9fafb;
+  --jbli_gray_100: #f3f4f6;
+  --jbli_gray_200: #e5e7eb;
+  --jbli_gray_300: #d1d5db;
+  --jbli_gray_400: #9ca3af;
+  --jbli_gray_500: #6b7280;
+  --jbli_gray_600: #4b5563;
+  --jbli_gray_700: #374151;
+  --jbli_gray_900: #111827;
+  --jbli_white: #ffffff;
+
+  --jbli_space_2xs: 4px;
+  --jbli_space_xs: 6px;
+  --jbli_space_sm: 8px;
+  --jbli_space_md: 12px;
+  --jbli_space_lg: 16px;
+  --jbli_space_xl: 20px;
+  --jbli_space_2xl: 24px;
+  --jbli_space_3xl: 28px;
+  --jbli_space_4xl: 32px;
+  --jbli_space_5xl: 48px;
+
+  --jbli_font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --jbli_text_2xs: 0.62rem;
+  --jbli_text_xs: 0.72rem;
+  --jbli_text_sm: 0.78rem;
+  --jbli_text_md: 0.875rem;
+  --jbli_text_base: 0.9rem;
+  --jbli_text_lg: 0.98rem;
+  --jbli_text_xl: 1.2rem;
+  --jbli_text_2xl: 1.4rem;
+  --jbli_leading_tight: 1.15;
+  --jbli_leading_snug: 1.35;
+  --jbli_leading_normal: 1.55;
+  --jbli_leading_relaxed: 1.6;
+  --jbli_tracking_tight: -0.02em;
+  --jbli_tracking_tighter: -0.03em;
+  --jbli_weight_medium: 600;
+  --jbli_weight_bold: 700;
+  --jbli_weight_extrabold: 800;
+
+  --jbli_r_sm: 6px;
+  --jbli_r: 12px;
+  --jbli_r_lg: 16px;
+  --jbli_r_pill: 999px;
+
+  --jbli_shadow_sm: 0 1px 2px rgba(0, 0, 0, .05);
+  --jbli_shadow: 0 1px 3px rgba(0, 0, 0, .10), 0 1px 2px rgba(0, 0, 0, .06);
+  --jbli_shadow_md: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .06);
+  --jbli_shadow_lg: 0 10px 15px rgba(0, 0, 0, .10), 0 4px 6px rgba(0, 0, 0, .05);
+  --jbli_shadow_card: 0 12px 32px rgba(15, 23, 42, .06);
+  --jbli_shadow_card_hover: 0 20px 48px rgba(15, 23, 42, .12), 0 4px 12px rgba(5, 150, 105, .1);
+  --jbli_shadow_panel: 0 20px 55px rgba(15, 23, 42, .08);
+  --jbli_shadow_green_sm: 0 1px 2px rgba(5, 150, 105, .2);
+  --jbli_shadow_green: 0 2px 10px rgba(5, 150, 105, .28);
+  --jbli_shadow_green_lg: 0 4px 16px rgba(5, 150, 105, .38);
+  --jbli_shadow_green_ribbon: 0 2px 8px rgba(5, 150, 105, .4);
+  --jbli_focus_ring: 0 0 0 4px rgba(5, 150, 105, .12);
+
+  --jbli_transition: all .2s cubic-bezier(.4, 0, .2, 1);
+  --jbli_ease: cubic-bezier(.4, 0, .2, 1);
+  --jbli_duration: .2s;
+}
