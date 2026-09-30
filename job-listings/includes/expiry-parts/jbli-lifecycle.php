@@ -34,11 +34,12 @@ function jbli_local_datetime_to_ts( $jbli_datetime ) {
 
 	$jbli_datetime = trim( (string) $jbli_datetime );
 
-	if ( '' === $jbli_datetime ) { return false; }
+	/* Reject unparsable text up front: no exception is thrown for it (PHP 8.3+ / Xdebug turn it into errors). */
+	if ( '' === $jbli_datetime || false === strtotime( $jbli_datetime ) ) { return false; }
 
 	try {
 		return ( new DateTimeImmutable( $jbli_datetime, wp_timezone() ) )->getTimestamp();
-	} catch ( Exception $jbli_e ) {
+	} catch ( Throwable $jbli_e ) {
 		return false;
 	}
 
@@ -62,7 +63,13 @@ function jbli_future_datetime( $jbli_days, $jbli_time = '' ) {
 	 * keeps the local clock time across daylight-saving changes.
 	 */
 	$jbli_date = new DateTimeImmutable( 'now', wp_timezone() );
-	$jbli_next = $jbli_date->modify( '+' . $jbli_days . ' days' . ( '' !== $jbli_time ? ' ' . $jbli_time : '' ) );
+
+	/* modify() returns false before PHP 8.3 and throws from 8.3 on an invalid modifier. */
+	try {
+		$jbli_next = $jbli_date->modify( '+' . $jbli_days . ' days' . ( '' !== $jbli_time ? ' ' . $jbli_time : '' ) );
+	} catch ( Throwable $jbli_e ) {
+		$jbli_next = false;
+	}
 
 	if ( false === $jbli_next ) { $jbli_next = $jbli_date->modify( '+' . $jbli_days . ' days' ); }
 
