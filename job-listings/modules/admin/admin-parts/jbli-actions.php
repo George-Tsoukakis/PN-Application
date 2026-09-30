@@ -311,6 +311,12 @@ if ( ! function_exists( 'jbli_fields_handle_save' ) )
 			update_option( 'jbli_apply_email_subject', $jbli_subject, false );
 			update_option( 'jbli_apply_email_body',    $jbli_body,    false );
 
+			/* 9.9.57: how long applications are kept (7–730 days). */
+			if ( isset( $_POST['jbli_apply_retention_days'] ) )
+			{
+				update_option( 'jbli_apply_retention_days', max( 7, min( 730, absint( $_POST['jbli_apply_retention_days'] ) ) ), false );
+			}
+
 			wp_safe_redirect(
 				add_query_arg(
 					array( 'page' => 'jbli_settings', 'jbli_saved' => 'apply_email' ),

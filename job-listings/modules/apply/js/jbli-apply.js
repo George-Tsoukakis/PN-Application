@@ -7,6 +7,7 @@
 		if ( ! jbli_modal ) { return; }
 
 		jbli_modal.hidden = false;
+		jbli_modal.setAttribute( 'data-jbli_opened', String( Date.now() ) );
 		document.body.style.overflow = 'hidden';
 
 		var jbli_first = jbli_modal.querySelector( '.jbli_apply_input' );
@@ -85,6 +86,12 @@
 		jbli_form_data.append( 'applicant_name',  jbli_name.value.trim() );
 		jbli_form_data.append( 'applicant_phone', jbli_phone.value.trim() );
 		jbli_form_data.append( 'applicant_email', jbli_email.value.trim() );
+
+		/* Anti-spam (9.9.57): hidden honeypot + time since the modal opened. */
+		var jbli_hp     = jbli_modal.querySelector( '[name="jbli_hp_website"]' );
+		var jbli_opened = parseInt( jbli_modal.getAttribute( 'data-jbli_opened' ) || '0', 10 );
+		jbli_form_data.append( 'jbli_hp_website', jbli_hp ? jbli_hp.value : '' );
+		if ( jbli_opened ) { jbli_form_data.append( 'jbli_elapsed', String( Date.now() - jbli_opened ) ); }
 
 		var jbli_ajax_url = ( window.jbli_data && window.jbli_data.ajaxurl )
 			|| '/wp-admin/admin-ajax.php';

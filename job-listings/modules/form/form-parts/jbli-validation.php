@@ -54,6 +54,30 @@ function jbli_title_max_chars() {
 }
 
 /**
+ * Whether a listing came from «Εισαγωγή από URL».
+ *
+ * Imported ads often carry no phone, email or address. When such a listing
+ * is edited these fields are optional (still validated when filled in), so
+ * the other fields can be corrected without inventing contact details.
+ *
+ * @since 9.9.57
+ *
+ * @param int $jbli_post_id Listing ID (0 = new listing).
+ * @return bool
+ */
+function jbli_listing_is_imported( $jbli_post_id ) {
+
+	$jbli_post_id = absint( $jbli_post_id );
+
+	if ( ! $jbli_post_id ) { return false; }
+
+	$jbli_key = defined( 'JBLI_META_SOURCE_URL' ) ? JBLI_META_SOURCE_URL : 'jbli_source_url';
+
+	return '' !== trim( (string) get_post_meta( $jbli_post_id, $jbli_key, true ) );
+
+}
+
+/**
  * Validate and sanitize form POST data.
  *
  * @since 9.9.20
@@ -66,6 +90,8 @@ function jbli_validate_form_data( $jbli_edit_id ) {
 
 	$jbli_errors = array();
 
+	/* 9.9.57: imported listings may have no phone / email / address. */
+	$jbli_contact_optional = jbli_listing_is_imported( $jbli_edit_id );
 
 	$jbli_position      = sanitize_text_field( wp_unslash( $_POST['job_position']      ?? '' ) );
 	$jbli_description   = wp_kses( wp_unslash( $_POST['job_description']  ?? '' ), jbli_allowed_html() );
@@ -145,23 +171,30 @@ function jbli_validate_form_data( $jbli_edit_id ) {
 
 	if ( '' === $jbli_contact_phone )
 	{
-		$jbli_errors[] = array( 'field' => 'job_contact_phone', 'message' => __( 'Παρακαλώ συμπληρώστε τηλέφωνο επικοινωνίας.', 'job-listings' ) );
+		if ( ! $jbli_contact_optional )
+		{
+			$jbli_errors[] = array( 'field' => 'job_contact_phone', 'message' => __( 'Παρακαλώ συμπληρώστε τηλέφωνο επικοινωνίας.', 'job-listings' ) );
+		}
 	}
-
-	$jbli_digits = preg_replace( '/\D/', '', $jbli_contact_phone );
-
-	if ( ! is_string( $jbli_digits ) || strlen( $jbli_digits ) < 10 )
+	else
 	{
-		$jbli_errors[] = array( 'field' => 'job_contact_phone', 'message' => __( 'Το τηλέφωνο πρέπει να έχει τουλάχιστον 10 ψηφία.', 'job-listings' ) );
+		$jbli_digits = preg_replace( '/\D/', '', $jbli_contact_phone );
+
+		if ( ! is_string( $jbli_digits ) || strlen( $jbli_digits ) < 10 )
+		{
+			$jbli_errors[] = array( 'field' => 'job_contact_phone', 'message' => __( 'Το τηλέφωνο πρέπει να έχει τουλάχιστον 10 ψηφία.', 'job-listings' ) );
+		}
 	}
 
 
 	if ( '' === $jbli_contact_email )
 	{
-		$jbli_errors[] = array( 'field' => 'job_contact_email', 'message' => __( 'Παρακαλώ συμπληρώστε email επικοινωνίας.', 'job-listings' ) );
+		if ( ! $jbli_contact_optional )
+		{
+			$jbli_errors[] = array( 'field' => 'job_contact_email', 'message' => __( 'Παρακαλώ συμπληρώστε email επικοινωνίας.', 'job-listings' ) );
+		}
 	}
-
-	if ( ! is_email( $jbli_contact_email ) )
+	elseif ( ! is_email( $jbli_contact_email ) )
 	{
 		$jbli_errors[] = array( 'field' => 'job_contact_email', 'message' => __( 'Παρακαλώ συμπληρώστε έγκυρο email επικοινωνίας.', 'job-listings' ) );
 	}
@@ -186,7 +219,7 @@ function jbli_validate_form_data( $jbli_edit_id ) {
 	}
 
 
-	if ( '' === $jbli_address )
+	if ( '' === $jbli_address && ! $jbli_contact_optional )
 	{
 		$jbli_errors[] = array( 'field' => 'job_address', 'message' => __( 'Παρακαλώ συμπληρώστε τη διεύθυνση του φαρμακείου.', 'job-listings' ) );
 	}

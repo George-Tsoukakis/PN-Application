@@ -381,7 +381,7 @@ get_header();
 
 							<div class="jbli_desc_card_body" id="jbli_desc_body_<?php echo esc_attr( $jbli_id ); ?>">
 								<div class="jbli_desc_card_content" id="jbli_desc_content_<?php echo esc_attr( $jbli_id ); ?>">
-									<?php echo wp_kses_post( apply_filters( 'the_content', $jbli_content ) ); ?>
+									<?php echo jbli_single_description_html( $jbli_content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses'd inside. ?>
 								</div>
 								<div class="jbli_desc_card_fade"></div>
 							</div>

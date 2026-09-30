@@ -168,15 +168,16 @@ final class Plugin {
 
 		if ( JBLI_VERSION === $jbli_stored_version ) { return; }
 
-		update_option( 'jbli_version', JBLI_VERSION, false );
-		update_option( 'jbli_asset_bust', time(), false );
-
 		ob_start();
 
 		if ( function_exists( 'jbli_maybe_install_storage' ) ) { jbli_maybe_install_storage(); }
 
 		$jbli_output = (string) ob_get_clean();
 		self::jbli_discard_unexpected_output( 'version check', $jbli_output );
+
+		/* 9.9.57: recorded after the storage update, so a failed update is retried on the next request. */
+		update_option( 'jbli_version', JBLI_VERSION, false );
+		update_option( 'jbli_asset_bust', time(), false );
 
 		if ( function_exists( 'rocket_clean_domain' ) ) { rocket_clean_domain(); }
 
@@ -227,6 +228,7 @@ final class Plugin {
 		{
 			wp_clear_scheduled_hook( 'jbli_hourly_cron' );
 			wp_clear_scheduled_hook( 'jbli_daily_reminder_cron' );
+			wp_clear_scheduled_hook( 'jbli_apply_purge_cron' );
 		}
 
 		if ( function_exists( 'flush_rewrite_rules' ) ) { flush_rewrite_rules( false ); }

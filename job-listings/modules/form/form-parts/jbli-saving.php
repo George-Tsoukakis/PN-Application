@@ -164,6 +164,17 @@ function jbli_save_listing_meta( $jbli_post_id, array $jbli_fields, $jbli_user_i
 
 	$jbli_pharmacy = jbli_get_pharmacy_name( $jbli_owner_id );
 
+	/*
+	 * 9.9.57: an imported listing belongs to the admin who imported it; keep
+	 * the pharmacy name found in the ad instead of the admin's own.
+	 */
+	if ( function_exists( 'jbli_listing_is_imported' ) && jbli_listing_is_imported( $jbli_post_id ) )
+	{
+		$jbli_imported_name = (string) get_post_meta( $jbli_post_id, JBLI_META_PHARMACY_NAME, true );
+
+		if ( '' !== $jbli_imported_name ) { $jbli_pharmacy = $jbli_imported_name; }
+	}
+
 	$jbli_meta_map = array(
 		JBLI_META_POSITION      => $jbli_fields['jbli_position'],
 		JBLI_META_SALARY        => $jbli_fields['jbli_salary'],

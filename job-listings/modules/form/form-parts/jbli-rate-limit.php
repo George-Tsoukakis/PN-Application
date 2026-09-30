@@ -83,6 +83,28 @@ function jbli_resolve_active_count( $jbli_user_id ) {
 }
 
 /**
+ * Whether a listing owner already has the maximum number of active listings.
+ *
+ * Used by the dashboard «Ενεργοποίηση» / «Ανανέωση» actions, so the cap
+ * cannot be bypassed by pausing a listing, creating a new one and
+ * re-activating the paused one. Admins are never capped.
+ *
+ * @since 9.9.57
+ *
+ * @param int $jbli_user_id Owner user ID.
+ * @return bool
+ */
+function jbli_owner_at_active_cap( $jbli_user_id ) {
+
+	if ( jbli_is_admin() ) { return false; }
+
+	$jbli_max_active = (int) apply_filters( 'jbli_max_active_per_user', 5 );
+
+	return jbli_resolve_active_count( absint( $jbli_user_id ) ) >= $jbli_max_active;
+
+}
+
+/**
  * Check all rate limits for a form submission.
  *
  * Checks the active-listings cap and the cooldown transient.

@@ -212,3 +212,26 @@ function jbli_pharmacy_display_name( $jbli_name ) {
 	return '' !== $jbli_stripped ? $jbli_stripped : $jbli_name;
 
 }
+
+/**
+ * Listing description for the single page.
+ *
+ * Not the_content: the text is written by pharmacies, and the_content would
+ * run any [shortcode] typed into it (forms, dashboards, other plugins'
+ * shortcodes) on the public page. Shortcodes are removed; the rest gets
+ * the same formatting (paragraphs, typography) through the plugin's HTML
+ * allow-list.
+ *
+ * @since 9.9.57
+ *
+ * @param string $jbli_content Raw post_content.
+ * @return string Safe HTML.
+ */
+function jbli_single_description_html( $jbli_content ) {
+
+	$jbli_content = strip_shortcodes( (string) $jbli_content );
+	$jbli_content = wp_kses( $jbli_content, jbli_allowed_html() );
+
+	return wpautop( wptexturize( $jbli_content ) );
+
+}

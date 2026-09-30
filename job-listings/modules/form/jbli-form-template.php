@@ -33,6 +33,11 @@ defined( 'ABSPATH' ) || exit;
 
 $jbli_is_edit = (bool) $jbli_edit_id;
 
+/* 9.9.57: imported listings — phone, email and address are optional. */
+$jbli_contact_optional = function_exists( 'jbli_listing_is_imported' ) && jbli_listing_is_imported( (int) $jbli_edit_id );
+$jbli_req_attr         = $jbli_contact_optional ? '' : ' required aria-required="true"';
+$jbli_req_mark         = $jbli_contact_optional ? '' : ' <span class="jbli_req" aria-hidden="true">*</span>';
+
 $jbli_fv = static function ( string $jbli_key, string $jbli_default = '' ) use ( $jbli_v ): string {
 	return isset( $jbli_v[ $jbli_key ] ) ? (string) $jbli_v[ $jbli_key ] : $jbli_default;
 };

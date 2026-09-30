@@ -19,6 +19,12 @@ require_once __DIR__ . '/jbli-import-parser.php';
 defined( 'JBLI_META_SOURCE_URL' )  || define( 'JBLI_META_SOURCE_URL',  'jbli_source_url' );
 defined( 'JBLI_META_SOURCE_SITE' ) || define( 'JBLI_META_SOURCE_SITE', 'jbli_source_site' );
 
+/* 9.9.57: URLs per import. With JS each URL is its own request, so no timeouts. */
+defined( 'JBLI_IMPORT_MAX_URLS' )  || define( 'JBLI_IMPORT_MAX_URLS',  100 );
+
+/* Without JS the whole list runs in one request — keep it short. */
+defined( 'JBLI_IMPORT_MAX_URLS_NOJS' ) || define( 'JBLI_IMPORT_MAX_URLS_NOJS', 20 );
+
 /**
  * Status for imported listings, from Ρυθμίσεις → «Εισαγωγή από URL».
  *
@@ -221,7 +227,7 @@ function jbli_import_render_page() {
 		/* Not sanitize_textarea_field(): it strips the %XX sequences of Greek URLs. Each line is validated by jbli_import_canonical_url(). */
 		$jbli_raw   = wp_check_invalid_utf8( (string) wp_unslash( $_POST['jbli_import_urls'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$jbli_email = sanitize_email( wp_unslash( $_POST['jbli_import_email'] ?? '' ) );
-		$jbli_list  = array_slice( array_values( array_unique( array_filter( array_map( 'jbli_import_canonical_url', preg_split( '~[\r\n\s]+~', $jbli_raw ) ) ) ) ), 0, 20 );
+		$jbli_list  = array_slice( array_values( array_unique( array_filter( array_map( 'jbli_import_canonical_url', preg_split( '~[\r\n\s]+~', $jbli_raw ) ) ) ) ), 0, JBLI_IMPORT_MAX_URLS_NOJS );
 		$jbli_urls  = implode( "\n", $jbli_list );
 
 		if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 300 ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -242,7 +248,11 @@ function jbli_import_render_page() {
 		<h1><?php esc_html_e( 'Εισαγωγή αγγελιών από URL', 'job-listings' ); ?></h1>
 
 		<p style="max-width:780px;color:#4b5563;">
-			<?php esc_html_e( 'Επικολλήστε συνδέσμους αγγελιών από άλλους ιστότοπους (π.χ. jobfind.gr, kariera.gr), έναν ανά γραμμή (έως 20). Κάθε αγγελία δημιουργείται με τίτλο, περιγραφή, φαρμακείο, νομό, κατηγορία, τύπο και αμοιβή όπως αναγνωρίστηκαν, μαζί με σύνδεσμο στην αρχική. Ο ίδιος σύνδεσμος δεν εισάγεται δεύτερη φορά.', 'job-listings' ); ?>
+			<?php
+				/* translators: %d: maximum number of URLs per import */
+				echo esc_html( sprintf( __( 'Επικολλήστε συνδέσμους αγγελιών από άλλους ιστότοπους (π.χ. jobfind.gr, kariera.gr), έναν ανά γραμμή (έως %d κάθε φορά). Οι σύνδεσμοι εισάγονται ένας-ένας, με πρόοδο στην οθόνη, οπότε μπορείτε να βάλετε πολλούς μαζί.', 'job-listings' ), JBLI_IMPORT_MAX_URLS ) );
+			?>
+			<?php esc_html_e( 'Κάθε αγγελία δημιουργείται με τίτλο, περιγραφή, φαρμακείο, νομό, κατηγορία, τύπο και αμοιβή όπως αναγνωρίστηκαν, μαζί με σύνδεσμο στην αρχική. Ο ίδιος σύνδεσμος δεν εισάγεται δεύτερη φορά.', 'job-listings' ); ?>
 		</p>
 
 		<p style="max-width:780px;">
@@ -255,9 +265,9 @@ function jbli_import_render_page() {
 			<?php esc_html_e( 'Εισάγετε αγγελίες για τις οποίες έχετε δικαίωμα αναδημοσίευσης (π.χ. με άδεια του φαρμακείου ή του ιστότοπου). Η αρχική πηγή εμφανίζεται πάντα στην αγγελία.', 'job-listings' ); ?>
 		</p>
 
-		<?php if ( $jbli_results ) { ?>
+		<div id="jbli_import_results"<?php echo $jbli_results ? '' : ' hidden'; ?>>
 
-			<h2><?php esc_html_e( 'Αποτελέσματα', 'job-listings' ); ?></h2>
+			<h2><?php esc_html_e( 'Αποτελέσματα', 'job-listings' ); ?> <span id="jbli_import_progress" style="font-size:14px;font-weight:400;color:#4b5563;" aria-live="polite"></span></h2>
 
 			<table class="widefat striped" style="max-width:1100px;">
 				<thead>
@@ -267,31 +277,8 @@ function jbli_import_render_page() {
 						<th><?php esc_html_e( 'Αγγελία / Σημειώσεις', 'job-listings' ); ?></th>
 					</tr>
 				</thead>
-				<tbody>
-				<?php foreach ( $jbli_results as $jbli_r ) { ?>
-					<tr>
-						<td style="word-break:break-all;"><a href="<?php echo esc_url( $jbli_r['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $jbli_r['url'] ); ?></a></td>
-						<td>
-							<?php
-								if ( 'created' === $jbli_r['status'] )       { echo '<strong style="color:#047857;">' . esc_html( ! empty( $jbli_r['published'] ) ? __( 'Δημοσιεύτηκε', 'job-listings' ) : __( 'Σε αναμονή', 'job-listings' ) ) . '</strong>'; }
-								elseif ( 'duplicate' === $jbli_r['status'] ) { echo '<strong style="color:#92400e;">' . esc_html__( 'Υπάρχει ήδη', 'job-listings' ) . '</strong>'; }
-								else                                         { echo '<strong style="color:#b91c1c;">' . esc_html__( 'Σφάλμα', 'job-listings' ) . '</strong>'; }
-							?>
-						</td>
-						<td>
-							<?php if ( ! empty( $jbli_r['post_id'] ) ) { ?>
-								<a href="<?php echo esc_url( (string) get_edit_post_link( (int) $jbli_r['post_id'] ) ); ?>"><?php echo esc_html( (string) ( $jbli_r['title'] ?? '' ) ); ?></a>
-								&nbsp;·&nbsp;<a href="<?php echo esc_url( (string) get_preview_post_link( (int) $jbli_r['post_id'] ) ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Προεπισκόπηση', 'job-listings' ); ?></a>
-							<?php } ?>
-							<?php if ( ! empty( $jbli_r['message'] ) ) { ?><div style="color:#b91c1c;"><?php echo esc_html( $jbli_r['message'] ); ?></div><?php } ?>
-							<?php if ( ! empty( $jbli_r['warnings'] ) ) { ?>
-								<ul style="margin:6px 0 0 18px;list-style:disc;color:#92400e;">
-									<?php foreach ( $jbli_r['warnings'] as $jbli_w ) { ?><li><?php echo esc_html( $jbli_w ); ?></li><?php } ?>
-								</ul>
-							<?php } ?>
-						</td>
-					</tr>
-				<?php } ?>
+				<tbody id="jbli_import_rows">
+				<?php foreach ( $jbli_results as $jbli_r ) { echo jbli_import_result_row_html( $jbli_r ); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside. ?>
 				</tbody>
 			</table>
 
@@ -299,9 +286,9 @@ function jbli_import_render_page() {
 				<p><a class="button button-primary" href="<?php echo esc_url( $jbli_panel_url ); ?>"><?php esc_html_e( 'Έλεγχος & έγκριση αγγελιών σε αναμονή', 'job-listings' ); ?></a></p>
 			<?php } ?>
 
-		<?php } ?>
+		</div>
 
-		<form method="post" style="max-width:780px;margin-top:18px;">
+		<form method="post" id="jbli_import_form" style="max-width:780px;margin-top:18px;">
 			<?php wp_nonce_field( 'jbli_import', 'jbli_import_nonce' ); ?>
 
 			<p>
@@ -315,10 +302,191 @@ function jbli_import_render_page() {
 				<br><span style="color:#6b7280;"><?php esc_html_e( 'Αν συμπληρωθεί, οι αιτήσεις για αυτές τις αγγελίες στέλνονται εδώ. Αλλιώς χρησιμοποιείται email που βρέθηκε στην αγγελία· αν δεν βρεθεί, εμφανίζεται μόνο σύνδεσμος στην αρχική αγγελία.', 'job-listings' ); ?></span>
 			</p>
 
-			<p><button type="submit" class="button button-primary button-hero"><?php esc_html_e( 'Εισαγωγή', 'job-listings' ); ?></button></p>
+			<p><button type="submit" id="jbli_import_submit" class="button button-primary button-hero"><?php esc_html_e( 'Εισαγωγή', 'job-listings' ); ?></button></p>
 		</form>
 
+		<?php jbli_import_print_script(); ?>
+
 	</div>
+	<?php
+
+}
+
+/**
+ * One results-table row for an import result.
+ *
+ * @since 9.9.57 (was inline in jbli_import_render_page())
+ *
+ * @param array $jbli_r Result of jbli_import_url() plus 'url'.
+ * @return string Escaped HTML.
+ */
+function jbli_import_result_row_html( array $jbli_r ) {
+
+	$jbli_status = (string) ( $jbli_r['status'] ?? 'error' );
+
+	if ( 'created' === $jbli_status )       { $jbli_label = '<strong style="color:#047857;">' . esc_html( ! empty( $jbli_r['published'] ) ? __( 'Δημοσιεύτηκε', 'job-listings' ) : __( 'Σε αναμονή', 'job-listings' ) ) . '</strong>'; }
+	elseif ( 'duplicate' === $jbli_status ) { $jbli_label = '<strong style="color:#92400e;">' . esc_html__( 'Υπάρχει ήδη', 'job-listings' ) . '</strong>'; }
+	else                                    { $jbli_label = '<strong style="color:#b91c1c;">' . esc_html__( 'Σφάλμα', 'job-listings' ) . '</strong>'; }
+
+	$jbli_notes = '';
+
+	if ( ! empty( $jbli_r['post_id'] ) )
+	{
+		$jbli_id    = (int) $jbli_r['post_id'];
+		$jbli_edit  = function_exists( 'jbli_get_form_page_url' ) ? add_query_arg( 'job_edit', $jbli_id, jbli_get_form_page_url() ) : (string) get_edit_post_link( $jbli_id );
+		$jbli_notes .= '<a href="' . esc_url( $jbli_edit ) . '">' . esc_html( (string) ( $jbli_r['title'] ?? '' ) ) . '</a>';
+		$jbli_notes .= '&nbsp;·&nbsp;<a href="' . esc_url( (string) get_preview_post_link( $jbli_id ) ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Προεπισκόπηση', 'job-listings' ) . '</a>';
+	}
+
+	if ( ! empty( $jbli_r['message'] ) ) { $jbli_notes .= '<div style="color:#b91c1c;">' . esc_html( (string) $jbli_r['message'] ) . '</div>'; }
+
+	if ( ! empty( $jbli_r['warnings'] ) )
+	{
+		$jbli_notes .= '<ul style="margin:6px 0 0 18px;list-style:disc;color:#92400e;">';
+
+		foreach ( (array) $jbli_r['warnings'] as $jbli_w ) { $jbli_notes .= '<li>' . esc_html( (string) $jbli_w ) . '</li>'; }
+
+		$jbli_notes .= '</ul>';
+	}
+
+	$jbli_url = (string) ( $jbli_r['url'] ?? '' );
+
+	return '<tr>'
+		. '<td style="word-break:break-all;"><a href="' . esc_url( $jbli_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $jbli_url ) . '</a></td>'
+		. '<td>' . $jbli_label . '</td>'
+		. '<td>' . $jbli_notes . '</td>'
+		. '</tr>';
+
+}
+
+/**
+ * AJAX: import a single URL (the import page sends the list one URL at a time).
+ *
+ * @since 9.9.57
+ * @return void
+ */
+function jbli_import_ajax_one() {
+
+	if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( array( 'message' => __( 'Unauthorized', 'job-listings' ) ), 403 ); }
+
+	check_ajax_referer( 'jbli_import', 'nonce' );
+
+	/* Not sanitize_text_field(): it strips the %XX sequences of Greek URLs. jbli_import_canonical_url() validates it. */
+	$jbli_raw   = wp_check_invalid_utf8( (string) wp_unslash( $_POST['url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$jbli_email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+	$jbli_url   = jbli_import_canonical_url( $jbli_raw );
+
+	if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 60 ); } // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+	$jbli_result = array( 'url' => '' !== $jbli_url ? $jbli_url : $jbli_raw ) + jbli_import_url( $jbli_raw, $jbli_email );
+
+	wp_send_json_success(
+		array(
+			'status' => (string) $jbli_result['status'],
+			'row'    => jbli_import_result_row_html( $jbli_result ),
+		)
+	);
+
+}
+
+add_action( 'wp_ajax_jbli_import_one', 'jbli_import_ajax_one' );
+
+/**
+ * Inline script: send the URL list one URL at a time, with progress.
+ *
+ * Without JS the form still posts the whole list (first JBLI_IMPORT_MAX_URLS_NOJS).
+ *
+ * @since 9.9.57
+ * @return void
+ */
+function jbli_import_print_script() {
+
+	$jbli_cfg = array(
+		'ajax'    => admin_url( 'admin-ajax.php' ),
+		'nonce'   => wp_create_nonce( 'jbli_import' ),
+		'max'     => (int) JBLI_IMPORT_MAX_URLS,
+		'i18n'    => array(
+			/* translators: 1: current URL number, 2: total URLs */
+			'progress' => __( '%1$d από %2$d', 'job-listings' ),
+			'done'     => __( 'Ολοκληρώθηκε: %1$d νέες, %2$d υπήρχαν ήδη, %3$d σφάλματα.', 'job-listings' ),
+			'tooMany'  => __( 'Βάλατε %1$d συνδέσμους· εισάγονται οι πρώτοι %2$d, οι υπόλοιποι μένουν στο πεδίο για την επόμενη φορά.', 'job-listings' ),
+			'failed'   => __( 'Ο διακομιστής δεν απάντησε. Δοκιμάστε ξανά αυτόν τον σύνδεσμο.', 'job-listings' ),
+			'busy'     => __( 'Εισαγωγή…', 'job-listings' ),
+			'leave'    => __( 'Η εισαγωγή δεν έχει τελειώσει.', 'job-listings' ),
+		),
+	);
+	?>
+	<script>
+	( function () {
+		var cfg   = <?php echo wp_json_encode( $jbli_cfg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>;
+		var form  = document.getElementById( 'jbli_import_form' );
+		var box   = document.getElementById( 'jbli_import_results' );
+		var rows  = document.getElementById( 'jbli_import_rows' );
+		var prog  = document.getElementById( 'jbli_import_progress' );
+		var btn   = document.getElementById( 'jbli_import_submit' );
+		if ( ! form || ! window.fetch || ! window.FormData ) { return; }
+
+		function fmt( s, a ) { return s.replace( /%(\d)\$d/g, function ( m, n ) { return String( a[ n - 1 ] ); } ); }
+		function errorRow( url, msg ) {
+			var tr = document.createElement( 'tr' ), td1 = document.createElement( 'td' ), td2 = document.createElement( 'td' ), td3 = document.createElement( 'td' ), b = document.createElement( 'strong' );
+			td1.style.wordBreak = 'break-all'; td1.textContent = url;
+			b.style.color = '#b91c1c'; b.textContent = '✕'; td2.appendChild( b );
+			td3.style.color = '#b91c1c'; td3.textContent = msg;
+			tr.appendChild( td1 ); tr.appendChild( td2 ); tr.appendChild( td3 );
+			return tr;
+		}
+
+		var running = false;
+		window.addEventListener( 'beforeunload', function ( e ) { if ( running ) { e.preventDefault(); e.returnValue = cfg.i18n.leave; return cfg.i18n.leave; } } );
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			if ( running ) { return; }
+
+			var seen = {}, urls = [];
+			form.elements.jbli_import_urls.value.split( /\s+/ ).forEach( function ( u ) {
+				u = u.trim(); if ( u && ! seen[ u ] ) { seen[ u ] = 1; urls.push( u ); }
+			} );
+			if ( ! urls.length ) { return; }
+
+			var total = urls.length;
+			rows.innerHTML = '';
+			box.hidden = false;
+			var note = '', rest = [];
+			if ( total > cfg.max ) { note = fmt( cfg.i18n.tooMany, [ total, cfg.max ] ) + ' '; rest = urls.slice( cfg.max ); urls = urls.slice( 0, cfg.max ); }
+
+			var email = form.elements.jbli_import_email.value, n = 0, c = { created: 0, duplicate: 0, error: 0 }, failed = [];
+			running = true; btn.disabled = true;
+
+			function next() {
+				if ( n >= urls.length ) {
+					running = false; btn.disabled = false; btn.textContent = btn.getAttribute( 'data-label' );
+					prog.textContent = note + fmt( cfg.i18n.done, [ c.created, c.duplicate, c.error ] );
+					/* Keep the links that failed or were over the limit, ready for the next run. */
+					form.elements.jbli_import_urls.value = failed.concat( rest ).join( '\n' );
+					return;
+				}
+				var url = urls[ n++ ];
+				prog.textContent = note + fmt( cfg.i18n.progress, [ n, urls.length ] );
+				var fd = new FormData();
+				fd.append( 'action', 'jbli_import_one' ); fd.append( 'nonce', cfg.nonce ); fd.append( 'url', url ); fd.append( 'email', email );
+				fetch( cfg.ajax, { method: 'POST', body: fd, credentials: 'same-origin' } )
+					.then( function ( r ) { return r.json(); } )
+					.then( function ( j ) {
+						if ( ! j || ! j.success ) { throw new Error( 'bad' ); }
+						c[ j.data.status ] = ( c[ j.data.status ] || 0 ) + 1;
+						if ( 'error' === j.data.status ) { failed.push( url ); }
+						rows.insertAdjacentHTML( 'beforeend', j.data.row );
+					} )
+					.catch( function () { c.error++; failed.push( url ); rows.appendChild( errorRow( url, cfg.i18n.failed ) ); } )
+					.then( next );
+			}
+			btn.setAttribute( 'data-label', btn.textContent );
+			btn.textContent = cfg.i18n.busy;
+			next();
+		} );
+	} () );
+	</script>
 	<?php
 
 }

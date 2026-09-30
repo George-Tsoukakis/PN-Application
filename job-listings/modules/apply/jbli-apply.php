@@ -132,14 +132,74 @@ function jbli_apply_replace_placeholders( string $jbli_text, array $jbli_data ):
 
 function jbli_apply_check_rate_limit( int $jbli_post_id ): bool {
 
-	$jbli_ip    = sanitize_text_field( (string) ( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' ) );
-	$jbli_key   = 'jbli_apply_' . $jbli_post_id . '_' . md5( $jbli_ip );
-	$jbli_count = (int) get_transient( $jbli_key );
+	/* 9.9.57: proxy-aware IP (Cloudflare etc.), same helper as the view counter. */
+	$jbli_ip = function_exists( 'jbli_get_client_ip' )
+		? jbli_get_client_ip()
+		: sanitize_text_field( wp_unslash( (string) ( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' ) ) );
 
-	if ( $jbli_count >= 3 ) { return false; }
+	$jbli_hash   = md5( wp_salt( 'nonce' ) . $jbli_ip );
+	$jbli_key    = 'jbli_apply_' . $jbli_post_id . '_' . $jbli_hash;
+	$jbli_global = 'jbli_apply_ip_' . $jbli_hash;
 
-	set_transient( $jbli_key, $jbli_count + 1, HOUR_IN_SECONDS );
+	$jbli_count        = (int) get_transient( $jbli_key );
+	$jbli_global_count = (int) get_transient( $jbli_global );
+
+	/* 3 per listing and 10 in total per hour from the same visitor. */
+	$jbli_per_listing = (int) apply_filters( 'jbli_apply_limit_per_listing', 3 );
+	$jbli_per_ip      = (int) apply_filters( 'jbli_apply_limit_per_ip', 10 );
+
+	if ( $jbli_count >= $jbli_per_listing || $jbli_global_count >= $jbli_per_ip ) { return false; }
+
+	set_transient( $jbli_key,    $jbli_count + 1,        HOUR_IN_SECONDS );
+	set_transient( $jbli_global, $jbli_global_count + 1, HOUR_IN_SECONDS );
 	return true;
+
+}
+
+/**
+ * Honeypot: a hidden field people never see; bots that fill every input do.
+ *
+ * @since 9.9.57
+ * @return bool
+ */
+function jbli_apply_honeypot_filled(): bool {
+
+	$jbli_honeypot = isset( $_POST['jbli_hp_website'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['jbli_hp_website'] ) ) ) : '';
+
+	return '' !== $jbli_honeypot;
+
+}
+
+/**
+ * Sent faster than a person can (browser autofill included).
+ *
+ * Only judged when the script sent the timing, so a page still running the
+ * pre-9.9.57 script (stale cache) is never blocked.
+ *
+ * @since 9.9.57
+ * @return bool
+ */
+function jbli_apply_sent_too_fast(): bool {
+
+	return isset( $_POST['jbli_elapsed'] ) && absint( $_POST['jbli_elapsed'] ) < 1500;
+
+}
+
+/**
+ * Applicant name: letters, spaces, dots, apostrophes and hyphens — no links.
+ *
+ * @since 9.9.57
+ * @param string $jbli_name Sanitized name.
+ * @return bool
+ */
+function jbli_apply_valid_name( string $jbli_name ): bool {
+
+	if ( function_exists( 'jbli_strlen' ) ? jbli_strlen( $jbli_name ) > 80 : strlen( $jbli_name ) > 160 ) { return false; }
+
+	/* Domain-like text ("www.", "site.com") is a link, not a name. */
+	if ( preg_match( '/www\.|\.[a-z]{2,6}(\s|$)/i', $jbli_name ) ) { return false; }
+
+	return (bool) preg_match( "/^[\\p{L}][\\p{L}\\p{M} .'\\-]*$/u", $jbli_name );
 
 }
 
@@ -160,12 +220,19 @@ function jbli_apply_handle_ajax(): void {
 		wp_send_json_error( array( 'jbli_message' => __( 'Η αγγελία δεν βρέθηκε.', 'job-listings' ) ) );
 	}
 
-	if ( ! jbli_apply_check_rate_limit( $jbli_post_id ) )
+	/* Bots get the normal "sent" answer, so they learn nothing; nothing is stored or mailed. */
+	if ( jbli_apply_honeypot_filled() )
 	{
-		wp_send_json_error( array( 'jbli_message' => __( 'Έχετε στείλει πολλά αιτήματα. Δοκιμάστε αργότερα.', 'job-listings' ) ) );
+		wp_send_json_success( array( 'jbli_message' => __( 'Το ενδιαφέρον σας στάλθηκε επιτυχώς!', 'job-listings' ) ) );
 	}
 
-	$jbli_name  = sanitize_text_field( wp_unslash( $_POST['applicant_name']  ?? '' ) );
+	/* A person who was just very quick sees this and simply presses «Αποστολή» again. */
+	if ( jbli_apply_sent_too_fast() )
+	{
+		wp_send_json_error( array( 'jbli_message' => __( 'Ελέγξτε τα στοιχεία σας και πατήστε ξανά «Αποστολή».', 'job-listings' ) ) );
+	}
+
+	$jbli_name  = trim( (string) preg_replace( '/\s+/u', ' ', sanitize_text_field( wp_unslash( $_POST['applicant_name']  ?? '' ) ) ) );
 	$jbli_phone = sanitize_text_field( wp_unslash( $_POST['applicant_phone'] ?? '' ) );
 	$jbli_email = sanitize_email( wp_unslash( $_POST['applicant_email']      ?? '' ) );
 
@@ -174,11 +241,29 @@ function jbli_apply_handle_ajax(): void {
 		wp_send_json_error( array( 'jbli_message' => __( 'Παρακαλώ συμπληρώστε όλα τα πεδία σωστά.', 'job-listings' ) ) );
 	}
 
+	if ( ! jbli_apply_valid_name( $jbli_name ) )
+	{
+		wp_send_json_error( array( 'jbli_message' => __( 'Το ονοματεπώνυμο μπορεί να έχει μόνο γράμματα.', 'job-listings' ) ) );
+	}
+
+	$jbli_phone_digits = (string) preg_replace( '/\D/', '', $jbli_phone );
+
+	if ( strlen( $jbli_phone_digits ) < 10 || strlen( $jbli_phone_digits ) > 15 )
+	{
+		wp_send_json_error( array( 'jbli_message' => __( 'Συμπληρώστε έγκυρο τηλέφωνο (τουλάχιστον 10 ψηφία).', 'job-listings' ) ) );
+	}
+
 	$jbli_to = sanitize_email( (string) get_post_meta( $jbli_post_id, JBLI_META_EMAIL, true ) );
 
 	if ( ! $jbli_to || ! is_email( $jbli_to ) )
 	{
 		wp_send_json_error( array( 'jbli_message' => __( 'Δεν βρέθηκε email επικοινωνίας για αυτή την αγγελία.', 'job-listings' ) ) );
+	}
+
+	/* 9.9.57: counted only for a valid request, so typos don't use up the attempts. */
+	if ( ! jbli_apply_check_rate_limit( $jbli_post_id ) )
+	{
+		wp_send_json_error( array( 'jbli_message' => __( 'Έχετε στείλει πολλά αιτήματα. Δοκιμάστε αργότερα.', 'job-listings' ) ) );
 	}
 
 	$jbli_position = sanitize_text_field( (string) get_post_meta( $jbli_post_id, JBLI_META_POSITION, true ) )
@@ -212,10 +297,14 @@ function jbli_apply_handle_ajax(): void {
 	$jbli_headers   = jbli_email_headers();
 	$jbli_headers[] = 'Reply-To: ' . str_replace( array( "\r", "\n", '<', '>', '"' ), '', $jbli_name ) . ' <' . $jbli_email . '>';
 
-	if ( function_exists( 'jbli_apply_save_submission' ) )
-	{
-		jbli_apply_save_submission( $jbli_post_id, $jbli_name, $jbli_phone, $jbli_email );
-	}
+	/*
+	 * 9.9.57: the record starts as "pending" and is marked "sent" or
+	 * "failed" after wp_mail(), so the admin list shows what reached the
+	 * pharmacy and a failed attempt is not mistaken for a sent application.
+	 */
+	$jbli_submission_id = function_exists( 'jbli_apply_save_submission' )
+		? jbli_apply_save_submission( $jbli_post_id, $jbli_name, $jbli_phone, $jbli_email )
+		: 0;
 
 	$jbli_sent = wp_mail(
 		$jbli_to,
@@ -223,6 +312,11 @@ function jbli_apply_handle_ajax(): void {
 		$jbli_email_html,
 		$jbli_headers
 	);
+
+	if ( $jbli_submission_id && function_exists( 'jbli_apply_set_submission_status' ) )
+	{
+		jbli_apply_set_submission_status( $jbli_submission_id, $jbli_sent ? 'sent' : 'failed' );
+	}
 
 	if ( ! $jbli_sent )
 	{
@@ -384,6 +478,11 @@ function jbli_apply_modal_html( int $jbli_post_id ): string {
 					</div>
 				</div>
 
+				<div class="jbli_apply_hp" aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">
+					<label for="<?php echo esc_attr( $jbli_modal_id ); ?>_website"><?php esc_html_e( 'Μην συμπληρώσετε αυτό το πεδίο', 'job-listings' ); ?></label>
+					<input type="text" id="<?php echo esc_attr( $jbli_modal_id ); ?>_website" name="jbli_hp_website" value="" tabindex="-1" autocomplete="off">
+				</div>
+
 				<input type="hidden" name="post_id" value="<?php echo esc_attr( (string) $jbli_post_id ); ?>">
 				<input type="hidden" name="nonce"   value="<?php echo esc_attr( $jbli_nonce ); ?>">
 				<input type="hidden" name="action"  value="jbli_apply">
@@ -400,7 +499,19 @@ function jbli_apply_modal_html( int $jbli_post_id ): string {
 
 				<p class="jbli_apply_modal_privacy">
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-					<?php esc_html_e( 'Τα στοιχεία σας αποστέλλονται μόνο στο φαρμακείο της αγγελίας.', 'job-listings' ); ?>
+					<span>
+						<?php
+						echo esc_html( sprintf(
+							/* translators: %d: days applications are kept */
+							__( 'Τα στοιχεία σας στέλνονται στο φαρμακείο της αγγελίας. Κρατάμε αντίγραφο της αίτησης για %d ημέρες και μετά διαγράφεται αυτόματα.', 'job-listings' ),
+							function_exists( 'jbli_apply_retention_days' ) ? jbli_apply_retention_days() : 60
+						) );
+						$jbli_privacy_url = function_exists( 'get_privacy_policy_url' ) ? get_privacy_policy_url() : '';
+						if ( '' !== $jbli_privacy_url ) {
+							echo ' <a href="' . esc_url( $jbli_privacy_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Πολιτική απορρήτου', 'job-listings' ) . '</a>';
+						}
+						?>
+					</span>
 				</p>
 
 			</div>

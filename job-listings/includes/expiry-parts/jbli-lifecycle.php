@@ -14,6 +14,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/* 9.9.57: set when an admin deactivates a listing (leading "_" = hidden from Custom Fields). */
+defined( 'JBLI_META_ADMIN_HIDDEN' ) || define( 'JBLI_META_ADMIN_HIDDEN', '_jbli_admin_hidden' );
+
 /**
  * Return a future MySQL datetime string.
  *
@@ -78,6 +81,9 @@ function jbli_publish_and_reset( $jbli_post_id, $jbli_action_hook ) {
 
 	delete_post_meta( $jbli_post_id, JBLI_META_EXPIRED );
 	delete_post_meta( $jbli_post_id, JBLI_META_REMINDER_SENT );
+
+	/* 9.9.57: an admin publishing the listing lifts an admin deactivation. */
+	if ( function_exists( 'jbli_is_admin' ) && jbli_is_admin() ) { delete_post_meta( $jbli_post_id, JBLI_META_ADMIN_HIDDEN ); }
 	update_post_meta( $jbli_post_id, JBLI_META_EXPIRES, jbli_future_datetime( 30 ) );
 
 	if ( function_exists( 'jbli_sync_listing_storage' ) ) { jbli_sync_listing_storage( $jbli_post_id ); }
@@ -173,6 +179,9 @@ function jbli_deactivate_job( $jbli_post_id ) {
 
 		return $jbli_updated;
 	}
+
+	/* 9.9.57: deactivated by an admin → the owner cannot publish it again. */
+	if ( function_exists( 'jbli_is_admin' ) && jbli_is_admin() ) { update_post_meta( $jbli_post_id, JBLI_META_ADMIN_HIDDEN, 1 ); }
 
 	if ( function_exists( 'jbli_sync_listing_storage' ) ) { jbli_sync_listing_storage( $jbli_post_id ); }
 

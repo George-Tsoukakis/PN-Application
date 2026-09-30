@@ -23,8 +23,10 @@ defined( 'ABSPATH' ) || exit;
  *           created by dbDelta with all keys; nothing is copied over).
  *  1.3.1 — upgrade path for 1.3.0: rename legacy _job_* post meta and
  *           rebuild the storage index from the listing posts.
+ *  1.4.0 — jbli_status (pending/sent/failed) and an email key on
+ *           jbli_apply_submission (email delivery + privacy export/erase).
  */
-defined( 'JBLI_DB_VERSION' ) || define( 'JBLI_DB_VERSION', '1.3.1' );
+defined( 'JBLI_DB_VERSION' ) || define( 'JBLI_DB_VERSION', '1.4.0' );
 
 function jbli_install_storage() {
 
@@ -83,9 +85,11 @@ function jbli_install_storage() {
 		jbli_applicant_phone VARCHAR(50) NOT NULL DEFAULT '',
 		jbli_applicant_email VARCHAR(190) NOT NULL DEFAULT '',
 		jbli_submitted_at DATETIME NOT NULL,
+		jbli_status VARCHAR(10) NOT NULL DEFAULT 'sent',
 		PRIMARY KEY  (id),
 		KEY jbli_post_id (jbli_post_id),
-		KEY jbli_submitted_at (jbli_submitted_at)
+		KEY jbli_submitted_at (jbli_submitted_at),
+		KEY jbli_applicant_email (jbli_applicant_email(100))
 	) {$jbli_charset_collate};";
 
 	dbDelta( $jbli_sql_submissions );

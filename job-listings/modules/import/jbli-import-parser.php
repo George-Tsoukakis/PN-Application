@@ -41,8 +41,10 @@ function jbli_import_fetch( $jbli_url ) {
 	$jbli_response = wp_safe_remote_get(
 		$jbli_url,
 		array(
-			'timeout'     => 20,
-			'redirection' => 5,
+			'timeout'             => 20,
+			'redirection'         => 5,
+			/* 9.9.57: an ad page is a few hundred KB; don't load huge responses into memory. */
+			'limit_response_size' => 3 * MB_IN_BYTES,
 			/* A regular browser UA: many sites' firewalls answer 403 to unknown bots. */
 			'user-agent'  => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
 			'headers'     => array( 'Accept' => 'text/html,application/xhtml+xml', 'Accept-Language' => 'el-GR,el;q=0.9,en;q=0.6' ),

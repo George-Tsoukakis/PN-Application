@@ -264,3 +264,97 @@ function jbli_block_admin_edit_access() {
 }
 
 add_action( 'admin_init', 'jbli_block_admin_edit_access' );
+
+/**
+ * Listing meta can only be changed by admins outside the plugin's own forms.
+ *
+ * The CPT supports custom fields (admins fix imported listings there), and
+ * core lets anyone who can edit a post add/edit its meta through the
+ * Custom Fields box or admin-ajax "add-meta". Registering the keys with an
+ * auth_callback limits that to manage_options, so an owner cannot set
+ * "featured", a far-future expiry, views, email or pharmacy name directly.
+ * The plugin's own code writes meta with update_post_meta(), which does not
+ * check these caps.
+ *
+ * @since 9.9.57
+ * @return void
+ */
+function jbli_register_protected_meta() {
+
+	$jbli_keys = array(
+		JBLI_META_POSITION, JBLI_META_PHARMACY_NAME, JBLI_META_ADDRESS, JBLI_META_LAT, JBLI_META_LNG,
+		JBLI_META_TYPE, JBLI_META_SALARY, JBLI_META_CONTACT_PHONE, JBLI_META_EXPIRES, JBLI_META_EXPIRED,
+		JBLI_META_REMINDER_SENT, JBLI_META_FEATURED, JBLI_META_VIEWS, JBLI_META_EMAIL,
+		'jbli_source_url', 'jbli_source_site',
+	);
+
+	foreach ( $jbli_keys as $jbli_key ) {
+
+		register_post_meta(
+			JBLI_CPT,
+			$jbli_key,
+			array(
+				'single'        => true,
+				'show_in_rest'  => false,
+				'auth_callback' => static function () { return current_user_can( 'manage_options' ); },
+			)
+		);
+
+	}
+
+}
+
+add_action( 'init', 'jbli_register_protected_meta', 20 );
+
+/**
+ * Pharmacies use only the front end (dashboard / form): keep them out of wp-admin.
+ *
+ * admin-ajax.php and admin-post.php stay reachable (AJAX filters, apply,
+ * form fallbacks). Admins/editors are never redirected.
+ *
+ * @since 9.9.57
+ * @return void
+ */
+function jbli_redirect_pharmacists_from_admin() {
+
+	if ( ! is_admin() || wp_doing_ajax() || wp_doing_cron() ) { return; }
+
+	$jbli_script = basename( (string) ( $_SERVER['SCRIPT_NAME'] ?? '' ) );
+
+	if ( 'admin-post.php' === $jbli_script || 'admin-ajax.php' === $jbli_script ) { return; }
+
+	$jbli_user = wp_get_current_user();
+
+	if ( ! jbli_user_is_pharmacist( $jbli_user ) || jbli_user_has_full_listing_access( $jbli_user ) ) { return; }
+
+	if ( ! (bool) apply_filters( 'jbli_block_pharmacist_admin', true, $jbli_user ) ) { return; }
+
+	$jbli_target = function_exists( 'jbli_get_dashboard_url' ) ? jbli_get_dashboard_url() : '';
+
+	wp_safe_redirect( '' !== $jbli_target ? $jbli_target : home_url( '/' ) );
+	exit;
+
+}
+
+add_action( 'admin_init', 'jbli_redirect_pharmacists_from_admin', 1 );
+
+/**
+ * No admin bar for pharmacies (it only links into wp-admin).
+ *
+ * @since 9.9.57
+ * @param bool $jbli_show Current value.
+ * @return bool
+ */
+function jbli_hide_admin_bar_for_pharmacists( $jbli_show ) {
+
+	if ( ! $jbli_show || ! is_user_logged_in() ) { return $jbli_show; }
+
+	$jbli_user = wp_get_current_user();
+
+	if ( jbli_user_is_pharmacist( $jbli_user ) && ! jbli_user_has_full_listing_access( $jbli_user ) && (bool) apply_filters( 'jbli_block_pharmacist_admin', true, $jbli_user ) ) { return false; }
+
+	return $jbli_show;
+
+}
+
+add_filter( 'show_admin_bar', 'jbli_hide_admin_bar_for_pharmacists' );

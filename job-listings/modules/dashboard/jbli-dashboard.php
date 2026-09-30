@@ -242,6 +242,10 @@ function jbli_dash_adminpost_handler() {
 				);
 			}
 
+			$jbli_guard = jbli_dashboard_publish_guard( (int) $jbli_post_id, 'renew' );
+
+			if ( null !== $jbli_guard ) { jbli_redirect_with_notice( $jbli_back_url, $jbli_guard, 'warning' ); }
+
 			$jbli_renewed = jbli_renew_job( (int) $jbli_post_id );
 
 			if ( is_wp_error( $jbli_renewed ) )
@@ -315,6 +319,10 @@ function jbli_dash_adminpost_handler() {
 					'warning'
 				);
 			}
+
+			$jbli_guard = jbli_dashboard_publish_guard( (int) $jbli_post_id, 'activate' );
+
+			if ( null !== $jbli_guard ) { jbli_redirect_with_notice( $jbli_back_url, $jbli_guard, 'warning' ); }
 
 			$jbli_activated = jbli_activate_job( (int) $jbli_post_id );
 
@@ -394,4 +402,56 @@ function jbli_dash_action_btn(
 		. esc_html( $jbli_label )
 		. '</button>'
 		. '</form>';
+}
+
+/**
+ * Server-side checks before an owner re-publishes a listing from the dashboard.
+ *
+ * - A listing an admin deactivated stays off until an admin publishes it.
+ * - «Ανανέωση» only applies to expired listings (not pending / drafts).
+ * - Publishing must not exceed the active-listings cap.
+ *
+ * @since 9.9.57
+ *
+ * @param int    $jbli_post_id Listing ID.
+ * @param string $jbli_action  'renew' | 'activate'.
+ * @return string|null Message to show, or null when allowed.
+ */
+function jbli_dashboard_publish_guard( $jbli_post_id, $jbli_action ) {
+
+	if ( jbli_is_admin() ) { return null; }
+
+	$jbli_status = (string) get_post_status( $jbli_post_id );
+
+	/* Already public (e.g. flagged expired but not yet moved by cron): renewing adds nothing to the active count. */
+	if ( 'publish' === $jbli_status )
+	{
+		return ( 'renew' === $jbli_action && ! get_post_meta( $jbli_post_id, JBLI_META_EXPIRED, true ) )
+			? __( 'Η αγγελία είναι ήδη ενεργή.', 'job-listings' )
+			: null;
+	}
+
+	if ( defined( 'JBLI_META_ADMIN_HIDDEN' ) && get_post_meta( $jbli_post_id, JBLI_META_ADMIN_HIDDEN, true ) )
+	{
+		return __( 'Η αγγελία απενεργοποιήθηκε από τον διαχειριστή. Επικοινωνήστε μαζί μας για να ενεργοποιηθεί ξανά.', 'job-listings' );
+	}
+
+	if ( 'pending' === $jbli_status ) { return __( 'Η αγγελία περιμένει έγκριση από τον διαχειριστή.', 'job-listings' ); }
+
+	if ( 'renew' === $jbli_action && 'job-expired' !== $jbli_status && ! get_post_meta( $jbli_post_id, JBLI_META_EXPIRED, true ) )
+	{
+		return __( 'Μόνο αγγελίες που έχουν λήξει μπορούν να ανανεωθούν.', 'job-listings' );
+	}
+
+	if ( function_exists( 'jbli_owner_at_active_cap' ) && jbli_owner_at_active_cap( (int) get_post_field( 'post_author', $jbli_post_id ) ) )
+	{
+		return sprintf(
+			/* translators: %d: maximum number of active listings */
+			__( 'Έχετε φτάσει το μέγιστο όριο ενεργών αγγελιών (%d). Απενεργοποιήστε μια άλλη πρώτα.', 'job-listings' ),
+			(int) apply_filters( 'jbli_max_active_per_user', 5 )
+		);
+	}
+
+	return null;
+
 }

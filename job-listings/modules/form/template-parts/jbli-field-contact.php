@@ -23,6 +23,8 @@ $jbli_contact_phone 		= is_callable( $jbli_fv ) ? $jbli_fv( 'jbli_contact_phone'
 $jbli_user_email 			= ( isset( $jbli_user_email ) && is_email( $jbli_user_email ) ) ? (string) $jbli_user_email : '';
 $jbli_default_email 		= ( isset( $jbli_contact_email ) && is_email( $jbli_contact_email ) ) ? (string) $jbli_contact_email : ( is_email( $jbli_user_email ) ? $jbli_user_email : '' );
 $jbli_contact_email_value 	= is_callable( $jbli_fv ) ? $jbli_fv( 'contact_email', $jbli_default_email ) : $jbli_default_email;
+$jbli_req_attr_c 			= isset( $jbli_req_attr ) ? (string) $jbli_req_attr : ' required aria-required="true"';
+$jbli_req_mark_c 			= isset( $jbli_req_mark ) ? (string) $jbli_req_mark : ' <span class="jbli_req" aria-hidden="true">*</span>';
 ?>
 
 <div class="jbli_form_grid jbli_form_grid_2 jbli_form_grid_contact">
@@ -30,18 +32,18 @@ $jbli_contact_email_value 	= is_callable( $jbli_fv ) ? $jbli_fv( 'contact_email'
 	<?php  ?>
 	<div class="jbli_field jbli_form_field jbli_form_field_phone">
 
-		<label class="jbli_field_label" for="job_contact_phone"><?php esc_html_e( 'Τηλέφωνο', 'job-listings' ); ?> <span class="jbli_req" aria-hidden="true">*</span></label>
+		<label class="jbli_field_label" for="job_contact_phone"><?php esc_html_e( 'Τηλέφωνο', 'job-listings' ); ?><?php echo $jbli_req_mark_c; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static markup. ?></label>
 
-		<input type="tel" id="job_contact_phone" name="job_contact_phone" value="<?php echo esc_attr( $jbli_contact_phone ); ?>" class="jbli_input" inputmode="tel" autocomplete="tel" required aria-required="true">
+		<input type="tel" id="job_contact_phone" name="job_contact_phone" value="<?php echo esc_attr( $jbli_contact_phone ); ?>" class="jbli_input" inputmode="tel" autocomplete="tel"<?php echo $jbli_req_attr_c; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static markup. ?>>
 
 	</div>
 
 	<?php  ?>
 	<div class="jbli_field jbli_form_field jbli_form_field_email">
 
-		<label class="jbli_field_label" for="job_contact_email"><?php esc_html_e( 'Email Επικοινωνίας', 'job-listings' ); ?> <span class="jbli_req" aria-hidden="true">*</span></label>
+		<label class="jbli_field_label" for="job_contact_email"><?php esc_html_e( 'Email Επικοινωνίας', 'job-listings' ); ?><?php echo $jbli_req_mark_c; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static markup. ?></label>
 
-		<input type="email" id="job_contact_email" name="job_contact_email" value="<?php echo esc_attr( $jbli_contact_email_value ); ?>" class="jbli_input" inputmode="email" autocomplete="email" required aria-required="true">
+		<input type="email" id="job_contact_email" name="job_contact_email" value="<?php echo esc_attr( $jbli_contact_email_value ); ?>" class="jbli_input" inputmode="email" autocomplete="email"<?php echo $jbli_req_attr_c; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static markup. ?>>
 
 	</div>
 

@@ -6,6 +6,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) { exit; }
 
 wp_clear_scheduled_hook( 'jbli_hourly_cron' );
 wp_clear_scheduled_hook( 'jbli_daily_reminder_cron' );
+wp_clear_scheduled_hook( 'jbli_apply_purge_cron' );
 flush_rewrite_rules();
 
 if ( ! (bool) get_option( 'jbli_delete_on_uninstall', false ) )
@@ -87,6 +88,7 @@ $jbli_options = array(
 	'jbli_listings_page_id',
 	'jbli_apply_email_subject',
 	'jbli_apply_email_body',
+	'jbli_apply_retention_days',
 );
 
 foreach ( $jbli_options as $jbli_option ) {

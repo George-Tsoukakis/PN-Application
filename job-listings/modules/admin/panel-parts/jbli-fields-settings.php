@@ -465,6 +465,24 @@ $jbli_title_max_chars    = function_exists( 'jbli_title_max_chars' ) ? jbli_titl
 					><?php echo esc_textarea( $jbli_body ?: $jbli_def_body ); ?></textarea>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row">
+					<label for="jbli_apply_retention_days"><?php esc_html_e( 'Διατήρηση αιτήσεων (ημέρες)', 'job-listings' ); ?></label>
+				</th>
+				<td>
+					<input
+						type="number"
+						id="jbli_apply_retention_days"
+						name="jbli_apply_retention_days"
+						value="<?php echo esc_attr( (string) ( function_exists( 'jbli_apply_retention_days' ) ? jbli_apply_retention_days() : 60 ) ); ?>"
+						min="7"
+						max="730"
+						step="1"
+						class="small-text"
+					>
+					<p class="description"><?php esc_html_e( 'Μετά από τόσες ημέρες τα στοιχεία των υποψηφίων διαγράφονται αυτόματα. Οι αγγελίες διαρκούν 30 ημέρες· προτείνεται 60.', 'job-listings' ); ?></p>
+				</td>
+			</tr>
 		</table>
 
 		<p>

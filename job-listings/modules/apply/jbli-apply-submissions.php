@@ -15,26 +15,20 @@
 
 defined( 'ABSPATH' ) || exit;
 
-if ( ! function_exists( 'jbli_apply_submissions_table' ) )
-{
-	function jbli_apply_submissions_table(): string {
-
-		global $wpdb;
-		return $wpdb->prefix . 'jbli_apply_submissions';
-
-	}
-}
+/* jbli_apply_submissions_table() lives in includes/jbli-storage.php (9.9.57: the unused duplicate here was removed). */
 
 /**
  * Save a submission record to the custom DB table.
+ *
+ * @since 9.9.57 Returns the row ID and starts as "pending" (see jbli_apply_set_submission_status()).
  *
  * @param int    $jbli_post_id Listing post ID.
  * @param string $jbli_name    Applicant full name.
  * @param string $jbli_phone   Applicant phone.
  * @param string $jbli_email   Applicant email.
- * @return bool True on success, false on failure.
+ * @return int Row ID, or 0 on failure.
  */
-function jbli_apply_save_submission( int $jbli_post_id, string $jbli_name, string $jbli_phone, string $jbli_email ): bool {
+function jbli_apply_save_submission( int $jbli_post_id, string $jbli_name, string $jbli_phone, string $jbli_email ): int {
 
 	global $wpdb;
 
@@ -49,13 +43,254 @@ function jbli_apply_save_submission( int $jbli_post_id, string $jbli_name, strin
 			'jbli_applicant_phone' => $jbli_phone,
 			'jbli_applicant_email' => $jbli_email,
 			'jbli_submitted_at'    => current_time( 'mysql' ),
+			'jbli_status'          => 'pending',
 		),
-		array( '%d', '%s', '%s', '%s', '%s' )
+		array( '%d', '%s', '%s', '%s', '%s', '%s' )
 	);
 
-	return false !== $jbli_result;
+	return false !== $jbli_result ? (int) $wpdb->insert_id : 0;
 
 }
+
+/**
+ * Record whether the email to the pharmacy went out.
+ *
+ * @since 9.9.57
+ *
+ * @param int    $jbli_id     Row ID.
+ * @param string $jbli_status 'sent' | 'failed'.
+ * @return void
+ */
+function jbli_apply_set_submission_status( int $jbli_id, string $jbli_status ): void {
+
+	global $wpdb;
+
+	if ( ! in_array( $jbli_status, array( 'pending', 'sent', 'failed' ), true ) ) { return; }
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$wpdb->update( jbli_apply_submissions_table(), array( 'jbli_status' => $jbli_status ), array( 'id' => $jbli_id ), array( '%s' ), array( '%d' ) );
+
+}
+
+/**
+ * Days an application is kept before it is deleted automatically.
+ *
+ * Listings run for 30 days; the default 60 leaves the pharmacy another
+ * month to get back to applicants. Set in Ρυθμίσεις (option
+ * jbli_apply_retention_days) or with the filter.
+ *
+ * @since 9.9.57
+ * @return int
+ */
+function jbli_apply_retention_days(): int {
+
+	$jbli_days = (int) get_option( 'jbli_apply_retention_days', 60 );
+
+	return max( 7, min( 730, (int) apply_filters( 'jbli_apply_retention_days', $jbli_days > 0 ? $jbli_days : 60 ) ) );
+
+}
+
+/**
+ * Delete applications older than the retention period (daily cron).
+ *
+ * @since 9.9.57
+ * @return int Rows deleted.
+ */
+function jbli_apply_purge_old_submissions(): int {
+
+	global $wpdb;
+
+	$jbli_table  = jbli_apply_submissions_table();
+	/* jbli_submitted_at is stored in site-local time (current_time('mysql')). */
+	$jbli_cutoff = gmdate( 'Y-m-d H:i:s', (int) current_time( 'timestamp' ) - jbli_apply_retention_days() * DAY_IN_SECONDS ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
+	$jbli_deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM {$jbli_table} WHERE jbli_submitted_at < %s", $jbli_cutoff ) );
+
+	return (int) $jbli_deleted;
+
+}
+
+add_action( 'jbli_apply_purge_cron', 'jbli_apply_purge_old_submissions' );
+
+/**
+ * Schedule the daily purge.
+ *
+ * @since 9.9.57
+ * @return void
+ */
+function jbli_apply_schedule_purge(): void {
+
+	if ( ! wp_next_scheduled( 'jbli_apply_purge_cron' ) ) { wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'jbli_apply_purge_cron' ); }
+
+}
+
+add_action( 'init', 'jbli_apply_schedule_purge' );
+
+/**
+ * A listing deleted for good takes its applications with it.
+ *
+ * @since 9.9.57
+ * @param int $jbli_post_id Post ID.
+ * @return void
+ */
+function jbli_apply_delete_listing_submissions( $jbli_post_id ): void {
+
+	if ( JBLI_CPT !== get_post_type( (int) $jbli_post_id ) ) { return; }
+
+	global $wpdb;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$wpdb->delete( jbli_apply_submissions_table(), array( 'jbli_post_id' => (int) $jbli_post_id ), array( '%d' ) );
+
+}
+
+add_action( 'before_delete_post', 'jbli_apply_delete_listing_submissions' );
+
+/**
+ * Applications by email address (privacy export / erase).
+ *
+ * @param string $jbli_email Email.
+ * @param int    $jbli_page  Page (1-based).
+ * @return array[]
+ */
+function jbli_apply_rows_by_email( string $jbli_email, int $jbli_page ): array {
+
+	global $wpdb;
+
+	$jbli_table = jbli_apply_submissions_table();
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
+	$jbli_rows = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT id, jbli_post_id, jbli_applicant_name, jbli_applicant_phone, jbli_applicant_email, jbli_submitted_at
+			   FROM {$jbli_table}
+			  WHERE jbli_applicant_email = %s
+			  ORDER BY id ASC
+			  LIMIT %d OFFSET %d",
+			$jbli_email,
+			100,
+			( max( 1, $jbli_page ) - 1 ) * 100
+		),
+		ARRAY_A
+	);
+
+	return is_array( $jbli_rows ) ? $jbli_rows : array();
+
+}
+
+/**
+ * Personal data exporter (Εργαλεία → Εξαγωγή προσωπικών δεδομένων).
+ *
+ * @since 9.9.57
+ * @param string $jbli_email Email.
+ * @param int    $jbli_page  Page.
+ * @return array
+ */
+function jbli_apply_privacy_exporter( $jbli_email, $jbli_page = 1 ): array {
+
+	$jbli_rows  = jbli_apply_rows_by_email( (string) $jbli_email, (int) $jbli_page );
+	$jbli_items = array();
+
+	foreach ( $jbli_rows as $jbli_row ) {
+
+		$jbli_items[] = array(
+			'group_id'    => 'jbli-applications',
+			'group_label' => __( 'Εκδηλώσεις ενδιαφέροντος για αγγελίες', 'job-listings' ),
+			'item_id'     => 'jbli-application-' . (int) $jbli_row['id'],
+			'data'        => array(
+				array( 'name' => __( 'Αγγελία', 'job-listings' ),       'value' => get_the_title( (int) $jbli_row['jbli_post_id'] ) ),
+				array( 'name' => __( 'Ονοματεπώνυμο', 'job-listings' ), 'value' => $jbli_row['jbli_applicant_name'] ),
+				array( 'name' => __( 'Τηλέφωνο', 'job-listings' ),      'value' => $jbli_row['jbli_applicant_phone'] ),
+				array( 'name' => __( 'Email', 'job-listings' ),         'value' => $jbli_row['jbli_applicant_email'] ),
+				array( 'name' => __( 'Ημ/νία', 'job-listings' ),        'value' => $jbli_row['jbli_submitted_at'] ),
+			),
+		);
+
+	}
+
+	return array( 'data' => $jbli_items, 'done' => count( $jbli_rows ) < 100 );
+
+}
+
+/**
+ * Personal data eraser (Εργαλεία → Διαγραφή προσωπικών δεδομένων).
+ *
+ * @since 9.9.57
+ * @param string $jbli_email Email.
+ * @param int    $jbli_page  Page (always 1: erased rows are gone).
+ * @return array
+ */
+function jbli_apply_privacy_eraser( $jbli_email, $jbli_page = 1 ): array {
+
+	global $wpdb;
+
+	$jbli_email = (string) $jbli_email;
+	$jbli_count = 0;
+
+	if ( is_email( $jbli_email ) )
+	{
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$jbli_count = (int) $wpdb->delete( jbli_apply_submissions_table(), array( 'jbli_applicant_email' => $jbli_email ), array( '%s' ) );
+	}
+
+	return array(
+		'items_removed'  => $jbli_count > 0,
+		'items_retained' => false,
+		'messages'       => array(),
+		'done'           => true,
+	);
+
+}
+
+function jbli_apply_register_privacy_exporter( $jbli_exporters ) {
+
+	$jbli_exporters['job-listings-applications'] = array(
+		'exporter_friendly_name' => __( 'Αιτήσεις σε αγγελίες εργασίας', 'job-listings' ),
+		'callback'               => 'jbli_apply_privacy_exporter',
+	);
+
+	return $jbli_exporters;
+
+}
+
+add_filter( 'wp_privacy_personal_data_exporters', 'jbli_apply_register_privacy_exporter' );
+
+function jbli_apply_register_privacy_eraser( $jbli_erasers ) {
+
+	$jbli_erasers['job-listings-applications'] = array(
+		'eraser_friendly_name' => __( 'Αιτήσεις σε αγγελίες εργασίας', 'job-listings' ),
+		'callback'             => 'jbli_apply_privacy_eraser',
+	);
+
+	return $jbli_erasers;
+
+}
+
+add_filter( 'wp_privacy_personal_data_erasers', 'jbli_apply_register_privacy_eraser' );
+
+/**
+ * Text for Ρυθμίσεις → Απόρρητο → οδηγός πολιτικής απορρήτου.
+ *
+ * @since 9.9.57
+ * @return void
+ */
+function jbli_apply_privacy_policy_content(): void {
+
+	if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) { return; }
+
+	wp_add_privacy_policy_content(
+		__( 'Αγγελίες εργασίας', 'job-listings' ),
+		'<p>' . esc_html( sprintf(
+			/* translators: %d: days applications are kept */
+			__( 'Όταν εκδηλώνετε ενδιαφέρον για μια αγγελία, το ονοματεπώνυμο, το τηλέφωνο και το email σας στέλνονται στο φαρμακείο της αγγελίας. Κρατάμε αντίγραφο για %d ημέρες και μετά διαγράφεται αυτόματα. Διαγράφεται επίσης όταν διαγραφεί η αγγελία.', 'job-listings' ),
+			jbli_apply_retention_days()
+		) ) . '</p>'
+	);
+
+}
+
+add_action( 'admin_init', 'jbli_apply_privacy_policy_content' );
 
 function jbli_admin_ajax_get_submissions(): void {
 
@@ -82,7 +317,7 @@ function jbli_admin_ajax_get_submissions(): void {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
 	$jbli_rows = $wpdb->get_results(
 		$wpdb->prepare(
-			"SELECT id, jbli_applicant_name, jbli_applicant_phone, jbli_applicant_email, jbli_submitted_at
+			"SELECT id, jbli_applicant_name, jbli_applicant_phone, jbli_applicant_email, jbli_submitted_at, jbli_status
 			   FROM {$jbli_table}
 			  WHERE jbli_post_id = %d
 			  ORDER BY jbli_submitted_at DESC",
@@ -123,6 +358,7 @@ function jbli_admin_ajax_get_submissions(): void {
 				<th class="jbli_sub_modal_th_phone"><?php esc_html_e( 'Κινητό', 'job-listings' ); ?></th>
 				<th class="jbli_sub_modal_th_email"><?php esc_html_e( 'Email', 'job-listings' ); ?></th>
 				<th class="jbli_sub_modal_th_date"><?php esc_html_e( 'Ημ/νία', 'job-listings' ); ?></th>
+				<th class="jbli_sub_modal_th_status"><?php esc_html_e( 'Email', 'job-listings' ); ?></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -137,6 +373,14 @@ function jbli_admin_ajax_get_submissions(): void {
 						<td><?php echo esc_html( $jbli_row->jbli_applicant_phone ); ?></td>
 						<td><?php echo esc_html( $jbli_row->jbli_applicant_email ); ?></td>
 						<td><?php echo esc_html( wp_date( 'd/m/Y H:i', strtotime( $jbli_row->jbli_submitted_at ) ) ); ?></td>
+						<td>
+							<?php
+								$jbli_st = (string) ( $jbli_row->jbli_status ?? 'sent' );
+								if ( 'failed' === $jbli_st )       { echo '<span style="color:#b91c1c;" title="' . esc_attr__( 'Το email προς το φαρμακείο απέτυχε', 'job-listings' ) . '">✕ ' . esc_html__( 'Απέτυχε', 'job-listings' ) . '</span>'; }
+								elseif ( 'pending' === $jbli_st )  { echo '<span style="color:#92400e;">… ' . esc_html__( 'Άγνωστο', 'job-listings' ) . '</span>'; }
+								else                               { echo '<span style="color:#047857;">✓ ' . esc_html__( 'Στάλθηκε', 'job-listings' ) . '</span>'; }
+							?>
+						</td>
 					</tr>
 				<?php
 			}
