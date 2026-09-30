@@ -83,7 +83,7 @@ class Plandose_Invoice_Migration {
 
 	/** File names of the migration's own copies (lm-<32>.<ext>). */
 	const COPY_PREFIX  = 'lm-';
-	const COPY_PATTERN = '/^lm-[A-Za-z0-9]{32}\.(pdf|jpg|jpeg|png|webp)$/';
+	const COPY_PATTERN = '/^lm-[A-Za-z0-9]{32}\.(pdf|jpg|jpeg|png|webp)\z/';
 
 	/**
 	 * Option flag marking that the legacy Media-Library-attachment invoice

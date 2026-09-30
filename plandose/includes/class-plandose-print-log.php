@@ -278,7 +278,7 @@ class Plandose_Print_Log {
 	 * @return int|null
 	 */
 	public static function day_start_ts( $ymd ) {
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $ymd ) ) {
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}\z/', $ymd ) ) {
 			return null;
 		}
 

@@ -8,21 +8,21 @@
 # touching the code.
 msgid ""
 msgstr ""
-"Project-Id-Version: PlanDose 1.31.0\n"
+"Project-Id-Version: PlanDose 1.31.1\n"
 "Report-Msgid-Bugs-To: https://pharmacyneeds.gr\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-30T08:21:51+00:00\n"
+"POT-Creation-Date: 2026-09-30T09:47:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: PlanDose make-pot.php\n"
 "X-Domain: plandose\n"
 
 #. Plugin Name of the plugin
 #: plandose.php
-#: includes/class-plandose-account-type.php:512
+#: includes/class-plandose-account-type.php:729
 #: includes/class-plandose-admin-settings.php:257
 #: includes/class-plandose-admin.php:471
 #: includes/class-plandose-admin.php:472
@@ -52,34 +52,34 @@ msgstr ""
 msgid "PharmacyNeeds"
 msgstr ""
 
-#: includes/class-plandose-account-type.php:515
+#: includes/class-plandose-account-type.php:732
 msgid "Κατηγορία Επιχείρησης"
 msgstr ""
 
-#: includes/class-plandose-account-type.php:519
+#: includes/class-plandose-account-type.php:736
 msgid "— Χωρίς κατηγορία —"
 msgstr ""
 
 #. translators: %s: category value stored by the registration form.
-#: includes/class-plandose-account-type.php:527
+#: includes/class-plandose-account-type.php:744
 #, php-format
 msgid "Άλλη τιμή: %s (διατήρηση)"
 msgstr ""
 
-#: includes/class-plandose-account-type.php:535
+#: includes/class-plandose-account-type.php:752
 msgid "Ο λογαριασμός αναγνωρίζεται ως φαρμακείο και μπορεί να χρησιμοποιήσει το PlanDose."
 msgstr ""
 
-#: includes/class-plandose-account-type.php:536
+#: includes/class-plandose-account-type.php:753
 msgid "Ο λογαριασμός ΔΕΝ αναγνωρίζεται ως φαρμακείο: δεν έχει πρόσβαση στο PlanDose και δεν μπορεί να γίνει Pro."
 msgstr ""
 
-#: includes/class-plandose-account-type.php:539
+#: includes/class-plandose-account-type.php:756
 msgid "Ο χρήστης δεν μπορεί να αλλάξει μόνος του την κατηγορία μετά την εγγραφή. Οι αλλαγές από αυτή τη σελίδα καταγράφονται στο Ημερολόγιο του PlanDose."
 msgstr ""
 
 #. translators: %s: list of stored values, e.g. "account_type: Εταιρία, user_registration_account_type: Φαρμακείο".
-#: includes/class-plandose-account-type.php:545
+#: includes/class-plandose-account-type.php:762
 #, php-format
 msgid "Προσοχή: η κατηγορία είναι αποθηκευμένη με διαφορετικές τιμές (%s). Με την αποθήκευση θα γραφτεί η επιλεγμένη τιμή παντού."
 msgstr ""
@@ -109,7 +109,7 @@ msgid "Πατήστε «Επανέλεγχος» στο PlanDose → Διαγν�
 msgstr ""
 
 #: includes/class-plandose-admin-invoices.php:182
-#: includes/class-plandose-invoice-storage.php:1906
+#: includes/class-plandose-invoice-storage.php:1964
 msgid "Λύση:"
 msgstr ""
 
@@ -3870,137 +3870,145 @@ msgstr ""
 msgid "Ο φάκελος PLANDOSE_INVOICE_DIR δεν φέρει το αρχείο ιδιοκτησίας του PlanDose, οπότε δεν διαβάζονται τιμολόγια από αυτόν. Ελέγξτε ότι η σταθερά δείχνει τον σωστό φάκελο τιμολογίων."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:799
+#: includes/class-plandose-invoice-storage.php:834
 msgid "Δεν ήταν δυνατή η πρόσβαση στον φάκελο uploads. Ο διαχειριστής του site βλέπει τις λεπτομέρειες στο PlanDose → Διαγνωστικά."
 msgstr ""
 
 #. translators: %s: WordPress upload directory error.
-#: includes/class-plandose-invoice-storage.php:806
+#: includes/class-plandose-invoice-storage.php:841
 #, php-format
 msgid "Δεν ήταν δυνατή η πρόσβαση στον φάκελο uploads: %s"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:815
+#: includes/class-plandose-invoice-storage.php:850
 msgid "Ο φάκελος uploads δεν είναι διαθέσιμος."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:838
+#: includes/class-plandose-invoice-storage.php:877
+msgid "Η σταθερά PLANDOSE_INVOICE_DIR περιέχει μη επιτρεπτό χαρακτήρα (NUL)."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:889
+msgid "Η διαδρομή PLANDOSE_INVOICE_DIR δεν επιτρέπεται να περιέχει «..». Γράψτε την πλήρη διαδρομή του φακέλου χωρίς «..»."
+msgstr ""
+
+#: includes/class-plandose-invoice-storage.php:896
 msgid "Η σταθερά PLANDOSE_INVOICE_DIR πρέπει να είναι μια απόλυτη διαδρομή φακέλου."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:847
+#: includes/class-plandose-invoice-storage.php:905
 msgid "Η διαδρομή PLANDOSE_INVOICE_DIR δεν επιτρέπεται να είναι symbolic link."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:865
+#: includes/class-plandose-invoice-storage.php:923
 msgid "Η διαδρομή PLANDOSE_INVOICE_DIR δεν επιτρέπεται να είναι κρίσιμος φάκελος του συστήματος ή του WordPress."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:878
+#: includes/class-plandose-invoice-storage.php:936
 msgid "Η διαδρομή PLANDOSE_INVOICE_DIR είναι υπερβολικά γενική· χρησιμοποιήστε έναν αποκλειστικό, βαθύτερο φάκελο."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1079
+#: includes/class-plandose-invoice-storage.php:1137
 msgid "Μη έγκυρη εγγραφή αρχείου τιμολογίου."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1847
+#: includes/class-plandose-invoice-storage.php:1905
 msgid "Δεν υπάρχει πρόσφατος έλεγχος ότι ο φάκελος τιμολογίων είναι κλειστός για το internet. Πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά."
 msgstr ""
 
 #. translators: %s: reason the check could not be completed
-#: includes/class-plandose-invoice-storage.php:1893
+#: includes/class-plandose-invoice-storage.php:1951
 #, php-format
 msgid "Προσοχή: το τιμολόγιο αποθηκεύτηκε, αλλά δεν επιβεβαιώθηκε ότι ο φάκελος τιμολογίων είναι κλειστός για το internet (%s). Δείτε PlanDose → Διαγνωστικά."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1906
+#: includes/class-plandose-invoice-storage.php:1964
 msgid "Τα τιμολόγια που υπάρχουν ήδη ανοίγουν κανονικά."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1917
+#: includes/class-plandose-invoice-storage.php:1975
 msgid "Το τιμολόγιο δεν αποθηκεύτηκε: ο φάκελος τιμολογίων είναι ανοιχτός στο internet — ένα δοκιμαστικό αρχείο του κατέβηκε χωρίς σύνδεση."
 msgstr ""
 
 #. translators: %s: reason the check could not be completed
-#: includes/class-plandose-invoice-storage.php:1922
+#: includes/class-plandose-invoice-storage.php:1980
 #, php-format
 msgid "Το τιμολόγιο δεν αποθηκεύτηκε: δεν ήταν δυνατό να επιβεβαιωθεί ότι ο φάκελος τιμολογίων είναι κλειστός για το internet (%s)."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1935
+#: includes/class-plandose-invoice-storage.php:1993
 msgid "Ζητήστε από τον πάροχο φιλοξενίας να μεταφέρει τον φάκελο εκτός του δημόσιου χώρου του site (σταθερά PLANDOSE_INVOICE_DIR στο wp-config.php) ή να κλείσει την πρόσβαση σε αυτόν (οδηγίες στο αρχείο nginx-invoice-protection.txt του plugin), και μετά πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1938
+#: includes/class-plandose-invoice-storage.php:1996
 msgid "Ζητήστε από τον πάροχο φιλοξενίας να ορίσει τη σταθερά PLANDOSE_INVOICE_DIR σε φάκελο εκτός του δημόσιου χώρου του site, ή να επιτρέψει στο site να καλεί τον εαυτό του (loopback), και μετά πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά. Μόνο αν ο πάροχος επιβεβαιώσει ότι ο φάκελος είναι κλειστός: define( 'PLANDOSE_ALLOW_UNVERIFIED_INVOICE_DIR', true ); στο wp-config.php."
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1950
+#: includes/class-plandose-invoice-storage.php:2008
 msgid "ο φάκελος είναι εκτός κάθε δημόσιου φακέλου του web server"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1951
+#: includes/class-plandose-invoice-storage.php:2009
 msgid "ο web server αρνήθηκε να παραδώσει δοκιμαστικό αρχείο του φακέλου, ενώ παρέδωσε κανονικά αρχείο σύγκρισης σε δημόσιο φάκελο"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1952
+#: includes/class-plandose-invoice-storage.php:2010
 msgid "ο web server παρέδωσε δοκιμαστικό αρχείο του φακέλου σε αίτημα χωρίς σύνδεση"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1953
+#: includes/class-plandose-invoice-storage.php:2011
 msgid "ο φάκελος είναι μέσα στο web root, αλλά δεν αντιστοιχεί σε γνωστή διεύθυνση του site"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1954
+#: includes/class-plandose-invoice-storage.php:2012
 msgid "ο φάκελος δεν έχει δημιουργηθεί ακόμη"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1955
+#: includes/class-plandose-invoice-storage.php:2013
 msgid "ο φάκελος τιμολογίων δεν είναι έγκυρος"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1956
+#: includes/class-plandose-invoice-storage.php:2014
 msgid "δεν ήταν δυνατή η εγγραφή δοκιμαστικού αρχείου στον φάκελο"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1957
+#: includes/class-plandose-invoice-storage.php:2015
 msgid "ο φάκελος uploads σερβίρεται από άλλο host (π.χ. CDN)"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1958
+#: includes/class-plandose-invoice-storage.php:2016
 msgid "το site δεν μπόρεσε να καλέσει τον εαυτό του — loopback"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1959
+#: includes/class-plandose-invoice-storage.php:2017
 msgid "ο server απάντησε με ανακατεύθυνση"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1960
+#: includes/class-plandose-invoice-storage.php:2018
 msgid "ο server απάντησε με σφάλμα"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1961
+#: includes/class-plandose-invoice-storage.php:2019
 msgid "δεν έχει γίνει ακόμη έλεγχος"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1962
+#: includes/class-plandose-invoice-storage.php:2020
 msgid "ο server δεν παρέδωσε ούτε ένα δοκιμαστικό αρχείο σε δημόσιο φάκελο, οπότε η άρνηση δεν αποδεικνύει τίποτα (π.χ. firewall ή μπλοκαρισμένο loopback)"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1963
+#: includes/class-plandose-invoice-storage.php:2021
 msgid "δεν βρέθηκε δημόσιος φάκελος για δοκιμή σύγκρισης"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1964
+#: includes/class-plandose-invoice-storage.php:2022
 msgid "δεν ήταν δυνατή η εγγραφή δοκιμαστικού αρχείου σύγκρισης"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1965
+#: includes/class-plandose-invoice-storage.php:2023
 msgid "ο server απάντησε χωρίς να αρνηθεί και χωρίς να παραδώσει το δοκιμαστικό αρχείο (π.χ. σελίδα firewall ή CDN), οπότε η ιδιωτικότητα δεν αποδεικνύεται"
 msgstr ""
 
-#: includes/class-plandose-invoice-storage.php:1966
+#: includes/class-plandose-invoice-storage.php:2024
 msgid "ο έλεγχος έτρεξε χωρίς γνωστό DOCUMENT_ROOT (π.χ. WP-CLI ή cron από γραμμή εντολών) — θα επαναληφθεί από τον web server"
 msgstr ""
 

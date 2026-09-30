@@ -1571,7 +1571,7 @@ class Plandose_Frontend {
 	 * @return bool
 	 */
 	private static function is_locale_name( $locale ) {
-		return is_string( $locale ) && 1 === preg_match( '/^[A-Za-z]{2,3}(?:_[A-Za-z0-9]{2,8}){0,2}$/', $locale );
+		return is_string( $locale ) && 1 === preg_match( '/^[A-Za-z]{2,3}(?:_[A-Za-z0-9]{2,8}){0,2}\z/', $locale );
 	}
 
 	/**

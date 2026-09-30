@@ -654,6 +654,13 @@ class Plandose_Invoice_Storage {
 			return false;
 		}
 
+		// A NUL byte makes every filesystem call fail (realpath() even
+		// throws a ValueError on PHP 8). Such a path is unusable, so it can
+		// not be shown to be private: fail safe, report it as public.
+		if ( false !== strpos( $path, "\0" ) ) {
+			return true;
+		}
+
 		$candidates = array( $path );
 		$real_path  = self::resolve_path( $path );
 
@@ -679,6 +686,10 @@ class Plandose_Invoice_Storage {
 	 * symlinked parent (/home/account/link/invoices, where "link" points into
 	 * the web root) would go unrecognised until the first upload creates it.
 	 * Resolve the deepest EXISTING ancestor instead and re-append the rest.
+	 * The re-appended (missing) part is normalised lexically: '.' is
+	 * dropped and '..' removes the previous segment, so
+	 * /tmp/missing/../../var/www/uploads/new resolves to
+	 * /var/www/uploads/new and not to a path under /tmp.
 	 *
 	 * @since 1.15.1
 	 * @param string $path Absolute, normalized path.
@@ -688,13 +699,37 @@ class Plandose_Invoice_Storage {
 		$path = untrailingslashit( wp_normalize_path( (string) $path ) );
 		$tail = array();
 
+		// realpath() throws a ValueError for a NUL byte (PHP 8).
+		if ( false !== strpos( $path, "\0" ) ) {
+			return '';
+		}
+
 		while ( '' !== $path ) {
 			$real = realpath( $path );
 
 			if ( false !== $real ) {
 				$resolved = untrailingslashit( wp_normalize_path( $real ) );
 
-				return $tail ? $resolved . '/' . implode( '/', array_reverse( $tail ) ) : $resolved;
+				if ( ! $tail ) {
+					return $resolved;
+				}
+
+				foreach ( array_reverse( $tail ) as $segment ) {
+					if ( '' === $segment || '.' === $segment ) {
+						continue;
+					}
+
+					if ( '..' === $segment ) {
+						$slash    = strrpos( $resolved, '/' );
+						$resolved = false === $slash ? $resolved : substr( $resolved, 0, $slash );
+						continue;
+					}
+
+					$resolved .= '/' . $segment;
+				}
+
+				// '..' up to the filesystem root leaves ''.
+				return '' === $resolved ? '/' : $resolved;
 			}
 
 			$parent = untrailingslashit( wp_normalize_path( dirname( $path ) ) );
@@ -832,6 +867,29 @@ class Plandose_Invoice_Storage {
 	 * @return true|WP_Error
 	 */
 	public static function validate_custom_invoice_dir( $custom ) {
+		$custom = (string) $custom;
+
+		// Checked before ANY filesystem call: path_is_absolute() and
+		// realpath() below throw a ValueError on a NUL byte (PHP 8).
+		if ( false !== strpos( $custom, "\0" ) ) {
+			return new WP_Error(
+				'plandose_invoice_custom_dir_invalid',
+				__( 'Η σταθερά PLANDOSE_INVOICE_DIR περιέχει μη επιτρεπτό χαρακτήρα (NUL).', 'plandose' )
+			);
+		}
+
+		// '..' makes the written path say something other than where the
+		// folder really is (/tmp/missing/../../var/www/…): the public-tree
+		// check, the protected-directory check and uninstall would all
+		// reason about the wrong place. An admin-written value, so simply
+		// refused.
+		if ( in_array( '..', explode( '/', str_replace( '\\', '/', $custom ) ), true ) ) {
+			return new WP_Error(
+				'plandose_invoice_custom_dir_dotdot',
+				__( 'Η διαδρομή PLANDOSE_INVOICE_DIR δεν επιτρέπεται να περιέχει «..». Γράψτε την πλήρη διαδρομή του φακέλου χωρίς «..».', 'plandose' )
+			);
+		}
+
 		if ( '' === $custom || ! path_is_absolute( $custom ) ) {
 			return new WP_Error(
 				'plandose_invoice_custom_dir_invalid',
@@ -1175,7 +1233,7 @@ class Plandose_Invoice_Storage {
 	const CANARY_PREFIX = 'plandose-probe-';
 
 	/** Exactly the names probe_privacy() writes (see is_canary_name()). */
-	const CANARY_PATTERN = '/^plandose-probe-(control-)?[A-Za-z0-9]{24}\\.(pdf|jpg|jpeg|png|webp)$/';
+	const CANARY_PATTERN = '/^plandose-probe-(control-)?[A-Za-z0-9]{24}\\.(pdf|jpg|jpeg|png|webp)\z/';
 
 	/**
 	 * A canary left behind longer than this belongs to a probe that was

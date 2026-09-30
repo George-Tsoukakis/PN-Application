@@ -58,7 +58,9 @@ function plandose_uninstall_custom_dir_deletable( $dir, $upload_dir ) {
 	}
 
 	// Standalone fallback (mirrors Plandose_Invoice_Storage::custom_invoice_dir_is_deletable()).
-	if ( '' === (string) $dir || ! path_is_absolute( $dir ) ) {
+	// NUL (realpath() throws on PHP 8) and '..' are refused before any
+	// filesystem call, as validate_custom_invoice_dir() does.
+	if ( '' === (string) $dir || false !== strpos( (string) $dir, "\0" ) || in_array( '..', explode( '/', str_replace( '\\', '/', (string) $dir ) ), true ) || ! path_is_absolute( $dir ) ) {
 		return false;
 	}
 
@@ -440,7 +442,7 @@ function plandose_run_uninstall() {
 	// (tables, options, usermeta, files), exactly as after a failed read
 	// below — not a half-uninstall that deletes the options (the list of
 	// public Media Library originals among them) but leaves the tables.
-	if ( ! $plandose_keep_data && ! ( is_string( $prefix ) && preg_match( '/^[A-Za-z0-9_]+$/', $prefix ) ) ) {
+	if ( ! $plandose_keep_data && ! ( is_string( $prefix ) && preg_match( '/^[A-Za-z0-9_]+\z/', $prefix ) ) ) {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the uninstaller has no UI to report to.
 		error_log( 'PlanDose uninstall: the database table prefix contains unexpected characters, so PlanDose data (tables, options, invoice files) was kept.' );
 		$plandose_keep_data = true;
@@ -677,8 +679,8 @@ function plandose_run_uninstall() {
 
 	// Keep the same identifier guard used above before interpolating WordPress
 	// table names into the remaining direct cleanup queries.
-	$plandose_safe_options_table  = is_string( $wpdb->options ) && preg_match( '/^[A-Za-z0-9_]+$/', $wpdb->options );
-	$plandose_safe_usermeta_table = is_string( $wpdb->usermeta ) && preg_match( '/^[A-Za-z0-9_]+$/', $wpdb->usermeta );
+	$plandose_safe_options_table  = is_string( $wpdb->options ) && preg_match( '/^[A-Za-z0-9_]+\z/', $wpdb->options );
+	$plandose_safe_usermeta_table = is_string( $wpdb->usermeta ) && preg_match( '/^[A-Za-z0-9_]+\z/', $wpdb->usermeta );
 
 	// Remove any PlanDose print-lock debounce options left over from any
 	// version's implementation. These are normally short-lived (cleared

@@ -409,10 +409,11 @@ pdt_check( ! Plandose_Access::is_registered_pharmacist( $self ), 'guard: after a
 pdt_same( array( 'Εταιρία' ), $db_meta( $self, 'account_type' ), '… account_type still «Εταιρία»' );
 
 pdt_same( false, delete_user_meta( $self, 'account_type' ), 'guard: non-admin cannot delete their own account_type' );
-// NOT covered here: delete_user_meta( $self, 'Account_Type ' ) (or any
-// case/trailing-space variant) is let through and deletes the
-// account_type row — see the bug report for 1.31.0 (guard_delete() reads
-// the case-sensitive meta cache under the variant key).
+// 1.31.1: the variants are guarded too (see also test-bugfixes-1311.php).
+foreach ( array( 'Account_Type ', 'ACCOUNT_TYPE' ) as $variant ) {
+	pdt_same( false, delete_user_meta( $self, $variant ), "guard: key variant «{$variant}» is guarded (delete)" );
+	pdt_same( false, update_user_meta( $self, $variant, '' ), "guard: key variant «{$variant}» cannot clear the category (update to '')" );
+}
 pdt_same( array( 'Εταιρία' ), $db_meta( $self, 'account_type' ), '… still stored' );
 
 pdt_check( false !== update_user_meta( $self, 'account_type', 'ΕΤΑΙΡΙΑ' ), 'guard: re-saving the same category (case/accents differ) is not blocked' );
