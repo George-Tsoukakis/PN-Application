@@ -15,6 +15,9 @@ defined( 'ABSPATH' ) || exit;
 $jbli_filters_file = __DIR__ . '/listings-parts/jbli-filters.php';
 $jbli_cards_file   = __DIR__ . '/listings-parts/jbli-cards.php';
 
+/* 9.9.62: map of listings per νομός under the results. */
+require_once __DIR__ . '/listings-parts/jbli-map.php';
+
 if ( is_readable( $jbli_filters_file ) ) { require_once $jbli_filters_file; }
 
 if ( is_readable( $jbli_cards_file ) ) { require_once $jbli_cards_file; }

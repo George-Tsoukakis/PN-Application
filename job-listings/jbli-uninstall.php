@@ -128,6 +128,16 @@ $wpdb->query(
 	)
 );
 
+/* 9.9.62: cached per-νομός counts of the listings map. */
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+		$wpdb->esc_like( '_transient_jbli_map_counts_' ) . '%',
+		$wpdb->esc_like( '_transient_timeout_jbli_map_counts_' ) . '%'
+	)
+);
+
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $wpdb->query(
 	$wpdb->prepare(

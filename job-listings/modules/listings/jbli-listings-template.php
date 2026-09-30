@@ -297,4 +297,12 @@ $jbli_salary_options 	= is_array( $jbli_salary_options ) ? $jbli_salary_options 
 		?>
 	</div>
 
+	<?php
+		/* 9.9.62: map of listings per νομός. */
+		if ( function_exists( 'jbli_listings_map_html' ) )
+		{
+			echo jbli_listings_map_html( (int) ( $jbli_filters['f_nomos'] ?? 0 ), (string) $jbli_clear_url ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+		}
+	?>
+
 </div>

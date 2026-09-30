@@ -1279,3 +1279,190 @@
 .jbli_single .jbli_single_title .jbli_single_title_text {
   color: #fff;
 }
+
+/* ── 9.9.62 — Listings map (per νομός) ───────────────────────────── */
+.jbli_map,
+.jbli_map *,
+.jbli_map *::before,
+.jbli_map *::after {
+  box-sizing: border-box;
+}
+
+.jbli_map {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d1fae5;
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(2, 44, 34, .08);
+}
+
+.jbli_map_canvas {
+  position: relative;
+  background: #eaf4fb;
+  border-right: 1px solid #e5efeb;
+}
+
+.jbli_map_svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.jbli_map_pin { cursor: pointer; }
+
+.jbli_map_halo { fill: rgba(5, 150, 105, .15); }
+
+.jbli_map_dot {
+  fill: var(--jbli_green);
+  stroke: #fff;
+  stroke-width: 3;
+  transition: fill .15s ease;
+}
+
+.jbli_map_num {
+  fill: #fff;
+  font-weight: 800;
+  font-family: var(--jbli_font);
+  pointer-events: none;
+}
+
+.jbli_map_pin:hover .jbli_map_dot,
+.jbli_map_pin:focus-visible .jbli_map_dot,
+.jbli_map_pin.is_active .jbli_map_dot {
+  fill: var(--jbli_green_ink);
+}
+
+.jbli_map_pin.is_active .jbli_map_halo { fill: rgba(5, 150, 105, .32); }
+
+.jbli_map_pin:focus-visible { outline: none; }
+
+.jbli_map_pin:focus-visible .jbli_map_dot {
+  stroke: var(--jbli_amber);
+  stroke-width: 4;
+}
+
+.jbli_map_legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5efeb;
+  background: rgba(255, 255, 255, .92);
+  color: var(--jbli_gray_600);
+  font-size: 12.5px;
+}
+
+.jbli_map_side {
+  padding: 28px 26px;
+  min-width: 0;
+}
+
+.jbli_map_eyebrow {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 5px 12px;
+  border-radius: var(--jbli_r_pill);
+  background: var(--jbli_green_lt);
+  color: var(--jbli_green_ink);
+  font-size: 12px;
+  font-weight: var(--jbli_weight_extrabold);
+}
+
+.jbli_map_title {
+  margin: 0 0 8px;
+  font-size: clamp(1.3rem, 1rem + 1vw, 1.65rem);
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  color: var(--jbli_gray_900);
+}
+
+.jbli_map_sub {
+  margin: 0 0 18px;
+  color: var(--jbli_gray_600);
+  font-size: .92rem;
+  line-height: 1.55;
+}
+
+.jbli_map_list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.jbli_map_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #eef2f1;
+  color: var(--jbli_gray_900);
+  font-size: .92rem;
+  font-weight: var(--jbli_weight_bold);
+  text-decoration: none;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.jbli_map_row b {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  border-radius: var(--jbli_r_pill);
+  background: var(--jbli_green_lt);
+  color: var(--jbli_green_dk);
+  font-size: .82rem;
+}
+
+.jbli_map_row:hover,
+.jbli_map_row:focus-visible,
+.jbli_map_row.is_active {
+  border-color: var(--jbli_green);
+  background: #f0fdf4;
+  color: var(--jbli_gray_900);
+}
+
+.jbli_map_row.is_active b {
+  background: var(--jbli_green);
+  color: #fff;
+}
+
+.jbli_map_more { margin-top: 12px; }
+
+.jbli_map_more summary {
+  cursor: pointer;
+  color: var(--jbli_green_dk);
+  font-weight: var(--jbli_weight_extrabold);
+  font-size: .9rem;
+}
+
+.jbli_map_more[open] summary { margin-bottom: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .jbli_map_dot,
+  .jbli_map_row { transition: none; }
+}
+
+@media (max-width: 860px) {
+  .jbli_map { grid-template-columns: 1fr; }
+
+  .jbli_map_canvas {
+    border-right: 0;
+    border-bottom: 1px solid #e5efeb;
+  }
+
+  .jbli_map_side { padding: 20px 18px; }
+}
+
+@media (max-width: 520px) {
+  .jbli_map { border-radius: 20px; }
+
+  /* The text under the map says what the numbers mean; on phones the label would cover pins. */
+  .jbli_map_legend { display: none; }
+}

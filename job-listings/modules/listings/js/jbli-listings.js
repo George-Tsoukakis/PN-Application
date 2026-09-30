@@ -168,6 +168,34 @@
 			});
 		});
 
+		/* 9.9.62: the map under the results selects a νομός in the filter. */
+		var jbli_nomos_select = document.getElementById('f_nomos');
+
+		function jbli_mark_map(jbli_id) {
+			document.querySelectorAll('#jbli_map [data-jbli_nomos]').forEach(function (jbli_el) {
+				jbli_el.classList.toggle('is_active', jbli_el.getAttribute('data-jbli_nomos') === String(jbli_id));
+			});
+		}
+
+		if (jbli_nomos_select) {
+			jbli_nomos_select.addEventListener('change', function () { jbli_mark_map(jbli_nomos_select.value); });
+
+			document.addEventListener('click', function (e) {
+				var jbli_pin = e.target.closest ? e.target.closest('#jbli_map [data-jbli_nomos]') : null;
+				if (!jbli_pin || e.metaKey || e.ctrlKey || e.shiftKey) { return; }
+
+				var jbli_id = jbli_pin.getAttribute('data-jbli_nomos');
+				if (!jbli_nomos_select.querySelector('option[value="' + jbli_id + '"]')) { return; }
+
+				e.preventDefault();
+				jbli_nomos_select.value = jbli_id;
+				jbli_nomos_select.dispatchEvent(new Event('change', { bubbles: true }));
+
+				var jbli_root = document.getElementById('jbli_listings_root');
+				if (jbli_root && jbli_root.scrollIntoView) { jbli_root.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+			});
+		}
+
 		var jbli_search_input = document.getElementById('jbli_search_input');
 		if (jbli_search_input) {
 			jbli_search_input.addEventListener('input', function () {
