@@ -161,7 +161,7 @@
 
 	/** Βήματα 1–2 στην κορυφή του παραθύρου. */
 	function stepsNav() {
-		return '<div class="plandose-steps" aria-label="' + PD.escapeAttr(PD.txt('stepsAria', 'Βήματα PlanDose')) + '">' +
+		return '<div class="plandose-steps" role="group" aria-label="' + PD.escapeAttr(PD.txt('stepsAria', 'Βήματα PlanDose')) + '">' +
 			'<button type="button" class="plandose-step-dot active" data-step="1"><span>1</span><small>' + PD.escapeHtml(PD.stepTitle(1)) + '</small></button>' +
 			'<button type="button" class="plandose-step-dot" data-step="2"><span>2</span><small>' + PD.escapeHtml(PD.stepTitle(2)) + '</small></button>' +
 			'</div>';
@@ -859,7 +859,7 @@
 			return;
 		}
 		/* Belt-and-braces: a visitor who is not an approved
-		   pharmacist is served plandose-guest.js instead of the nine tool
+		   pharmacist is served plandose-guest.js instead of the tool
 		   modules, so this file never even runs for them and the guest view
 		   is rendered server-side by render_modal(). If the enqueue rules
 		   ever change, bail out quietly rather than rebuilding the tool
@@ -879,10 +879,22 @@
 			'pd-custom-monthday'
 		];
 		var snapshot = {};
+		/* A type=number field holding text it cannot parse (e.g. «επτά»
+		   in «Ημέρες») reports value '' and only validity.badInput says
+		   something is there. Copying '' into the rebuilt field would turn
+		   "unreadable input" into "empty" on a language switch, and the
+		   raw text cannot be written back into a number field. So such a
+		   field keeps its OLD element (raw text and badInput intact),
+		   re-labelled with the new markup's attributes. Its listeners
+		   still work: they call PD.* or read the element itself. */
+		var keepNodes = {};
 		fieldIds.forEach(function (id) {
 			var el = document.getElementById(id);
 			if (el) {
 				snapshot[id] = el.value;
+				if (el.type === 'number' && el.validity && el.validity.badInput) {
+					keepNodes[id] = el;
+				}
 			}
 		});
 
@@ -890,7 +902,25 @@
 
 		fieldIds.forEach(function (id) {
 			var el = document.getElementById(id);
-			if (el && typeof snapshot[id] !== 'undefined') {
+			if (!el) {
+				return;
+			}
+			var old = keepNodes[id];
+			if (old && el.parentNode) {
+				Array.prototype.slice.call(old.attributes).forEach(function (attr) {
+					if (!el.hasAttribute(attr.name) && 'value' !== attr.name) {
+						old.removeAttribute(attr.name);
+					}
+				});
+				Array.prototype.slice.call(el.attributes).forEach(function (attr) {
+					if ('value' !== attr.name) {
+						old.setAttribute(attr.name, attr.value);
+					}
+				});
+				el.parentNode.replaceChild(old, el);
+				return;
+			}
+			if (typeof snapshot[id] !== 'undefined') {
 				el.value = snapshot[id];
 			}
 		});

@@ -56,7 +56,9 @@ class Plandose_Subscriber_Query {
 	 * Already called from every write that can move a subscriber figure —
 	 * subscription updates, access overrides, row deletions and settings
 	 * saves — which is why stats() can cache at all. Prints and monthly
-	 * resets do not call it; "prints" may lag by the TTL.
+	 * resets do not call it (it would also drop the expensive list
+	 * caches); a charged print drops only STATS_CACHE_KEY instead (see
+	 * STATS_CACHE_KEY), so «Εκτυπώσεις Μήνα» stays current.
 	 */
 	public static function invalidate_subscriber_cache() {
 		delete_transient( self::SUBSCRIBER_CACHE_KEY );
@@ -356,15 +358,29 @@ class Plandose_Subscriber_Query {
 			JOIN {$wpdb->users} u ON u.ID = pm.user_id
 			LEFT JOIN {$table} s ON s.user_id = u.ID";
 
-		$sql = "SELECT u.ID
-			FROM {$from}
-			WHERE {$where}
-			ORDER BY u.display_name ASC, u.ID ASC
-			LIMIT %d OFFSET %d";
+		$page_params = $params;
 
-		$page_params   = $params;
-		$page_params[] = $args['per_page'];
-		$page_params[] = $offset;
+		if ( null !== $args['after_id'] ) {
+			// Keyset page (see query_subscribers()): stable while users
+			// are renamed, added or removed mid-run.
+			$sql = "SELECT u.ID
+				FROM {$from}
+				WHERE {$where} AND u.ID > %d
+				ORDER BY u.ID ASC
+				LIMIT %d";
+
+			$page_params[] = $args['after_id'];
+			$page_params[] = $args['per_page'];
+		} else {
+			$sql = "SELECT u.ID
+				FROM {$from}
+				WHERE {$where}
+				ORDER BY u.display_name ASC, u.ID ASC
+				LIMIT %d OFFSET %d";
+
+			$page_params[] = $args['per_page'];
+			$page_params[] = $offset;
+		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $sql is passed through $wpdb->prepare() on this line; the only interpolated identifiers are $table ($wpdb->prefix), $wpdb->users and $wpdb->usermeta.
 		$ids = $wpdb->get_col( $wpdb->prepare( $sql, $page_params ) );
@@ -544,6 +560,19 @@ class Plandose_Subscriber_Query {
 
 	/**
 	 * Query subscribers using real database pagination.
+	 *
+	 * Two modes. By default a page of the list as the screen shows it
+	 * (by name, LIMIT/OFFSET on 'paged'). With 'after_id' (an int, 0 for
+	 * the first batch) a keyset batch instead: the next 'per_page'
+	 * subscribers with an ID above it, by ID — for a caller that walks
+	 * the whole list (the CSV export), where OFFSET over a name order
+	 * would skip or repeat rows when an account is renamed, added or
+	 * removed while it runs. 'last_id' is the highest ID of that batch
+	 * (0 when it was empty); pass it back as the next 'after_id'. It is
+	 * taken from the IDs, not the hydrated items, which may skip a user.
+	 *
+	 * @param array $args Query arguments.
+	 * @return array{items:array,total:int,last_id:int}
 	 */
 	public static function query_subscribers( $args = array() ) {
 		$defaults = array(
@@ -555,6 +584,7 @@ class Plandose_Subscriber_Query {
 			'paged'          => 1,
 			'per_page'       => 20,
 			'with_total'     => true,
+			'after_id'       => null,
 		);
 
 		$args = wp_parse_args( $args, $defaults );
@@ -571,12 +601,14 @@ class Plandose_Subscriber_Query {
 		$args['with_total']  = ! empty( $args['with_total'] );
 		$args['expiry_from'] = Plandose_Settings::sanitize_ymd( $args['expiry_from'] );
 		$args['expiry_to']   = Plandose_Settings::sanitize_ymd( $args['expiry_to'] );
+		$args['after_id']    = null === $args['after_id'] ? null : absint( $args['after_id'] );
 
 		$result = self::query_subscriber_ids( $args, $args['with_total'] );
 
 		return array(
-			'items' => self::hydrate_subscriber_items( $result['ids'] ),
-			'total' => $result['total'],
+			'items'   => self::hydrate_subscriber_items( $result['ids'] ),
+			'total'   => $result['total'],
+			'last_id' => $result['ids'] ? max( $result['ids'] ) : 0,
 		);
 	}
 
@@ -656,7 +688,7 @@ class Plandose_Subscriber_Query {
 				'total'  => $total,
 				'groups' => $groups,
 			),
-			self::STATS_CACHE_TTL
+			self::UNCOUNTED_CACHE_TTL
 		);
 
 		return array(
@@ -699,7 +731,7 @@ class Plandose_Subscriber_Query {
 		if ( $cached && '' === $wpdb->last_error ) {
 			$cached['ids']       = $ids;
 			$cached['ids_limit'] = $limit;
-			set_transient( self::UNCOUNTED_CACHE_KEY, $cached, self::STATS_CACHE_TTL );
+			set_transient( self::UNCOUNTED_CACHE_KEY, $cached, self::UNCOUNTED_CACHE_TTL );
 		}
 
 		return $ids;
@@ -841,6 +873,16 @@ class Plandose_Subscriber_Query {
 	 * shown (uncounted_ids()). Never names or emails.
 	 */
 	const UNCOUNTED_CACHE_KEY = 'plandose_uncounted_users';
+
+	/**
+	 * Lifetime of UNCOUNTED_CACHE_KEY. The query scans every user, and
+	 * everything it depends on already drops the cache the moment it
+	 * changes (account_type / override / capabilities meta, set_user_role,
+	 * user_register, deleted_user, settings saves — see init_cache_hooks()),
+	 * so the TTL is only a backstop for writes that bypass those hooks
+	 * (direct SQL, a role gaining manage_options).
+	 */
+	const UNCOUNTED_CACHE_TTL = HOUR_IN_SECONDS;
 
 	/**
 	 * The GROUP BY half of uncounted_users().

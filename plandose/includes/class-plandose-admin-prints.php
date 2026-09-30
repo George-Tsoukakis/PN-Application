@@ -67,14 +67,16 @@ class Plandose_Admin_Prints {
 
 	/**
 	 * User IDs a search matches (the subscriber list's own search), or
-	 * array( 0 ) when nothing matches.
+	 * array( 0 ) when nothing matches. At most
+	 * Plandose_Subscriber_Query::MAX_SUBSCRIBER_PAGE_SIZE: 'capped' tells
+	 * the screen that the search may match more pharmacies than it shows.
 	 *
 	 * @param string $search Search text.
-	 * @return int[]
+	 * @return array{ids:int[],capped:bool}
 	 */
 	private static function search_user_ids( $search ) {
 		if ( ! class_exists( 'Plandose_Subscriber_Query' ) ) {
-			return array( 0 );
+			return array( 'ids' => array( 0 ), 'capped' => false );
 		}
 
 		$result = Plandose_Subscriber_Query::query_subscribers(
@@ -91,7 +93,10 @@ class Plandose_Admin_Prints {
 			$ids[] = (int) $item->user->ID;
 		}
 
-		return $ids ? $ids : array( 0 );
+		return array(
+			'ids'    => $ids ? $ids : array( 0 ),
+			'capped' => count( $ids ) >= Plandose_Subscriber_Query::MAX_SUBSCRIBER_PAGE_SIZE,
+		);
 	}
 
 	/**
@@ -117,9 +122,12 @@ class Plandose_Admin_Prints {
 			$user = get_userdata( $id );
 
 			if ( $user ) {
+				// User meta may hold an array (another plugin, an import):
+				// only a scalar is a name, never «Array».
 				$name          = Plandose_Access::get_meta_with_fallback( $id, Plandose_Access::PHARMACY_NAME_META_KEYS );
+				$name          = is_scalar( $name ) ? trim( (string) $name ) : '';
 				$labels[ $id ] = array(
-					'name'    => $name ? $name : $user->display_name,
+					'name'    => '' !== $name ? $name : (string) $user->display_name,
 					'email'   => $user->user_email,
 					'deleted' => false,
 				);
@@ -171,11 +179,14 @@ class Plandose_Admin_Prints {
 		self::render_summary();
 
 		$user_ids = array();
+		$capped   = false;
 
 		if ( $f['user'] ) {
 			$user_ids = array( $f['user'] );
 		} elseif ( '' !== $f['search'] ) {
-			$user_ids = self::search_user_ids( $f['search'] );
+			$found    = self::search_user_ids( $f['search'] );
+			$user_ids = $found['ids'];
+			$capped   = $found['capped'];
 		}
 
 		$query  = array(
@@ -213,6 +224,18 @@ class Plandose_Admin_Prints {
 					?>
 					<a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Όλα τα φαρμακεία', 'plandose' ); ?></a>
 				</p>
+			<?php endif; ?>
+
+			<?php if ( $capped ) : ?>
+				<div class="notice notice-warning inline"><p>
+					<?php
+					printf(
+						/* translators: %1$s: maximum number of pharmacies a search covers */
+						esc_html__( 'Η αναζήτηση ταιριάζει σε περισσότερα από %1$s φαρμακεία· εμφανίζονται μόνο οι εκτυπώσεις των πρώτων %1$s. Περιορίστε την αναζήτηση για πλήρη αποτελέσματα.', 'plandose' ),
+						esc_html( number_format_i18n( Plandose_Subscriber_Query::MAX_SUBSCRIBER_PAGE_SIZE ) )
+					);
+					?>
+				</p></div>
 			<?php endif; ?>
 
 			<?php if ( $result['error'] ) : ?>
@@ -288,19 +311,35 @@ class Plandose_Admin_Prints {
 	}
 
 	/**
+	 * The KPI tiles' periods: label and start (00:00 site time of today,
+	 * 6 and 29 days before). Counted in calendar days in the site's time
+	 * zone, not in 86400-second steps, which are an hour off across a
+	 * daylight-saving change.
+	 *
+	 * @param DateTimeImmutable|null $now «Now» (tests); default the current time.
+	 * @return array<int,array{0:string,1:int}>
+	 */
+	public static function summary_periods( $now = null ) {
+		$now   = $now instanceof DateTimeImmutable ? $now : new DateTimeImmutable( 'now', wp_timezone() );
+		$today = $now->setTimezone( wp_timezone() )->setTime( 0, 0, 0 );
+
+		return array(
+			array( __( 'Σήμερα', 'plandose' ), $today->getTimestamp() ),
+			array( __( 'Τελευταίες 7 ημέρες', 'plandose' ), $today->modify( '-6 days' )->getTimestamp() ),
+			array( __( 'Τελευταίες 30 ημέρες', 'plandose' ), $today->modify( '-29 days' )->getTimestamp() ),
+		);
+	}
+
+	/**
 	 * Today, the last 7 and the last 30 days, as KPI tiles.
 	 */
 	private static function render_summary() {
-		$today_start = Plandose_Print_Log::day_start_ts( wp_date( 'Y-m-d' ) );
-		$periods     = array(
-			array( __( 'Σήμερα', 'plandose' ), (int) $today_start ),
-			array( __( 'Τελευταίες 7 ημέρες', 'plandose' ), (int) $today_start - 6 * DAY_IN_SECONDS ),
-			array( __( 'Τελευταίες 30 ημέρες', 'plandose' ), (int) $today_start - 29 * DAY_IN_SECONDS ),
-		);
+		$periods = self::summary_periods();
+		$all     = Plandose_Print_Log::counts_since_each( wp_list_pluck( $periods, 1 ) );
 		?>
 		<div class="plandose-kpis">
-			<?php foreach ( $periods as $period ) : ?>
-				<?php $counts = Plandose_Print_Log::counts_since( $period[1] ); ?>
+			<?php foreach ( $periods as $i => $period ) : ?>
+				<?php $counts = ( is_array( $all ) && isset( $all[ $i ] ) ) ? $all[ $i ] : null; ?>
 				<div class="plandose-kpi">
 					<span aria-hidden="true">🖨️</span>
 					<div>

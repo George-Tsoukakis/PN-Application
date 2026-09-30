@@ -30,8 +30,8 @@
 			times: 'Τι ώρα θέλετε την υπενθύμιση;',
 			neutral: 'Να μη φαίνονται τα ονόματα των φαρμάκων στην ειδοποίηση (φαίνονται μόνο μέσα στο γεγονός)',
 			add: 'Προσθήκη στο ημερολόγιο',
-			addHelp: 'Στο iPhone ανοίγει το Ημερολόγιο: πατήστε «Προσθήκη όλων». Στο Android ανοίξτε το αρχείο με την εφαρμογή ημερολογίου σας.',
-			added: 'Έτοιμο. Αν δεν άνοιξε μόνο του, ανοίξτε το αρχείο «%s» από τις Λήψεις του κινητού.',
+			addHelp: 'Στο iPhone ανοίγει είτε το Ημερολόγιο (πατήστε «Προσθήκη όλων») είτε η λήψη του αρχείου: τότε ανοίξτε τις Λήψεις (εφαρμογή «Αρχεία»), πατήστε το αρχείο «%s» και μετά «Προσθήκη όλων». Στο Android ανοίξτε το αρχείο με την εφαρμογή ημερολογίου σας.',
+			added: 'Έτοιμο. Αν δεν άνοιξε μόνο του το Ημερολόγιο, ανοίξτε το αρχείο «%s» από τις Λήψεις του κινητού (στο iPhone: εφαρμογή «Αρχεία» → Λήψεις).',
 			google: 'Χρησιμοποιώ Google Calendar στο Android',
 			googleHelp: 'Ένα κουμπί για κάθε υπενθύμιση. Πατήστε το καθένα και μετά «Αποθήκευση». Με αυτά τα κουμπιά η υπενθύμιση (φάρμακα και δόση) αποθηκεύεται στον λογαριασμό σας στη Google.',
 			googleTooMany: 'Το πλάνο έχει πολλές ξεχωριστές υπενθυμίσεις: χρησιμοποιήστε το κουμπί «Προσθήκη στο ημερολόγιο».',
@@ -62,8 +62,8 @@
 			times: 'What time should the reminder come?',
 			neutral: 'Hide medicine names in the alert (they show only inside the event)',
 			add: 'Add to calendar',
-			addHelp: 'On iPhone the Calendar opens: tap “Add All”. On Android open the file with your calendar app.',
-			added: 'Done. If nothing opened, open the file “%s” from your phone’s Downloads.',
+			addHelp: 'On iPhone either Calendar opens (tap “Add All”) or the file is downloaded: then open Downloads (Files app), tap the file “%s”, then “Add All”. On Android open the file with your calendar app.',
+			added: 'Done. If Calendar did not open by itself, open the file “%s” from your phone’s Downloads (on iPhone: Files app → Downloads).',
 			google: 'I use Google Calendar on Android',
 			googleHelp: 'One button per reminder. Tap each one, then “Save”. With these buttons the reminder (medicines and dose) is saved in your Google account.',
 			googleTooMany: 'This plan has many separate reminders: use the “Add to calendar” button.',
@@ -217,6 +217,15 @@
 	/* Schedule → events                                                  */
 	/* ---------------------------------------------------------------- */
 
+	/*
+	 * Only DTSTART + RRULE (COUNT), never RDATE: iPhone's Calendar
+	 * (EventKit) has no list of extra dates, and parsers disagree on
+	 * whether an RDATE-only event keeps its DTSTART (ical.js drops it) —
+	 * a missed dose either way. Days no rule fits become a few more
+	 * events; segments() never makes more than one per run of days.
+	 */
+	var WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
 	function has(bits, d) {
 		return !!(bits[d >> 3] & (1 << (d & 7)));
 	}
@@ -241,25 +250,179 @@
 		return map;
 	}
 
+	/*
+	 * Day d of the plan as a calendar date {y, m (1–12), d, wd (0 = Sunday),
+	 * len (days in its month)} — counted in UTC, so a DST change can never
+	 * move a dose to another day.
+	 */
+	function civil(plan, d) {
+		var p = plan.start.split('-').map(Number);
+		var t = new Date(Date.UTC(p[0], p[1] - 1, p[2] + d));
+		return {
+			y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), wd: t.getUTCDay(),
+			len: new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate()
+		};
+	}
+
+	/* The plan day of a date (a day 0 = the last day of the month before). */
+	function dayOf(plan, y, m, d) {
+		var p = plan.start.split('-').map(Number);
+		return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(p[0], p[1] - 1, p[2])) / 86400000);
+	}
+
+	/*
+	 * The longest run of days[i…] that ONE recurrence rule gives exactly,
+	 * as {count, rule}. Each candidate walks the dates its rule would give
+	 * (RFC 5545, COUNT from DTSTART = days[i]) and stops at the first date
+	 * that is not a dose or at the first dose the rule would not give — so
+	 * a rule never adds or drops a dose, whatever the rhythm was on the
+	 * sheet.
+	 */
+	function longestRule(plan, days, i) {
+		var best = { count: 1, rule: null };
+		var take = function (count, rule) {
+			if (count > best.count) { best = { count: count, rule: rule }; }
+		};
+		var n = days.length;
+		/* Every day / every N days / once a week: equal gaps. */
+		if (i + 1 < n) {
+			var gap = days[i + 1] - days[i];
+			var j = i + 1;
+			while (j + 1 < n && days[j + 1] - days[j] === gap) { j++; }
+			take(j - i + 1, 7 === gap ? { freq: 'WEEKLY', count: j - i + 1 } : { freq: 'DAILY', interval: gap, count: j - i + 1 });
+		}
+		/* Some weekdays every week: the weekdays of the first seven days,
+		   then every day on must be a dose exactly when it is one of them. */
+		var wds = [];
+		for (var k = i; k < n && days[k] < days[i] + 7; k++) {
+			wds.push(civil(plan, days[k]).wd);
+		}
+		if (wds.length > 1 && wds.length < 7) {
+			var c = i;
+			for (var d = days[i]; c < n; d++) {
+				var want = -1 !== wds.indexOf(civil(plan, d).wd);
+				if (want !== (days[c] === d)) { break; }
+				if (want) { c++; }
+			}
+			/* Monday first, as the patient reads a week. */
+			wds.sort(function (a, b) { return (a + 6) % 7 - (b + 6) % 7; });
+			take(c - i, { freq: 'WEEKLY', byDay: wds.map(function (w) { return WEEKDAYS[w]; }), count: c - i });
+		}
+		/* The same day of every month, or the last day of every month:
+		   each next dose must be exactly the next month's date. A 29th,
+		   30th or 31st stops before the first month without that day:
+		   RFC 5545 skips such a month (and some apps take its last day
+		   instead), while the sheet's «31» falls on the 30th or the 28th
+		   there. So the rule never reaches a month where they differ. */
+		var first = civil(plan, days[i]);
+		[first.d, first.d === first.len ? -1 : 0].forEach(function (md) {
+			if (!md) { return; }
+			var y = first.y;
+			var m = first.m;
+			var c = i + 1;
+			while (c < n) {
+				m++;
+				if (m > 12) { m = 1; y++; }
+				if (md > new Date(Date.UTC(y, m, 0)).getUTCDate()) { break; }
+				if (days[c] !== (md > 0 ? dayOf(plan, y, m, md) : dayOf(plan, y, m + 1, 0))) { break; }
+				c++;
+			}
+			take(c - i, { freq: 'MONTHLY', monthDay: md, count: c - i });
+		});
+		return best;
+	}
+
+	/*
+	 * The days of a group cut into as few rules as the walk above finds:
+	 * usually one, two with a dose carried over to an extra day.
+	 */
+	function groupEvents(plan, slot, meds, days, limit) {
+		var out = [];
+		var i = 0;
+		/* At the limit the runs win anyway (segments()): no need to go on
+		   (a hand-made link of 200 scattered tracks stays quick). */
+		while (i < days.length && out.length < limit) {
+			var r = longestRule(plan, days, i);
+			out.push({ slot: slot, meds: meds, days: days.slice(i, i + r.count), rule: r.count > 1 ? r.rule : null, key: meds.join('.') + '-' + days[i] });
+			i += r.count;
+		}
+		return out;
+	}
+
 	/**
-	 * Runs of consecutive days with the same medicines in the same slot:
-	 * one calendar event each (a daily repeat for runs longer than a day).
+	 * The calendar events: [{slot, meds, days (plan day numbers, sorted),
+	 * rule, key}]. Every dose of the plan is in exactly one event.
+	 *
+	 * Per part of the day, the fewer of two ways:
+	 * - runs: consecutive days with the same medicines, one daily event
+	 *   each — one alarm names every medicine of that time;
+	 * - rhythms: each medicine (medicines with exactly the same days
+	 *   share one) with its own recurring event. A daily medicine and an
+	 *   every-other-day one in the same slot change the set every day: as
+	 *   runs, 400 days made 400 events per slot (a 781 KB file for three
+	 *   slots, which a patient can hardly delete); as rhythms, two.
+	 * Ties go to the runs: one alarm for all, as until now.
 	 */
 	function segments(plan) {
 		var map = dayMap(plan);
 		var out = [];
 		SLOTS.forEach(function (slot) {
-			var days = map[slot];
+			var byDay = map[slot];
+			var runs = [];
 			var d = 0;
 			while (d < plan.days) {
-				if (!days[d].length) { d++; continue; }
-				var key = days[d].join(',');
+				if (!byDay[d].length) { d++; continue; }
+				var key = byDay[d].join(',');
 				var start = d;
-				while (d < plan.days && days[d].join(',') === key) { d++; }
-				out.push({ slot: slot, from: start, count: d - start, meds: days[start].slice() });
+				var run = [];
+				while (d < plan.days && byDay[d].join(',') === key) { run.push(d); d++; }
+				runs.push({
+					slot: slot, meds: byDay[start].slice(), days: run,
+					rule: run.length > 1 ? { freq: 'DAILY', interval: 1, count: run.length } : null,
+					key: 'r' + start
+				});
 			}
+			/* The days of each medicine; medicines with the very same
+			   days make one group (one alarm for them). */
+			var daysOf = {};
+			byDay.forEach(function (list, day) {
+				list.forEach(function (m) { (daysOf[m] = daysOf[m] || []).push(day); });
+			});
+			var groups = {};
+			var order = [];
+			Object.keys(daysOf).map(Number).sort(function (a, b) { return a - b; }).forEach(function (m) {
+				var k = daysOf[m].join(',');
+				if (!groups[k]) {
+					groups[k] = { meds: [], days: daysOf[m] };
+					order.push(k);
+				}
+				groups[k].meds.push(m);
+			});
+			/* Stops as soon as the rhythms are not fewer than the runs. */
+			var rhythms = [];
+			for (var g = 0; g < order.length && rhythms.length < runs.length; g++) {
+				rhythms = rhythms.concat(groupEvents(plan, slot, groups[order[g]].meds, groups[order[g]].days, runs.length - rhythms.length));
+			}
+			var fewer = g === order.length && rhythms.length < runs.length;
+			out = out.concat(fewer ? rhythms : runs);
 		});
 		return out;
+	}
+
+	/*
+	 * The RRULE value of an event ('' = none). COUNT, never UNTIL: UNTIL
+	 * would have to be converted to UTC, and COUNT cannot be off by a day.
+	 */
+	function rrule(ev) {
+		var r = ev.rule;
+		if (!r) { return ''; }
+		if ('MONTHLY' === r.freq) {
+			return 'FREQ=MONTHLY;BYMONTHDAY=' + r.monthDay + ';COUNT=' + r.count;
+		}
+		if ('WEEKLY' === r.freq) {
+			return 'FREQ=WEEKLY' + (r.byDay ? ';BYDAY=' + r.byDay.join(',') : '') + ';COUNT=' + r.count;
+		}
+		return 'FREQ=DAILY' + (r.interval > 1 ? ';INTERVAL=' + r.interval : '') + ';COUNT=' + r.count;
 	}
 
 	/* ---------------------------------------------------------------- */
@@ -294,7 +457,7 @@
 	/* Event text                                                          */
 	/* ---------------------------------------------------------------- */
 
-	function medLine(plan, i, T) {
+	function medLine(plan, i) {
 		var m = plan.meds[i];
 		return m[0] + (m[1] ? ': ' + m[1] : '') + (m[2] ? ' (' + m[2] + ')' : '');
 	}
@@ -307,7 +470,7 @@
 	}
 
 	function eventText(plan, seg, T) {
-		var lines = seg.meds.map(function (i) { return '• ' + medLine(plan, i, T); });
+		var lines = seg.meds.map(function (i) { return '• ' + medLine(plan, i); });
 		if (plan.pharmacy) {
 			lines.push('', T.from.replace('%s', plan.pharmacy));
 		}
@@ -378,14 +541,17 @@
 		var T = TEXT[plan.lang];
 		var dtstamp = (now || new Date()).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 		var uid = uidPart(plan);
-		var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PlanDose//Calendar 1.28.2//EL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'].concat(VTIMEZONE);
-		segments(plan).forEach(function (seg, i) {
+		var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PlanDose//Calendar//EL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'].concat(VTIMEZONE);
+		segments(plan).forEach(function (seg) {
 			var time = times[seg.slot];
-			var day = addDays(plan.start, seg.from);
+			var day = addDays(plan.start, seg.days[0]);
 			var title = eventTitle(plan, seg, neutral, T);
 			lines.push(
 				'BEGIN:VEVENT',
-				'UID:plandose-' + uid + '-' + i + '@plandose.invalid',
+				/* Per part of the day and medicines (+ first day), not a
+				   running number: the same QR added again updates each
+				   event in place, whatever order the events come in. */
+				'UID:plandose-' + uid + '-' + seg.slot + '-' + seg.key + '@plandose.invalid',
 				'DTSTAMP:' + dtstamp,
 				/* The UID is stable, so a later import must carry a
 				   higher SEQUENCE for calendar apps to take the new times. */
@@ -393,8 +559,8 @@
 				'DTSTART;TZID=' + TZ + ':' + stamp(day, time),
 				'DURATION:PT15M'
 			);
-			if (seg.count > 1) {
-				lines.push('RRULE:FREQ=DAILY;COUNT=' + seg.count);
+			if (seg.rule) {
+				lines.push('RRULE:' + rrule(seg));
 			}
 			lines.push(
 				'SUMMARY:' + icsText(title),
@@ -411,7 +577,7 @@
 	function googleLink(plan, seg, times, neutral) {
 		var T = TEXT[plan.lang];
 		var time = times[seg.slot];
-		var day = addDays(plan.start, seg.from);
+		var day = addDays(plan.start, seg.days[0]);
 		var q = [
 			['action', 'TEMPLATE'],
 			['text', eventTitle(plan, seg, neutral, T)],
@@ -419,16 +585,22 @@
 			['ctz', TZ],
 			['details', eventText(plan, seg, T)]
 		];
-		if (seg.count > 1) {
-			q.push(['recur', 'RRULE:FREQ=DAILY;COUNT=' + seg.count]);
+		/* Google reads the same RRULE, in the event's own zone (ctz). */
+		if (seg.rule) {
+			q.push(['recur', 'RRULE:' + rrule(seg)]);
 		}
 		return 'https://calendar.google.com/calendar/render?' + q.map(function (kv) {
 			return encodeURIComponent(kv[0]) + '=' + encodeURIComponent(kv[1]);
 		}).join('&');
 	}
 
+	/* One Google button per event: offered only for a few events. */
+	function googleOk(segs) {
+		return segs.length <= MAX_GOOGLE;
+	}
+
 	/* For the tests (Node). */
-	window.PlanDoseCalendar = { decode: decode, segments: segments, dayMap: dayMap, buildIcs: buildIcs, googleLink: googleLink, DEFAULT_TIME: DEFAULT_TIME, medWhen: medWhen, spacingHints: spacingHints, TEXT: TEXT };
+	window.PlanDoseCalendar = { decode: decode, segments: segments, rrule: rrule, dayMap: dayMap, buildIcs: buildIcs, googleLink: googleLink, googleOk: googleOk, DEFAULT_TIME: DEFAULT_TIME, medWhen: medWhen, spacingHints: spacingHints, TEXT: TEXT };
 
 	/* ---------------------------------------------------------------- */
 	/* Page (DOM built with textContent: nothing from the link is HTML)    */
@@ -473,34 +645,65 @@
 	 * look like a daily one, so the rhythm is always said — every day, once
 	 * a week, every N days with the number of dose days, or the dates
 	 * themselves when they follow no rhythm.
+	 *
+	 * Each part of the day is told with its own days: a medicine taken
+	 * every morning but only on three evenings read «Πρωί · Βράδυ · κάθε
+	 * ημέρα» when the days of all its slots were merged. Slots with the
+	 * very same days are still said together («Πρωί · Βράδυ · κάθε ημέρα»).
 	 */
 	function medWhen(plan, index, T) {
-		var md = medDays(plan, index);
-		var parts = md.slots.map(function (s) { return T.slot[s]; });
-		var days = md.days;
+		var bySlot = {};
+		plan.tracks.forEach(function (t) {
+			if (t.med !== index) { return; }
+			for (var d = 0; d < plan.days; d++) {
+				if (has(t.bits, d)) {
+					bySlot[t.slot] = bySlot[t.slot] || [];
+					if (-1 === bySlot[t.slot].indexOf(d)) { bySlot[t.slot].push(d); }
+				}
+			}
+		});
+		var groups = [];
+		SLOTS.forEach(function (s) {
+			if (!bySlot[s]) { return; }
+			var days = bySlot[s].sort(function (a, b) { return a - b; });
+			var key = days.join(',');
+			var same = groups.filter(function (g) { return g.key === key; })[0];
+			if (same) {
+				same.slots.push(s);
+			} else {
+				groups.push({ key: key, slots: [s], days: days });
+			}
+		});
+		return groups.map(function (g) {
+			return g.slots.map(function (s) { return T.slot[s]; }).concat(rhythmText(plan, g.days, T)).join(' · ');
+		}).join('; ');
+	}
+
+	/* The rhythm of some days, as the parts of a «·» line. */
+	function rhythmText(plan, days, T) {
 		if (!days.length) {
-			return parts.join(' · ');
+			return [];
 		}
 		var date = function (d) { return shortDate(addDays(plan.start, d)); };
 		var first = days[0];
 		var last = days[days.length - 1];
 		if (1 === days.length) {
-			return parts.concat(date(first)).join(' · ');
+			return [date(first)];
 		}
 		var gap = days[1] - days[0];
 		var even = days.every(function (d, k) { return 0 === k || d - days[k - 1] === gap; });
 		var span = date(first) + ' – ' + date(last);
 		if (even && 1 === gap) {
-			return parts.concat(T.everyDay, span).join(' · ');
+			return [T.everyDay, span];
 		}
 		var count = T.doseDays.replace('%d', days.length);
 		if (even) {
-			return parts.concat(7 === gap ? T.weekly : T.everyN.replace('%d', gap), count, span).join(' · ');
+			return [7 === gap ? T.weekly : T.everyN.replace('%d', gap), count, span];
 		}
 		var shown = days.length <= 6
 			? days.map(date).join(', ')
 			: days.slice(0, 3).map(date).join(', ') + ' … ' + date(last);
-		return parts.concat(count + ': ' + shown).join(' · ');
+		return [count + ': ' + shown];
 	}
 
 	/*
@@ -564,9 +767,15 @@
 
 		var timeBox = el('div', { 'class': 'times' });
 		used.forEach(function (s) {
+			var input = el('input', { type: 'time', id: 'pd-t-' + s, value: DEFAULT_TIME[s] });
+			/* Leaving a cleared field puts the default back in it. */
+			input.addEventListener('blur', function () {
+				times(true);
+				drawGoogle();
+			});
 			timeBox.appendChild(el('label', { 'for': 'pd-t-' + s }, [
 				document.createTextNode(T.slot[s]),
-				el('input', { type: 'time', id: 'pd-t-' + s, value: DEFAULT_TIME[s] })
+				input
 			]));
 		});
 		/* Unticked by default — the medicine names show in the alert
@@ -582,40 +791,52 @@
 		])));
 
 		var addBtn = el('button', { type: 'button', 'class': 'btn', text: T.add });
-		var done = el('p', { 'class': 'done', role: 'status', text: T.added.replace('%s', T.file) });
-		done.hidden = true;
+		/* The page's only live region: present (empty) from the start
+		   so that filling it is announced — a re-render of the whole
+		   page is not. */
+		var done = el('p', { 'class': 'done', role: 'status' });
 		var googleList = el('div', { 'class': 'gcal-list' });
 		var segs = segments(plan);
+		var google = googleOk(segs);
 		app.appendChild(el('section', { 'class': 'stack' }, [
 			addBtn,
 			done,
-			el('p', { 'class': 'muted', text: T.addHelp }),
+			el('p', { 'class': 'muted', text: T.addHelp.replace('%s', T.file) }),
 			el('details', { 'class': 'panel' }, [
 				el('summary', { text: T.google }),
-				segs.length > MAX_GOOGLE ? el('p', { 'class': 'muted', text: T.googleTooMany }) : googleList,
-				segs.length > MAX_GOOGLE ? null : el('p', { 'class': 'muted', text: T.googleHelp })
+				google ? googleList : el('p', { 'class': 'muted', text: T.googleTooMany }),
+				google ? el('p', { 'class': 'muted', text: T.googleHelp }) : null
 			])
 		]));
 		app.appendChild(el('footer', { text: T.disclaimer }));
 
-		function times() {
+		/* A cleared (or unreadable) time falls back to the default,
+		   which is written back into the field (writeBack: when the
+		   patient leaves the field or adds to the calendar — not while
+		   typing, when a half-edited time is momentarily empty): the time
+		   used is always the time shown. */
+		function times(writeBack) {
 			var out = {};
 			SLOTS.forEach(function (s) {
 				var input = document.getElementById('pd-t-' + s);
-				out[s] = input && /^\d{2}:\d{2}$/.test(input.value) ? input.value : DEFAULT_TIME[s];
+				var ok = input && /^([01]\d|2[0-3]):[0-5]\d$/.test(input.value);
+				out[s] = ok ? input.value : DEFAULT_TIME[s];
+				if (writeBack && input && !ok) {
+					input.value = DEFAULT_TIME[s];
+				}
 			});
 			return out;
 		}
 
 		function drawGoogle() {
-			if (segs.length > MAX_GOOGLE) { return; }
+			if (!google) { return; }
 			var t = times();
 			var neutral = neutralBox.checked;
 			googleList.textContent = '';
 			segs.forEach(function (seg) {
-				var from = addDays(plan.start, seg.from);
-				var to = addDays(plan.start, seg.from + seg.count - 1);
-				var span = seg.count > 1 ? shortDate(from) + ' – ' + shortDate(to) : shortDate(from);
+				/* The rhythm is said too: «01/10 – 30/10» alone reads as
+				   every day for an every-other-day reminder. */
+				var span = rhythmText(plan, seg.days, T).join(' · ');
 				googleList.appendChild(el('a', {
 					'class': 'btn secondary',
 					href: googleLink(plan, seg, t, neutral),
@@ -631,13 +852,13 @@
 		app.onchange = drawGoogle;
 
 		addBtn.addEventListener('click', function () {
-			var blob = new Blob([buildIcs(plan, times(), neutralBox.checked)], { type: 'text/calendar;charset=utf-8' });
+			var blob = new Blob([buildIcs(plan, times(true), neutralBox.checked)], { type: 'text/calendar;charset=utf-8' });
 			var url = URL.createObjectURL(blob);
 			var a = el('a', { href: url, download: T.file });
 			document.body.appendChild(a);
 			a.click();
 			a.remove();
-			done.hidden = false;
+			done.textContent = T.added.replace('%s', T.file);
 			setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
 		});
 	}

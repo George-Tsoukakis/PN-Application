@@ -55,13 +55,19 @@ class Plandose_Print_Charges {
 	 *
 	 * A replay prints without charging or using a free reprint, so an
 	 * unbounded number would let one request id print again and again for 30
-	 * minutes. The client re-sends a request id only after a lost answer,
-	 * and promises «έως %d επαναλήψεις» with Plandose_Ajax::MAX_FREE_REPRINTS,
-	 * so the same number bounds it here. Counted atomically in
-	 * requests.replay_count (use_replay()); the next replay is refused,
-	 * neither charged nor printed.
+	 * minutes. The client re-sends a request id only after a lost answer.
+	 * Counted atomically in requests.replay_count (use_replay()); the next
+	 * replay is refused, neither charged nor printed.
+	 *
+	 * A limit of its own, not Plandose_Ajax::MAX_FREE_REPRINTS: replays of
+	 * one press and free reprints of one plan are different things, and
+	 * changing the free-reprint allowance must not silently change how
+	 * often a lost answer may be retried. Same value today (2) — the
+	 * client's «έως %d επαναλήψεις» notices (print.js, api.js) print the
+	 * maxFreeReprints figure, so change both together or give the notice
+	 * this number.
 	 */
-	const MAX_REPLAYS = Plandose_Ajax::MAX_FREE_REPRINTS;
+	const MAX_REPLAYS = 2;
 
 	/** Transient caching the storage-engine check (see engines_ok()). */
 	const ENGINE_CHECK_TRANSIENT = 'plandose_engine_check';
@@ -482,9 +488,20 @@ class Plandose_Print_Charges {
 			);
 		}
 
+		// The request row only as THIS charge wrote it (same token, a
+		// charge): a record of the same request id for anything else is
+		// not this undo's to delete.
 		if ( '' !== (string) $request_hash ) {
 			$requests = self::requests_table_name();
-			$wpdb->query( $wpdb->prepare( "DELETE FROM {$requests} WHERE user_id = %d AND request_hash = %s", absint( $user_id ), (string) $request_hash ) );
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$requests} WHERE user_id = %d AND request_hash = %s AND token_hash = %s AND kind = %s",
+					absint( $user_id ),
+					(string) $request_hash,
+					(string) $token_hash,
+					self::KIND_CHARGE
+				)
+			);
 		}
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}

@@ -57,36 +57,64 @@ class Plandose_Invoice_Storage {
 	}
 
 	/**
-	 * Lazily initialize and return the WP_Filesystem abstraction, used in
-	 * place of raw @-silenced file_put_contents()/unlink()/chmod()/copy()
-	 * calls throughout this class.
+	 * The filesystem decision for this request: null until filesystem()
+	 * first runs, then a WP_Filesystem_Direct instance or false (plain-PHP
+	 * fallback).
 	 *
-	 * On the overwhelming majority of hosts WP_Filesystem() resolves to the
-	 * 'direct' method transparently (no credentials prompt) because
-	 * wp-content/uploads is already writable by the PHP process — which is
-	 * a precondition for this plugin to work at all, since every invoice
-	 * lives under wp_upload_dir(). The rare host that forces FTP/SSH
-	 * credentials for filesystem writes would prompt for those via
-	 * request_filesystem_credentials(), which has no sane place to surface
-	 * itself from inside an AJAX/admin-post handler — so on THAT class of
-	 * host WP_Filesystem() returns null here and every caller below falls
-	 * back to direct PHP calls plus a log entry rather than
-	 * hard-failing invoice storage entirely.
+	 * @var WP_Filesystem_Direct|false|null
+	 */
+	private static $filesystem = null;
+
+	/**
+	 * The WP_Filesystem object to use in place of raw @-silenced
+	 * file_put_contents()/unlink()/chmod()/copy() calls throughout this
+	 * class — but ONLY when WordPress resolves the 'direct' method
+	 * (get_filesystem_method(), which honours FS_METHOD and the
+	 * 'filesystem_method' filter). Otherwise null, and every caller below
+	 * uses the plain-PHP fallback plus a log entry.
 	 *
-	 * @return WP_Filesystem_Base|null
+	 * Why not the global $wp_filesystem: WP_Filesystem() assigns that global
+	 * BEFORE it calls connect(), and core or another plugin may have created
+	 * it without credentials. On a host that forces FTP/SSH the global is
+	 * then a WP_Filesystem_Base that was never connected, and reusing it
+	 * made every later write, delete, chmod and copy here fail (an upload
+	 * refused, an uninstall leaving invoice files behind). A connected
+	 * FTP/SSH object would not help either: it works in the FTP user's
+	 * paths, not the absolute server paths used here, and asking for
+	 * credentials has no sane place to show from inside an admin-post
+	 * handler, a cron batch or uninstall. The PHP process itself must be
+	 * able to write the invoice folder anyway (invoice_dir() checks
+	 * is_writable()), so plain PHP is the right fallback on those hosts.
+	 *
+	 * On 'direct' hosts a private WP_Filesystem_Direct instance is built,
+	 * so the global is neither read nor replaced. The decision is made once
+	 * per request (get_filesystem_method() writes a temporary file to test
+	 * ownership) and cached in self::$filesystem.
+	 *
+	 * @return WP_Filesystem_Direct|null
 	 */
 	private static function filesystem() {
-		global $wp_filesystem;
+		if ( null === self::$filesystem ) {
+			self::$filesystem = false;
 
-		if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
-			return $wp_filesystem;
+			if ( ! function_exists( 'get_filesystem_method' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			if ( 'direct' === get_filesystem_method() ) {
+				if ( ! class_exists( 'WP_Filesystem_Base' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+				}
+
+				if ( ! class_exists( 'WP_Filesystem_Direct' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+				}
+
+				self::$filesystem = new WP_Filesystem_Direct( null );
+			}
 		}
 
-		if ( ! function_exists( 'WP_Filesystem' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-
-		return WP_Filesystem() && $wp_filesystem instanceof WP_Filesystem_Base ? $wp_filesystem : null;
+		return self::$filesystem ? self::$filesystem : null;
 	}
 
 	/**
@@ -149,7 +177,7 @@ class Plandose_Invoice_Storage {
 	public static function fs_copy( $source, $target, $context ) {
 		$fs = self::filesystem();
 		$ok = $fs
-			? $fs->copy( $source, $target, true )
+			? $fs->copy( $source, $target, true, defined( 'FS_CHMOD_FILE' ) ? FS_CHMOD_FILE : 0644 )
 			: @copy( $source, $target ); // phpcs:ignore WordPress.PHP.NoSilencedErrors -- fallback when WP_Filesystem is unavailable; failure is logged below.
 
 		if ( ! $ok ) {
@@ -484,6 +512,12 @@ class Plandose_Invoice_Storage {
 			}
 		}
 
+		// Canaries of a privacy probe that was killed before its own
+		// cleanup hold only a random token. The plugin is inactive during
+		// uninstall, so none of them can still be in use: all go, and they
+		// no longer keep the folder (and its protection files) in place.
+		self::delete_stale_canaries( $dir, 0 );
+
 		// Pass 2: the protection and marker files go ONLY when nothing
 		// else is left. Any invoice the database does not list (orphans
 		// from before 1.14.1, an interrupted upload) would otherwise stay
@@ -539,7 +573,8 @@ class Plandose_Invoice_Storage {
 	/**
 	 * Whether a directory holds nothing but the given protection files.
 	 * Any other entry — a file, a link, a subdirectory — returns false, and
-	 * so does a directory that cannot be read (fail closed).
+	 * so does a directory that cannot be read (fail closed). Leftover
+	 * privacy-probe canaries are deleted by the caller before this check.
 	 *
 	 * @param string              $dir        Directory.
 	 * @param array<string,bool>  $protection Protection file names as keys.
@@ -1133,8 +1168,33 @@ class Plandose_Invoice_Storage {
 	/** An 'unverified' verdict (loopback failed, …) is retried sooner. */
 	const PRIVACY_UNVERIFIED_TTL = 600;
 
-	/** Canary files are named plandose-probe-<24 random>.pdf. */
+	/**
+	 * Canary files are named plandose-probe-<24 random>.<ext>, one per
+	 * invoice extension, and plandose-probe-control-<24 random>.pdf.
+	 */
 	const CANARY_PREFIX = 'plandose-probe-';
+
+	/** Exactly the names probe_privacy() writes (see is_canary_name()). */
+	const CANARY_PATTERN = '/^plandose-probe-(control-)?[A-Za-z0-9]{24}\\.(pdf|jpg|jpeg|png|webp)$/';
+
+	/**
+	 * A canary left behind longer than this belongs to a probe that was
+	 * killed (time limit, fatal) before its finally block could delete it.
+	 */
+	const CANARY_STALE_AFTER = 3600;
+
+	/**
+	 * A valid 1×1 image per image extension, written in front of the
+	 * token: a CDN / image optimizer that answers 4xx for a file that is
+	 * not a real image must not read as «refused», while it serves real
+	 * invoice images. The token after the image data is ignored by
+	 * decoders; one that re-encodes the image drops it (→ 'unverified').
+	 */
+	const CANARY_IMAGES = array(
+		'jpg'  => '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDz+iiigD//2Q==',
+		'png'  => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAADElEQVQI12NgYGAAAAAEAAEnNCcKAAAAAElFTkSuQmCC',
+		'webp' => 'UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAsBMJaQAA3AA/vgfgAA=',
+	);
 
 	/** @var string|null DOCUMENT_ROOT override (`wp plandose check --docroot=`). */
 	private static $docroot_override = null;
@@ -1349,22 +1409,43 @@ class Plandose_Invoice_Storage {
 			return self::finish_probe( $result, $persist );
 		}
 
-		$name          = self::CANARY_PREFIX . wp_generate_password( 24, false, false ) . '.pdf';
-		$path          = trailingslashit( $result['dir'] ) . $name;
+		// Canaries of earlier probes killed before their cleanup.
+		self::delete_stale_canaries( $result['dir'] );
+		self::delete_stale_canaries( $control_dir );
+
+		/*
+		 * One canary per allowed invoice extension: a per-extension rule
+		 * (e.g. Nginx refusing only \.pdf$, or a CDN serving images
+		 * itself) could keep PDFs private while image invoices are public.
+		 * 'private' needs EVERY one refused. At most one request per
+		 * extension plus the control; the first failure or served canary
+		 * ends the probe.
+		 */
 		$token         = 'plandose-canary-' . wp_generate_password( 32, false, false );
+		$canaries      = array();
 		$control_name  = self::CANARY_PREFIX . 'control-' . wp_generate_password( 24, false, false ) . '.pdf';
 		$control_path  = trailingslashit( $control_dir ) . $control_name;
 		$control_token = 'plandose-control-' . wp_generate_password( 32, false, false );
 		$written       = array();
+		$responses     = array();
+		$control       = null;
+
+		foreach ( self::invoice_extensions() as $ext ) {
+			$canaries[ $ext ] = self::CANARY_PREFIX . wp_generate_password( 24, false, false ) . '.' . $ext;
+		}
 
 		try {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPress.PHP.NoSilencedErrors.Discouraged -- A few bytes each, deleted in the finally below; WP_Filesystem may need FTP credentials here.
-			if ( false === @file_put_contents( $path, $token . "\n" ) ) {
-				$result['reason'] = 'canary_write_failed';
-				return self::finish_probe( $result, $persist );
-			}
+			foreach ( $canaries as $ext => $name ) {
+				$path = trailingslashit( $result['dir'] ) . $name;
 
-			$written[] = $path;
+				if ( false === @file_put_contents( $path, self::canary_body( $ext, $token ) ) ) {
+					$result['reason'] = 'canary_write_failed';
+					return self::finish_probe( $result, $persist );
+				}
+
+				$written[] = $path;
+			}
 
 			if ( false === @file_put_contents( $control_path, $control_token . "\n" ) ) {
 				$result['reason'] = 'control_write_failed';
@@ -1374,8 +1455,20 @@ class Plandose_Invoice_Storage {
 
 			$written[] = $control_path;
 
-			$response = self::probe_request( $url . '/' . rawurlencode( $name ), $home_host );
-			$control  = self::probe_request( $control_url . '/' . rawurlencode( $control_name ), $home_host );
+			foreach ( $canaries as $ext => $name ) {
+				$response          = self::probe_request( $url . '/' . rawurlencode( $name ), $home_host );
+				$responses[ $ext ] = $response;
+
+				if ( is_wp_error( $response ) || self::canary_served( $response, $token ) ) {
+					break;
+				}
+			}
+
+			$last = end( $responses );
+
+			if ( ! is_wp_error( $last ) && ! self::canary_served( $last, $token ) ) {
+				$control = self::probe_request( $control_url . '/' . rawurlencode( $control_name ), $home_host );
+			}
 		} finally {
 			foreach ( $written as $file ) {
 				if ( file_exists( $file ) ) {
@@ -1385,26 +1478,55 @@ class Plandose_Invoice_Storage {
 		}
 
 		$result['control_url']  = $control_url . '/';
-		$result['control_code'] = is_wp_error( $control ) ? 0 : (int) wp_remote_retrieve_response_code( $control );
+		$result['control_code'] = null === $control || is_wp_error( $control ) ? 0 : (int) wp_remote_retrieve_response_code( $control );
+
+		// The verdict is decided by the least private answer: a served
+		// canary, then a failed request, then any answer other than a 4xx.
+		$worst     = null;
+		$worst_ext = '';
+		$rank      = -1;
+
+		foreach ( $responses as $ext => $response ) {
+			if ( is_wp_error( $response ) ) {
+				$this_rank = 4;
+			} elseif ( self::canary_served( $response, $token ) ) {
+				$this_rank = 5;
+			} else {
+				$code      = (int) wp_remote_retrieve_response_code( $response );
+				$this_rank = $code >= 400 && $code < 500 ? 0 : 1;
+			}
+
+			if ( $this_rank > $rank ) {
+				$rank      = $this_rank;
+				$worst     = $response;
+				$worst_ext = $ext;
+			}
+		}
+
+		$response = $worst;
+
+		if ( count( $canaries ) > 1 && '' !== $worst_ext && $rank > 0 ) {
+			$result['detail'] = '.' . $worst_ext;
+		}
 
 		if ( is_wp_error( $response ) ) {
 			$result['reason'] = 'request_failed';
-			$result['detail'] = $response->get_error_message();
+			$result['detail'] = trim( $result['detail'] . ' ' . $response->get_error_message() );
 			return self::finish_probe( $result, $persist );
 		}
 
 		$code                = (int) wp_remote_retrieve_response_code( $response );
 		$result['http_code'] = $code;
-		$body                = (string) wp_remote_retrieve_body( $response );
 
 		// Served: public, whatever the control says.
-		if ( 200 === $code && false !== strpos( $body, $token ) ) {
+		if ( self::canary_served( $response, $token ) ) {
 			$result['status'] = 'public';
 			$result['reason'] = 'http_served';
 			return self::finish_probe( $result, $persist );
 		}
 
-		$control_ok = ! is_wp_error( $control )
+		$control_ok = null !== $control
+			&& ! is_wp_error( $control )
 			&& 200 === $result['control_code']
 			&& false !== strpos( (string) wp_remote_retrieve_body( $control ), $control_token );
 
@@ -1427,6 +1549,102 @@ class Plandose_Invoice_Storage {
 		}
 
 		return self::finish_probe( $result, $persist );
+	}
+
+	/**
+	 * Every file extension an invoice may be stored with.
+	 *
+	 * @return string[]
+	 */
+	public static function invoice_extensions() {
+		$exts = array();
+
+		foreach ( self::ALLOWED_INVOICE_EXTENSIONS_BY_MIME as $list ) {
+			$exts = array_merge( $exts, $list );
+		}
+
+		return array_values( array_unique( $exts ) );
+	}
+
+	/**
+	 * Content of a canary: the token, after a valid 1×1 image for an
+	 * image extension (CANARY_IMAGES).
+	 *
+	 * @param string $ext   Extension.
+	 * @param string $token Token.
+	 * @return string
+	 */
+	private static function canary_body( $ext, $token ) {
+		$key = 'jpeg' === $ext ? 'jpg' : $ext;
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- constant 1×1 test images, not obfuscated code.
+		$image = isset( self::CANARY_IMAGES[ $key ] ) ? (string) base64_decode( self::CANARY_IMAGES[ $key ] ) : '';
+
+		return $image . $token . "\n";
+	}
+
+	/**
+	 * Whether a probe response delivered the canary itself.
+	 *
+	 * @param array|WP_Error $response Response.
+	 * @param string         $token    Canary token.
+	 * @return bool
+	 */
+	private static function canary_served( $response, $token ) {
+		return ! is_wp_error( $response )
+			&& 200 === (int) wp_remote_retrieve_response_code( $response )
+			&& false !== strpos( (string) wp_remote_retrieve_body( $response ), $token );
+	}
+
+	/**
+	 * Whether a file name is one of probe_privacy()'s canaries.
+	 *
+	 * @param string $name Bare file name.
+	 * @return bool
+	 */
+	public static function is_canary_name( $name ) {
+		return 1 === preg_match( self::CANARY_PATTERN, (string) $name );
+	}
+
+	/**
+	 * Delete canaries older than $max_age from a folder (never links or
+	 * folders, never another file name). Returns how many are left.
+	 *
+	 * @param string $dir     Folder.
+	 * @param int    $max_age Seconds; 0 deletes every canary.
+	 * @return int Canaries that could not be deleted (or are still fresh).
+	 */
+	public static function delete_stale_canaries( $dir, $max_age = self::CANARY_STALE_AFTER ) {
+		if ( '' === (string) $dir || ! is_dir( $dir ) ) {
+			return 0;
+		}
+
+		$entries = @scandir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- an unreadable folder simply has nothing to clean.
+
+		if ( false === $entries ) {
+			return 0;
+		}
+
+		$left = 0;
+
+		foreach ( $entries as $entry ) {
+			if ( ! self::is_canary_name( $entry ) ) {
+				continue;
+			}
+
+			$path  = trailingslashit( $dir ) . $entry;
+			$mtime = @filemtime( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- the file may vanish meanwhile (a parallel probe).
+
+			if ( ! is_file( $path ) || is_link( $path ) || false === $mtime ) {
+				continue;
+			}
+
+			if ( ( time() - $mtime ) < $max_age || ! self::fs_delete( $path, 'Deleting stale privacy probe canary' ) ) {
+				++$left;
+			}
+		}
+
+		return $left;
 	}
 
 	/**
@@ -1608,14 +1826,31 @@ class Plandose_Invoice_Storage {
 	 *
 	 * Call after invoice_dir(), so the folder exists for the canary.
 	 *
+	 * With $probe false only the cached verdict is used, and only while it
+	 * is fresh: no HTTP request is made. The probe requests one canary per
+	 * invoice extension plus a control file, each with its own timeout, so
+	 * running it from an ordinary admin page load (the inline batch of the
+	 * legacy migration, Plandose_Invoice_Migration::maybe_migrate_legacy_invoices())
+	 * could stall that page for many seconds. A missing or stale verdict is
+	 * then refused like an unverified one; re-probing is left to the daily
+	 * cron, the migration's cron batch, uploads and «Επανέλεγχος».
+	 *
+	 * @param bool $probe Probe the server when the cached verdict is missing, stale or a refusal.
 	 * @return true|WP_Error
 	 */
-	public static function upload_allowed() {
-		$state = self::privacy_status( true );
+	public static function upload_allowed( $probe = true ) {
+		$state = self::privacy_status( $probe );
+
+		if ( ! $probe && ! empty( $state['stale'] ) ) {
+			return new WP_Error(
+				'plandose_invoice_storage_not_checked',
+				__( 'Δεν υπάρχει πρόσφατος έλεγχος ότι ο φάκελος τιμολογίων είναι κλειστός για το internet. Πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά.', 'plandose' )
+			);
+		}
 
 		// A cached refusal is re-checked on the spot: the admin may just
 		// have fixed the server.
-		if ( 'private' !== $state['status'] && ! self::$probed_this_request ) {
+		if ( $probe && 'private' !== $state['status'] && ! self::$probed_this_request ) {
 			$state = self::privacy_status( true, true );
 		}
 

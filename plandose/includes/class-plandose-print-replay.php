@@ -28,7 +28,10 @@ final class Plandose_Print_Replay {
 	 * @return Plandose_Print_Result|null
 	 */
 	public static function answer( Plandose_Print_Request $request ) {
-		// 1. The same request again: answer from its record.
+		// 1. The same request again: answer from its record — up to
+		// MAX_REPLAYS times per request id, on top of the charged print and
+		// its free reprints (the full per-charge ceiling is spelled out
+		// above Plandose_Ajax::PRINT_RECEIPT_META_KEY).
 		$prior = Plandose_Print_Charges::find_request( $request->user_id, $request->request_hash );
 
 		if ( false === $prior ) {
@@ -183,14 +186,12 @@ final class Plandose_Print_Replay {
 		$user_id      = $request->user_id;
 		$request_hash = $request->request_hash;
 
+		// Never '' since 1.30.1 (Plandose_Print_Request::read_post()
+		// refuses a request without an id). Kept fail-closed: a free
+		// reprint without its request record could not be told from a
+		// retry of it, so «try again», never a reprint.
 		if ( '' === $request_hash ) {
-			$used = Plandose_Print_Charges::use_reprint( $charge, Plandose_Ajax::MAX_FREE_REPRINTS );
-
-			if ( false === $used ) {
-				return 'error';
-			}
-
-			return 1 === $used ? 'used' : 'changed';
+			return 'error';
 		}
 
 		$tx = Plandose_Print_Transaction::begin();

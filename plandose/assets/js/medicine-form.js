@@ -379,21 +379,32 @@
 		PD.renderMedicationList();
 		PD.renderPreview();
 		PD.updateStepButtons();
+		/* Its first dose moved to tomorrow (the plan starts today and
+		   its daypart is before «Πρώτη δόση»): said right away, not only
+		   in the preview, which the pharmacist sees much later. A medicine
+		   safety warning below replaces it (the preview still lists it). */
+		var shiftText = typeof PD.firstDoseShiftText === 'function' ? PD.firstDoseShiftText(item) : '';
 		/* Patient safety: methotrexate is taken once a WEEK;
 		   daily dosing is a well-known fatal error. A warning, not a
 		   block — the pharmacist has the final word. */
 		if (PD.methotrexateTooOften(item)) {
 			PD.setMessage(PD.txt('rxWarn_methotrexateDaily', 'ΠΡΟΣΟΧΗ: η μεθοτρεξάτη χορηγείται συνήθως μία φορά την εβδομάδα. Επιβεβαιώστε τη συχνότητα.'), 'error');
+			shiftText = '';
 		} else if (PD.weeklyOnlyTooOften && PD.weeklyOnlyTooOften(item)) {
 			/* The other once-a-week medicines, the same way. */
 			PD.setMessage(PD.txt('rxWarn_weeklyOnly', 'ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα, εδώ είναι συχνότερα. Επαληθεύστε τη συχνότητα με τον γιατρό που το συνταγογράφησε.'), 'error');
+			shiftText = '';
 		} else if (PD.weeklyRepeatedItems) {
 			/* Each entry weekly, but the same once-a-week medicine
 			   in two entries (printing asks again, see validation.js). */
 			var rep = PD.weeklyRepeatedItems(PD.s.items);
 			if (rep.mtx.indexOf(item) !== -1 || rep.weekly.indexOf(item) !== -1) {
 				PD.setMessage(PD.txt('weeklyRepeatedWarn', 'ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα και υπάρχει ήδη σε άλλη εγγραφή του πλάνου. Επιβεβαιώστε ότι μαζί δεν δίνουν δόση συχνότερα από το σωστό.'), 'error');
+				shiftText = '';
 			}
+		}
+		if (shiftText) {
+			PD.setMessage(shiftText, 'error');
 		}
 		var drugEl = document.getElementById('pd-drug');
 		if (drugEl) {
@@ -545,7 +556,11 @@
 					var card = document.createElement('div');
 					card.className = 'plandose-med-card';
 					var deleteLabel = PD.txt('deleteAria', 'Διαγραφή') + ': ' + item.name;
-					card.innerHTML = '<div class="plandose-med-card-main">' + '<strong>' + PD.escapeHtml(item.name) + '</strong>' + '<span>' + PD.escapeHtml(PD.itemSummary(item)) + '</span>' + (PD.courseLine(item) ? '<small class="pd-med-course">' + PD.escapeHtml(PD.courseLine(item)) + '</small>' : '') + (item.notes ? '<small>' + PD.escapeHtml(item.notes) + '</small>' : '') + '</div>' + '<div class="plandose-med-card-actions">' + '<button type="button" class="plandose-mini-btn" data-action="edit">' + PD.escapeHtml(PD.txt('edit', 'Επεξεργασία')) + '</button>' + '<button type="button" class="plandose-mini-btn plandose-mini-btn-danger" data-action="delete" aria-label="' + PD.escapeAttr(deleteLabel) + '">×</button>' + '</div>';
+					/* Same pattern as delete: a screen-reader user tabbing
+					   through the list must hear WHICH drug «Επεξεργασία»
+					   opens, not the same word N times. */
+					var editLabel = PD.txt('edit', 'Επεξεργασία') + ': ' + item.name;
+					card.innerHTML = '<div class="plandose-med-card-main">' + '<strong>' + PD.escapeHtml(item.name) + '</strong>' + '<span>' + PD.escapeHtml(PD.itemSummary(item)) + '</span>' + (PD.courseLine(item) ? '<small class="pd-med-course">' + PD.escapeHtml(PD.courseLine(item)) + '</small>' : '') + (item.notes ? '<small>' + PD.escapeHtml(item.notes) + '</small>' : '') + '</div>' + '<div class="plandose-med-card-actions">' + '<button type="button" class="plandose-mini-btn" data-action="edit" aria-label="' + PD.escapeAttr(editLabel) + '">' + PD.escapeHtml(PD.txt('edit', 'Επεξεργασία')) + '</button>' + '<button type="button" class="plandose-mini-btn plandose-mini-btn-danger" data-action="delete" aria-label="' + PD.escapeAttr(deleteLabel) + '">×</button>' + '</div>';
 					card.querySelector('[data-action="edit"]').addEventListener('click', function () {
 						PD.editItem(index);
 					});

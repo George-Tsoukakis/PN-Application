@@ -72,8 +72,8 @@ breaks and trailing spaces are unchanged. The rest was replaced as follows:
 | Field | Replacement |
 |---|---|
 | Doctor and patient ΕΠΩΝΥΜΟ / ΟΝΟΜΑ | `ΙΑΤΡΟΥ` / `ΓΙΑΤΡΟΣ` and `ΑΣΘΕΝΟΥΣ` / `ΑΣΘΕΝΗΣ`, one placeholder word per real word, with hyphens kept. Latin names get Latin placeholders (`PATIENT`, …). |
-| Α.Μ.Κ.Α. (doctor and patient) | Random but valid in shape: DDMMYY plus 5 digits. The patient's YY follows the shifted birth year. |
-| Ε.Τ.Α.Α., Α.Μ.Α., ΔΙΑΒΑΤΗΡΙΟ, pharmacist's ΑΜΚΑ/ΕΤΑΑ, pharmacy ΑΦΜ | Random digits (and letters) of the same length and class. A value that repeats inside a file keeps a single replacement. |
+| Α.Μ.Κ.Α. (doctor and patient) | Random, real in shape (DDMMYY plus 5 digits; the patient's YY follows the shifted birth year) but never a VALID ΑΜΚΑ: the last digit always fails the check digit (Luhn), so no value can be a real person's. |
+| Ε.Τ.Α.Α., Α.Μ.Α., ΔΙΑΒΑΤΗΡΙΟ, pharmacist's ΑΜΚΑ/ΕΤΑΑ, pharmacy ΑΦΜ | Random digits (and letters) of the same length and class. A value that repeats inside a file keeps a single replacement. Any 11-digit replacement fails the ΑΜΚΑ check digit as well. |
 | ΤΗΛΕΦΩΝΟ | Random digits of the same length. The first digit (2… landline, 6… mobile) is kept. |
 | ΔΙΕΥΘΥΝΣΗ / ΧΩΡΑ | Each word becomes `ΟΔΟΣ` / `ΤΟΠΟΣ` / `ΠΟΛΗ` / `ΧΩΡΙΟ`. Numbers become random digits. A country becomes `ΑΛΛΗ ΧΩΡΑ`. |
 | ΕΤΟΣ ΓΕΝΝΗΣΗΣ | Shifted by ±1–3 years, never later than 2025. |
@@ -104,6 +104,7 @@ all dates and all sticker codes. It then checks the following:
   unchanged.
 - The number of lines is unchanged.
 - Every drug line and dose line of the truth is present unchanged.
+- No 11-digit number anywhere in the corpus passes the ΑΜΚΑ check digit (Luhn).
 
 The log in this folder has counts only. The detailed log, which names the
 values, goes to the private folder. Last result (all five batches, 622 files):
@@ -113,6 +114,14 @@ hits in the corpus, and 483 file-name surnames or numbers returned 0 hits in
 equal the placeholder `ΧΩΡΙΟ`. Twenty-four random files (10 from batch 1, 5 from
 batch 2, and 3 each from batches 3, 4 and 5) were also compared side by side by
 hand.
+
+Post-hoc fix (2026-09): the first anonymisation made the ΑΜΚΑ values random
+but real in shape, and about 1 in 10 passed the ΑΜΚΑ check digit (90 distinct
+values: 63 doctor/patient, plus pharmacist ΑΜΚΑ). Each such value had its last
+digit changed so that it fails the check digit (and equals no other 11-digit
+number of the corpus), the same replacement in the Chrome and Firefox copy and
+wherever the value repeated inside a file (ΕΤΑΑ, ΑΜΑ). The parser does not
+read these fields; the expected.json does not contain them.
 
 ## The test
 

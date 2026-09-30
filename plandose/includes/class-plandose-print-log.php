@@ -211,29 +211,61 @@ class Plandose_Print_Log {
 	}
 
 	/**
-	 * Prints since a moment, by kind, for the summary line of the screen.
+	 * Prints since a moment, by kind.
 	 *
 	 * @param int $since Unix time.
 	 * @return array{charge:int,reprint:int}|null Null on a database error.
 	 */
 	public static function counts_since( $since ) {
+		$counts = self::counts_since_each( array( (int) $since ) );
+
+		return null === $counts ? null : $counts[0];
+	}
+
+	/**
+	 * Prints since each of several moments, by kind — the KPI tiles of
+	 * the screen — in ONE query (conditional sums over the rows since the
+	 * earliest moment) instead of one per tile.
+	 *
+	 * @param int[] $moments Unix times.
+	 * @return array<int,array{charge:int,reprint:int}>|null Keyed like
+	 *         $moments; null on a database error.
+	 */
+	public static function counts_since_each( $moments ) {
 		global $wpdb;
 
-		$table = self::table_name();
+		$moments = array_map( 'intval', array_values( (array) $moments ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom plugin table.
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT kind, COUNT(*) AS n FROM {$table} WHERE printed_ts >= %d GROUP BY kind", (int) $since ) );
+		if ( ! $moments ) {
+			return array();
+		}
 
-		if ( ! is_array( $rows ) ) {
+		$table   = self::table_name();
+		$columns = array();
+		$args    = array();
+
+		foreach ( $moments as $i => $since ) {
+			$columns[] = "COALESCE(SUM(kind = %s AND printed_ts >= %d), 0) AS c{$i}, COALESCE(SUM(kind = %s AND printed_ts >= %d), 0) AS r{$i}";
+			array_push( $args, self::KIND_CHARGE, $since, self::KIND_REPRINT, $since );
+		}
+
+		$args[] = min( $moments );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Custom plugin table; the column list holds only placeholders and fixed aliases.
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT ' . implode( ', ', $columns ) . " FROM {$table} WHERE printed_ts >= %d", $args ), ARRAY_A );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( ! is_array( $row ) || '' !== (string) $wpdb->last_error ) {
 			return null;
 		}
 
-		$out = array( self::KIND_CHARGE => 0, self::KIND_REPRINT => 0 );
+		$out = array();
 
-		foreach ( $rows as $row ) {
-			if ( isset( $out[ $row->kind ] ) ) {
-				$out[ $row->kind ] = (int) $row->n;
-			}
+		foreach ( $moments as $i => $since ) {
+			$out[ $i ] = array(
+				self::KIND_CHARGE  => isset( $row[ 'c' . $i ] ) ? (int) $row[ 'c' . $i ] : 0,
+				self::KIND_REPRINT => isset( $row[ 'r' . $i ] ) ? (int) $row[ 'r' . $i ] : 0,
+			);
 		}
 
 		return $out;

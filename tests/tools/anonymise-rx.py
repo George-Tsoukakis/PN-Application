@@ -134,7 +134,7 @@ class Gen:
 
     def token(self, orig, kind, **kw):
         if orig not in self.map:
-            self.map[orig] = self.make(orig, kind, **kw)
+            self.map[orig] = not_luhn(self.make(orig, kind, **kw), orig)
         return self.map[orig]
 
     def make(self, orig, kind, yy=None):
@@ -156,6 +156,31 @@ class Gen:
                 if s != orig:
                     return s
         return self.same_class(orig, kind)
+
+
+def luhn_ok(s):
+    """The ΑΜΚΑ check digit (Luhn over all 11 digits)."""
+    t = 0
+    for i, ch in enumerate(reversed(s)):
+        d = int(ch)
+        if i % 2:
+            d = d * 2 - 9 if d > 4 else d * 2
+        t += d
+    return t % 10 == 0
+
+
+def not_luhn(s, orig):
+    """An 11-digit replacement (the ΑΜΚΑ of doctor, patient and pharmacist,
+    and whatever ΕΤΑΑ / ΑΜΑ repeats it) must never be a VALID ΑΜΚΑ: it
+    could be a real person's.  A Luhn-valid one gets another last digit
+    (any other digit breaks the check), never the original value."""
+    if not re.fullmatch(r'\d{11}', s) or not luhn_ok(s):
+        return s
+    for k in range(1, 10):
+        n = s[:-1] + str((int(s[-1]) + k) % 10)
+        if n != orig:
+            return n
+    return s
 
 
 def split_ws(line):
@@ -520,6 +545,14 @@ def verify(srcs, out, pdir, truth=None, filename_map=None, grep_root=None):
                     if ' '.join(part.split()) not in flat:
                         fails += 1
                         det.append('DRUGTEXT %s/%s: %r changed' % (c, b, part))
+    # --- whole corpus: no 11-digit number is a VALID ΑΜΚΑ (Luhn): it could be a real person's
+    valid_amka = 0
+    for (c, b), anon in sorted(corpus.items()):
+        for v in re.findall(r'(?<!\d)\d{11}(?!\d)', anon):
+            if luhn_ok(v):
+                valid_amka += 1
+                fails += 1
+                det.append('VALID AMKA %s/%s: %r passes the check digit' % (c, b, v))
     # --- whole corpus: every surname / first name of every original, anywhere
     names = {}
     for c in sorted(idmap):
@@ -559,6 +592,7 @@ def verify(srcs, out, pdir, truth=None, filename_map=None, grep_root=None):
         pub.append('  %-16s %d' % (k, kinds_total[k]))
     pub.append('corpus-wide name grep: %d distinct surnames/first names, %d found in the corpus, %d equal to a placeholder word'
                % (len(names), name_hits, allowed_names))
+    pub.append('11-digit numbers that are a valid ΑΜΚΑ (Luhn): %d' % valid_amka)
     if fn_line:
         pub.append(fn_line)
     pub.append('allowed coincidences (value also inside the drug/dose text, or a generic address word equal to a placeholder): %d'

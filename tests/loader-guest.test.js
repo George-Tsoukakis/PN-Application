@@ -4,23 +4,10 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { loadLoader, loadGuest, closeAll } = require('./harness.js');
+const { until } = require('./lib/until.js');
 
 test.afterEach(closeAll);
 
-function until(cond, ms) {
-	const end = Date.now() + (ms || 3000);
-	return new Promise((resolve, reject) => {
-		(function poll() {
-			if (cond()) {
-				return resolve();
-			}
-			if (Date.now() > end) {
-				return reject(new Error('timed out'));
-			}
-			setTimeout(poll, 10);
-		})();
-	});
-}
 
 test('loader: nothing of the tool loads with the page', async () => {
 	const { w, requested } = await loadLoader();

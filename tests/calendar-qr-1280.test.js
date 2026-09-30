@@ -71,7 +71,7 @@ function paper(PD) {
 function calendar(plan, C) {
 	const out = {};
 	C.segments(plan).forEach((seg) => {
-		for (let d = seg.from; d < seg.from + seg.count; d++) {
+		for (const d of seg.days) {
 			const k = d + seg.slot;
 			(out[k] = out[k] || []).push(...seg.meds.map((i) => plan.meds[i][0]));
 		}

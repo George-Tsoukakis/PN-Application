@@ -397,8 +397,14 @@ class Plandose_Admin_Invoices {
 		// validation as «invoice.pdf» but would be stored with none.
 		$checked  = sanitize_file_name( wp_unslash( (string) $file['name'] ) );
 		$filetype = wp_check_filetype_and_ext( $file['tmp_name'], $checked );
-		$ext      = ! empty( $filetype['ext'] ) ? $filetype['ext'] : pathinfo( $checked, PATHINFO_EXTENSION );
-		$ext      = Plandose_Invoice_Storage::clean_extension( $ext );
+		$ext      = ! empty( $filetype['ext'] ) ? Plandose_Invoice_Storage::clean_extension( $filetype['ext'] ) : '';
+
+		// validate_invoice_upload() already refused a file without a
+		// recognised extension; never store one without it.
+		if ( '' === $ext ) {
+			set_transient( 'plandose_invoice_error_' . get_current_user_id(), __( 'Μη επιτρεπτός τύπος αρχείου τιμολογίου.', 'plandose' ), 60 );
+			return;
+		}
 
 		$dir = Plandose_Invoice_Storage::invoice_dir();
 
@@ -634,8 +640,9 @@ class Plandose_Admin_Invoices {
 			// underlying attachment was already missing when it ran): an
 			// old Media Library attachment ID. Still only ever served
 			// through this gated endpoint, never by linking the public
-			// attachment URL.
-			$path = get_attached_file( (int) $entry );
+			// attachment URL. Only a real attachment: get_attached_file()
+			// reads _wp_attached_file of ANY post ID.
+			$path = 'attachment' === get_post_type( (int) $entry ) ? get_attached_file( (int) $entry ) : '';
 		} else {
 			$path = Plandose_Invoice_Storage::invoice_path( $entry );
 
@@ -1266,9 +1273,19 @@ class Plandose_Admin_Invoices {
 
 			// Read back from the database, not the cache: every record must
 			// really be stored before the caller forgets the attachment IDs.
+			// Only this option's entries are dropped — deleting the whole
+			// 'alloptions' / 'notoptions' buckets would make every request
+			// reload all autoloaded options on a persistent object cache.
 			wp_cache_delete( self::LEGACY_ORIGINALS_OPTION, 'options' );
-			wp_cache_delete( 'notoptions', 'options' );
-			wp_cache_delete( 'alloptions', 'options' );
+
+			foreach ( array( 'notoptions', 'alloptions' ) as $bucket ) {
+				$cached = wp_cache_get( $bucket, 'options' );
+
+				if ( is_array( $cached ) && array_key_exists( self::LEGACY_ORIGINALS_OPTION, $cached ) ) {
+					unset( $cached[ self::LEGACY_ORIGINALS_OPTION ] );
+					wp_cache_set( $bucket, $cached, 'options' );
+				}
+			}
 
 			if ( ! self::legacy_originals_contain( $records ) ) {
 				return false;
@@ -1727,8 +1744,30 @@ class Plandose_Admin_Invoices {
 	}
 
 	/**
-	 * Whether the attachment is still used by the site — a featured
-	 * image, or named in some post's content. Reason code, or ''.
+	 * Numeric post meta keys that never reference an attachment, so an
+	 * equal number there is not usage (prices, stock, editor IDs, …).
+	 */
+	const USAGE_IGNORED_META_KEYS = array( '_edit_last', '_edit_lock', '_price', '_regular_price', '_sale_price', '_stock', 'total_sales', '_wc_average_rating', '_wc_review_count', '_download_limit', '_download_expiry', '_weight', '_length', '_width', '_height' );
+
+	/**
+	 * Whether the attachment is still used by the site. Reason code, or ''.
+	 *
+	 * Checked, each as one bounded (LIMIT 1) prepared query:
+	 * - featured image (_thumbnail_id);
+	 * - any other post meta holding the ID — alone, in a comma list
+	 *   (WooCommerce _product_image_gallery) or as a quoted serialized /
+	 *   JSON value (ACF image/gallery fields) — and term meta holding it
+	 *   (e.g. a product category thumbnail);
+	 * - the site icon / logo;
+	 * - post content: the file's path, a wp-image-<ID> class, a block's
+	 *   "id":<ID> / "ids":[…], a [gallery ids="…"] / include="…" list, an
+	 *   ?attachment_id=<ID> link;
+	 * - a [gallery] without ids in the post the attachment is attached to
+	 *   (such a gallery shows that post's attached images). Being attached
+	 *   (post_parent) is not usage by itself.
+	 *
+	 * Deliberately broad: a false «in use» only keeps a file, a missed use
+	 * deletes one.
 	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return string
@@ -1736,12 +1775,15 @@ class Plandose_Admin_Invoices {
 	private static function legacy_original_usage_reason( $attachment_id ) {
 		global $wpdb;
 
+		$attachment_id = absint( $attachment_id );
+		$id            = (string) $attachment_id;
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off reference check before an irreversible delete; must not be served from a cache.
 		$thumbnail_of = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s LIMIT 1",
 				'_thumbnail_id',
-				(string) $attachment_id
+				$id
 			)
 		);
 
@@ -1751,6 +1793,46 @@ class Plandose_Admin_Invoices {
 
 		if ( null !== $thumbnail_of ) {
 			return 'thumbnail';
+		}
+
+		$ignored = self::USAGE_IGNORED_META_KEYS;
+		$in_list = '(^|,)[[:space:]]*' . $id . '[[:space:]]*(,|$)';
+		$quoted  = '%"' . $wpdb->esc_like( $id ) . '"%';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Same as above; the IN () placeholders are built from a constant list.
+		$in_meta = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id != %d AND meta_key NOT IN ( " . implode( ', ', array_fill( 0, count( $ignored ), '%s' ) ) . " ) AND ( meta_value = %s OR ( meta_value LIKE %s AND ( meta_value REGEXP %s OR meta_value LIKE %s ) ) ) LIMIT 1",
+				array_merge( array( $attachment_id ), $ignored, array( $id, '%' . $wpdb->esc_like( $id ) . '%', $in_list, $quoted ) )
+			)
+		);
+		// phpcs:enable
+
+		if ( '' !== $wpdb->last_error ) {
+			return 'check_failed';
+		}
+
+		if ( null === $in_meta ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Same as above.
+			$in_meta = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT meta_id FROM {$wpdb->termmeta} WHERE meta_key != %s AND meta_key NOT LIKE %s AND meta_value = %s LIMIT 1",
+					'order',
+					$wpdb->esc_like( 'product_count_' ) . '%',
+					$id
+				)
+			);
+
+			if ( '' !== $wpdb->last_error ) {
+				return 'check_failed';
+			}
+		}
+
+		if ( null !== $in_meta
+			|| $attachment_id === absint( get_option( 'site_icon' ) )
+			|| $attachment_id === absint( get_option( 'site_logo' ) )
+			|| $attachment_id === absint( get_theme_mod( 'custom_logo' ) ) ) {
+			return 'in_meta';
 		}
 
 		$relative = (string) get_post_meta( $attachment_id, '_wp_attached_file', true );
@@ -1770,6 +1852,42 @@ class Plandose_Admin_Invoices {
 			}
 
 			if ( null !== $in_content ) {
+				return 'in_content';
+			}
+		}
+
+		// The ID (not the path) in content: resized images, galleries,
+		// blocks, attachment-page links. The LIKE narrows what REGEXP reads.
+		$by_id = 'wp-image-' . $id . '([^0-9]|$)'
+			. '|"id":' . $id . '([^0-9]|$)'
+			. '|"ids":\\[([0-9]+,)*' . $id . '[],]'
+			. '|(ids|include)=["\']?([0-9]+[[:space:]]*,[[:space:]]*)*' . $id . '([^0-9]|$)'
+			. '|attachment_id=' . $id . '([^0-9]|$)';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Same as above.
+		$in_content = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts} WHERE ID != %d AND post_type NOT IN ( 'attachment', 'revision' ) AND post_content LIKE %s AND post_content REGEXP %s LIMIT 1",
+				$attachment_id,
+				'%' . $wpdb->esc_like( $id ) . '%',
+				$by_id
+			)
+		);
+
+		if ( '' !== $wpdb->last_error ) {
+			return 'check_failed';
+		}
+
+		if ( null !== $in_content ) {
+			return 'in_content';
+		}
+
+		$parent = (int) wp_get_post_parent_id( $attachment_id );
+
+		if ( $parent > 0 ) {
+			$parent_post = get_post( $parent );
+
+			if ( $parent_post && false !== strpos( (string) $parent_post->post_content, '[gallery' ) ) {
 				return 'in_content';
 			}
 		}
@@ -1835,6 +1953,7 @@ class Plandose_Admin_Invoices {
 			'hash_mismatch'       => __( 'Το προστατευμένο αντίγραφο δεν είναι πανομοιότυπο με το πρωτότυπο (SHA-256).', 'plandose' ),
 			'thumbnail'           => __( 'Χρησιμοποιείται ως επιλεγμένη εικόνα (featured image) άρθρου ή σελίδας.', 'plandose' ),
 			'in_content'          => __( 'Αναφέρεται στο περιεχόμενο άρθρου ή σελίδας.', 'plandose' ),
+			'in_meta'             => __( 'Χρησιμοποιείται σε πεδίο άρθρου, προϊόντος ή κατηγορίας (π.χ. γκαλερί προϊόντος, πεδίο ACF) ή ως εικονίδιο/λογότυπο του site.', 'plandose' ),
 			'check_failed'        => __( 'Ο έλεγχος αναφορών απέτυχε λόγω σφάλματος βάσης δεδομένων.', 'plandose' ),
 			'no_copy'             => __( 'Η εγγραφή αφαιρέθηκε από τη λίστα τιμολογίων χωρίς να υπάρξει προστατευμένο αντίγραφο. Διαγράψτε το πρωτότυπο ρητά με το κουμπί της γραμμής.', 'plandose' ),
 			'delete_failed'       => __( 'Η διαγραφή του συνημμένου απέτυχε.', 'plandose' ),

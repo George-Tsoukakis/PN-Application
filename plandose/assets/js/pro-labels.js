@@ -225,7 +225,7 @@
 			var first = ends.firstSlot + (ends.firstDay > 0 ? ' ' + dm(ends.firstDay) : '');
 			bits.push(PD.format(labelWord('labelFirstDose', '1η δόση: %s', '1st dose: %s'), first));
 		}
-		return bits.join(' · ').replace(/ /g, ' ').replace(/ · /g, ' · ');
+		return bits.join(' · ').replace(/ /g, '\u00a0').replace(/\u00a0·\u00a0/g, '\u00a0· ');
 	};
 
 	/**
@@ -639,6 +639,43 @@
 	 */
 	PD.fitLabel = function fitLabel(item, patient, size) {
 		var host = PD.labelMeasureHost();
+		/* One layout pass per label content: the preview, the size
+		   check, the notes / initials warnings and the print each ask for
+		   the same fit. The key is everything the label shows (its HTML,
+		   which carries the language, pharmacy, dates and dose), the full
+		   notes, the patient and the box, so any change measures again. */
+		var memo = null;
+		var key = '';
+		if (fitMemo && host && 'object' === typeof host) {
+			memo = fitMemo.get(host);
+			if (!memo || memo.size > 200) {
+				memo = new Map();
+				fitMemo.set(host, memo);
+			}
+			key = JSON.stringify([PD.labelFixedBoxCss(size), patient || '', String(item.notes || ''), PD.labelInnerHtml(item, patient, {})]);
+			if (memo.has(key)) {
+				return copyFit(memo.get(key));
+			}
+		}
+		var result = measureFit(item, patient, size, host);
+		if (memo) {
+			memo.set(key, copyFit(result));
+		}
+		return result;
+	};
+
+	/* Per measuring host (a new host measures afresh): content key → fit. */
+	var fitMemo = 'function' === typeof WeakMap && 'function' === typeof Map ? new WeakMap() : null;
+
+	function copyFit(fit) {
+		var opts = {};
+		Object.keys(fit.opts || {}).forEach(function (k) {
+			opts[k] = fit.opts[k];
+		});
+		return { ok: fit.ok, scale: fit.scale, opts: opts, trimmed: fit.trimmed.slice() };
+	}
+
+	function measureFit(item, patient, size, host) {
 		var box = PD.labelFixedBoxCss(size);
 		/* 0.6 mm of slack against rounding between screen and printer. */
 		var slack = 0.6 * 96 / 25.4;
@@ -728,7 +765,7 @@
 		}
 		host.innerHTML = '';
 		return { ok: false, scale: 0, opts: {}, trimmed: [] };
-	};
+	}
 
 	/**
 	 * The medicine name that cannot fit the chosen size, or ''.

@@ -315,28 +315,18 @@ class Plandose_CLI {
 	 * --docroot) is known and the folder is outside it. The verdict is not
 	 * stored: the site's own cache is written only by wp-admin checks.
 	 *
-	 * @param bool $canary Ignored (kept for callers of the old signature).
+	 * (--canary is still accepted by `wp plandose check`, for old scripts,
+	 * but the canary probe always runs, so it changes nothing.)
+	 *
 	 * @return array<int,array> Results.
 	 */
-	public static function check_invoices( $canary = false ) {
-		unset( $canary );
-
+	public static function check_invoices() {
 		return Plandose_Diagnostics::check_storage(
 			array(
 				'live'    => true,
 				'persist' => false,
 			)
 		);
-	}
-
-	/**
-	 * Public URL for a path inside the web tree, or '' when it has none.
-	 *
-	 * @param string $path Absolute path.
-	 * @return string URL without a trailing slash.
-	 */
-	public static function path_to_url( $path ) {
-		return Plandose_Invoice_Storage::path_to_url( $path );
 	}
 
 	/* --------------------------------------------------------------------
@@ -924,22 +914,23 @@ class Plandose_CLI {
 			return $user;
 		}
 
+		// Any account with an account-type meta, under the keys
+		// Plandose_Access reads it from.
+		$meta_query = array( 'relation' => 'OR' );
+
+		foreach ( Plandose_Access::account_type_meta_keys() as $key ) {
+			$meta_query[] = array(
+				'key'     => $key,
+				'compare' => 'EXISTS',
+			);
+		}
+
 		$candidates = get_users(
 			array(
 				'number'     => 25,
 				'orderby'    => 'ID',
 				'order'      => 'ASC',
-				'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- One-off diagnostic, capped at 25 rows.
-					'relation' => 'OR',
-					array(
-						'key'     => 'account_type',
-						'compare' => 'EXISTS',
-					),
-					array(
-						'key'     => 'user_registration_account_type',
-						'compare' => 'EXISTS',
-					),
-				),
+				'meta_query' => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- One-off diagnostic, capped at 25 rows.
 			)
 		);
 

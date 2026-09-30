@@ -5,6 +5,9 @@
 	--ink: #14302a;
 	--muted: #53706a;
 	--line: #d3e2dc;
+	/* Edge of a form field: 3:1 (WCAG 1.4.11) on --bg and --surface;
+	   --line (1.23:1) stays for panels and separators. */
+	--field-line: #6b8780;
 	--accent: #0f6e56;
 	--accent-ink: #ffffff;
 	--soft: #e2f0eb;
@@ -19,6 +22,7 @@
 		--ink: #e5efec;
 		--muted: #9fb6b0;
 		--line: #28403b;
+		--field-line: #6f928a;
 		--accent: #59c3a5;
 		--accent-ink: #0a1714;
 		--soft: #1b322d;
@@ -56,7 +60,7 @@ ul.meds li:last-child { border-bottom: 0; padding-bottom: 0; }
 .times label { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
 input[type="time"] {
 	font: inherit; color: var(--ink); background: var(--bg);
-	border: 1px solid var(--line); border-radius: 10px; padding: 10px; min-height: 48px; width: 100%;
+	border: 1px solid var(--field-line); border-radius: 10px; padding: 10px; min-height: 48px; width: 100%;
 }
 .check { display: flex; gap: 10px; align-items: flex-start; font-size: .95rem; }
 .check input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
@@ -69,7 +73,20 @@ input[type="time"] {
 .btn.secondary { background: transparent; color: var(--accent); font-weight: 600; min-height: 48px; justify-content: flex-start; text-align: left; }
 .btn:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .done { background: var(--soft); border-radius: 12px; padding: 12px 14px; font-size: .95rem; }
+/* Empty until «Add to calendar»: kept in the page (a live region must exist
+   before its text changes to be announced) but takes no room. */
+.done:empty { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
 .gcal-list { display: grid; gap: 8px; margin-top: 8px; }
 .gcal-list .when { display: block; font-size: .85rem; color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
-details summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+details summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; gap: 10px; list-style: none; }
+/* display:flex drops the browser's disclosure triangle, so the summary
+   draws its own chevron, turned down while the section is open. */
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+	content: ""; flex: none; width: 8px; height: 8px;
+	border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+	transform: rotate(-45deg); transition: transform .15s ease;
+}
+details[open] > summary::before { transform: rotate(45deg); }
+@media (prefers-reduced-motion: reduce) { details summary::before { transition: none; } }
 footer { color: var(--muted); font-size: .85rem; }

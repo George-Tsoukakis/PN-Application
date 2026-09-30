@@ -17,6 +17,12 @@
    opts.fetch      window.fetch replacement (loadLoader: default answers
                    every request with a failed JSON reply).
    opts.skip       module file names not to load.
+   opts.now        fixed clock for the page (load/loadLoader/loadGuest): a Date,
+                   ms, or a local-time string such as '2026-01-05T09:00:00'.
+                   The window's Date starts there and runs on normally, so
+                   «today», default start dates and month lengths no longer
+                   depend on the day the suite runs. The returned env.isoAhead(n)
+                   counts from that day. Without it: the real clock, as before.
    opts.serve      loadLoader: { absolute URL: body } served as is (e.g. the
                    dictionary scripts named in opts.loader.i18n).
 
@@ -45,6 +51,49 @@ const PAGE = '<!doctype html><html><head></head><body>' +
 	'</body></html>';
 
 const OPEN = [];
+
+/* opts.now → the ms of the fixed start, or null for the real clock. */
+function fixedStart(opts) {
+	if (opts.now === undefined || opts.now === null || opts.now === '') {
+		return null;
+	}
+	const ms = opts.now instanceof Date ? opts.now.getTime() : (typeof opts.now === 'number' ? opts.now : new Date(opts.now).getTime());
+	if (!Number.isFinite(ms)) {
+		throw new Error('harness: opts.now is not a date: ' + opts.now);
+	}
+	return ms;
+}
+
+/* Replaces the window's Date by one whose clock starts at `start` (ms) and
+   runs on in real time. new Date(args) and Date.UTC/parse are untouched. */
+function installClock(w, start) {
+	if (start === null) {
+		return;
+	}
+	const Real = w.Date;
+	const offset = start - Real.now();
+	class FixedDate extends Real {
+		constructor(...a) {
+			if (a.length === 0) {
+				super(Real.now() + offset);
+			} else {
+				super(...a);
+			}
+		}
+		static now() {
+			return Real.now() + offset;
+		}
+	}
+	w.Date = FixedDate;
+}
+
+/* The env.isoAhead(n) of a window: from its own «today». */
+function isoAheadIn(w) {
+	return (days) => {
+		const n = new w.Date();
+		return iso(new Date(n.getFullYear(), n.getMonth(), n.getDate() + days));
+	};
+}
 function closeAll() {
 	while (OPEN.length) {
 		try { OPEN.pop().close(); } catch (e) { /* ignore */ }
@@ -88,6 +137,7 @@ function load(opts) {
 	const dom = new JSDOM(PAGE, { runScripts: 'outside-only', url: ORIGIN + '/', pretendToBeVisual: true });
 	const w = dom.window;
 	OPEN.push(w);
+	installClock(w, fixedStart(opts));
 	w.PlandoseConfig = config(opts);
 	if (opts.fetch) {
 		w.fetch = opts.fetch;
@@ -100,7 +150,7 @@ function load(opts) {
 	if (!PD) {
 		throw new Error('namespace not created');
 	}
-	return { dom, w, PD };
+	return { dom, w, PD, isoAhead: isoAheadIn(w) };
 }
 
 /* Serves ORIGIN/js/<file> from JS_DIR, a stub stylesheet for ORIGIN/css/,
@@ -147,6 +197,7 @@ function loadLoader(opts) {
 		pretendToBeVisual: true,
 		virtualConsole: vc,
 		beforeParse(w) {
+			installClock(w, fixedStart(opts));
 			w.PlandoseConfig = config(opts);
 			w.PlandoseLoader = Object.assign({
 				style: ORIGIN + '/css/plandose.css',
@@ -161,7 +212,7 @@ function loadLoader(opts) {
 	});
 	OPEN.push(dom.window);
 	return new Promise((resolve) => {
-		dom.window.addEventListener('load', () => resolve({ dom, w: dom.window, requested }));
+		dom.window.addEventListener('load', () => resolve({ dom, w: dom.window, requested, isoAhead: isoAheadIn(dom.window) }));
 	});
 }
 
@@ -170,8 +221,9 @@ function loadGuest(opts) {
 	const dom = new JSDOM(PAGE, { runScripts: 'outside-only', url: ORIGIN + '/', pretendToBeVisual: true });
 	const w = dom.window;
 	OPEN.push(w);
+	installClock(w, fixedStart(opts));
 	w.eval(fs.readFileSync(path.join(JS_DIR, 'plandose-guest.js'), 'utf8') + '\n//# sourceURL=plandose-guest.js');
-	return { dom, w };
+	return { dom, w, isoAhead: isoAheadIn(w) };
 }
 
 function iso(d) {

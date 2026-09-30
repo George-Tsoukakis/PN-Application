@@ -3,6 +3,13 @@
 	--pd-green: #10b981;
 	--pd-bg: #f6f8ff;
 	--pd-border: #e5e7ef;
+	/* Edges of form controls: WCAG 1.4.11 asks 3:1 (#e5e7ef is 1.23:1
+	   on white). 3.88:1 on white, 3.66:1 on --pd-bg, 3.41:1 on the
+	   wp-admin grey. --pd-border stays for cards and separators. */
+	--pd-border-control: #7b8194;
+	/* The toggle's ON state (3:1 against the white card); --pd-green
+	   (2.54:1) stays for the decorative charts and badges. */
+	--pd-green-control: #047857;
 	--pd-text: #172033;
 	--pd-muted: #687089;
 	--pd-danger: #dc2626;
@@ -173,7 +180,7 @@
 .plandose-settings-form select,
 .plandose-settings-form textarea {
 	width: 100%;
-	border: 1px solid var(--pd-border);
+	border: 1px solid var(--pd-border-control);
 	border-radius: 9px;
 	min-height: 38px;
 	box-sizing: border-box;
@@ -660,7 +667,7 @@
 	gap: 7px;
 	margin: 0 !important;
 	padding: 8px 14px;
-	border: 1.5px solid var(--pd-border);
+	border: 1.5px solid var(--pd-border-control);
 	border-radius: 999px;
 	font-weight: 600 !important;
 	font-size: 13px;
@@ -739,7 +746,7 @@
 }
 
 .pd-toggle input:checked + em {
-	background: var(--pd-green);
+	background: var(--pd-green-control);
 }
 
 .pd-toggle input:checked + em::before {
@@ -1307,7 +1314,7 @@
 	flex: 0 0 68px;
 	text-align: center;
 	min-height: 40px;
-	border: 1px solid var(--pd-border);
+	border: 1px solid var(--pd-border-control);
 	border-radius: 9px;
 	box-sizing: border-box;
 }

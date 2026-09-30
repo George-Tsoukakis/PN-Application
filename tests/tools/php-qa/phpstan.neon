@@ -50,18 +50,6 @@ parameters:
 			message: '#^Access to protected property wpdb::\$dbh\.$#'
 			path: ../../../plandose/includes/class-plandose-print-charges.php
 			count: 2
-		# WP_Filesystem() fills the global $wp_filesystem as a side effect,
-		# which PHPStan cannot see after the earlier instanceof check failed.
-		-
-			identifier: instanceof.alwaysFalse
-			message: '#^Instanceof between mixed and WP_Filesystem_Base will always evaluate to false\.$#'
-			path: ../../../plandose/includes/class-plandose-invoice-storage.php
-			count: 1
-		-
-			identifier: booleanAnd.alwaysFalse
-			message: '#^Result of && is always false\.$#'
-			path: ../../../plandose/includes/class-plandose-invoice-storage.php
-			count: 1
 		# Plandose_Subscriptions::get_row() queries through the global $wpdb,
 		# which resets $wpdb->last_error; PHPStan keeps the '' assigned before it.
 		-

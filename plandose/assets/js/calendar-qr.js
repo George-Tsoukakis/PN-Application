@@ -2335,11 +2335,18 @@ var qrcode = function() {
 	PD.qrcode = qrcode;
 
 	/**
-	 * Longest link printed as a QR: ≤ version 18 (89 modules) at error
-	 * correction L, i.e. modules of ~0.38 mm in the 34 mm box — readable by
-	 * a phone camera from a laser or inkjet print.
+	 * Longest link printed as a QR: 620 bytes fit version 17 (85 modules)
+	 * at error correction L, i.e. modules of ~0.40 mm in the 34 mm box —
+	 * readable by a phone camera from a laser or inkjet print.
 	 */
 	PD.CAL_MAX_LINK = 620;
+
+	/**
+	 * The largest QR the 34 mm box takes: the version CAL_MAX_LINK needs
+	 * at level L (4 × 17 + 17 = 85 modules). calendarQrCode() never goes
+	 * past it, so raising CAL_MAX_LINK means checking this too.
+	 */
+	PD.CAL_QR_MAX_MODULES = 85;
 
 	/** Longest plan the patient page accepts (public/calendar.js decode()). */
 	PD.CAL_MAX_DAYS = 400;
@@ -2351,6 +2358,20 @@ var qrcode = function() {
 		var a = Array.from(String(value || '').replace(/\s+/g, ' ').trim());
 		return a.length > max ? a.slice(0, max - 1).join('') + '…' : a.join('');
 	}
+
+	/* True when clip() shortens the text (it then ends in «…»). */
+	function clipped(value, max) {
+		return Array.from(String(value || '').replace(/\s+/g, ' ').trim()).length > max;
+	}
+
+	/*
+	 * Longest name / dose / notes put in the QR. The patient page accepts
+	 * up to 100 / 60 / 100 characters (decode() in public/calendar.js):
+	 * the dose uses its whole limit, name and notes keep the QR small.
+	 */
+	var CAL_NAME_MAX = 60;
+	var CAL_DOSE_MAX = 60;
+	var CAL_NOTES_MAX = 50;
 
 	/* The same list as isFormatChar() in public/calendar.js. */
 	function calFormatChar(c) {
@@ -2440,6 +2461,7 @@ var qrcode = function() {
 			return { payload: null, tooBig: true };
 		}
 		var meds = [];
+		var cut = [];
 		var medIndex = {};
 		var bits = {};
 		var order = [];
@@ -2452,11 +2474,21 @@ var qrcode = function() {
 				group.entries.forEach(function (entry) {
 					if (!(entry.index in medIndex)) {
 						medIndex[entry.index] = meds.length;
-						meds.push([
-							clip(entry.item.name, 60),
-							clip(PD.doseAmountText(entry.item), 30),
-							false === opts.notes ? '' : clip(entry.item.notes, 50)
-						]);
+						/* The dose gets the patient page's whole limit
+						   (60, decode() in public/calendar.js); anything
+						   still shortened is said to the pharmacist
+						   (calendarQrNotice()), never cut without a word. */
+						var row = [
+							clip(entry.item.name, CAL_NAME_MAX),
+							clip(PD.doseAmountText(entry.item), CAL_DOSE_MAX),
+							false === opts.notes ? '' : clip(entry.item.notes, CAL_NOTES_MAX)
+						];
+						if (clipped(entry.item.name, CAL_NAME_MAX) ||
+							clipped(PD.doseAmountText(entry.item), CAL_DOSE_MAX) ||
+							(false !== opts.notes && clipped(entry.item.notes, CAL_NOTES_MAX))) {
+							cut.push(row[0]);
+						}
+						meds.push(row);
 					}
 					var key = medIndex[entry.index] + ':' + slot;
 					if (!bits[key]) {
@@ -2486,7 +2518,7 @@ var qrcode = function() {
 				return [parseInt(p[0], 10), parseInt(p[1], 10), bits[key]];
 			})
 		};
-		return { payload: payload, tooBig: false };
+		return { payload: payload, tooBig: false, clipped: cut };
 	}
 
 	/** A payload → the text after «#». */
@@ -2545,7 +2577,7 @@ var qrcode = function() {
 			if (link.length <= PD.CAL_MAX_LINK) {
 				/* The pharmacy name, left out by the last try, is
 				   said too. */
-				PD.calLastInfo = { state: notesDropped ? 'noNotes' : 'full', noPharmacy: pharmacyDropped };
+				PD.calLastInfo = { state: notesDropped ? 'noNotes' : 'full', noPharmacy: pharmacyDropped, clipped: built.clipped || [] };
 				return link;
 			}
 			/* The next try leaves the notes out — worth telling
@@ -2583,13 +2615,41 @@ var qrcode = function() {
 		if ('tooBig' === info.state) {
 			return PD.txt('calQrTooBig', 'Το πλάνο είναι πολύ μεγάλο για το QR «Υπενθυμίσεις στο κινητό»: το φύλλο θα τυπωθεί χωρίς QR.');
 		}
+		var out = [];
 		if (info.noPharmacy) {
-			return PD.txt('calQrNoPharmacy', 'Το όνομα του φαρμακείου (και τυχόν σημειώσεις των φαρμάκων) δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: στο κινητό οι υπενθυμίσεις θα είναι χωρίς αυτά. Στο τυπωμένο φύλλο υπάρχουν κανονικά.');
+			out.push(PD.txt('calQrNoPharmacy', 'Το όνομα του φαρμακείου (και τυχόν σημειώσεις των φαρμάκων) δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: στο κινητό οι υπενθυμίσεις θα είναι χωρίς αυτά. Στο τυπωμένο φύλλο υπάρχουν κανονικά.'));
+		} else if ('noNotes' === info.state) {
+			out.push(PD.txt('calQrNoNotes', 'Οι σημειώσεις των φαρμάκων δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: οι υπενθυμίσεις στο κινητό θα είναι χωρίς σημειώσεις. Στο τυπωμένο φύλλο υπάρχουν κανονικά.'));
 		}
-		if ('noNotes' === info.state) {
-			return PD.txt('calQrNoNotes', 'Οι σημειώσεις των φαρμάκων δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: οι υπενθυμίσεις στο κινητό θα είναι χωρίς σημειώσεις. Στο τυπωμένο φύλλο υπάρχουν κανονικά.');
+		/* A shortened dose (or name, or notes) must never reach the
+		   phone without the pharmacist knowing. */
+		if (info.clipped && info.clipped.length) {
+			out.push(PD.txt('calQrClipped', 'Στο QR «Υπενθυμίσεις στο κινητό» το όνομα, η δόση ή οι σημειώσεις αυτών των φαρμάκων είναι πολύ μεγάλα και κόβονται με «…»: %s. Στο τυπωμένο φύλλο υπάρχουν ολόκληρα· συντομεύστε τα αν χρειάζεται.').replace('%s', function () {
+				return info.clipped.join(', ');
+			}));
 		}
-		return '';
+		return out.join(' ');
+	};
+
+	/**
+	 * The QR of a calendar link. A paper handout gets creased, smudged and
+	 * scribbled on, so level M (~15% of the code can be lost) is used
+	 * whenever the link fits at M without a larger QR than the longest link
+	 * needs at L (CAL_QR_MAX_MODULES) — up to ~500 bytes. A longer link
+	 * falls back to L (~7%), exactly as before, so the notes/pharmacy
+	 * fallbacks of calendarLink() and its 620-byte cap are unchanged.
+	 */
+	PD.calendarQrCode = function calendarQrCode(link) {
+		var qr = PD.qrcode(0, 'M');
+		qr.addData(link, 'Byte');
+		qr.make();
+		if (qr.getModuleCount() <= PD.CAL_QR_MAX_MODULES) {
+			return qr;
+		}
+		qr = PD.qrcode(0, 'L');
+		qr.addData(link, 'Byte');
+		qr.make();
+		return qr;
 	};
 
 	/** The QR box of the A4 sheet, or ''. */
@@ -2604,10 +2664,13 @@ var qrcode = function() {
 		if (!link) {
 			return '';
 		}
-		var qr = PD.qrcode(0, 'L');
-		qr.addData(link, 'Byte');
-		qr.make();
-		var svg = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
+		var qr = PD.calendarQrCode(link);
+		/* An image with a name for screen readers, and crisp module
+		   edges instead of anti-aliased seams between the squares. */
+		var svg = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true }).replace(
+			'<svg ',
+			'<svg role="img" aria-label="' + PD.escapeHtml(PD.txt('calQrAlt', 'QR για το ημερολόγιο του ασθενή')) + '" shape-rendering="crispEdges" '
+		);
 		return '<div class="pd-info-box pd-cal-box">' +
 			'<div class="pd-cal-qr">' + svg + '</div>' +
 			'<div class="pd-cal-text"><h3>' + PD.escapeHtml(PD.txt('calQrTitle', 'Υπενθυμίσεις στο κινητό')) + '</h3>' +

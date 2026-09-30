@@ -3,7 +3,7 @@
  * Plugin Name: PlanDose
  * Plugin URI: https://pharmacyneeds.gr
  * Description: Δημιουργεί εκτυπώσιμα πλάνα δοσολογίας για ασθενείς μέσα από ένα popup εργαλείο στην αρχική οθόνη.
- * Version: 1.30.1
+ * Version: 1.31.0
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * PlanDose constants.
  */
 if ( ! defined( 'PLANDOSE_VERSION' ) ) {
-	define( 'PLANDOSE_VERSION', '1.30.1' );
+	define( 'PLANDOSE_VERSION', '1.31.0' );
 }
 
 if ( ! defined( 'PLANDOSE_FILE' ) ) {
@@ -309,18 +309,19 @@ function plandose_activate( $network_wide = false ) {
 		wp_die( esc_html( $bootstrap_error ) );
 	}
 
-	$tables_ready = class_exists( 'Plandose_Subscriptions' )
-		&& method_exists( 'Plandose_Subscriptions', 'create_table' )
-		&& Plandose_Subscriptions::create_table();
+	// Through the same lock as every other request (plandose_maybe_upgrade()),
+	// so it never runs dbDelta() alongside a request that is already
+	// upgrading. Forced: activation re-verifies the tables even when the
+	// stored version is current, and retries during a failure back-off.
+	// 'busy' means that other request is creating the tables right now;
+	// it records the version (or the failure and its notice) itself.
+	$upgrade = plandose_maybe_upgrade( true );
 
-	if ( ! $tables_ready ) {
+	if ( 'done' !== $upgrade && 'busy' !== $upgrade ) {
 		wp_die(
 			esc_html__( 'Το PlanDose δεν μπόρεσε να δημιουργήσει ή να επιβεβαιώσει τους απαιτούμενους πίνακες βάσης δεδομένων.', 'plandose' )
 		);
 	}
-
-	update_option( 'plandose_version', PLANDOSE_VERSION );
-	delete_transient( 'plandose_upgrade_failed' );
 
 	if ( method_exists( 'Plandose_Settings', 'maybe_migrate_legacy_defaults' ) ) {
 		Plandose_Settings::maybe_migrate_legacy_defaults();
@@ -377,19 +378,22 @@ if ( ! defined( 'PLANDOSE_UPGRADE_BACKOFF' ) ) {
  *   while it upgrades; the others carry on with the existing tables
  *   (schema changes are additive) and do not run dbDelta();
  * - a lock older than PLANDOSE_UPGRADE_LOCK_TTL (30 minutes) is taken
- *   over (its holder died);
+ *   over (its holder died); if even that fails, the result stays 'busy'
+ *   but the same admin notice as for 'failed' is shown;
  * - after a failure no request retries for 10 minutes, and the admin
  *   notice (plandose_render_bootstrap_notice()) is shown meanwhile.
  *
+ * @param bool $force Run even when the stored version is current or a
+ *                   back-off is active (activation). The lock still applies.
  * @return string 'current' (nothing to do), 'done', 'busy' (another
  *                request is upgrading) or 'failed'.
  */
-function plandose_maybe_upgrade() {
-	if ( get_option( 'plandose_version' ) === PLANDOSE_VERSION ) {
+function plandose_maybe_upgrade( $force = false ) {
+	if ( ! $force && get_option( 'plandose_version' ) === PLANDOSE_VERSION ) {
 		return 'current';
 	}
 
-	if ( false !== get_transient( PLANDOSE_UPGRADE_BACKOFF ) ) {
+	if ( ! $force && false !== get_transient( PLANDOSE_UPGRADE_BACKOFF ) ) {
 		return 'failed';
 	}
 
@@ -401,10 +405,27 @@ function plandose_maybe_upgrade() {
 	$owned = Plandose_Lock::claim( PLANDOSE_UPGRADE_LOCK, $now );
 
 	if ( ! $owned ) {
-		$held_since = get_option( PLANDOSE_UPGRADE_LOCK );
+		// Read from the database, not get_option(): the lock row is
+		// written behind WordPress's back, and a stale 'notoptions' entry
+		// in a persistent object cache would report it absent while it
+		// exists — the takeover below would then never happen and every
+		// request would stay 'busy' for good.
+		$held_since = Plandose_Lock::held_value( PLANDOSE_UPGRADE_LOCK );
 
 		if ( false !== $held_since && (int) $held_since < $now - (int) PLANDOSE_UPGRADE_LOCK_TTL ) {
 			$owned = Plandose_Lock::claim_if_unchanged( PLANDOSE_UPGRADE_LOCK, $held_since, $now );
+
+			// Still the same dead holder's value after a failed takeover:
+			// nobody else reclaimed it either (a database error, for
+			// instance), so the upgrade has been 'busy' for longer than the
+			// TTL and will not finish on its own. The request carries on
+			// with the existing tables as for any 'busy', but the admin
+			// gets the failure notice (plandose_render_bootstrap_notice())
+			// instead of an upgrade that silently never happens. A code,
+			// not a translated string — see plandose_init().
+			if ( ! $owned && Plandose_Lock::held_value( PLANDOSE_UPGRADE_LOCK ) === $held_since ) {
+				$GLOBALS['plandose_bootstrap_error'] = 'db_upgrade_failed';
+			}
 		}
 	}
 
@@ -417,7 +438,7 @@ function plandose_maybe_upgrade() {
 	wp_cache_delete( 'plandose_version', 'options' );
 	wp_cache_delete( 'alloptions', 'options' );
 
-	if ( get_option( 'plandose_version' ) === PLANDOSE_VERSION ) {
+	if ( ! $force && get_option( 'plandose_version' ) === PLANDOSE_VERSION ) {
 		Plandose_Lock::release_if_owned( PLANDOSE_UPGRADE_LOCK, $now );
 
 		return 'current';

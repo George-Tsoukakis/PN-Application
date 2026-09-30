@@ -31,7 +31,11 @@ class Plandose_Diagnostics {
 	/** A daily job not seen for this long is overdue. */
 	const CRON_OVERDUE = 172800;
 
-	/** Minimum versions (the plugin header's Requires PHP / Requires at least). */
+	/**
+	 * Fallback minimum versions, used only when the plugin header cannot be
+	 * read: the real ones are its Requires PHP / Requires at least
+	 * (min_versions()).
+	 */
 	const MIN_PHP = '8.0';
 	const MIN_WP  = '6.3';
 
@@ -121,12 +125,16 @@ class Plandose_Diagnostics {
 		);
 
 		self::$standalone_hook = is_string( $hook ) ? $hook : '';
+
+		// So Plandose_Admin::admin_screen_ids() knows its screen.
+		if ( method_exists( 'Plandose_Admin', 'remember_screen' ) ) {
+			Plandose_Admin::remember_screen( self::$standalone_hook );
+		}
 	}
 
 	/**
-	 * The admin CSS/JS on the stand-alone page (its screen id is not one of
-	 * Plandose_Admin::admin_screen_ids(), so it is passed as the regular
-	 * Διαγνωστικά screen).
+	 * The admin CSS/JS on the stand-alone page (its screen id is recorded
+	 * in Plandose_Admin::admin_screen_ids() by register_standalone_menu()).
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
@@ -136,7 +144,7 @@ class Plandose_Diagnostics {
 		}
 
 		if ( class_exists( 'Plandose_Admin' ) && method_exists( 'Plandose_Admin', 'admin_assets' ) ) {
-			Plandose_Admin::admin_assets( 'plandose_page_' . self::PAGE );
+			Plandose_Admin::admin_assets( self::$standalone_hook );
 		}
 	}
 
@@ -1030,6 +1038,10 @@ class Plandose_Diagnostics {
 			return true;
 		}
 
+		// Not dead code: activation is refused on multisite, but a site
+		// that activated PlanDose before that keeps running (see
+		// plandose_render_multisite_notice()), and a cache plugin there
+		// may be network-activated.
 		if ( is_multisite() ) {
 			$network = (array) get_site_option( 'active_sitewide_plugins', array() );
 
@@ -1044,6 +1056,38 @@ class Plandose_Diagnostics {
 	 * ------------------------------------------------------------------ */
 
 	/**
+	 * Minimum PHP and WordPress versions, read once from the plugin
+	 * header (Requires PHP / Requires at least), so they are written in one
+	 * place; MIN_PHP / MIN_WP only when the header cannot be read.
+	 *
+	 * @return array{php: string, wp: string}
+	 */
+	public static function min_versions() {
+		static $versions = null;
+
+		if ( null !== $versions ) {
+			return $versions;
+		}
+
+		$header = ( defined( 'PLANDOSE_FILE' ) && is_readable( PLANDOSE_FILE ) )
+			? get_file_data(
+				PLANDOSE_FILE,
+				array(
+					'php' => 'Requires PHP',
+					'wp'  => 'Requires at least',
+				)
+			)
+			: array();
+
+		$versions = array(
+			'php' => ( isset( $header['php'] ) && preg_match( '/^\d+(?:\.\d+)*$/', $header['php'] ) ) ? $header['php'] : self::MIN_PHP,
+			'wp'  => ( isset( $header['wp'] ) && preg_match( '/^\d+(?:\.\d+)*$/', $header['wp'] ) ) ? $header['wp'] : self::MIN_WP,
+		);
+
+		return $versions;
+	}
+
+	/**
 	 * @return array<int,array>
 	 */
 	public static function check_environment() {
@@ -1051,14 +1095,15 @@ class Plandose_Diagnostics {
 
 		$results = array();
 		$wp      = isset( $wp_version ) ? (string) $wp_version : (string) get_bloginfo( 'version' );
+		$min     = self::min_versions();
 
-		$results[] = version_compare( PHP_VERSION, self::MIN_PHP, '>=' )
-			? self::result( self::PASS, 'PHP', 'PHP ' . PHP_VERSION . ' (≥ ' . self::MIN_PHP . ')' )
-			: self::result( self::FAIL, 'PHP', 'PHP ' . PHP_VERSION . ' < ' . self::MIN_PHP, __( 'Αναβαθμίστε την PHP από τον πίνακα του παρόχου.', 'plandose' ) );
+		$results[] = version_compare( PHP_VERSION, $min['php'], '>=' )
+			? self::result( self::PASS, 'PHP', 'PHP ' . PHP_VERSION . ' (≥ ' . $min['php'] . ')' )
+			: self::result( self::FAIL, 'PHP', 'PHP ' . PHP_VERSION . ' < ' . $min['php'], __( 'Αναβαθμίστε την PHP από τον πίνακα του παρόχου.', 'plandose' ) );
 
-		$results[] = version_compare( $wp, self::MIN_WP, '>=' )
-			? self::result( self::PASS, 'WordPress', 'WordPress ' . $wp . ' (≥ ' . self::MIN_WP . ')' )
-			: self::result( self::FAIL, 'WordPress', 'WordPress ' . $wp . ' < ' . self::MIN_WP, __( 'Αναβαθμίστε το WordPress.', 'plandose' ) );
+		$results[] = version_compare( $wp, $min['wp'], '>=' )
+			? self::result( self::PASS, 'WordPress', 'WordPress ' . $wp . ' (≥ ' . $min['wp'] . ')' )
+			: self::result( self::FAIL, 'WordPress', 'WordPress ' . $wp . ' < ' . $min['wp'], __( 'Αναβαθμίστε το WordPress.', 'plandose' ) );
 
 		$results[] = extension_loaded( 'mbstring' )
 			? self::result( self::PASS, 'mbstring', __( 'Η επέκταση mbstring είναι διαθέσιμη.', 'plandose' ) )

@@ -130,6 +130,12 @@ class Plandose_Invoice_Migration {
 	const LEGACY_MIGRATION_FAILED_MAX_USERS = 200;
 
 	/**
+	 * Transient behind the one-time result notice: the totals of the
+	 * current pass, summed over its batches (see add_result()).
+	 */
+	const RESULT_TRANSIENT = 'plandose_legacy_migration_result';
+
+	/**
 	 * Tracks the last user_id processed by maybe_migrate_legacy_invoices(),
 	 * so each run picks up strictly after where the previous one left off
 	 * (WHERE user_id > cursor) instead of re-selecting the same LIMIT
@@ -275,7 +281,10 @@ class Plandose_Invoice_Migration {
 
 		try {
 			self::cleanup_unrecorded_copies();
-			self::run_legacy_invoice_migration( false, self::INLINE_BUDGET_SECONDS, self::INLINE_BUDGET_FILES );
+			// Cached privacy verdict only (see usable_storage()): this is an
+			// ordinary page load, and the live probe is several HTTP
+			// requests with their own timeouts.
+			self::run_legacy_invoice_migration( false, self::INLINE_BUDGET_SECONDS, self::INLINE_BUDGET_FILES, false );
 		} finally {
 			self::release_legacy_migration_lock();
 		}
@@ -286,7 +295,17 @@ class Plandose_Invoice_Migration {
 	 * next event is scheduled.
 	 */
 	public static function run_cron_batch() {
-		if ( ! self::migration_pending() || ! self::acquire_legacy_migration_lock() ) {
+		if ( ! self::migration_pending() ) {
+			return;
+		}
+
+		// Busy (a page-load batch or a manual retry holds the lock): this
+		// event has already been consumed, so returning without a successor
+		// would end the chain — and with it the migration, until someone
+		// happens to open a PlanDose screen. Try again shortly instead.
+		if ( ! self::acquire_legacy_migration_lock() ) {
+			self::$blocked = false;
+			self::schedule_next_batch();
 			return;
 		}
 
@@ -323,16 +342,19 @@ class Plandose_Invoice_Migration {
 	 * The invoice folder, if it may receive copies now: usable and
 	 * verified private (as for uploads), else the reason as a WP_Error.
 	 *
+	 * @param bool $probe False on a page load: decide on the cached, fresh
+	 *                    privacy verdict only and never run the live probe
+	 *                    (see Plandose_Invoice_Storage::upload_allowed()).
 	 * @return string|WP_Error
 	 */
-	private static function usable_storage() {
+	private static function usable_storage( $probe = true ) {
 		$dir = Plandose_Invoice_Storage::invoice_dir();
 
 		if ( is_wp_error( $dir ) ) {
 			return $dir;
 		}
 
-		$allowed = Plandose_Invoice_Storage::upload_allowed();
+		$allowed = Plandose_Invoice_Storage::upload_allowed( $probe );
 
 		return is_wp_error( $allowed ) ? $allowed : $dir;
 	}
@@ -397,6 +419,7 @@ class Plandose_Invoice_Migration {
 
 		$deleted = 0;
 		$forget  = array();
+		$keep    = array();
 
 		foreach ( array_keys( $names ) as $name ) {
 			if ( isset( $referenced[ $name ] ) ) {
@@ -405,8 +428,14 @@ class Plandose_Invoice_Migration {
 
 			$path = trailingslashit( $dir ) . $name;
 
-			if ( is_file( $path ) && ! is_link( $path ) && Plandose_Invoice_Storage::fs_delete( $path, 'Deleting unrecorded legacy migration copy' ) ) {
-				++$deleted;
+			if ( is_file( $path ) && ! is_link( $path ) ) {
+				if ( Plandose_Invoice_Storage::fs_delete( $path, 'Deleting unrecorded legacy migration copy' ) ) {
+					++$deleted;
+				} else {
+					// Still on disk: stays journaled, so the next run
+					// tries again instead of leaving an untracked orphan.
+					$keep[] = $name;
+				}
 			}
 
 			if ( class_exists( 'Plandose_Admin_Invoices' ) ) {
@@ -431,7 +460,7 @@ class Plandose_Invoice_Migration {
 			Plandose_Admin_Invoices::forget_legacy_originals( $forget );
 		}
 
-		delete_option( self::PENDING_COPIES_OPTION );
+		self::save_journal( $keep );
 
 		if ( $deleted > 0 ) {
 			Plandose_Admin::audit( 'legacy_invoice_migration_cleanup', 0, array( 'deleted' => $deleted ) );
@@ -498,6 +527,37 @@ class Plandose_Invoice_Migration {
 		$pending[] = (string) $name;
 
 		update_option( self::PENDING_COPIES_OPTION, array_values( array_unique( $pending ) ), false );
+	}
+
+	/**
+	 * Drop names from the pending-copies journal: copies that are now
+	 * recorded in the database or were deleted. A copy whose rollback
+	 * failed must NOT be dropped — it stays on disk, and only the journal
+	 * lets cleanup_unrecorded_copies() find it again.
+	 *
+	 * @param string[] $names File names.
+	 */
+	private static function unjournal( array $names ) {
+		$pending = get_option( self::PENDING_COPIES_OPTION, array() );
+		$pending = is_array( $pending ) ? array_map( 'strval', $pending ) : array();
+
+		self::save_journal( array_diff( $pending, array_map( 'strval', $names ) ) );
+	}
+
+	/**
+	 * Store the journal, or delete the option when nothing is left.
+	 *
+	 * @param string[] $names File names still pending.
+	 */
+	private static function save_journal( array $names ) {
+		$names = array_values( array_unique( array_map( 'strval', $names ) ) );
+
+		if ( empty( $names ) ) {
+			delete_option( self::PENDING_COPIES_OPTION );
+			return;
+		}
+
+		update_option( self::PENDING_COPIES_OPTION, $names, false );
 	}
 
 	/**
@@ -724,13 +784,24 @@ class Plandose_Invoice_Migration {
 	 * @param bool $manual         Report back even when nothing changed.
 	 * @param int  $budget_seconds Stop before the next copy after this long.
 	 * @param int  $budget_files   Stop after this many copies.
+	 * @param bool $probe          May run the live privacy probe (false: page load, cached verdict only).
 	 * @return bool Whether the run stopped on its budget.
 	 */
-	private static function run_legacy_invoice_migration( $manual = false, $budget_seconds = self::BUDGET_SECONDS, $budget_files = self::BUDGET_FILES ) {
+	private static function run_legacy_invoice_migration( $manual = false, $budget_seconds = self::BUDGET_SECONDS, $budget_files = self::BUDGET_FILES, $probe = true ) {
 		global $wpdb;
 
 		$table  = Plandose_Subscriptions::table_name();
 		$cursor = absint( get_option( self::LEGACY_MIGRATION_CURSOR_OPTION, 0 ) );
+
+		/*
+		 * The result notice sums every batch of one pass. A pass starts
+		 * when no cursor is stored at all — not merely a cursor of 0: a
+		 * batch whose budget ran out inside the FIRST row stores 0 and
+		 * continues the same pass.
+		 */
+		if ( false === get_option( self::LEGACY_MIGRATION_CURSOR_OPTION, false ) ) {
+			delete_transient( self::RESULT_TRANSIENT );
+		}
 
 		// Failures are collected across the batches of one pass. A
 		// cursor of 0 means this batch starts a new pass, so anything left
@@ -772,6 +843,7 @@ class Plandose_Invoice_Migration {
 		}
 
 		$migrated_rows  = 0;
+		$updated_users  = array();
 		$migrated_files = 0;
 		$failed_files   = 0;
 		$last_user_id   = $cursor;
@@ -810,7 +882,7 @@ class Plandose_Invoice_Migration {
 				}
 
 				if ( null === $dir ) {
-					$dir = self::usable_storage();
+					$dir = self::usable_storage( $probe );
 
 					if ( is_wp_error( $dir ) ) {
 						self::$blocked = true;
@@ -871,12 +943,16 @@ class Plandose_Invoice_Migration {
 				// this row's copy failures, if any, are counted when it is
 				// retried, not twice).
 				$failed_files -= count( $row_failed );
+				$settled       = array();
 
 				foreach ( $copied as $new_filename ) {
-					Plandose_Invoice_Storage::fs_delete( trailingslashit( $dir ) . $new_filename, 'Rolling back migrated invoice file: invoice list busy' );
+					if ( Plandose_Invoice_Storage::fs_delete( trailingslashit( $dir ) . $new_filename, 'Rolling back migrated invoice file: invoice list busy' ) ) {
+						$settled[] = $new_filename;
+					}
 				}
 
-				delete_option( self::PENDING_COPIES_OPTION );
+				// A copy that could not be deleted stays journaled.
+				self::unjournal( $settled );
 				$interrupted = true;
 				break;
 			}
@@ -888,8 +964,16 @@ class Plandose_Invoice_Migration {
 				$fresh   = Plandose_Subscriptions::get_row( (int) $row->user_id, false );
 				$current = $fresh ? Plandose_Subscriptions::decode_invoices( $fresh->invoices ) : array();
 
+				// EVERY occurrence of a copied attachment ID is rewritten,
+				// to the same copy: a row listing one ID twice (a hand-edited
+				// row, an old double submit) would otherwise keep a numeric
+				// entry for ever — has_legacy_entries() stays true and the
+				// uninstall keeps all data — while the batch loop above
+				// skips the ID as already copied. Two entries sharing one
+				// file is safe: the delete handler removes the file only
+				// once no entry lists it any more.
 				foreach ( $current as $i => $entry ) {
-					if ( is_numeric( $entry ) && isset( $copied[ (int) $entry ] ) && ! isset( $migrated[ (int) $entry ] ) ) {
+					if ( is_numeric( $entry ) && isset( $copied[ (int) $entry ] ) ) {
 						$current[ $i ]            = $copied[ (int) $entry ];
 						$migrated[ (int) $entry ] = $copied[ (int) $entry ];
 					}
@@ -927,6 +1011,15 @@ class Plandose_Invoice_Migration {
 						} else {
 							Plandose_Admin_Invoices::forget_legacy_originals( $row_records );
 						}
+					} elseif ( method_exists( 'Plandose_Admin_Invoices', 'forget_legacy_originals' ) ) {
+						// The read-back failed, but the list may still have
+						// been (partly) written. Those records would name
+						// copies that are rolled back below, so the
+						// «πρωτότυπα» list would point at files that no
+						// longer exist while the row still lists the IDs.
+						// forget_legacy_originals() matches on the fresh,
+						// random copy name, so nothing else is touched.
+						Plandose_Admin_Invoices::forget_legacy_originals( $row_records );
 					}
 				}
 			} finally {
@@ -936,18 +1029,24 @@ class Plandose_Invoice_Migration {
 			// Copies that did not end up in the database — the entry was
 			// removed meanwhile, or the write failed — are deleted rather
 			// than left as orphans.
+			$settled = array();
+
 			foreach ( $copied as $attachment_id => $new_filename ) {
-				if ( ! $updated || ! isset( $migrated[ $attachment_id ] ) ) {
-					Plandose_Invoice_Storage::fs_delete( trailingslashit( $dir ) . $new_filename, 'Rolling back migrated invoice file after DB update failure' );
+				if ( $updated && isset( $migrated[ $attachment_id ] ) ) {
+					$settled[] = $new_filename;
+				} elseif ( Plandose_Invoice_Storage::fs_delete( trailingslashit( $dir ) . $new_filename, 'Rolling back migrated invoice file after DB update failure' ) ) {
+					$settled[] = $new_filename;
 				}
 			}
 
-			// This row's copies are now either recorded or deleted.
-			delete_option( self::PENDING_COPIES_OPTION );
+			// This row's copies are now recorded or deleted; one whose
+			// rollback failed stays journaled for cleanup_unrecorded_copies().
+			self::unjournal( $settled );
 
 			if ( $updated ) {
 				$migrated_files += count( $migrated );
 				++$migrated_rows;
+				$updated_users[] = (int) $row->user_id;
 			} elseif ( $migrated ) {
 				$failed_files += count( $migrated );
 				$row_failed = array_merge( $row_failed, array_map( 'intval', array_keys( $migrated ) ) );
@@ -1005,28 +1104,11 @@ class Plandose_Invoice_Migration {
 
 		// A manual retry always reports back, even «0 of 0», so the admin
 		// sees that the button did something.
-		if ( $manual && 0 === $migrated_files && 0 === $failed_files ) {
-			set_transient(
-				'plandose_legacy_migration_result',
-				array(
-					'rows'   => 0,
-					'files'  => 0,
-					'failed' => 0,
-				),
-				DAY_IN_SECONDS
-			);
+		if ( $manual || $migrated_files > 0 || $failed_files > 0 ) {
+			self::add_result( $updated_users, $migrated_files, $failed_files );
 		}
 
 		if ( $migrated_files > 0 || $failed_files > 0 ) {
-			set_transient(
-				'plandose_legacy_migration_result',
-				array(
-					'rows'   => $migrated_rows,
-					'files'  => $migrated_files,
-					'failed' => $failed_files,
-				),
-				DAY_IN_SECONDS
-			);
 
 			Plandose_Admin::audit(
 				'legacy_invoice_migration',
@@ -1042,6 +1124,39 @@ class Plandose_Invoice_Migration {
 		}
 
 		return $budget_hit;
+	}
+
+	/**
+	 * Add one batch's numbers to the pass's result notice. Adding zeros
+	 * still creates the notice (a manual retry always reports back).
+	 * Rows are visited in ascending user_id order, so the only pharmacy two
+	 * batches can share is the one a budget cut in half: the last one
+	 * counted before ('last_user') is not counted again.
+	 *
+	 * @param int[] $users  Pharmacies (user IDs) whose list was rewritten, in order.
+	 * @param int   $files  Files copied.
+	 * @param int   $failed Files that could not be copied.
+	 */
+	private static function add_result( array $users, $files, $failed ) {
+		$result = get_transient( self::RESULT_TRANSIENT );
+		$result = is_array( $result ) ? $result : array();
+		$last   = isset( $result['last_user'] ) ? absint( $result['last_user'] ) : 0;
+		$rows   = count( $users );
+
+		if ( $rows > 0 && $last > 0 && (int) $users[0] === $last ) {
+			--$rows;
+		}
+
+		set_transient(
+			self::RESULT_TRANSIENT,
+			array(
+				'rows'      => ( isset( $result['rows'] ) ? absint( $result['rows'] ) : 0 ) + $rows,
+				'files'     => ( isset( $result['files'] ) ? absint( $result['files'] ) : 0 ) + max( 0, (int) $files ),
+				'failed'    => ( isset( $result['failed'] ) ? absint( $result['failed'] ) : 0 ) + max( 0, (int) $failed ),
+				'last_user' => $users ? (int) end( $users ) : $last,
+			),
+			DAY_IN_SECONDS
+		);
 	}
 
 	/**
@@ -1114,6 +1229,11 @@ class Plandose_Invoice_Migration {
 				Plandose_Invoice_Storage::fs_delete( $target, 'Removing partial legacy invoice copy' );
 			}
 
+			// Journaled only while a partial copy is still on disk.
+			if ( ! file_exists( $target ) ) {
+				self::unjournal( array( $filename ) );
+			}
+
 			return '';
 		}
 
@@ -1137,10 +1257,10 @@ class Plandose_Invoice_Migration {
 			return;
 		}
 
-		$result = get_transient( 'plandose_legacy_migration_result' );
+		$result = get_transient( self::RESULT_TRANSIENT );
 
 		if ( $result ) {
-			delete_transient( 'plandose_legacy_migration_result' );
+			delete_transient( self::RESULT_TRANSIENT );
 
 			$files  = isset( $result['files'] ) ? (int) $result['files'] : 0;
 			$rows   = isset( $result['rows'] ) ? (int) $result['rows'] : 0;

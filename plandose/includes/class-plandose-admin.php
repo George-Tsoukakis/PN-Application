@@ -26,7 +26,15 @@ class Plandose_Admin {
 	 */
 	public static function capability() {
 		$capability = apply_filters( 'plandose_manage_capability', 'manage_options' );
-		$capability = is_string( $capability ) ? sanitize_key( $capability ) : '';
+
+		/*
+		 * Not sanitize_key(): it lowercases, and capabilities are
+		 * case-sensitive, so a custom 'Manage_PlanDose' would silently
+		 * become an unknown capability nobody holds (fail closed, every
+		 * screen locked). Only characters no capability name uses are
+		 * dropped; nothing usable left falls back to the default.
+		 */
+		$capability = is_string( $capability ) ? (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', $capability ) : '';
 
 		return '' !== $capability ? $capability : 'manage_options';
 	}
@@ -222,10 +230,24 @@ class Plandose_Admin {
 		}
 
 		if ( class_exists( 'Plandose_Subscriptions' ) ) {
-			$row      = Plandose_Subscriptions::get_row( $user_id, false );
-			$invoices = $row ? Plandose_Subscriptions::decode_invoices( $row->invoices ) : array();
+			global $wpdb;
 
-			if ( $invoices ) {
+			// get_row() returns null both for "no row" and for a failed
+			// read. Taking a failed read for "no invoices" would delete the
+			// only record of which invoice files belong to this pharmacy,
+			// so a database error retires the row instead (a retired row
+			// without invoices is harmless; a lost invoice list is not).
+			// wpdb clears last_error at the start of every query, so it
+			// describes get_row()'s SELECT (the user ID is non-zero here,
+			// so get_row() always runs it).
+			$row         = Plandose_Subscriptions::get_row( $user_id, false );
+			$read_failed = null === $row && '' !== (string) $wpdb->last_error;
+			$invoices    = $row ? Plandose_Subscriptions::decode_invoices( $row->invoices ) : array();
+
+			if ( $read_failed ) {
+				error_log( 'PlanDose: the subscription row of deleted user ' . $user_id . ' could not be read, so it was retired, not deleted: ' . $wpdb->last_error ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Server-side trace of a failed read; no admin screen is showing.
+				Plandose_Subscriptions::retire_row( $user_id );
+			} elseif ( $invoices ) {
 				Plandose_Subscriptions::retire_row( $user_id );
 				self::audit( 'account_deleted_invoices_kept', $user_id, array( 'invoices' => count( $invoices ) ) );
 			} else {
@@ -241,6 +263,14 @@ class Plandose_Admin {
 		// history (it could not be reached by a privacy request later).
 		if ( class_exists( 'Plandose_Print_Log' ) ) {
 			Plandose_Print_Log::delete_for_user( $user_id );
+		}
+
+		// And its free-reprint / replay records (both charge tables),
+		// which the privacy eraser removes too: keyed by user_id, they
+		// would otherwise stay until the daily cleanup — or be matched
+		// by a new account that reuses the ID.
+		if ( class_exists( 'Plandose_Print_Charges' ) && method_exists( 'Plandose_Print_Charges', 'delete_for_user' ) ) {
+			Plandose_Print_Charges::delete_for_user( $user_id );
 		}
 	}
 
@@ -400,6 +430,27 @@ class Plandose_Admin {
 	const AUDIT_CLEANUP_CHUNK      = 1000;
 	const AUDIT_CLEANUP_MAX_CHUNKS = 200;
 
+	/**
+	 * Hook suffixes (= screen ids) WordPress returned for the PlanDose
+	 * pages, see remember_screen().
+	 *
+	 * @var string[]
+	 */
+	private static $screen_hooks = array();
+
+	/**
+	 * Record the hook suffix add_menu_page() / add_submenu_page() returned
+	 * for a PlanDose page, for admin_screen_ids(). Public for the stand-alone
+	 * Διαγνωστικά menu (Plandose_Diagnostics).
+	 *
+	 * @param string|false $hook Hook suffix, or false when the page was not added.
+	 */
+	public static function remember_screen( $hook ) {
+		if ( is_string( $hook ) && '' !== $hook && ! in_array( $hook, self::$screen_hooks, true ) ) {
+			self::$screen_hooks[] = $hook;
+		}
+	}
+
 	public static function admin_menu() {
 		$cap = self::capability();
 
@@ -407,29 +458,39 @@ class Plandose_Admin {
 			return;
 		}
 
-		add_menu_page(
-			__( 'PlanDose', 'plandose' ),
-			__( 'PlanDose', 'plandose' ),
-			$cap,
-			'plandose',
-			array( 'Plandose_Admin_Subscriptions', 'render_dashboard_page' ),
-			'dashicons-clipboard',
-			58
+		/*
+		 * The submenu screen ids start with the sanitized, TRANSLATED menu
+		 * title ('plandose_page_' only while «PlanDose» is not translated),
+		 * so the hook suffixes WordPress returns are kept rather than
+		 * guessed (admin_screen_ids()).
+		 */
+		self::$screen_hooks = array();
+
+		self::remember_screen(
+			add_menu_page(
+				__( 'PlanDose', 'plandose' ),
+				__( 'PlanDose', 'plandose' ),
+				$cap,
+				'plandose',
+				array( 'Plandose_Admin_Subscriptions', 'render_dashboard_page' ),
+				'dashicons-clipboard',
+				58
+			)
 		);
 
-		add_submenu_page( 'plandose', __( 'Dashboard', 'plandose' ), __( 'Dashboard', 'plandose' ), $cap, 'plandose', array( 'Plandose_Admin_Subscriptions', 'render_dashboard_page' ) );
-		add_submenu_page( 'plandose', __( 'Συνδρομές', 'plandose' ), __( 'Συνδρομές', 'plandose' ), $cap, 'plandose-subscriptions', array( 'Plandose_Admin_Subscriptions', 'render_subscriptions_page' ) );
-		add_submenu_page( 'plandose', __( 'Δωρεάν', 'plandose' ), __( 'Δωρεάν', 'plandose' ), $cap, 'plandose-free', array( 'Plandose_Admin_Subscriptions', 'render_free_page' ) );
-		add_submenu_page( 'plandose', __( 'Pro', 'plandose' ), __( 'Pro', 'plandose' ), $cap, 'plandose-pro', array( 'Plandose_Admin_Subscriptions', 'render_pro_page' ) );
+		self::remember_screen( add_submenu_page( 'plandose', __( 'Dashboard', 'plandose' ), __( 'Dashboard', 'plandose' ), $cap, 'plandose', array( 'Plandose_Admin_Subscriptions', 'render_dashboard_page' ) ) );
+		self::remember_screen( add_submenu_page( 'plandose', __( 'Συνδρομές', 'plandose' ), __( 'Συνδρομές', 'plandose' ), $cap, 'plandose-subscriptions', array( 'Plandose_Admin_Subscriptions', 'render_subscriptions_page' ) ) );
+		self::remember_screen( add_submenu_page( 'plandose', __( 'Δωρεάν', 'plandose' ), __( 'Δωρεάν', 'plandose' ), $cap, 'plandose-free', array( 'Plandose_Admin_Subscriptions', 'render_free_page' ) ) );
+		self::remember_screen( add_submenu_page( 'plandose', __( 'Pro', 'plandose' ), __( 'Pro', 'plandose' ), $cap, 'plandose-pro', array( 'Plandose_Admin_Subscriptions', 'render_pro_page' ) ) );
 		// Every print, newest first (Plandose_Admin_Prints).
 		if ( class_exists( 'Plandose_Admin_Prints' ) ) {
-			add_submenu_page( 'plandose', __( 'Εκτυπώσεις', 'plandose' ), __( 'Εκτυπώσεις', 'plandose' ), $cap, Plandose_Admin_Prints::PAGE, array( 'Plandose_Admin_Prints', 'render_page' ) );
+			self::remember_screen( add_submenu_page( 'plandose', __( 'Εκτυπώσεις', 'plandose' ), __( 'Εκτυπώσεις', 'plandose' ), $cap, Plandose_Admin_Prints::PAGE, array( 'Plandose_Admin_Prints', 'render_page' ) ) );
 		}
-		add_submenu_page( 'plandose', __( 'Ημερολόγιο', 'plandose' ), __( 'Ημερολόγιο', 'plandose' ), $cap, 'plandose-audit', array( 'Plandose_Admin_Subscriptions', 'render_audit_page' ) );
-		add_submenu_page( 'plandose', __( 'Settings', 'plandose' ), __( 'Settings', 'plandose' ), $cap, 'plandose-settings', array( 'Plandose_Admin_Settings', 'render_settings_page' ) );
+		self::remember_screen( add_submenu_page( 'plandose', __( 'Ημερολόγιο', 'plandose' ), __( 'Ημερολόγιο', 'plandose' ), $cap, 'plandose-audit', array( 'Plandose_Admin_Subscriptions', 'render_audit_page' ) ) );
+		self::remember_screen( add_submenu_page( 'plandose', __( 'Settings', 'plandose' ), __( 'Settings', 'plandose' ), $cap, 'plandose-settings', array( 'Plandose_Admin_Settings', 'render_settings_page' ) ) );
 
 		if ( class_exists( 'Plandose_Diagnostics' ) ) {
-			add_submenu_page( 'plandose', __( 'Διαγνωστικά', 'plandose' ), __( 'Διαγνωστικά', 'plandose' ), $cap, 'plandose-diagnostics', array( 'Plandose_Diagnostics', 'render_page' ) );
+			self::remember_screen( add_submenu_page( 'plandose', __( 'Διαγνωστικά', 'plandose' ), __( 'Διαγνωστικά', 'plandose' ), $cap, 'plandose-diagnostics', array( 'Plandose_Diagnostics', 'render_page' ) ) );
 		}
 	}
 
@@ -438,18 +499,33 @@ class Plandose_Admin {
 	 * on our own screens, instead of on any admin page whose hook merely
 	 * contains the substring "plandose" (which could match an unrelated
 	 * plugin's page and leak our styles/scripts onto it).
+	 *
+	 * The ids are the hook suffixes WordPress returned when the pages were
+	 * added (admin_menu()): a submenu's starts with the sanitized, possibly
+	 * translated, menu title, so 'plandose_page_…' cannot be assumed.
+	 * Before 'admin_menu' has run they are derived the same way core does
+	 * (get_plugin_page_hookname()); the untranslated ids are always
+	 * included, as they can only ever name these pages.
+	 *
+	 * @return string[]
 	 */
 	public static function admin_screen_ids() {
-		return array(
-			'toplevel_page_plandose',
-			'plandose_page_plandose-subscriptions',
-			'plandose_page_plandose-free',
-			'plandose_page_plandose-pro',
-			'plandose_page_plandose-prints',
-			'plandose_page_plandose-audit',
-			'plandose_page_plandose-settings',
-			'plandose_page_plandose-diagnostics',
-		);
+		$slugs = array( 'plandose-subscriptions', 'plandose-free', 'plandose-pro', 'plandose-prints', 'plandose-audit', 'plandose-settings', 'plandose-diagnostics' );
+		$ids   = array( 'toplevel_page_plandose' );
+
+		foreach ( $slugs as $slug ) {
+			$ids[] = 'plandose_page_' . $slug;
+		}
+
+		$hooks = self::$screen_hooks;
+
+		if ( ! $hooks && function_exists( 'get_plugin_page_hookname' ) && ! empty( $GLOBALS['admin_page_hooks']['plandose'] ) ) {
+			foreach ( $slugs as $slug ) {
+				$hooks[] = get_plugin_page_hookname( $slug, 'plandose' );
+			}
+		}
+
+		return array_values( array_unique( array_merge( $ids, $hooks ) ) );
 	}
 
 	public static function admin_assets( $hook ) {

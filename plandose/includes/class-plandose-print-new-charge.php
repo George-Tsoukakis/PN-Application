@@ -244,44 +244,43 @@ final class Plandose_Print_New_Charge {
 		}
 
 		/*
-		 * wpdb reconnects on «server has gone away» and re-runs the failed
-		 * query on a NEW connection, in autocommit: rows written on the old
-		 * one are gone while the counter update stuck. Put them back, so a
-		 * charged print always has its charge row and its request record.
+		 * Was the transaction lost to a silent wpdb reconnect (see
+		 * Plandose_Print_Transaction)? Checked right after the counter
+		 * UPDATE, with no statement in between: connection_id() reads the
+		 * id on the PHP side, so the check itself cannot reconnect.
+		 *
+		 * - Not lost: the charge row, the request row and the counter were
+		 *   all written in this transaction. Nothing else runs before
+		 *   COMMIT, so a connection lost from here on can only be lost AT
+		 *   the COMMIT, where commit_confirmed() tells it from the rows.
+		 *   (Before 1.30.2 the look-up of the rows ran here too: a
+		 *   connection lost during it rolled the counter back with the old
+		 *   transaction, the rows were written again in autocommit and the
+		 *   sheet printed uncounted.)
+		 * - Lost: the reconnect happened at or before the counter UPDATE,
+		 *   so that UPDATE ran on the NEW connection, in autocommit — it
+		 *   stuck, exactly once. The rows written before the reconnect may
+		 *   be gone with the old transaction: put them back (verified,
+		 *   see ensure_charge_records()) and answer success. The counter is
+		 *   never incremented again here, so this is never a double charge.
 		 */
-		// The put-back is verified (and tried once more) instead of
-		// assumed. See ensure_charge_records().
-		self::ensure_charge_records( $request, $charge_started );
-
-		/*
-		 * A reconnect before this point means the statements after it ran in
-		 * autocommit and the COMMIT below runs on a connection with no
-		 * transaction. The rows were just put back above; the counter
-		 * update either stuck (it ran after the reconnect) or was lost with
-		 * the old transaction — the print is then uncharged, never charged
-		 * twice. Either way the answer is success.
-		 */
-		/*
-		 * A connection lost AT the COMMIT. wpdb reconnects on «gone
-		 * away» and re-runs COMMIT on the new connection, where it succeeds
-		 * (there is nothing to commit) — while the server rolled the killed
-		 * transaction back: charge row, request row and counter. commit()
-		 * then says true, and a success answer would print an uncounted sheet.
-		 * So a failed COMMIT, or one after which the connection id changed,
-		 * is verified against the rows themselves.
-		 */
-		if ( ! self::commit_confirmed( $tx, $request, $previous, $charge_started ) ) {
-			// Rolled back: nothing was charged. The lock goes, so the
-			// client's retry (same request id) charges exactly once.
+		if ( $tx->lost() ) {
+			self::ensure_charge_records( $request, $charge_started );
+		} elseif ( ! self::commit_confirmed( $tx, $request, $previous, $charge_started ) ) {
+			/*
+			 * A connection lost AT the COMMIT. wpdb reconnects on «gone
+			 * away» and re-runs COMMIT on the new connection, where it
+			 * succeeds (there is nothing to commit) — while the server
+			 * rolled the killed transaction back: charge row, request row
+			 * and counter. So a COMMIT that is not confirmed is verified
+			 * against the rows themselves; here they are missing: nothing
+			 * was charged. The lock goes, so the client's retry (same
+			 * request id) charges exactly once.
+			 */
 			Plandose_Print_Lock::release( $user_id, $lock_token );
 
 			return self::server_error( $request, Plandose_Subscriptions::get_row( $user_id ) );
 		}
-
-		// A print does not drop the (expensive) list caches, but it
-		// does drop the one-row KPI set, so «Εκτυπώσεις Μήνα» counts
-		// this print at once — otherwise it lags by up to the stats TTL
-		// (300 s), which reads as a print not being counted.
 
 		$row = Plandose_Subscriptions::get_row( $user_id );
 
@@ -289,6 +288,10 @@ final class Plandose_Print_New_Charge {
 		// effort: a lost log row never changes this answer.
 		$request->log_print( 'charge', $row ? Plandose_Subscriptions::current_month_count( $row ) : 0 );
 
+		// A print does not drop the (expensive) list caches, but it
+		// does drop the one-row KPI set, so «Εκτυπώσεις Μήνα» counts
+		// this print at once — otherwise it lags by up to the stats TTL
+		// (300 s), which reads as a print not being counted.
 		if ( class_exists( 'Plandose_Subscriber_Query' ) ) {
 			delete_transient( Plandose_Subscriber_Query::STATS_CACHE_KEY );
 		}
@@ -322,10 +325,12 @@ final class Plandose_Print_New_Charge {
 	}
 
 	/**
-	 * After the counter was charged, confirm that the token's
-	 * charge row and this request's record exist, writing them again if a
-	 * reconnect lost them (see the note above its call in
-	 * charge_locked()). Tried twice.
+	 * After the counter was charged in autocommit on a new connection
+	 * (the transaction was lost, see the note above its call in
+	 * charge_locked()), confirm that the token's charge row and this
+	 * request's record exist, writing them again if the reconnect lost
+	 * them. Tried twice. Only on that rare path: a transaction that was
+	 * not lost commits the rows together with the counter.
 	 *
 	 * The answer to the client stays «success» either way: the counter WAS
 	 * charged, and an error would make the client send the same request

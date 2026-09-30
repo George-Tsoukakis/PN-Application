@@ -433,6 +433,12 @@ class Plandose_Admin_Settings {
 			}
 		}
 
+		// sanitize_settings() refuses «selected pages» with no page
+		// (keeps the previous scope and shows its own error notice); the
+		// redirect then leaves out updated=1, so the screen does not show
+		// «αποθηκεύτηκαν» next to that refusal.
+		$scope_refused = 'selected' === $s['display_scope'] && empty( $s['display_pages'] );
+
 		$s = Plandose_Settings::sanitize_settings( $s );
 
 		$updated = update_option( 'plandose_settings', $s );
@@ -513,15 +519,14 @@ class Plandose_Admin_Settings {
 		}
 
 		Plandose_Admin::audit( 'save_settings', 0, $audit_meta );
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'page'    => 'plandose-settings',
-					'updated' => '1',
-				),
-				admin_url( 'admin.php' )
-			)
-		);
+
+		$redirect_args = array( 'page' => 'plandose-settings' );
+
+		if ( ! $scope_refused ) {
+			$redirect_args['updated'] = '1';
+		}
+
+		wp_safe_redirect( add_query_arg( $redirect_args, admin_url( 'admin.php' ) ) );
 		exit;
 	}
 

@@ -3,9 +3,10 @@
  *
  * The only PlanDose script a registered pharmacist's page loads up front.
  *
- * The whole tool is nine modules, about 180 KB of JavaScript plus 31 KB
- * of CSS. Rather than put them on every page a pharmacist visits, whether
- * or not the popup is ever opened, this file (≈6 KB, mostly comments)
+ * The whole tool is fifteen modules (sixteen with the Pro label module),
+ * about 500 KB of JavaScript plus 43 KB of CSS. Rather than put them on
+ * every page a pharmacist visits, whether or not the popup is ever
+ * opened, this file (≈8 KB, mostly comments)
  * loads them on demand:
  *
  * - as soon as the pointer moves onto the button, it gets focus, or a
@@ -149,6 +150,11 @@
 	 * screen reader's cursor could walk into the page behind it. Every
 	 * sibling along the overlay's path up to <body> gets `inert` (+
 	 * aria-hidden as a fallback); only what we changed is restored.
+	 *
+	 * The same helper exists in modal.js (PD.setBackgroundInert) and
+	 * plandose-guest.js. It cannot be shared: this view exists precisely
+	 * because the PD modules did not load, and the guest bundle never
+	 * loads them. Keep the three in step.
 	 */
 	var inertChanged = [];
 	function setBackgroundInert(on) {
@@ -188,6 +194,7 @@
 	function showError() {
 		var hide = function () {
 			overlay.hidden = true;
+			trigger.setAttribute('aria-expanded', 'false');
 			document.body.classList.remove('plandose-no-scroll');
 			setBackgroundInert(false);
 			closeBtn.removeEventListener('click', hide);
@@ -210,6 +217,9 @@
 		p.textContent = L.failed || 'PlanDose could not be loaded. Check your connection and reload the page.';
 		app.appendChild(p);
 		overlay.hidden = false;
+		/* Same as PD.openModal(): the trigger tells assistive tech the
+		   dialog it controls is open. */
+		trigger.setAttribute('aria-expanded', 'true');
 		document.body.classList.add('plandose-no-scroll');
 		/* No Tab trap here (modal.js did not load), but with the
 		   page inert Tab can only reach the dialog's own controls. */

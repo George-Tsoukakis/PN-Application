@@ -6,6 +6,9 @@
  * the large stylesheet is deferred / async-loaded later.
  * Only trigger-button rules live here. Modal, wizard, preview and print styles
  * stay in plandose.css.
+ *
+ * The :root custom properties below are the ONLY copy: plandose-guest.css
+ * and plandose.css both depend on this file and read them from here.
  */
 
 :root {

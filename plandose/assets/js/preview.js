@@ -645,6 +645,40 @@
 		);
 	};
 
+	/**
+	 * True when a WHOLE DAY of the drug moves: the plan starts today and
+	 * every one of its dayparts falls before the chosen «Πρώτη δόση» (a
+	 * once-daily «Πρωί» drug with the first dose «Μεσημέρι»), so its
+	 * first dose is tomorrow. The course line says so, but it is easy to
+	 * miss; the pharmacist is warned on screen (never on the sheet).
+	 *
+	 * Built on courseEnds(), i.e. on the very rule that lays out the
+	 * table, so the warning cannot disagree with the sheet. That rule
+	 * already leaves out everything whose later first date is intended:
+	 * a plan starting on a later day (effectiveFirstSlot() is 'morning'),
+	 * and weekly, monthly and every-N-days schedules (no dayparts, their
+	 * first date comes from sparseDayHasDose()). A drug that only loses
+	 * SOME of today's doses (2 φορές, first dose «Βράδυ») still starts
+	 * today and is not warned about either.
+	 */
+	PD.firstDoseShifted = function firstDoseShifted(item) {
+		var ends = item ? PD.courseEnds(item) : null;
+		return !!ends && ends.firstDay > 0;
+	};
+
+	/** The on-screen warning for a drug of firstDoseShifted(), or ''. */
+	PD.firstDoseShiftText = function firstDoseShiftText(item) {
+		if (!PD.firstDoseShifted(item)) {
+			return '';
+		}
+		var ends = PD.courseEnds(item);
+		return PD.format(
+			PD.txt('firstDoseShiftWarn', 'Το «%1$s» ξεκινά αύριο (%2$s), γιατί η ώρα της πρώτης δόσης του πέρασε σήμερα. Αν πρέπει να πάρει δόση σήμερα, αλλάξτε την «Πρώτη δόση την ημέρα έναρξης».'),
+			item.name || '',
+			ends.firstSlot + ' ' + PD.shortDay(ends.firstDay)
+		);
+	};
+
 	PD.chunk = function chunk(arr, size) {
 		var out = [];
 		for (var i = 0; i < arr.length; i += size) {
@@ -725,9 +759,12 @@
 			'Patch': 'Patches',
 			'Units': { one: 'IU', many: 'IU' }
 		};
+		/* Greek takes the singular up to one: «0,5 Δισκίο», «1 Δισκίο»,
+		   «1,5 Δισκία». English keeps it for exactly one («0.5 tablets»). */
+		var amount = PD.parseDoseAmount(item.doseAmount, PD.DOSE_NO_LIMIT);
+		var single = 1 === amount || ('en' !== PD.lang && amount > 0 && amount < 1);
 		if (m && Object.prototype.hasOwnProperty.call(irregular, m[1])) {
 			var forms = irregular[m[1]];
-			var single = 1 === PD.parseDoseAmount(item.doseAmount, PD.DOSE_NO_LIMIT);
 			if (typeof forms === 'string') {
 				return raw + '\u00a0' + (single ? m[1] : forms);
 			}
@@ -737,8 +774,7 @@
 		if (m) {
 			var base = m[1];
 			var suf = m[2];
-			var one = 1 === PD.parseDoseAmount(item.doseAmount, PD.DOSE_NO_LIMIT);
-			if (one) {
+			if (single) {
 				unit = base;
 			} else if ('s' === suf) {
 				unit = base + 's';
@@ -1007,8 +1043,16 @@
 			/* What happened to the phone-reminder QR (notes left
 			   out, or no QR at all) — on screen only, never on the sheet. */
 			var qrNotice = typeof PD.calendarQrNotice === 'function' && PD.s.items.length ? PD.calendarQrNotice() : '';
+			/* Drugs whose first dose moved to tomorrow — also on
+			   screen only, from the same day pass as the sheet. */
+			var shifts = PD.s.items.map(PD.firstDoseShiftText).filter(Boolean);
 			PD.ensurePreviewStyles();
-			previewArea.innerHTML = (qrNotice ? '<p class="pd-preview-notice" role="note">' + PD.escapeHtml(qrNotice) + '</p>' : '') +
+			previewArea.innerHTML = (shifts.length
+				? '<div class="pd-preview-shift" role="note"><ul>' + shifts.map(function (text) {
+					return '<li>' + PD.escapeHtml(text) + '</li>';
+				}).join('') + '</ul></div>'
+				: '') +
+				(qrNotice ? '<p class="pd-preview-notice" role="note">' + PD.escapeHtml(qrNotice) + '</p>' : '') +
 				'<div class="pd-preview-page"><div class="pd-preview-sheet">' + html + '</div></div>' +
 				(typeof PD.buildLabelsPage === 'function' ? PD.buildLabelsPage() : '');
 			PD.watchPreviewSheet(previewArea);
@@ -1199,6 +1243,14 @@
 	   each new sheet. */
 	var previewObserver = null;
 	var previewResizeBound = false;
+	/* Closing the popup (or starting over) drops the sheet from the page;
+	   stop observing it so the detached nodes are not kept alive. */
+	PD.unwatchPreviewSheet = function unwatchPreviewSheet() {
+		if (previewObserver) {
+			previewObserver.disconnect();
+			previewObserver = null;
+		}
+	};
 	PD.watchPreviewSheet = function watchPreviewSheet(area) {
 		var fit = function () {
 			PD.fitPreviewSheet(area);

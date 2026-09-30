@@ -3,8 +3,9 @@
  *
  * The entire frontend for a visitor who is not a registered pharmacist.
  *
- * Loaded INSTEAD of the nine tool modules (state / api / validation /
- * preview / medicine-form / print-styles / print / modal / app), which a
+ * Loaded INSTEAD of the tool modules (state / api / validation /
+ * preview / medicine-form / print-styles / calendar-qr / print / the five
+ * rx-* files / modal / app, plus pro-labels for Pro), which a
  * guest can never use: Plandose_Frontend::assets() picks one bundle or the
  * other, never both.
  *

@@ -58,17 +58,21 @@ if ( ! class_exists( 'Plandose_Invoice_Storage' ) ) {
 
 global $wpdb;
 
-// configured_invoice_dir(), not invoice_dir() — the scanner only
-// reports; it must not create the folder or write protection files.
-$plandose_dir = Plandose_Invoice_Storage::configured_invoice_dir();
+// readable_invoice_dir(), not invoice_dir() — the scanner only reports;
+// it must not create the folder or write protection files. Not
+// configured_invoice_dir() either: a PLANDOSE_INVOICE_DIR without the
+// PlanDose ownership marker was never PlanDose's folder (the plugin itself
+// refuses to read invoices from it), and listing its files as «orphaned
+// invoices» would invite someone to delete another application's data.
+$plandose_dir = Plandose_Invoice_Storage::readable_invoice_dir();
 
 if ( is_wp_error( $plandose_dir ) ) {
-	echo "Could not resolve the invoice directory: " . $plandose_dir->get_error_message() . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text CLI output (wp eval-file), not HTML.
-	return;
-}
+	if ( 'plandose_invoice_dir_missing' === $plandose_dir->get_error_code() ) {
+		echo 'Invoice directory: ' . Plandose_Invoice_Storage::configured_invoice_dir() . "\n\nIt does not exist yet (no invoice has been uploaded). Nothing to scan.\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text CLI output (wp eval-file), not HTML.
+		return;
+	}
 
-if ( ! is_dir( $plandose_dir ) ) {
-	echo "Invoice directory: {$plandose_dir}\n\nIt does not exist yet (no invoice has been uploaded). Nothing to scan.\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text CLI output (wp eval-file), not HTML.
+	echo "Could not use the invoice directory: " . $plandose_dir->get_error_message() . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text CLI output (wp eval-file), not HTML.
 	return;
 }
 
@@ -158,6 +162,14 @@ foreach ( $plandose_entries as $plandose_entry ) {
 	}
 
 	if ( isset( $plandose_own[ $plandose_entry ] ) || isset( $plandose_referenced[ $plandose_entry ] ) ) {
+		continue;
+	}
+
+	// A privacy-probe canary (Plandose_Invoice_Storage::CANARY_PATTERN)
+	// holds only a random token, never an invoice: it exists for the
+	// seconds a probe runs, and one left by a killed probe is deleted by
+	// the next probe after an hour. Not an orphan.
+	if ( Plandose_Invoice_Storage::is_canary_name( $plandose_entry ) ) {
 		continue;
 	}
 

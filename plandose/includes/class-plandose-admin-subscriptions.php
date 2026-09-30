@@ -75,6 +75,7 @@ class Plandose_Admin_Subscriptions {
 			'success'      => array( 'success', __( 'Η ενέργεια ολοκληρώθηκε επιτυχώς.', 'plandose' ) ),
 			'invalid_user' => array( 'error', __( 'Ο επιλεγμένος χρήστης δεν βρέθηκε.', 'plandose' ) ),
 			'invalid_action' => array( 'error', __( 'Η ζητούμενη ενέργεια δεν είναι έγκυρη.', 'plandose' ) ),
+			'invalid_days'   => array( 'error', __( 'Ο αριθμός ημερών δεν είναι έγκυρος: δώστε έναν ακέραιο αριθμό ημερών από 1 και πάνω. Δεν έγινε καμία αλλαγή.', 'plandose' ) ),
 			'failed'       => array( 'error', __( 'Η ενέργεια δεν αποθηκεύτηκε. Δοκιμάστε ξανά και ελέγξτε το error log.', 'plandose' ) ),
 			// Pro form submitted from an outdated page (double click, resubmit, another admin).
 			'stale'        => array( 'warning', __( 'Η συνδρομή είχε ήδη αλλάξει (π.χ. διπλό πάτημα ή ενέργεια άλλου διαχειριστή), οπότε δεν προστέθηκαν ημέρες. Ελέγξτε τη νέα ημερομηνία λήξης και επαναλάβετε μόνο αν χρειάζεται.', 'plandose' ) ),
@@ -116,15 +117,11 @@ class Plandose_Admin_Subscriptions {
 	 * real, calendar-valid Y-m-d date.
 	 */
 	private static function sanitize_ymd_date( $value ) {
-		$value = sanitize_text_field( wp_unslash( (string) $value ) );
-
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ) {
+		if ( ! is_scalar( $value ) ) {
 			return '';
 		}
 
-		$dt = DateTime::createFromFormat( 'Y-m-d', $value );
-
-		return ( $dt && $dt->format( 'Y-m-d' ) === $value ) ? $value : '';
+		return Plandose_Settings::sanitize_ymd( sanitize_text_field( wp_unslash( (string) $value ) ) );
 	}
 
 	/**
@@ -145,6 +142,31 @@ class Plandose_Admin_Subscriptions {
 		return max( 1, min( Plandose_Settings::max_add_days(), $days ) );
 	}
 
+	/**
+	 * How a card shows its end date: 'expiring' (red) exactly when the
+	 * «Λήγουν Σύντομα» filter and KPI count it — 0 ≤ days_left ≤
+	 * expiring_days() (Plandose_Subscriber_Query) — 'expired' (muted, with
+	 * its own «έληξε πριν …» text) for a lapsed Pro, '' otherwise. A plain
+	 * days_left <= N was also true for negative values, so lapsed cards
+	 * turned red as "expiring" while the filter left them out.
+	 *
+	 * @param int|null $days_left Days until sub_end_date; null without one.
+	 * @return string 'expiring', 'expired' or ''.
+	 */
+	private static function expiry_state( $days_left ) {
+		if ( null === $days_left ) {
+			return '';
+		}
+
+		$days_left = (int) $days_left;
+
+		if ( $days_left < 0 ) {
+			return 'expired';
+		}
+
+		return $days_left <= Plandose_Settings::expiring_days() ? 'expiring' : '';
+	}
+
 	public static function handle_subscription_action() {
 		if ( 'POST' !== strtoupper( isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '' ) ) {
 			wp_die( esc_html__( 'Μη επιτρεπτή μέθοδος αιτήματος.', 'plandose' ), '', array( 'response' => 405 ) );
@@ -158,7 +180,9 @@ class Plandose_Admin_Subscriptions {
 
 		$user_id     = isset( $_POST['user_id'] ) ? Plandose_Admin_Invoices::parse_user_id( wp_unslash( $_POST['user_id'] ) ) : 0; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- digits only (parse_user_id()).
 		$action      = isset( $_POST['pd_action'] ) ? sanitize_key( wp_unslash( $_POST['pd_action'] ) ) : '';
-		$custom_days = isset( $_POST['custom_days'] ) ? max( 0, intval( wp_unslash( $_POST['custom_days'] ) ) ) : 0;
+		// null = no field at all (the configured default applies); anything
+		// sent is validated below rather than turned into 0 → default.
+		$custom_days = isset( $_POST['custom_days'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['custom_days'] ) ) ) : null;
 		/*
 		 * 'allow_access' is not an action. Under the pharmacy-only rule a
 		 * manual "allow" grants nothing (see
@@ -197,13 +221,31 @@ class Plandose_Admin_Subscriptions {
 		 * would read as the generic «δεν αποθηκεύτηκε» database error.
 		 * make_free stays open to everyone so a legacy Pro row on a
 		 * non-pharmacy can still be closed.
+		 *
+		 * deny_access is refused the same way: a non-pharmacy has no
+		 * access to block (Plandose_Access::access_evaluation()), and the
+		 * dashboard renders that button disabled for one (action_button()).
+		 * reset_access stays open, so a leftover override on a
+		 * non-pharmacy can still be cleared.
 		 */
-		if ( in_array( $action, array( 'make_pro', 'extend' ), true ) && ! Plandose_Access::is_registered_pharmacist( $user_id ) ) {
+		if ( in_array( $action, array( 'make_pro', 'extend', 'deny_access' ), true ) && ! Plandose_Access::is_registered_pharmacist( $user_id ) ) {
 			self::redirect_with_result( 'not_pharmacy' );
 		}
 
+		/*
+		 * An explicit 0, a negative, a fraction or an emptied field is a
+		 * typing mistake, not a request for the default: silently granting
+		 * default_pro_days (365) instead would hand out a year the admin
+		 * never asked for. Refused with a notice. Only a form without the
+		 * field gets the default; a number above max_add_days() is still
+		 * clamped by effective_pro_days() as before.
+		 */
+		if ( in_array( $action, array( 'make_pro', 'extend' ), true ) && null !== $custom_days && ( ! preg_match( '/^[0-9]+$/', $custom_days ) || (int) $custom_days < 1 ) ) {
+			self::redirect_with_result( 'invalid_days' );
+		}
+
 		$success = false;
-		$days    = self::effective_pro_days( $custom_days );
+		$days    = self::effective_pro_days( null === $custom_days ? 0 : (int) $custom_days );
 
 		if ( 'make_pro' === $action || 'extend' === $action ) {
 			/*
@@ -372,14 +414,19 @@ class Plandose_Admin_Subscriptions {
 			@session_write_close(); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- no active session is normal; this only releases the session lock.
 		}
 
-		$page       = 1;
+		self::raise_export_limits();
+
+		$after_id   = 0;
 		$batch_size = min( 500, Plandose_Subscriber_Query::MAX_SUBSCRIBER_PAGE_SIZE );
 		$written    = 0;
 
 		do {
+			// Keyset batches by user ID (see query_subscribers()): an
+			// OFFSET over the name order would skip or repeat a pharmacy
+			// renamed, added or removed while the export runs.
 			$result = Plandose_Subscriber_Query::query_subscribers(
 				array(
-					'paged'      => $page,
+					'after_id'   => $after_id,
 					'per_page'   => $batch_size,
 					'with_total' => false,
 				)
@@ -424,26 +471,29 @@ class Plandose_Admin_Subscriptions {
 				break;
 			}
 
-			++$page;
+			$last_id = isset( $result['last_id'] ) ? (int) $result['last_id'] : 0;
 
 			/*
-			 * Continue while a page returned ANYTHING, rather than while it
-			 * returned a full batch.
+			 * Continue while the batch had any IDs, rather than while it
+			 * returned a full batch of items — and decided on the IDs, not
+			 * on the items.
 			 *
 			 * hydrate_subscriber_items() skips any ID whose user row
 			 * get_users() did not return — filtered out by another plugin,
-			 * or deleted between the two queries — so a full page of IDs can
-			 * legitimately come back as 499 items. Stopping on a short page
-			 * would read that as "the list has ended", silently truncating
-			 * the export with nothing on screen to say so — the same failure
-			 * the docblock on Plandose_Subscriber_Query::stats() describes.
+			 * or deleted between the two queries — so a full batch of IDs
+			 * can legitimately come back as 499 items (or none at all).
+			 * Stopping on a short or empty item list would read that as
+			 * "the list has ended", silently truncating the export with
+			 * nothing on screen to say so — the same failure the docblock
+			 * on Plandose_Subscriber_Query::stats() describes.
 			 *
-			 * Pagination is by ID offset, so the run ends on its own when a
-			 * page falls past the end of the result set and comes back
-			 * empty — at the cost of one extra query when the row count is
-			 * an exact multiple of the batch size.
+			 * The run ends when a batch past the last ID comes back empty
+			 * (last_id 0) — at the cost of one extra query when the row
+			 * count is an exact multiple of the batch size.
 			 */
-		} while ( count( $items ) > 0 );
+			$more     = $last_id > $after_id;
+			$after_id = $last_id;
+		} while ( $more );
 
 		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- CSV streamed to php://output; WP_Filesystem cannot write there.
 
@@ -456,6 +506,24 @@ class Plandose_Admin_Subscriptions {
 		}
 
 		exit;
+	}
+
+	/**
+	 * Give the CSV export room on a large site: the admin memory limit
+	 * (WP_MAX_MEMORY_LIMIT) and no execution time limit, where the host
+	 * allows them. Best effort — a host that disables set_time_limit()
+	 * keeps its own limit.
+	 */
+	private static function raise_export_limits() {
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+
+		$disabled = array_map( 'trim', explode( ',', (string) ini_get( 'disable_functions' ) ) );
+
+		if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', $disabled, true ) ) {
+			@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- a long export on a large site; a host that forbids it only warns.
+		}
 	}
 
 	/**
@@ -816,7 +884,7 @@ class Plandose_Admin_Subscriptions {
 				<div class="plandose-cards">
 				<?php foreach ( $result['items'] as $item ) :
 					$invoice_list = Plandose_Subscriptions::decode_invoices( $item->row->invoices );
-					$expiring     = ( null !== $item->days_left && $item->days_left <= Plandose_Settings::expiring_days() );
+					$expiry_state = self::expiry_state( $item->days_left );
 					?>
 					<article class="plandose-card<?php echo $item->is_pro ? ' is-pro' : ' is-free'; ?>">
 						<header class="pd-card-head">
@@ -847,7 +915,7 @@ class Plandose_Admin_Subscriptions {
 						<dl class="pd-card-facts">
 							<div>
 								<dt><?php esc_html_e( 'Λήξη', 'plandose' ); ?></dt>
-								<dd<?php echo $expiring ? ' class="pd-danger"' : ''; ?>>
+								<dd<?php echo 'expiring' === $expiry_state ? ' class="pd-danger"' : ( 'expired' === $expiry_state ? ' class="pd-muted"' : '' ); ?>>
 									<?php
 									/*
 									 * sub_end_date is the LAST day the subscription is
@@ -1100,7 +1168,7 @@ class Plandose_Admin_Subscriptions {
 	private static function render_manual_access_lookup() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only user lookup: these GET params only populate a search field and look a user up for display; the actual grant/deny action is a separate nonce-protected POST.
 		$query = isset( $_GET['manual_lookup'] ) ? sanitize_text_field( wp_unslash( $_GET['manual_lookup'] ) ) : '';
-		$page  = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'plandose-subscriptions';
+		$page  = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'plandose-subscriptions';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$found = null;
 
