@@ -18,8 +18,14 @@ function jbli_render_dashboard() {
 	{
 		$jbli_html = function_exists( 'jbli_login_gate_html' )
 			? jbli_login_gate_html(
-				__( 'Διαχείριση Αγγελιών', 'job-listings' ),
-				__( 'Για να διαχειριστείτε τις αγγελίες σας πρέπει να συνδεθείτε ή να δημιουργήσετε λογαριασμό φαρμακείου.', 'job-listings' )
+				__( 'Οι αγγελίες του φαρμακείου σας, σε ένα σημείο', 'job-listings' ),
+				__( 'Συνδεθείτε με τον λογαριασμό του φαρμακείου σας για να δείτε και να διαχειριστείτε τις αγγελίες σας.', 'job-listings' ),
+				'',
+				array(
+					__( 'Ενεργές, ληγμένες και ανενεργές αγγελίες με μια ματιά', 'job-listings' ),
+					__( 'Επεξεργασία, παύση και ανανέωση', 'job-listings' ),
+					__( 'Υπενθύμιση με email πριν τη λήξη', 'job-listings' ),
+				)
 			)
 			: '';
 		echo $jbli_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safe HTML component.

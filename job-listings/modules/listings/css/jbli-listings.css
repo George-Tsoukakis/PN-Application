@@ -30,72 +30,258 @@
   box-sizing: border-box;
 }
 
+/* Login / register gate — 9.9.61: two columns, soft green background, media on the right */
+.jbli_login_gate,
+.jbli_login_gate *,
+.jbli_login_gate *::before,
+.jbli_login_gate *::after {
+  box-sizing: border-box;
+}
+
 .jbli_login_gate {
-  display: flex;
-  justify-content: center;
-  padding: var(--jbli_space_5xl) var(--jbli_space_lg);
+  padding: clamp(24px, 5vw, 56px) var(--jbli_space_lg);
 }
 
 .jbli_login_gate_inner {
-  text-align: center;
-  max-width: 440px;
-  width: 100%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+  padding: clamp(28px, 4vw, 48px);
+  border-radius: 28px;
+  border: 1px solid #d1fae5;
+  background:
+    radial-gradient(520px 320px at 0% 0%, rgba(16, 185, 129, .14), transparent 70%),
+    radial-gradient(420px 300px at 100% 100%, rgba(52, 211, 153, .16), transparent 70%),
+    linear-gradient(180deg, #f6fefa 0%, #ffffff 100%);
+  box-shadow: 0 24px 60px rgba(2, 44, 34, .08);
+}
+
+/* Faint dot grid behind the text */
+.jbli_login_gate_inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgba(4, 120, 87, .12) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, transparent 60%);
+  mask-image: linear-gradient(90deg, #000 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.jbli_login_gate_text {
+  text-align: left;
+  min-width: 0;
+}
+
+.jbli_login_gate_eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 5px 14px 5px 5px;
+  border-radius: var(--jbli_r_pill);
+  background: #fff;
+  border: 1px solid #d1fae5;
+  color: var(--jbli_green_ink);
+  font-size: .8rem;
+  font-weight: var(--jbli_weight_bold);
+  letter-spacing: .02em;
+  box-shadow: 0 2px 8px rgba(2, 44, 34, .06);
 }
 
 .jbli_login_gate_icon {
-  width: 52px;
-  height: 52px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background: var(--jbli_green_lt);
   color: var(--jbli_green);
-  border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto var(--jbli_space_xl);
+}
+
+.jbli_login_gate_icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .jbli_login_gate_title {
-  margin: 0 0 10px;
-  font-size: var(--jbli_text_xl);
+  margin: 0 0 14px;
+  font-size: clamp(1.6rem, 1.1rem + 1.8vw, 2.35rem);
+  line-height: 1.15;
   font-weight: var(--jbli_weight_extrabold);
   color: var(--jbli_gray_900);
-  letter-spacing: var(--jbli_tracking_tight);
+  letter-spacing: -.02em;
+  text-wrap: balance;
 }
 
 .jbli_login_gate_subtitle {
-  margin: 0 0 var(--jbli_space_2xl);
-  color: var(--jbli_gray_500);
-  font-size: var(--jbli_text_base);
+  margin: 0 0 22px;
+  max-width: 34em;
+  color: var(--jbli_gray_600);
+  font-size: 1.02rem;
   line-height: var(--jbli_leading_relaxed);
+}
+
+.jbli_login_gate_benefits {
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.jbli_login_gate_benefits li {
+  position: relative;
+  padding-left: 32px;
+  font-size: .95rem;
+  line-height: 1.45;
+  color: var(--jbli_gray_700);
+}
+
+.jbli_login_gate_benefits li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 12px no-repeat,
+    var(--jbli_green);
 }
 
 .jbli_login_gate_actions {
   display: flex;
-  gap: 10px;
-  justify-content: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .jbli_login_gate_btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 11px var(--jbli_space_2xl);
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 26px;
   border-radius: var(--jbli_r_pill);
   font-size: var(--jbli_text_base);
   font-weight: var(--jbli_weight_bold);
   text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
 }
 
 .jbli_login_gate_btn_primary {
   background: var(--jbli_green);
   color: var(--jbli_white);
+  box-shadow: 0 8px 20px rgba(5, 150, 105, .28);
+}
+
+.jbli_login_gate_btn_primary:hover,
+.jbli_login_gate_btn_primary:focus-visible {
+  background: var(--jbli_green_dk);
+  color: var(--jbli_white);
+  transform: translateY(-1px);
 }
 
 .jbli_login_gate_btn_secondary {
   background: var(--jbli_white);
-  color: var(--jbli_green);
-  border: 1.5px solid var(--jbli_green);
+  color: var(--jbli_green_dk);
+  border: 1.5px solid #a7f3d0;
+}
+
+.jbli_login_gate_btn_secondary:hover,
+.jbli_login_gate_btn_secondary:focus-visible {
+  border-color: var(--jbli_green);
+  color: var(--jbli_green_dk);
+  transform: translateY(-1px);
+}
+
+.jbli_login_gate_btn:focus-visible {
+  outline: 3px solid rgba(5, 150, 105, .35);
+  outline-offset: 2px;
+}
+
+.jbli_login_gate_note {
+  margin: 20px 0 0;
+  font-size: .9rem;
+  color: var(--jbli_gray_500);
+}
+
+.jbli_login_gate_note a {
+  color: var(--jbli_green_dk);
+  font-weight: var(--jbli_weight_bold);
+  text-decoration: none;
+}
+
+.jbli_login_gate_note a:hover {
+  text-decoration: underline;
+}
+
+.jbli_login_gate_media {
+  min-width: 0;
+}
+
+/* The media panel (defined with the form styles) at gate size */
+.jbli_login_gate_media .jbli_form_media {
+  height: clamp(360px, 46vw, 460px);
+}
+
+/* Let the illustration's soft circles reach the panel edges instead of being cut square */
+.jbli_login_gate_media .jbli_form_media_art {
+  inset: 6% 6% 34%;
+}
+
+.jbli_login_gate_media .jbli_form_media_art svg {
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jbli_login_gate_btn { transition: none; }
+  .jbli_login_gate_btn:hover { transform: none; }
+}
+
+@media (max-width: 860px) {
+  .jbli_login_gate_inner {
+    grid-template-columns: 1fr;
+  }
+
+  .jbli_login_gate_media { order: -1; }
+
+  .jbli_login_gate_media .jbli_form_media {
+    height: 200px;
+  }
+}
+
+@media (max-width: 560px) {
+  .jbli_login_gate {
+    padding: 16px 12px;
+  }
+
+  .jbli_login_gate_inner {
+    padding: 24px 18px;
+    border-radius: 22px;
+  }
+
+  .jbli_login_gate_media {
+    display: none;
+  }
+
+  .jbli_login_gate_actions {
+    flex-direction: column;
+  }
+
+  .jbli_login_gate_btn {
+    width: 100%;
+  }
 }
 
 .jbli_cache_clear_form {

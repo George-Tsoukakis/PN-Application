@@ -123,10 +123,11 @@ final class Html {
 	 *
 	 * @param string $jbli_heading  Heading text.
 	 * @param string $jbli_subtitle Supporting text.
-	 * @param string $jbli_icon_svg Optional SVG markup.
+	 * @param string   $jbli_icon_svg Optional SVG markup.
+	 * @param string[] $jbli_benefits Optional bullet points (9.9.61).
 	 * @return string
 	 */
-	public static function jbli_login_gate( $jbli_heading, $jbli_subtitle, $jbli_icon_svg = '' ) {
+	public static function jbli_login_gate( $jbli_heading, $jbli_subtitle, $jbli_icon_svg = '', array $jbli_benefits = array() ) {
 
 		$jbli_login_url    = esc_url( wp_login_url( get_permalink() ?: home_url( '/' ) ) );
 		$jbli_register_url = esc_url( wp_registration_url() );
@@ -135,6 +136,23 @@ final class Html {
 		{
 			$jbli_icon_svg = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 		}
+
+		/* 9.9.61: the same media as next to the listing form (Ρυθμίσεις → «Φόρμα νέας αγγελίας»), or the built-in illustration. */
+		$jbli_media_html = '';
+
+		if ( function_exists( 'jbli_media_panel_html' ) )
+		{
+			$jbli_media_html = jbli_media_panel_html(
+				(string) apply_filters( 'jbli_login_gate_media_url', (string) get_option( 'jbli_form_media_url', '' ) ),
+				array(
+					'kicker' => __( 'PharmacyNeeds', 'job-listings' ),
+					'title'  => __( 'Αγγελίες εργασίας για φαρμακεία σε όλη την Ελλάδα', 'job-listings' ),
+				),
+				'jbli_login_gate_panel'
+			);
+		}
+
+		$jbli_listings_url = function_exists( 'jbli_recent_get_listings_page_url' ) ? (string) jbli_recent_get_listings_page_url() : '';
 
 		$jbli_login_icon = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>';
 
@@ -147,6 +165,9 @@ final class Html {
 				'jbli_login_url'    => $jbli_login_url,
 				'jbli_register_url' => $jbli_register_url,
 				'jbli_login_icon'   => $jbli_login_icon,
+				'jbli_benefits'     => array_map( 'strval', $jbli_benefits ),
+				'jbli_listings_url' => $jbli_listings_url,
+				'jbli_media_html'   => $jbli_media_html,
 			)
 		);
 

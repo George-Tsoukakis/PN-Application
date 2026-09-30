@@ -46,9 +46,14 @@ function jbli_render_form() {
 
 		$jbli_html = function_exists( 'jbli_login_gate_html' )
 			? jbli_login_gate_html(
-				__( 'Καταχώρηση Αγγελίας', 'job-listings' ),
-				__( 'Για να καταχωρήσετε αγγελία εργασίας πρέπει να συνδεθείτε ή να δημιουργήσετε λογαριασμό φαρμακείου.', 'job-listings' ),
-				$jbli_form_icon
+				__( 'Βρείτε τον συνεργάτη που χρειάζεται το φαρμακείο σας', 'job-listings' ),
+				__( 'Συνδεθείτε με τον λογαριασμό του φαρμακείου σας για να καταχωρήσετε αγγελία εργασίας. Αν δεν έχετε λογαριασμό, η εγγραφή παίρνει ένα λεπτό.', 'job-listings' ),
+				$jbli_form_icon,
+				array(
+					__( 'Δωρεάν δημοσίευση αγγελίας', 'job-listings' ),
+					__( 'Ενεργή για 30 ημέρες, με ανανέωση με ένα κλικ', 'job-listings' ),
+					__( 'Οι υποψήφιοι σας στέλνουν τα στοιχεία τους απευθείας στο email', 'job-listings' ),
+				)
 			)
 			: '';
 		echo $jbli_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safe HTML component.

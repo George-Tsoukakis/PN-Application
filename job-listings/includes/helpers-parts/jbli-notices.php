@@ -80,8 +80,8 @@ function jbli_print_transient_notice() {
  * @param string $jbli_icon_svg SVG markup for the icon (raw, already sanitised by caller).
  * @return string HTML string.
  */
-function jbli_login_gate_html( string $jbli_heading, string $jbli_subtitle, string $jbli_icon_svg = '' ): string {
+function jbli_login_gate_html( string $jbli_heading, string $jbli_subtitle, string $jbli_icon_svg = '', array $jbli_benefits = array() ): string {
 
-	return \JobListings\Formatters\Html::jbli_login_gate( $jbli_heading, $jbli_subtitle, $jbli_icon_svg );
+	return \JobListings\Formatters\Html::jbli_login_gate( $jbli_heading, $jbli_subtitle, $jbli_icon_svg, $jbli_benefits );
 
 }
