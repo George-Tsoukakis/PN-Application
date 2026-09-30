@@ -18,6 +18,33 @@ defined( 'ABSPATH' ) || exit;
 defined( 'JBLI_META_ADMIN_HIDDEN' ) || define( 'JBLI_META_ADMIN_HIDDEN', '_jbli_admin_hidden' );
 
 /**
+ * Unix timestamp of a stored site-local datetime ("Y-m-d H:i:s").
+ *
+ * Expiry dates and application times are stored in the site's time zone
+ * (current_time( 'mysql' ) / jbli_future_datetime()). strtotime() reads
+ * them as UTC, which put every displayed date 2–3 hours off in Greece
+ * (a listing expiring at 23:00 showed the next day). Use this instead.
+ *
+ * @since 9.9.57
+ *
+ * @param string $jbli_datetime Local datetime.
+ * @return int|false
+ */
+function jbli_local_datetime_to_ts( $jbli_datetime ) {
+
+	$jbli_datetime = trim( (string) $jbli_datetime );
+
+	if ( '' === $jbli_datetime ) { return false; }
+
+	try {
+		return ( new DateTimeImmutable( $jbli_datetime, wp_timezone() ) )->getTimestamp();
+	} catch ( Exception $jbli_e ) {
+		return false;
+	}
+
+}
+
+/**
  * Return a future MySQL datetime string.
  *
  * @param int    $jbli_days Number of days from now.
@@ -29,16 +56,17 @@ function jbli_future_datetime( $jbli_days, $jbli_time = '' ) {
 	$jbli_days = absint( $jbli_days );
 	$jbli_time = sanitize_text_field( (string) $jbli_time );
 
-	$jbli_base = time();
-	$jbli_spec = '+' . $jbli_days . ' days';
+	/*
+	 * 9.9.57: computed in the site's time zone, so "midnight" is local
+	 * midnight (it was UTC midnight, 02:00/03:00 in Greece) and "+N days"
+	 * keeps the local clock time across daylight-saving changes.
+	 */
+	$jbli_date = new DateTimeImmutable( 'now', wp_timezone() );
+	$jbli_next = $jbli_date->modify( '+' . $jbli_days . ' days' . ( '' !== $jbli_time ? ' ' . $jbli_time : '' ) );
 
-	if ( '' !== $jbli_time ) { $jbli_spec .= ' ' . $jbli_time; }
+	if ( false === $jbli_next ) { $jbli_next = $jbli_date->modify( '+' . $jbli_days . ' days' ); }
 
-	$jbli_timestamp = strtotime( $jbli_spec, $jbli_base );
-
-	if ( false === $jbli_timestamp ) { $jbli_timestamp = $jbli_base + ( $jbli_days * DAY_IN_SECONDS ); }
-
-	return wp_date( 'Y-m-d H:i:s', $jbli_timestamp );
+	return $jbli_next->format( 'Y-m-d H:i:s' );
 
 }
 

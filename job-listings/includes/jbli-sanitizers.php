@@ -53,3 +53,21 @@ function jbli_sanitize_coordinate( $jbli_value, $jbli_min, $jbli_max ) {
 	return number_format( $jbli_float, 6, '.', '' );
 
 }
+
+/**
+ * Sanitize a salary / job-type option key.
+ *
+ * Like sanitize_key() but keeps "+", so the built-in "2200+" survives when
+ * the admin saves the options (sanitize_key() turned it into "2200" and
+ * existing listings lost their label and filter match). 9.9.57.
+ *
+ * @param string $jbli_key Raw key.
+ * @return string Lowercase a-z, 0-9, "_", "-", "+".
+ */
+function jbli_sanitize_option_key( $jbli_key ) {
+
+	$jbli_key = strtolower( trim( (string) $jbli_key ) );
+
+	return (string) preg_replace( '/[^a-z0-9_\-+]/', '', $jbli_key );
+
+}

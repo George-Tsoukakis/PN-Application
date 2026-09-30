@@ -102,7 +102,7 @@ function jbli_apply_purge_old_submissions(): int {
 
 	$jbli_table  = jbli_apply_submissions_table();
 	/* jbli_submitted_at is stored in site-local time (current_time('mysql')). */
-	$jbli_cutoff = gmdate( 'Y-m-d H:i:s', (int) current_time( 'timestamp' ) - jbli_apply_retention_days() * DAY_IN_SECONDS ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested
+	$jbli_cutoff = wp_date( 'Y-m-d H:i:s', time() - jbli_apply_retention_days() * DAY_IN_SECONDS );
 
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter
 	$jbli_deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM {$jbli_table} WHERE jbli_submitted_at < %s", $jbli_cutoff ) );
@@ -372,7 +372,7 @@ function jbli_admin_ajax_get_submissions(): void {
 						<td><?php echo esc_html( $jbli_row->jbli_applicant_name ); ?></td>
 						<td><?php echo esc_html( $jbli_row->jbli_applicant_phone ); ?></td>
 						<td><?php echo esc_html( $jbli_row->jbli_applicant_email ); ?></td>
-						<td><?php echo esc_html( wp_date( 'd/m/Y H:i', strtotime( $jbli_row->jbli_submitted_at ) ) ); ?></td>
+						<td><?php echo esc_html( wp_date( 'd/m/Y H:i', (int) jbli_local_datetime_to_ts( $jbli_row->jbli_submitted_at ) ) ); ?></td>
 						<td>
 							<?php
 								$jbli_st = (string) ( $jbli_row->jbli_status ?? 'sent' );
@@ -491,7 +491,7 @@ function jbli_apply_export_csv(): void {
 
 			if ( in_array( 'date', $jbli_fields, true ) )
 			{
-				$jbli_line[] = wp_date( 'd/m/Y H:i', strtotime( $jbli_row['jbli_submitted_at'] ) );
+				$jbli_line[] = wp_date( 'd/m/Y H:i', (int) jbli_local_datetime_to_ts( $jbli_row['jbli_submitted_at'] ) );
 			}
 
 			if ( in_array( 'post_id', $jbli_fields, true ) ) { $jbli_line[] = $jbli_post_id; }

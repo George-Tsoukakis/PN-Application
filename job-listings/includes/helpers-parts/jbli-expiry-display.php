@@ -30,7 +30,7 @@ function jbli_get_expiry_date( $jbli_post_id ) {
 
 	$jbli_expires = get_post_meta( absint( $jbli_post_id ), JBLI_META_EXPIRES, true );
 
-	if ( $jbli_expires && false !== strtotime( (string ) $jbli_expires ) ) { return (string) $jbli_expires; }
+	if ( $jbli_expires && false !== jbli_local_datetime_to_ts( $jbli_expires ) ) { return (string) $jbli_expires; }
 
 	return '';
 
@@ -51,13 +51,14 @@ function jbli_get_or_create_expiry_date( $jbli_post_id ) {
 	$jbli_post_id = absint( $jbli_post_id );
 	$jbli_expires = get_post_meta( $jbli_post_id, JBLI_META_EXPIRES, true );
 
-	if ( $jbli_expires && false !== strtotime( (string ) $jbli_expires ) ) { return (string) $jbli_expires; }
+	if ( $jbli_expires && false !== jbli_local_datetime_to_ts( $jbli_expires ) ) { return (string) $jbli_expires; }
 
 	$post = get_post( $jbli_post_id );
 
 	if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) { return ''; }
 
-	$jbli_created_timestamp = strtotime( $post->post_date );
+	/* post_date is local time; get_post_timestamp() reads it correctly (9.9.57). */
+	$jbli_created_timestamp = get_post_timestamp( $post );
 
 	if ( false === $jbli_created_timestamp ) { $jbli_created_timestamp = time(); }
 
@@ -96,7 +97,7 @@ function jbli_days_left( $jbli_post_id ) {
 
 	if ( ! $jbli_expires ) { return ''; }
 
-	$jbli_timestamp = strtotime( (string) $jbli_expires );
+	$jbli_timestamp = jbli_local_datetime_to_ts( $jbli_expires );
 
 	if ( false === $jbli_timestamp ) { return ''; }
 
@@ -119,7 +120,7 @@ function jbli_expiry_date( $jbli_post_id ) {
 
 	if ( ! $jbli_expires ) { return '—'; }
 
-	$jbli_timestamp = strtotime( (string) $jbli_expires );
+	$jbli_timestamp = jbli_local_datetime_to_ts( $jbli_expires );
 
 	if ( false === $jbli_timestamp ) { return '—'; }
 

@@ -58,8 +58,8 @@ function jbli_send_reminder_email( $jbli_post_id ) {
 
 	if ( $jbli_expires )
 	{
-		$jbli_timestamp = strtotime( (string) $jbli_expires );
-		$jbli_date      = false !== $jbli_timestamp ? date_i18n( 'd/m/Y', $jbli_timestamp ) : '—';
+		$jbli_timestamp = jbli_local_datetime_to_ts( $jbli_expires );
+		$jbli_date      = false !== $jbli_timestamp ? wp_date( 'd/m/Y', $jbli_timestamp ) : '—';
 	}
 
 	$jbli_body = jbli_email_heading( 'Η αγγελία σας λήγει σε 3 μέρες' )

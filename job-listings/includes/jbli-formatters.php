@@ -53,7 +53,7 @@ function jbli_salary_options(): array {
 
 			foreach ( $jbli_decoded as $jbli_k => $jbli_v ) {
 
-				$jbli_k = sanitize_key( (string) $jbli_k );
+				$jbli_k = jbli_sanitize_option_key( $jbli_k );
 				$jbli_v = sanitize_text_field( (string) $jbli_v );
 
 				if ( $jbli_k !== '' && $jbli_v !== '' ) { $jbli_clean[ $jbli_k ] = $jbli_v; }
@@ -106,7 +106,7 @@ function jbli_type_options(): array {
 
 			foreach ( $jbli_decoded as $jbli_k => $jbli_v ) {
 
-				$jbli_k = sanitize_key( (string) $jbli_k );
+				$jbli_k = jbli_sanitize_option_key( $jbli_k );
 				$jbli_v = sanitize_text_field( (string) $jbli_v );
 
 				if ( $jbli_k !== '' && $jbli_v !== '' ) { $jbli_clean[ $jbli_k ] = $jbli_v; }
@@ -126,9 +126,14 @@ function jbli_option_label( $jbli_value, $jbli_options ) {
 	$jbli_value   = trim( (string) $jbli_value );
 	$jbli_options = is_array( $jbli_options ) ? $jbli_options : array();
 
-	return isset( $jbli_options[ $jbli_value ] )
-		? (string) $jbli_options[ $jbli_value ]
-		: $jbli_value;
+	if ( isset( $jbli_options[ $jbli_value ] ) ) { return (string) $jbli_options[ $jbli_value ]; }
+
+	/* Options saved before 9.9.57 lost the "+" of "2200+"; still show a label. */
+	$jbli_plain = str_replace( '+', '', $jbli_value );
+
+	if ( $jbli_plain !== $jbli_value && isset( $jbli_options[ $jbli_plain ] ) ) { return (string) $jbli_options[ $jbli_plain ]; }
+
+	return $jbli_value;
 
 }
 

@@ -81,7 +81,7 @@ function jbli_apply_email_html( int $jbli_post_id, array $jbli_ph, string $jbli_
 	if ( ! is_wp_error( $jbli_nomoi ) && $jbli_nomoi ) { $jbli_listing_rows[] = array( __( 'Νομός', 'job-listings' ), esc_html( implode( ', ', $jbli_nomoi ) ) ); }
 	if ( $jbli_type ) { $jbli_listing_rows[] = array( __( 'Απασχόληση', 'job-listings' ), esc_html( jbli_type_label( $jbli_type ) ) ); }
 	if ( $jbli_sal )  { $jbli_listing_rows[] = array( __( 'Αμοιβή', 'job-listings' ), esc_html( jbli_salary_label( $jbli_sal ) ) ); }
-	if ( $jbli_exp && false !== strtotime( $jbli_exp ) ) { $jbli_listing_rows[] = array( __( 'Λήξη αγγελίας', 'job-listings' ), esc_html( wp_date( 'd/m/Y', strtotime( $jbli_exp ) ) ) ); }
+	if ( $jbli_exp && false !== jbli_local_datetime_to_ts( $jbli_exp ) ) { $jbli_listing_rows[] = array( __( 'Λήξη αγγελίας', 'job-listings' ), esc_html( wp_date( 'd/m/Y', jbli_local_datetime_to_ts( $jbli_exp ) ) ) ); }
 
 	$jbli_body = '<h1 style="margin:0 0 6px;font-size:22px;line-height:1.3;color:#111827;">' . esc_html__( 'Νέο ενδιαφέρον για την αγγελία σας', 'job-listings' ) . '</h1>'
 		. '<p style="margin:0 0 18px;font-size:14px;color:#6b7280;">'

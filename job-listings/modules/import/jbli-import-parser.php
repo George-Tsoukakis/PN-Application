@@ -455,9 +455,12 @@ function jbli_import_parse( $jbli_html, $jbli_url ) {
 
 	$jbli_expires = '';
 
-	if ( '' !== $jbli_valid && false !== strtotime( $jbli_valid ) && strtotime( $jbli_valid ) > time() )
+	/* validThrough may carry its own offset; a bare date is read as site-local (9.9.57). */
+	$jbli_valid_ts = '' !== $jbli_valid ? jbli_local_datetime_to_ts( $jbli_valid ) : false;
+
+	if ( false !== $jbli_valid_ts && $jbli_valid_ts > time() )
 	{
-		$jbli_expires = wp_date( 'Y-m-d H:i:s', strtotime( $jbli_valid ) );
+		$jbli_expires = wp_date( 'Y-m-d H:i:s', $jbli_valid_ts );
 	}
 
 	return array(

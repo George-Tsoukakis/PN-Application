@@ -36,8 +36,17 @@ function jbli_set_expiry_on_publish( $jbli_new_status, $jbli_old_status, $post )
 	/* Any (re)publish makes the listing live again, whichever screen did it. */
 	delete_post_meta( $post->ID, JBLI_META_EXPIRED );
 
-	if ( get_post_meta( $post->ID, JBLI_META_EXPIRES, true ) ) { return; }
+	/*
+	 * Keep a future expiry date. A date already in the past (a listing that
+	 * expired and is published again, e.g. from wp-admin) gets a fresh 30
+	 * days — otherwise the hourly cron expired it again straight away (9.9.57).
+	 */
+	$jbli_current = (string) get_post_meta( $post->ID, JBLI_META_EXPIRES, true );
+	$jbli_current_ts = '' !== $jbli_current && function_exists( 'jbli_local_datetime_to_ts' ) ? jbli_local_datetime_to_ts( $jbli_current ) : false;
 
+	if ( false !== $jbli_current_ts && $jbli_current_ts > time() ) { return; }
+
+	delete_post_meta( $post->ID, JBLI_META_REMINDER_SENT );
 	update_post_meta( $post->ID, JBLI_META_EXPIRES, jbli_future_datetime( 30 ) );
 
 }

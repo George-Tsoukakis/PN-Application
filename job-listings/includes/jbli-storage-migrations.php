@@ -42,6 +42,10 @@ function jbli_migrate_meta_key_prefix() {
 		'_job_email'         => 'jbli_email',
 	);
 
+	/*
+	 * 9.9.57: only this plugin's listings. Keys such as _job_expires are also
+	 * used by other job plugins (WP Job Manager) on their own posts.
+	 */
 	$jbli_renamed = 0;
 
 	foreach ( $jbli_meta_map as $jbli_old_key => $jbli_new_key ) {
@@ -57,6 +61,7 @@ function jbli_migrate_meta_key_prefix() {
 		$jbli_renamed += (int) $wpdb->query( $wpdb->prepare(
 			"UPDATE {$wpdb->postmeta} SET meta_key = %s
 			  WHERE meta_key = %s
+			    AND post_id IN ( SELECT ID FROM {$wpdb->posts} WHERE post_type = %s )
 			    AND post_id NOT IN (
 			        SELECT post_id FROM (
 			            SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s
@@ -64,6 +69,7 @@ function jbli_migrate_meta_key_prefix() {
 			    )",
 			$jbli_new_key,
 			$jbli_old_key,
+			JBLI_CPT,
 			$jbli_new_key
 		) );
 

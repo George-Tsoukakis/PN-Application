@@ -440,7 +440,7 @@ if ( ! function_exists( 'jbli_parse_key_label_lines' ) )
 
 			if ( count( $jbli_parts ) !== 2 ) { continue; }
 
-			$jbli_key   = sanitize_key( trim( $jbli_parts[0] ) );
+			$jbli_key   = jbli_sanitize_option_key( $jbli_parts[0] );
 			$jbli_label = sanitize_text_field( trim( $jbli_parts[1] ) );
 
 			if ( $jbli_key && $jbli_label ) { $jbli_result[ $jbli_key ] = $jbli_label; }
@@ -468,8 +468,8 @@ if ( ! function_exists( 'jbli_parse_parallel_arrays' ) )
 
 		for ( $jbli_i = 0; $jbli_i < $jbli_count; $jbli_i++ ) {
 
-			$jbli_key   = sanitize_key( trim( wp_unslash( (string) $jbli_keys[ $jbli_i ] ) ) );
-			$jbli_label = sanitize_text_field( trim( wp_unslash( (string) $jbli_labels[ $jbli_i ] ) ) );
+			$jbli_key   = is_scalar( $jbli_keys[ $jbli_i ] ) ? jbli_sanitize_option_key( wp_unslash( (string) $jbli_keys[ $jbli_i ] ) ) : '';
+			$jbli_label = is_scalar( $jbli_labels[ $jbli_i ] ) ? sanitize_text_field( trim( wp_unslash( (string) $jbli_labels[ $jbli_i ] ) ) ) : '';
 
 			if ( $jbli_key !== '' && $jbli_label !== '' ) { $jbli_result[ $jbli_key ] = $jbli_label; }
 

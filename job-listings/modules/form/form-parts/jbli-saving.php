@@ -70,7 +70,21 @@ function jbli_build_listing_title( $jbli_pharmacy, $jbli_position, $jbli_nomos =
  */
 function jbli_save_listing_post( $jbli_edit_id, array $jbli_fields, $jbli_was_expired, $jbli_edit_post, $jbli_user_id ) {
 
-	$jbli_pharmacy   = jbli_get_pharmacy_name( $jbli_user_id );
+	/*
+	 * 9.9.57: the title carries the listing owner's pharmacy (an admin editing
+	 * someone's listing used to put their own name in it). Imported listings
+	 * keep the pharmacy name found in the ad.
+	 */
+	$jbli_owner_id = $jbli_edit_post instanceof WP_Post ? (int) $jbli_edit_post->post_author : (int) $jbli_user_id;
+	$jbli_pharmacy = jbli_get_pharmacy_name( $jbli_owner_id );
+
+	if ( $jbli_edit_id && function_exists( 'jbli_listing_is_imported' ) && jbli_listing_is_imported( $jbli_edit_id ) )
+	{
+		$jbli_imported_name = (string) get_post_meta( $jbli_edit_id, JBLI_META_PHARMACY_NAME, true );
+
+		if ( '' !== $jbli_imported_name ) { $jbli_pharmacy = $jbli_imported_name; }
+	}
+
 	$jbli_nomos_term = get_term( (int) $jbli_fields['nomos_id'], 'job_nomos' );
 	$jbli_nomos_name = $jbli_nomos_term instanceof WP_Term ? $jbli_nomos_term->name : '';
 	$jbli_title      = jbli_build_listing_title( $jbli_pharmacy, $jbli_fields['jbli_position'], $jbli_nomos_name );
@@ -97,7 +111,12 @@ function jbli_save_listing_post( $jbli_edit_id, array $jbli_fields, $jbli_was_ex
 	}
 
 
-	$jbli_post_data['post_status'] = 'publish';
+	/*
+	 * 9.9.57: created as a draft; jbli_process_form_submit() publishes it
+	 * only after the terms and meta are saved, so a failure half-way never
+	 * leaves a public listing without category, area or contact details.
+	 */
+	$jbli_post_data['post_status'] = 'draft';
 	$jbli_post_data['post_author'] = $jbli_user_id;
 
 	if ( function_exists( 'jbli_build_post_slug' ) )

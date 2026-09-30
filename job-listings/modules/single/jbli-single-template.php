@@ -56,9 +56,9 @@ get_header();
 			$jbli_jsonld_date_posted   = get_the_date( 'c' );
 			$jbli_jsonld_valid_through = '';
 
-			if ( $jbli_expires && false !== strtotime( $jbli_expires ) )
+			if ( $jbli_expires && false !== jbli_local_datetime_to_ts( $jbli_expires ) )
 			{
-				$jbli_jsonld_valid_through = wp_date( 'c', strtotime( $jbli_expires ) );
+				$jbli_jsonld_valid_through = wp_date( 'c', jbli_local_datetime_to_ts( $jbli_expires ) );
 			}
 
 			$jbli_employment_type_map = array(
@@ -342,7 +342,7 @@ get_header();
 
 								if ( $jbli_expires )
 								{
-									$jbli_expires_ts = $jbli_expires ? strtotime( $jbli_expires ) : false;
+									$jbli_expires_ts = $jbli_expires ? jbli_local_datetime_to_ts( $jbli_expires ) : false;
 
 									if ( false !== $jbli_expires_ts )
 									{
@@ -350,7 +350,7 @@ get_header();
 										?>
 										<div class="jbli_info_card_row">
 											<span class="jbli_info_card_label"><?php esc_html_e( 'Λήξη', 'job-listings' ); ?></span>
-											<span class="jbli_info_card_value"><?php echo esc_html( date_i18n( 'd/m/Y', $jbli_expires_ts ) ); ?></span>
+											<span class="jbli_info_card_value"><?php echo esc_html( wp_date( 'd/m/Y', $jbli_expires_ts ) ); ?></span>
 										</div>
 										<?php
 									}

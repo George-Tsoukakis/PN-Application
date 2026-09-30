@@ -179,6 +179,9 @@ final class Plugin {
 		update_option( 'jbli_version', JBLI_VERSION, false );
 		update_option( 'jbli_asset_bust', time(), false );
 
+		/* 9.9.57: an update may change slugs/rewrites; refresh them once the CPT is registered. */
+		add_action( 'init', static function () { flush_rewrite_rules( false ); }, 999 );
+
 		if ( function_exists( 'rocket_clean_domain' ) ) { rocket_clean_domain(); }
 
 		/* WP Rocket reads rocket_cache_reject_uri only when it regenerates its config. */

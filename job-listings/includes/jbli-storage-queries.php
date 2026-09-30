@@ -150,11 +150,13 @@ function jbli_query_listing_ids_by_pharmacy( $jbli_pharmacy_id, $jbli_limit ) {
 	$jbli_cache_key = 'listing_ids_ph' . $jbli_pharmacy_id;
 	$jbli_cached    = wp_cache_get( $jbli_cache_key, 'job-listings' );
 
-	if ( false !== $jbli_cached ) { return (array) $jbli_cached; }
+	$jbli_hit = jbli_cached_ids_for_limit( $jbli_cached, (int) $jbli_limit );
+
+	if ( null !== $jbli_hit ) { return $jbli_hit; }
 
 	$jbli_ids = jbli_fetch_listing_ids( 'jbli_pharmacy_id', $jbli_pharmacy_id, $jbli_limit );
 
-	wp_cache_set( $jbli_cache_key, $jbli_ids, 'job-listings', 5 * MINUTE_IN_SECONDS );
+	wp_cache_set( $jbli_cache_key, array( 'limit' => (int) $jbli_limit, 'ids' => $jbli_ids ), 'job-listings', 5 * MINUTE_IN_SECONDS );
 
 	return $jbli_ids;
 
@@ -174,13 +176,41 @@ function jbli_query_listing_ids_by_user( $jbli_user_id, $jbli_limit ) {
 	$jbli_cache_key = 'listing_ids_u' . $jbli_user_id;
 	$jbli_cached    = wp_cache_get( $jbli_cache_key, 'job-listings' );
 
-	if ( false !== $jbli_cached ) { return (array) $jbli_cached; }
+	$jbli_hit = jbli_cached_ids_for_limit( $jbli_cached, (int) $jbli_limit );
+
+	if ( null !== $jbli_hit ) { return $jbli_hit; }
 
 	$jbli_ids = jbli_fetch_listing_ids( 'jbli_user_id', $jbli_user_id, $jbli_limit );
 
-	wp_cache_set( $jbli_cache_key, $jbli_ids, 'job-listings', 5 * MINUTE_IN_SECONDS );
+	wp_cache_set( $jbli_cache_key, array( 'limit' => (int) $jbli_limit, 'ids' => $jbli_ids ), 'job-listings', 5 * MINUTE_IN_SECONDS );
 
 	return $jbli_ids;
+
+}
+
+/**
+ * Reuse a cached ID list only if it was fetched with a limit that covers this one.
+ *
+ * 9.9.57: the cache key had no limit, so a call with limit 10 could be
+ * answered with a list cached for limit 100 (or the other way round).
+ * The entry now remembers its limit; a smaller request is served by slicing.
+ *
+ * @param mixed $jbli_cached Cache value.
+ * @param int   $jbli_limit  Requested limit (0 = no limit).
+ * @return int[]|null IDs, or null on a miss.
+ */
+function jbli_cached_ids_for_limit( $jbli_cached, $jbli_limit ) {
+
+	if ( ! is_array( $jbli_cached ) || ! isset( $jbli_cached['ids'], $jbli_cached['limit'] ) ) { return null; }
+
+	$jbli_cached_limit = (int) $jbli_cached['limit'];
+	$jbli_ids          = array_map( 'intval', (array) $jbli_cached['ids'] );
+
+	if ( 0 === $jbli_cached_limit ) { return $jbli_limit > 0 ? array_slice( $jbli_ids, 0, $jbli_limit ) : $jbli_ids; }
+
+	if ( $jbli_limit > 0 && $jbli_limit <= $jbli_cached_limit ) { return array_slice( $jbli_ids, 0, $jbli_limit ); }
+
+	return null;
 
 }
 

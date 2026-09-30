@@ -56,9 +56,9 @@ function jbli_admin_column_content( string $jbli_column, int $jbli_post_id ): vo
 
 			$jbli_expires = get_post_meta( $jbli_post_id, JBLI_META_EXPIRES, true );
 
-			if ( $jbli_expires && false !== strtotime( (string ) $jbli_expires ) )
+			if ( $jbli_expires && false !== jbli_local_datetime_to_ts( $jbli_expires ) )
 			{
-				$jbli_ts = strtotime( (string) $jbli_expires );
+				$jbli_ts = jbli_local_datetime_to_ts( $jbli_expires );
 				echo esc_html( function_exists( 'wp_date' ) ? wp_date( 'd/m/Y', $jbli_ts ) : date_i18n( 'd/m/Y', $jbli_ts ) );
 			} 
 			else 

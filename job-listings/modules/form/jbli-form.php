@@ -437,7 +437,31 @@ function jbli_process_form_submit( $jbli_edit_id = 0 ) {
 	$jbli_owner_id   = $jbli_edit_post instanceof WP_Post ? (int) $jbli_edit_post->post_author : (int) $jbli_user_id;
 	$jbli_meta_error = jbli_save_listing_meta( $jbli_post_id, $jbli_fields, $jbli_user_id, ! $jbli_edit_id, $jbli_owner_id );
 
-	if ( $jbli_meta_error ) { return $jbli_meta_error; }
+	if ( $jbli_meta_error )
+	{
+		/* A new listing that could not be completed is removed, so a retry starts clean (9.9.57). */
+		if ( ! $jbli_edit_id )
+		{
+			wp_delete_post( (int) $jbli_post_id, true );
+			jbli_clear_rate_limit( $jbli_user_id, false );
+		}
+
+		return $jbli_meta_error;
+	}
+
+	/* New listing: everything is saved, now make it public (9.9.57). */
+	if ( ! $jbli_edit_id )
+	{
+		$jbli_published = wp_update_post( array( 'ID' => (int) $jbli_post_id, 'post_status' => 'publish' ), true );
+
+		if ( is_wp_error( $jbli_published ) || ! $jbli_published )
+		{
+			wp_delete_post( (int) $jbli_post_id, true );
+			jbli_clear_rate_limit( $jbli_user_id, false );
+
+			return jbli_notice( __( 'Σφάλμα αποθήκευσης. Δοκιμάστε ξανά.', 'job-listings' ), 'error' );
+		}
+	}
 
 
 	if ( function_exists( 'jbli_sync_listing_storage' ) ) { jbli_sync_listing_storage( (int) $jbli_post_id ); }
