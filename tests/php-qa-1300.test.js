@@ -1,8 +1,11 @@
 /* PlanDose — guards for the PHP static analysis setup (tools/php-qa). TEST-ONLY.
    Runs without Composer, so a plain `npm test` catches the shortcuts that
    would make PHPStan/PHPCS pass without fixing anything:
-   - no PHPStan baseline, and every ignoreErrors entry is scoped
-     (identifier plus message or path) and has a reason comment above it;
+   - PHPStan level >= 6; the only baseline is tools/php-qa/phpstan-baseline.neon
+     and it holds level-6 debt alone (missingType.*), each entry scoped to
+     one file with a count, so no level 0-5 error can hide in it; every
+     ignoreErrors entry in phpstan.neon is scoped (identifier plus message
+     or path) and has a reason comment above it;
    - PHPCS runs the security/DB/i18n/compatibility sniffs on the plugin and
      does not exclude plugin code;
    - every phpcs:ignore / phpcs:disable in the plugin names specific sniffs
@@ -38,14 +41,16 @@ function phpFiles(dir) {
 	return out;
 }
 
-test('phpstan.neon: level >= 5, no baseline, every ignore scoped and explained', () => {
+test('phpstan.neon: level >= 6, every ignore scoped and explained', () => {
 	const neon = read(path.join(QA_DIR, 'phpstan.neon'));
 	const level = /^\s*level:\s*(\d+)/m.exec(neon);
-	assert.ok(level && Number(level[1]) >= 5, 'PHPStan level must be at least 5');
-	assert.ok(!/baseline/i.test(neon), 'no PHPStan baseline');
+	assert.ok(level && Number(level[1]) >= 6, 'PHPStan level must be at least 6');
 	assert.ok(/szepeviktor\/phpstan-wordpress\/extension\.neon/.test(neon), 'WordPress extension included');
+	const includes = neon.split(/^includes:\s*$/m)[1].split(/^\S/m)[0].match(/^\t- (\S+)/gm).map((l) => l.slice(3));
+	assert.deepStrictEqual(includes.filter((f) => /baseline/i.test(f)), ['phpstan-baseline.neon'], 'the one baseline is included');
+	assert.ok(!/reportUnmatchedIgnoredErrors:\s*false/.test(neon), 'fixed baseline debt must be reported');
 	const baselines = fs.readdirSync(QA_DIR).filter((f) => /baseline/i.test(f));
-	assert.deepStrictEqual(baselines, [], 'no baseline file in tools/php-qa');
+	assert.deepStrictEqual(baselines, ['phpstan-baseline.neon'], 'one baseline file in tools/php-qa');
 
 	const block = neon.split(/^\tignoreErrors:\s*$/m)[1].split(/^\S/m)[0];
 	const entries = block.split(/^\t\t-\s*$/m).slice(1);
@@ -64,6 +69,23 @@ test('phpstan.neon: level >= 5, no baseline, every ignore scoped and explained',
 		}
 	});
 	assert.ok(/^\t\t#/.test(lines[lines.indexOf('\t\t-') - 1]), 'first ignore needs a reason comment');
+});
+
+test('phpstan-baseline.neon: level-6 debt only (missingType.*), each entry scoped to one plugin file', () => {
+	const neon = read(path.join(QA_DIR, 'phpstan-baseline.neon'));
+	assert.ok(/^parameters:\n\tignoreErrors:\n/.test(neon), 'baseline holds ignoreErrors only');
+	assert.ok(!/^\t(?!ignoreErrors:)\S/m.test(neon), 'baseline sets no other parameter');
+	const entries = neon.split(/^\t\t-\s*$/m).slice(1);
+	assert.ok(entries.length > 0);
+	const allowed = new Set(['missingType.return', 'missingType.parameter', 'missingType.iterableValue', 'missingType.property', 'missingType.generics']);
+	for (const entry of entries) {
+		const id = /^\t\t\tidentifier: (\S+)$/m.exec(entry);
+		assert.ok(id && allowed.has(id[1]), 'not level-6 debt in the baseline:\n' + entry);
+		assert.ok(/^\t\t\tmessage: '#\^.+\$#'$/m.test(entry), 'baseline entry without an anchored message:\n' + entry);
+		assert.ok(/^\t\t\tcount: \d+$/m.test(entry), 'baseline entry without count:\n' + entry);
+		const p = /^\t\t\tpath: (\S+)$/m.exec(entry);
+		assert.ok(p && p[1].startsWith('../../../plandose/') && !p[1].includes('*'), 'baseline entry not scoped to one plugin file:\n' + entry);
+	}
 });
 
 test('phpcs.xml: security, DB, i18n and compatibility sniffs on the whole plugin', () => {

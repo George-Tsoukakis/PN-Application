@@ -4,11 +4,21 @@
 # The WordPress extension is included explicitly rather than through
 # phpstan/extension-installer: Composer disables plugins when run as root
 # (containers), which would silently drop the extension.
+#
+# Level 6 (missing parameter/return/iterable value types) since 1.31.0. The
+# existing level-6 debt is recorded in phpstan-baseline.neon (generated with
+#   vendor/bin/phpstan analyse --generate-baseline phpstan-baseline.neon
+# ); new code must meet level 6. The baseline may only hold level-6
+# identifiers (missingType.*): php-qa-1300.test.js checks that, so a level
+# 0-5 error can never be hidden in it. PHPStan reports baseline entries that
+# no longer match (reportUnmatchedIgnoredErrors), so fixed debt must be
+# removed from it: regenerate the baseline after adding types.
 includes:
 	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+	- phpstan-baseline.neon
 
 parameters:
-	level: 5
+	level: 6
 	phpVersion:
 		min: 80000
 		max: 80499
