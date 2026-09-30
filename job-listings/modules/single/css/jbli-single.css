@@ -1,0 +1,485 @@
+.jbli_wrap,
+.jbli_listings,
+.jbli_dash,
+.jbli_single,
+.jbli_form_wrap,
+.jbli_recent {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 clamp(14px, 2.2vw, 34px);
+}
+
+.jbli_page_wrap {
+  width: 100%;
+}
+
+.jbli_page_wrap_single,
+.jbli_form_page_wrap {
+  display: block;
+  width: 100%;
+  padding-top: 72px;
+}
+
+.jbli_page_wrap_single .jbli_single {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.jbli_page_wrap_single .jbli_single_hero {
+  margin-top: 0;
+  margin-bottom: var(--jbli_space_xl);
+  max-width: 860px;
+}
+
+.jbli_single {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 18px 44px;
+  font-family: var(--jbli_font);
+  color: var(--jbli_gray_900);
+  font-size: var(--jbli_space_lg);
+  line-height: 1.5;
+}
+
+.jbli_single *,
+.jbli_single *::before,
+.jbli_single *::after {
+  box-sizing: border-box;
+}
+
+.jbli_single a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.jbli_single_hero {
+  background:
+    radial-gradient(circle at 86% 16%, rgba(255, 255, 255, .16), transparent 230px),
+    linear-gradient(135deg, var(--jbli_green) 0%, var(--jbli_green_dk) 100%);
+  color: var(--jbli_white);
+  padding: var(--jbli_space_2xl) 30px 22px;
+  border-radius: var(--jbli_space_xl);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto var(--jbli_space_xl);
+  max-width: 860px;
+  box-shadow: 0 var(--jbli_space_md) 26px rgba(5, 150, 105, .13);
+}
+
+.jbli_single_hero::after {
+  content: '';
+  position: absolute;
+  right: -55px;
+  bottom: -95px;
+  width: 190px;
+  height: 190px;
+  border-radius: var(--jbli_r_pill);
+  background: rgba(255, 255, 255, .08);
+  pointer-events: none;
+}
+
+.jbli_single_featured_tag {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 18px;
+  padding: var(--jbli_space_sm) 14px;
+  border-radius: var(--jbli_r_pill);
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .26);
+  color: var(--jbli_white);
+  font-size: var(--jbli_text_sm);
+  font-weight: var(--jbli_weight_extrabold);
+  position: relative;
+  z-index: 1;
+}
+
+.jbli_single_org {
+  margin: 0 0 10px;
+  font-size: var(--jbli_text_base);
+  line-height: 1.35;
+  color: rgba(255, 255, 255, .92);
+  position: relative;
+  z-index: 1;
+}
+
+.jbli_single_org strong {
+  color: var(--jbli_white);
+  font-weight: 900;
+}
+
+.jbli_single_title {
+  margin: 0 0 var(--jbli_space_md);
+  font-size: clamp(1.55rem, 2.3vw, 2rem);
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: -.045em;
+  color: var(--jbli_white);
+  position: relative;
+  z-index: 1;
+}
+
+.jbli_single_title span {
+  color: var(--jbli_white);
+}
+
+.jbli_single_hero_badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--jbli_space_sm);
+  margin: 0 0 var(--jbli_space_md);
+  position: relative;
+  z-index: 1;
+}
+
+.jbli_single_hero_badges .jbli_badge,
+.jbli_single .jbli_badge_white {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--jbli_space_2xl);
+  padding: 5px 10px;
+  border-radius: var(--jbli_r_pill);
+  background: rgba(255, 255, 255, .14);
+  color: var(--jbli_white);
+  border: 1px solid rgba(255, 255, 255, .25);
+  font-size: .74rem;
+  font-weight: 850;
+}
+
+.jbli_single .jbli_expiry {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--jbli_space_2xl);
+  padding: 5px 10px;
+  border-radius: var(--jbli_r_pill);
+  font-size: .74rem;
+  font-weight: 900;
+  color: var(--jbli_white);
+  background: rgba(255, 255, 255, .20);
+  border: 1px solid rgba(255, 255, 255, .36);
+}
+
+.jbli_single_hero_meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  color: rgba(255, 255, 255, .92);
+  font-size: .84rem;
+  font-weight: 650;
+  position: relative;
+  z-index: 1;
+}
+
+.jbli_single_content_wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.jbli_single_info_row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.jbli_single .jbli_info_card,
+.jbli_single .jbli_map_card,
+.jbli_single .jbli_desc_card {
+  background: var(--jbli_white);
+  border: 1px solid var(--jbli_gray_200);
+  border-radius: var(--jbli_space_lg);
+  overflow: hidden;
+  box-shadow: 0 var(--jbli_space_sm) 18px rgba(17, 24, 39, .045);
+}
+
+.jbli_single .jbli_info_card {
+  min-width: 0;
+}
+
+.jbli_single .jbli_info_card_header,
+.jbli_single .jbli_map_card_header,
+.jbli_single .jbli_desc_card_header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px var(--jbli_space_lg) 9px;
+  color: var(--jbli_gray_900);
+  font-size: var(--jbli_text_lg);
+  font-weight: 900;
+  min-height: auto;
+}
+
+.jbli_single .jbli_info_card_header svg,
+.jbli_single .jbli_map_card_header svg,
+.jbli_single .jbli_desc_card_header svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--jbli_green);
+}
+
+.jbli_single .jbli_info_card_body {
+  padding: 0 var(--jbli_space_lg) 14px;
+}
+
+.jbli_single .jbli_info_card_name {
+  margin: 0 0 14px;
+  color: var(--jbli_gray_900);
+  font-size: .95rem;
+  font-weight: var(--jbli_weight_extrabold);
+}
+
+.jbli_single .jbli_info_card_row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin: 0;
+  padding: 7px 0;
+  border-top: 1px solid var(--jbli_gray_100);
+}
+
+.jbli_single .jbli_info_card_label {
+  display: block;
+  color: var(--jbli_gray_500);
+  font-size: var(--jbli_text_sm);
+  font-weight: 850;
+}
+
+.jbli_single .jbli_info_card_value,
+.jbli_single .jbli_info_card_phone,
+.jbli_single .jbli_info_card_email {
+  display: inline;
+  color: var(--jbli_gray_900);
+  font-size: var(--jbli_text_base);
+  font-weight: 650;
+  word-break: break-word;
+}
+
+.jbli_single .jbli_info_card_phone,
+.jbli_single .jbli_info_card_phone:link,
+.jbli_single .jbli_info_card_phone:visited,
+.jbli_single .jbli_info_card_email,
+.jbli_single .jbli_info_card_email:link,
+.jbli_single .jbli_info_card_email:visited {
+  color: var(--jbli_green);
+  text-decoration: none;
+}
+
+.jbli_single .jbli_info_card_phone:hover,
+.jbli_single .jbli_info_card_email:hover {
+  text-decoration: underline;
+}
+
+.jbli_single .jbli_info_card_value_salary {
+  color: var(--jbli_green_dk);
+  font-weight: 900;
+}
+
+.jbli_single .jbli_info_card_cta,
+.jbli_single .jbli_info_card_cta:link,
+.jbli_single .jbli_info_card_cta:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  margin: 14px 0 0;
+  padding: 0 var(--jbli_space_xl);
+  border-radius: var(--jbli_space_lg);
+  background: linear-gradient(135deg, var(--jbli_green), var(--jbli_green_dk));
+  color: var(--jbli_white);
+  text-decoration: none;
+  font-size: var(--jbli_text_lg);
+  font-weight: 900;
+  box-shadow: 0 14px var(--jbli_space_3xl) rgba(5, 150, 105, .22);
+  transition: transform .18s ease, box-shadow .18s ease;
+  overflow-wrap: anywhere;
+}
+
+.jbli_single .jbli_info_card_cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(5, 150, 105, .28);
+}
+
+.jbli_single .jbli_desc_card_body {
+  padding: 0 var(--jbli_space_lg) var(--jbli_space_lg);
+  color: var(--jbli_gray_700);
+  font-size: var(--jbli_text_base);
+  line-height: 1.55;
+}
+
+.jbli_single .jbli_desc_card_body p {
+  margin: 0 0 14px;
+}
+
+.jbli_single .jbli_desc_card_body_truncate {
+  position: relative;
+  max-height: 240px;
+  overflow: hidden;
+}
+
+.jbli_single .jbli_desc_card_fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1) 90%);
+  pointer-events: none;
+  display: none;
+}
+
+.jbli_single .jbli_desc_card_body_truncate .jbli_desc_card_fade {
+  display: block;
+}
+
+.jbli_single .jbli_desc_card_action {
+  text-align: center;
+  padding: 0 var(--jbli_space_lg) var(--jbli_space_lg);
+  margin-top: -10px;
+}
+
+.jbli_single .jbli_desc_card_more {
+  background: none;
+  border: none;
+  color: var(--jbli_green);
+  font-size: var(--jbli_text_base);
+  font-weight: var(--jbli_weight_bold);
+  cursor: pointer;
+  padding: var(--jbli_space_sm) var(--jbli_space_lg);
+  text-decoration: underline;
+  transition: color .2s;
+}
+
+.jbli_single .jbli_desc_card_more:hover {
+  color: var(--jbli_green_dk);
+}
+
+.jbli_single .jbli_map_card_map {
+  width: 100%;
+  height: 260px;
+}
+
+.jbli_single_back {
+  margin: 10px 0 0;
+}
+
+.jbli_mobile_cta_bar,
+.jbli_mobile_cta {
+  display: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   9.9.51 — Single listing: listing on the left, picture/video on the right.
+   Scoped under .jbli_page_wrap_single so the generic ".jbli_single" resets in
+   the other module stylesheets (loaded later) cannot undo it.
+   ========================================================================== */
+
+.jbli_page_wrap_single .jbli_single {
+  max-width: 1240px;
+}
+
+.jbli_page_wrap_single .jbli_single_layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+  gap: 28px;
+  align-items: start;
+}
+
+.jbli_page_wrap_single .jbli_single_main {
+  min-width: 0;
+}
+
+.jbli_page_wrap_single .jbli_single_main .jbli_single_hero {
+  max-width: none;
+}
+
+.jbli_page_wrap_single .jbli_single_aside {
+  position: sticky;
+  top: 96px;
+  min-width: 0;
+}
+
+.jbli_page_wrap_single .jbli_single_media {
+  height: clamp(460px, 72vh, 640px);
+}
+
+@media (max-width: 960px) {
+  .jbli_page_wrap_single .jbli_single_layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  /* Phones/tablets: the listing already has its own apply button, and the
+     picture card gets too cramped, so the side panel is desktop-only. */
+  .jbli_page_wrap_single .jbli_single_aside {
+    display: none;
+  }
+}
+
+/* 9.9.53 — source of an imported listing */
+.jbli_page_wrap_single .jbli_single_source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin: 14px 0 0;
+  padding: 14px 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #f5f9ff;
+  color: #1e3a8a;
+  font-size: .9rem;
+}
+
+.jbli_page_wrap_single .jbli_single_source .jbli_btn {
+  text-decoration: none;
+}
+
+/* 9.9.63 — address opens in Google Maps */
+.jbli_maps_link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--jbli_green_dk);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.jbli_maps_link:hover,
+.jbli_maps_link:focus-visible {
+  text-decoration: underline;
+}
+
+.jbli_maps_link_hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--jbli_green_lt);
+  color: var(--jbli_green_ink);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.jbli_maps_link .screen-reader-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

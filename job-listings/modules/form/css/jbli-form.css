@@ -1,0 +1,790 @@
+.jbli_wrap,
+.jbli_listings,
+.jbli_dash,
+.jbli_single,
+.jbli_form_wrap,
+.jbli_recent {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 clamp(14px, 2.2vw, 34px);
+}
+
+.jbli_form_wrap_simple {
+  max-width: 860px;
+  padding: var(--jbli_space_2xl) 14px var(--jbli_space_5xl) 14px;
+}
+
+.jbli_sr_only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.jbli_form_header {
+  display: block;
+  padding: var(--jbli_space_3xl) 36px;
+  margin-bottom: var(--jbli_space_2xl);
+  border-radius: var(--jbli_space_xl);
+  color: var(--jbli_white);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 18%, rgba(255, 255, 255, .16) 0 0, transparent 140px),
+    linear-gradient(135deg, var(--jbli_green_dk) 0%, var(--jbli_green) 100%);
+  box-shadow: 0 10px var(--jbli_space_2xl) rgba(5, 150, 105, .12);
+}
+
+.jbli_form_header::before {
+  content: '';
+  position: absolute;
+  top: -90px;
+  right: -88px;
+  width: 178px;
+  height: 178px;
+  background: rgba(255, 255, 255, .08);
+  border-radius: 50%;
+}
+
+.jbli_form_header_title {
+  margin: 0 0 var(--jbli_space_xs);
+  color: var(--jbli_white);
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+  line-height: 1.08;
+  font-weight: var(--jbli_weight_extrabold);
+  letter-spacing: -.035em;
+  position: relative;
+}
+
+.jbli_form_header_sub {
+  max-width: 540px;
+  margin: 0;
+  font-size: .95rem;
+  line-height: 1.55;
+  opacity: .92;
+  position: relative;
+}
+
+.jbli_form_header_sub strong {
+  color: var(--jbli_white);
+  font-weight: var(--jbli_weight_extrabold);
+}
+
+.jbli_form_card {
+  background: var(--jbli_white);
+  border: 1px solid var(--jbli_gray_200);
+  border-radius: var(--jbli_space_xl);
+  padding: 36px 40px;
+  box-shadow: 0 10px var(--jbli_space_3xl) rgba(17, 24, 39, .055);
+}
+
+.jbli_form_card {
+  --jbli_form_row_gap: var(--jbli_space_2xl);
+  --jbli_form_col_gap: var(--jbli_space_2xl);
+  --jbli_form_control_height: 56px;
+  --jbli_form_control_radius: 14px;
+  --jbli_form_control_pad_x: 18px;
+  --jbli_form_label_gap: 10px;
+}
+
+.jbli_form_grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--jbli_form_col_gap);
+  row-gap: var(--jbli_form_row_gap);
+  margin: 0 0 var(--jbli_form_row_gap);
+}
+
+.jbli_form_grid_2,
+.jbli_form_grid_category_nomos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.jbli_form_grid_1,
+.jbli_form_grid_single {
+  grid-template-columns: 1fr;
+}
+
+.jbli_form_card>.jbli_form_grid:last-child,
+.jbli_form_card>.jbli_field:last-child,
+.jbli_form_card>.jbli_form_field:last-child {
+  margin-bottom: 0;
+}
+
+.jbli_field,
+.jbli_form_field,
+.jbli_col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jbli_form_label_gap);
+  margin: 0 0 var(--jbli_form_row_gap);
+}
+
+.jbli_form_grid .jbli_field,
+.jbli_form_grid .jbli_form_field,
+.jbli_form_grid .jbli_col {
+  margin-bottom: 0;
+}
+
+.jbli_field_wide,
+.jbli_form_field_full {
+  grid-column: 1 / -1;
+}
+
+.jbli_field_description {
+  margin-top: 0;
+}
+
+.jbli_field label,
+.jbli_form_field label,
+.jbli_col>label,
+.jbli_field_label {
+  display: flex;
+  align-items: center;
+  gap: var(--jbli_space_2xs);
+  margin: 0;
+  min-height: var(--jbli_space_xl);
+  font-size: .86rem;
+  font-weight: 750;
+  line-height: 1.35;
+  color: var(--jbli_gray_700);
+}
+
+.jbli_req {
+  color: var(--jbli_red);
+  margin-left: 2px;
+}
+
+.jbli_input,
+.jbli_select,
+.jbli_textarea,
+.jbli_form_wrap input[type="text"],
+.jbli_form_wrap input[type="tel"],
+.jbli_form_wrap input[type="email"],
+.jbli_form_wrap input[type="number"],
+.jbli_form_wrap textarea,
+.jbli_form_wrap select {
+  width: 100%;
+  min-height: var(--jbli_form_control_height);
+  padding: 0 var(--jbli_form_control_pad_x);
+  border: 1px solid var(--jbli_gray_300);
+  border-radius: var(--jbli_form_control_radius);
+  background-color: var(--jbli_white);
+  color: var(--jbli_gray_900);
+  font-size: .95rem;
+  font-family: var(--jbli_font);
+  line-height: 1.35;
+  box-sizing: border-box;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, .02);
+  transition: border-color .15s, box-shadow .15s, background-color .15s;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.jbli_input,
+.jbli_select,
+.jbli_form_wrap input[type="text"],
+.jbli_form_wrap input[type="tel"],
+.jbli_form_wrap input[type="email"],
+.jbli_form_wrap input[type="number"],
+.jbli_form_wrap select {
+  height: var(--jbli_form_control_height);
+}
+
+.jbli_textarea,
+.jbli_form_wrap textarea {
+  min-height: 132px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.jbli_input::placeholder,
+.jbli_textarea::placeholder,
+.jbli_form_wrap input::placeholder,
+.jbli_form_wrap textarea::placeholder {
+  color: var(--jbli_gray_400);
+  opacity: 1;
+}
+
+.jbli_input:hover,
+.jbli_select:hover,
+.jbli_textarea:hover,
+.jbli_form_wrap input:hover,
+.jbli_form_wrap textarea:hover,
+.jbli_form_wrap select:hover {
+  border-color: var(--jbli_gray_400);
+}
+
+.jbli_input:focus,
+.jbli_select:focus,
+.jbli_textarea:focus,
+.jbli_form_wrap input:focus,
+.jbli_form_wrap textarea:focus,
+.jbli_form_wrap select:focus {
+  border-color: var(--jbli_green);
+  box-shadow: var(--jbli_focus_ring);
+}
+
+.jbli_input_readonly {
+  background-color: var(--jbli_gray_50);
+  color: var(--jbli_gray_500);
+  cursor: default;
+}
+
+.jbli_field_hint {
+  margin: -2px 0 0;
+  font-size: var(--jbli_text_sm);
+  color: var(--jbli_gray_400);
+}
+
+.jbli_select_wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.jbli_listings .jbli_select_wrap .jbli_select,
+.jbli_listings .jbli_select_wrap select,
+.jbli_form_wrap .jbli_select_wrap .jbli_select,
+.jbli_form_wrap .jbli_select_wrap select,
+.jbli_dash .jbli_select_wrap .jbli_select,
+.jbli_dash .jbli_select_wrap select,
+.jbli_select_wrap .jbli_select,
+.jbli_select_wrap select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  padding-right: 46px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.jbli_select_wrap::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  width: var(--jbli_space_lg);
+  height: var(--jbli_space_lg);
+  transform: translateY(-50%);
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--jbli_space_lg) var(--jbli_space_lg);
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.5 7.5L10 12L14.5 7.5' stroke='%23111827' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.jbli_select_wrap select::-ms-expand {
+  display: none;
+}
+
+.jbli_form_footer {
+  margin-top: 0;
+  padding-top: var(--jbli_space_2xl);
+  border-top: 1px solid var(--jbli_gray_200);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.jbli_form_footer_note {
+  max-width: 390px;
+  margin: 0;
+  font-size: var(--jbli_text_sm);
+  color: var(--jbli_gray_500);
+  line-height: 1.45;
+}
+
+.jbli_form_wrap_simple .jbli_btn_primary {
+  min-height: 50px;
+  padding: 0 var(--jbli_space_3xl);
+  border-radius: var(--jbli_space_md);
+  font-size: var(--jbli_text_base);
+  font-weight: var(--jbli_weight_extrabold);
+  background: linear-gradient(135deg, var(--jbli_green) 0%, var(--jbli_green_dk) 100%);
+  border: 0;
+  box-shadow: 0 10px 22px rgba(5, 150, 105, .18);
+}
+
+.jbli_form_wrap_simple .jbli_btn_primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px var(--jbli_space_3xl) rgba(5, 150, 105, .24);
+}
+
+@media (max-width: 720px) {
+  .jbli_form_wrap_simple {
+    padding-top: var(--jbli_space_md);
+    max-width: 100%;
+  }
+
+  .jbli_form_header {
+    padding: 22px var(--jbli_space_xl);
+    border-radius: 18px;
+    margin-bottom: var(--jbli_space_lg);
+  }
+
+  .jbli_form_card {
+    padding: 22px var(--jbli_space_xl);
+    border-radius: 18px;
+    --jbli_form_row_gap: 18px;
+    --jbli_form_col_gap: 18px;
+    --jbli_form_control_height: 52px;
+  }
+
+  .jbli_form_grid,
+  .jbli_form_grid_1,
+  .jbli_form_grid_2,
+  .jbli_form_grid_single,
+  .jbli_form_grid_category_nomos {
+    grid-template-columns: 1fr;
+  }
+
+  .jbli_field_wide,
+  .jbli_form_field_full {
+    grid-column: auto;
+  }
+
+  .jbli_form_footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jbli_form_wrap_simple .jbli_btn_primary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .jbli_form_header {
+    padding: var(--jbli_space_xl) var(--jbli_space_lg);
+  }
+
+  .jbli_form_card {
+    padding: 18px var(--jbli_space_lg);
+  }
+}
+
+.jbli_input_with_icon {
+  position: relative;
+  width: 100%;
+}
+
+.jbli_input_with_icon .jbli_input {
+  padding-right: var(--jbli_space_5xl);
+}
+
+.jbli_current_location_btn {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  width: var(--jbli_space_2xl);
+  height: var(--jbli_space_2xl);
+  cursor: pointer;
+  color: var(--jbli_gray_400);
+  transition: color 0.15s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none !important;
+}
+
+.jbli_current_location_btn:hover {
+  color: var(--jbli_green);
+}
+
+@keyframes jbli_spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+.jbli_current_location_btn.jbli_loading {
+  animation: jbli_spin 1s linear infinite;
+  pointer-events: none;
+  color: var(--jbli_green);
+}
+
+.pac-container {
+  border-radius: var(--jbli_space_md);
+  border: 1px solid var(--jbli_gray_200);
+  box-shadow: 0 10px var(--jbli_space_2xl) rgba(17, 24, 39, 0.08);
+  font-family: inherit;
+  margin-top: var(--jbli_space_2xs);
+  z-index: 999999 !important;
+}
+
+.pac-item {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: var(--jbli_gray_600);
+  cursor: pointer;
+  border-top: 1px solid var(--jbli_gray_100);
+  display: flex;
+  align-items: center;
+}
+
+.pac-item:first-child {
+  border-top: none;
+}
+
+.pac-item:hover {
+  background-color: var(--jbli_gray_50);
+}
+
+.pac-item-query {
+  font-size: 0.9rem;
+  color: var(--jbli_gray_900);
+}
+
+.pac-matched {
+  font-weight: var(--jbli_weight_bold);
+  color: var(--jbli_green);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * 9.9.41 — invalid field state
+ * ------------------------------------------------------------------------- */
+
+.jbli_field_invalid .jbli_input,
+.jbli_field_invalid .jbli_textarea,
+.jbli_field_invalid .jbli_select,
+.jbli_field_invalid select,
+.jbli_field_invalid textarea,
+.jbli_field_invalid input {
+  border-color: var(--jbli_red) !important;
+  background: var(--jbli_red_lt);
+}
+
+.jbli_field_invalid .jbli_input:focus,
+.jbli_field_invalid .jbli_textarea:focus,
+.jbli_field_invalid select:focus,
+.jbli_field_invalid textarea:focus,
+.jbli_field_invalid input:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, .12);
+}
+
+.jbli_field_invalid label,
+.jbli_field_invalid .jbli_field_label {
+  color: var(--jbli_red_ink);
+}
+
+.jbli_field_error {
+  display: block;
+  margin-top: var(--jbli_space_xs);
+  font-size: var(--jbli_text_sm);
+  line-height: var(--jbli_leading_snug);
+  color: var(--jbli_red_ink);
+  font-weight: var(--jbli_weight_medium);
+}
+
+.jbli_field_error::before {
+  content: '⚠ ';
+}
+
+/* ==========================================================================
+   9.9.45 — Compact form with a media panel on the right.
+   ========================================================================== */
+
+.jbli_form_wrap_simple.jbli_form_layout {
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
+  gap: 28px;
+  align-items: start;
+  padding-top: var(--jbli_space_xl);
+}
+
+.jbli_form_main {
+  min-width: 0;
+}
+
+/* Header: a slim bar instead of the tall banner */
+.jbli_form_layout .jbli_form_header {
+  padding: 18px 24px;
+  margin-bottom: 16px;
+  border-radius: 18px;
+}
+
+.jbli_form_layout .jbli_form_header::before {
+  top: -70px;
+  right: -60px;
+  width: 140px;
+  height: 140px;
+}
+
+.jbli_form_layout .jbli_form_header_title {
+  margin-bottom: 4px;
+  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
+}
+
+.jbli_form_layout .jbli_form_header_sub {
+  font-size: .86rem;
+}
+
+/* Tighter card and controls */
+.jbli_form_layout .jbli_form_card {
+  --jbli_form_row_gap: 14px;
+  --jbli_form_col_gap: 14px;
+  --jbli_form_control_height: 46px;
+  --jbli_form_control_radius: 12px;
+  --jbli_form_control_pad_x: 14px;
+  --jbli_form_label_gap: 6px;
+  padding: 22px 24px;
+  border-radius: 18px;
+}
+
+.jbli_form_layout .jbli_field label,
+.jbli_form_layout .jbli_form_field label,
+.jbli_form_layout .jbli_field_label {
+  font-size: .8rem;
+}
+
+.jbli_form_layout .jbli_textarea,
+.jbli_form_layout textarea {
+  min-height: 96px;
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.jbli_form_layout .jbli_field_hint {
+  font-size: .72rem;
+}
+
+.jbli_form_layout .jbli_form_consent {
+  margin: 4px 0 0;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.jbli_form_layout .jbli_checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.jbli_form_layout .jbli_checkbox input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--jbli_green);
+}
+
+.jbli_form_layout .jbli_form_footer {
+  padding-top: 16px;
+  margin-top: 14px;
+}
+
+.jbli_form_layout .jbli_btn_primary {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Media panel */
+.jbli_form_aside {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+
+.jbli_form_media {
+  position: relative;
+  overflow: hidden;
+  height: clamp(520px, 78vh, 700px);
+  border-radius: 24px;
+  background:
+    radial-gradient(360px 220px at 90% 0%, rgba(255, 255, 255, .16), transparent 70%),
+    radial-gradient(340px 260px at 0% 100%, rgba(52, 211, 153, .5), transparent 70%),
+    linear-gradient(150deg, #064e3b 0%, #047857 55%, #10b981 100%);
+  box-shadow: 0 24px 60px rgba(2, 44, 34, .22);
+}
+
+.jbli_form_media_el {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+  display: block;
+}
+
+/* An embedded player is scaled up so its edges/controls stay out of view. */
+.jbli_form_media_embed .jbli_form_media_el {
+  width: 180%;
+  height: 100%;
+  left: -40%;
+  pointer-events: none;
+}
+
+.jbli_form_media_art {
+  position: absolute;
+  inset: 8% 8% 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jbli_form_media_shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0) 35%, rgba(2, 44, 34, .78) 100%);
+  pointer-events: none;
+}
+
+.jbli_form_media_default .jbli_form_media_shade {
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0) 50%, rgba(2, 44, 34, .35) 100%);
+}
+
+.jbli_form_media_card {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  padding: 20px 20px 18px;
+  border-radius: 18px;
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .24);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+.jbli_form_media_kicker {
+  margin: 0 0 6px;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #a7f3d0;
+}
+
+.jbli_form_media_title {
+  margin: 0 0 12px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  color: #fff;
+}
+
+.jbli_form_media_list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.jbli_form_media_list li {
+  position: relative;
+  padding-left: 28px;
+  font-size: .88rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, .92);
+}
+
+.jbli_form_media_list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23064e3b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 11px no-repeat,
+    #6ee7b7;
+}
+
+/* Tablet/phone: the form comes first; the media becomes a short banner under the header */
+@media (max-width: 960px) {
+  .jbli_form_wrap_simple.jbli_form_layout {
+    grid-template-columns: 1fr;
+    max-width: 720px;
+    gap: 16px;
+  }
+
+  .jbli_form_aside {
+    position: static;
+    order: -1;
+  }
+
+  .jbli_form_media {
+    height: 210px;
+    border-radius: 18px;
+  }
+
+  .jbli_form_media_art {
+    inset: 6% 55% 6% 4%;
+  }
+
+  .jbli_form_media_card {
+    left: auto;
+    right: 12px;
+    bottom: 12px;
+    top: 12px;
+    width: min(62%, 360px);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .jbli_form_media_title {
+    font-size: .98rem;
+    margin-bottom: 8px;
+  }
+
+  .jbli_form_media_list li {
+    font-size: .8rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .jbli_form_aside {
+    display: none;
+  }
+
+  .jbli_form_layout .jbli_form_card {
+    padding: 18px 16px;
+  }
+
+  .jbli_form_layout .jbli_form_grid_2,
+  .jbli_form_layout .jbli_form_grid_category_nomos {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 9.9.47 — title character counter */
+.jbli_char_counter {
+  margin-left: 4px;
+  font-weight: 700;
+  color: var(--jbli_gray_600);
+}
+
+.jbli_char_counter[data-warn="true"] {
+  color: var(--jbli_amber);
+}

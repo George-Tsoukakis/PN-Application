@@ -12,6 +12,7 @@
     "test:wp": "node --test --test-concurrency=1 wp-integration/*.test.js; s=$?; php wp-integration/settings-frontend-1242.php \"${PD_WP_PATH:-/home/claude/wpenv}/wp-load.php\" || s=1; exit $s",
     "test:browser": "node tools/run-scripts.js wp-integration/browser-smoke.mjs wp-integration/units-1242.mjs wp-integration/rx-import-e2e.mjs",
     "test:visual": "node visual/a4-regression.mjs",
+    "test:jobs": "php job-listings/run.php && node --test job-listings/*.test.js",
     "pot:check": "php tools/make-pot.php ../plandose ../build/plandose.pot.check",
     "rx:expected": "node tools/make-rx-expected.js",
     "qa:php": "cd tools/php-qa && composer install --no-interaction --no-progress -q && vendor/bin/phpstan analyse --no-progress --memory-limit=2G && vendor/bin/phpcs"

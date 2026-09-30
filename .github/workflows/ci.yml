@@ -33,7 +33,7 @@ jobs:
           status=0
           while IFS= read -r -d '' f; do
             php -l "$f" >/dev/null || { php -l "$f"; status=1; }
-          done < <(find plandose tests -name '*.php' -not -path '*/node_modules/*' -print0)
+          done < <(find plandose job-listings tests -name '*.php' -not -path '*/node_modules/*' -print0)
           exit $status
 
   php-qa:
@@ -89,6 +89,27 @@ jobs:
       - run: php -v
       - run: npm ci
       - run: npm test
+
+  job-listings:
+    name: Job Listings (PHP units + Chromium)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - run: php -v
+      - run: npm ci
+      - name: Install Chromium for playwright-core
+        run: npx playwright-core install --with-deps chromium
+      - name: JS syntax (node --check)
+        run: for f in $(find ../job-listings -name '*.js'); do node --check "$f" || exit 1; done
+      - run: npm run test:jobs
 
   visual:
     name: A4 visual regression (Chromium)
