@@ -678,6 +678,7 @@
 			copyRaw: document.getElementById( 'qrrp-copy-raw' ),
 			emailInput: document.getElementById( 'qrrp-email-input' ),
 			sendEmail: document.getElementById( 'qrrp-send-email' ),
+			emailFeedback: document.getElementById( 'qrrp-email-feedback' ),
 			status: document.getElementById( 'qrrp-status' ),
 			statusLive: document.getElementById( 'qrrp-status-live' ),
 			alertLive: document.getElementById( 'qrrp-alert-live' )
@@ -752,7 +753,8 @@
 		var manualEntryMode = false;
 		var CAN_MANUAL_ENTRY = !! QRRP.canManualEntry && '0' !== String( QRRP.canManualEntry );
 
-		function setStatus( message, isError ) {
+		/* noScroll (2.15.7): το μήνυμα φαίνεται ήδη αλλού (π.χ. δίπλα στο κουμπί email). */
+		function setStatus( message, isError, noScroll ) {
 			if ( ! els.status ) {
 				return;
 			}
@@ -764,7 +766,7 @@
 
 			// Το μήνυμα είναι στην κορυφή του εργαλείου· ένα σφάλμα πρέπει να φαίνεται
 			// ακόμη κι αν ο χρήστης έχει κυλήσει πιο κάτω.
-			if ( message && isError && els.status.scrollIntoView ) {
+			if ( message && isError && ! noScroll && els.status.scrollIntoView ) {
 				els.status.scrollIntoView( { behavior: scrollBehavior(), block: 'nearest' } );
 			}
 		}
@@ -1649,6 +1651,7 @@
 			// Πεδία εκτός GS1 — καταλήγουν στην ετικέτα και στο email.
 			if ( els.customerName ) { els.customerName.value = ''; }
 			if ( els.emailInput ) { els.emailInput.value = ''; }
+			setEmailFeedback( '' );
 			if ( els.printDate ) { els.printDate.value = todayISO(); }
 
 			if ( els.ambiguousConfirm ) { els.ambiguousConfirm.hidden = true; }
@@ -1711,6 +1714,15 @@
 
 		if ( els.sendEmail && canSendEmail ) {
 			els.sendEmail.addEventListener( 'click', onSendEmail );
+
+			/* 2.15.7: νέα διεύθυνση → το προηγούμενο αποτέλεσμα δεν ισχύει πια γι' αυτήν. */
+			if ( els.emailInput ) {
+				els.emailInput.addEventListener( 'input', function () {
+					if ( els.emailFeedback && ! els.emailFeedback.classList.contains( 'qrrp-email-feedback-sending' ) ) {
+						setEmailFeedback( '' );
+					}
+				} );
+			}
 		} else if ( els.sendEmail ) {
 			els.sendEmail.disabled = true;
 		}
@@ -1800,6 +1812,7 @@
 			}
 
 			hideLoader();
+			setEmailFeedback( '' );
 			updateRegenerateAvailability();
 
 			if ( notify && hadOutput ) {
@@ -3232,6 +3245,29 @@
 			removeNode( textarea );
 		}
 
+		/*
+		 * 2.15.7: ορατό αποτέλεσμα αποστολής κάτω από το κουμπί. kind: 'sending',
+		 * 'success', 'error' ή '' (απόκρυψη). Το ίδιο μήνυμα πάει και στο γενικό
+		 * status (live regions) χωρίς κύλιση στην κορυφή, ώστε ο χρήστης να μένει
+		 * στη φόρμα του email.
+		 */
+		function setEmailFeedback( message, kind ) {
+			if ( ! els.emailFeedback ) {
+				return;
+			}
+
+			els.emailFeedback.textContent = message || '';
+			els.emailFeedback.className = 'qrrp-email-feedback' + ( message && kind ? ' qrrp-email-feedback-' + kind : '' );
+			els.emailFeedback.hidden = ! message;
+		}
+
+		function emailOutcome( message, isError ) {
+			setEmailFeedback( message, isError ? 'error' : 'success' );
+			setStatus( message, isError, true );
+		}
+
+		var sendEmailLabel = els.sendEmail ? els.sendEmail.textContent : '';
+
 		function onSendEmail() {
 			if ( ! canSendEmail || ! els.emailInput || ! els.sendEmail ) {
 				setStatus( t( 'noEmailPermission', 'Δεν έχετε δικαίωμα αποστολής email από αυτό το εργαλείο.' ), true );
@@ -3241,7 +3277,7 @@
 			var email = els.emailInput.value.trim();
 
 			if ( ! email || ! els.emailInput.checkValidity() ) {
-				setStatus( t( 'enterValidEmail', 'Εισάγετε μία έγκυρη διεύθυνση email.' ), true );
+				emailOutcome( t( 'enterValidEmail', 'Εισάγετε μία έγκυρη διεύθυνση email.' ), true );
 				return;
 			}
 
@@ -3251,7 +3287,7 @@
 				! lastValidatedFields ||
 				! lastValidatedOutput
 			) {
-				setStatus( t( 'createFirst', 'Δημιουργήστε πρώτα το νέο GS1 DataMatrix.' ), true );
+				emailOutcome( t( 'createFirst', 'Δημιουργήστε πρώτα το νέο GS1 DataMatrix.' ), true );
 				return;
 			}
 
@@ -3261,7 +3297,7 @@
 			 */
 			if ( ! sameGs1Fields( collectFields(), lastValidatedFields ) ) {
 				invalidateGeneratedQr( false );
-				setStatus( t( 'validatedDataChanged', 'Τα επικυρωμένα GS1 δεδομένα άλλαξαν. Δημιουργήστε ξανά το GS1 DataMatrix.' ), true );
+				emailOutcome( t( 'validatedDataChanged', 'Τα επικυρωμένα GS1 δεδομένα άλλαξαν. Δημιουργήστε ξανά το GS1 DataMatrix.' ), true );
 				return;
 			}
 
@@ -3299,7 +3335,10 @@
 			}
 
 			els.sendEmail.disabled = true;
+			els.sendEmail.textContent = t( 'sendingEmailButton', 'Αποστολή…' );
+			els.sendEmail.setAttribute( 'aria-busy', 'true' );
 			setStatus( '' );
+			setEmailFeedback( t( 'sendingEmail', 'Αποστολή email…' ), 'sending' );
 			showLoader( t( 'sendingEmail', 'Αποστολή email…' ) );
 
 			var request = ajaxRequest( 'qrrp_send_email', emailPayload )
@@ -3313,7 +3352,7 @@
 					}
 
 					if ( json && json.success ) {
-						setStatus( t( 'emailSent', 'Το email στάλθηκε με επιτυχία.' ) );
+						emailOutcome( t( 'emailSentTo', 'Το email στάλθηκε στο %s.' ).replace( '%s', function () { return email; } ) );
 						return;
 					}
 
@@ -3331,7 +3370,7 @@
 						lastValidatedOutput = '';
 						setOutputActionsEnabled( false );
 
-						setStatus(
+						emailOutcome(
 							( json && json.data && json.data.message ) ||
 								t(
 								'outputStale',
@@ -3343,7 +3382,7 @@
 						return;
 					}
 
-					setStatus(
+					emailOutcome(
 						nonceErrorMessage( json ) ||
 							( json && json.data && json.data.message ) ||
 							t( 'emailFailed', 'Η αποστολή email απέτυχε.' ),
@@ -3356,11 +3395,14 @@
 				 */
 				.catch( function ( error ) {
 					if ( emailGeneration === rebuildGeneration ) {
-						setStatus( networkErrorMessage( error ), true );
+						emailOutcome( networkErrorMessage( error ), true );
 					}
 				} );
 
 			promiseFinally( request, function () {
+				els.sendEmail.textContent = sendEmailLabel;
+				els.sendEmail.removeAttribute( 'aria-busy' );
+
 				/* 2.15.7: ο loader ανήκει πλέον σε νεότερη ενέργεια (ή τον έκλεισε το reset). */
 				if ( emailGeneration !== rebuildGeneration ) {
 					return;

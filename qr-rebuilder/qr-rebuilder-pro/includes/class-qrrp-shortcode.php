@@ -251,6 +251,9 @@ final class QRRP_Shortcode {
 					'missingFields'         => __( 'Λείπουν υποχρεωτικά πεδία.', 'qr-rebuilder-pro' ),
 					'invalidExpiry'         => __( 'Μη έγκυρη ημερομηνία λήξης.', 'qr-rebuilder-pro' ),
 					'emailSent'             => __( 'Το email στάλθηκε με επιτυχία.', 'qr-rebuilder-pro' ),
+					/* translators: %s: recipient email address. */
+					'emailSentTo'           => __( 'Το email στάλθηκε στο %s.', 'qr-rebuilder-pro' ),
+					'sendingEmailButton'    => __( 'Αποστολή…', 'qr-rebuilder-pro' ),
 					'emailFailed'           => __( 'Η αποστολή email απέτυχε.', 'qr-rebuilder-pro' ),
 					'fieldsChanged'         => __( 'Αλλάξατε τα στοιχεία — πατήστε «Αναδημιουργία» για να ενημερωθεί το GS1 DataMatrix.', 'qr-rebuilder-pro' ),
 					'prefilledFromLink'     => __( 'Τα στοιχεία φορτώθηκαν από τον σύνδεσμο. Πατήστε «Δημιουργία νέου GS1 DataMatrix».', 'qr-rebuilder-pro' ),
@@ -917,6 +920,15 @@ final class QRRP_Shortcode {
 
 						<button type="button" class="qrrp-btn qrrp-btn-primary" id="qrrp-send-email"><?php esc_html_e( 'Αποστολή email', 'qr-rebuilder-pro' ); ?></button>
 					</div>
+
+					<?php
+					/*
+					 * 2.15.7: ορατό αποτέλεσμα της αποστολής δίπλα στο κουμπί (το γενικό
+					 * status είναι στην κορυφή, εκτός οθόνης). aria-hidden: οι screen
+					 * readers παίρνουν το ίδιο μήνυμα από τις live regions του εργαλείου.
+					 */
+					?>
+					<p class="qrrp-email-feedback" id="qrrp-email-feedback" aria-hidden="true" hidden></p>
 
 					<p class="qrrp-email-note">
 						<?php esc_html_e( 'Η εικόνα αποστέλλεται ως αρχείο PNG (με λευκό φόντο) και μπορεί να αποθηκευτεί ή να εκτυπωθεί απευθείας από τον παραλήπτη.', 'qr-rebuilder-pro' ); ?>
