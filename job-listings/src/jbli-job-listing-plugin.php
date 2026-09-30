@@ -87,7 +87,6 @@ final class Plugin {
 			'includes/jbli-taxonomies.php',
 			'includes/jbli-expiry.php',
 			'includes/jbli-assets.php',
-			'includes/jbli-admin-columns.php',
 			'includes/jbli-view-counter.php',
 			'includes/jbli-featured.php',
 			'includes/jbli-rocket-compat.php',
@@ -98,13 +97,25 @@ final class Plugin {
 			'modules/dashboard/jbli-dashboard.php',
 			'modules/listings/jbli-listings.php',
 			'modules/single/jbli-single.php',
-			'modules/admin/jbli-admin-panel.php',
-			'modules/admin/jbli-settings.php',
-			'modules/admin/jbli-cache.php',
 			'modules/recent/jbli-recent-listings.php',
 			'modules/apply/jbli-apply.php',
-			'modules/import/jbli-import.php',
 		);
+
+		/*
+		 * 9.9.60: admin screens, settings, cache page and the URL importer are
+		 * only loaded for wp-admin requests (admin-ajax.php and admin-post.php
+		 * included), not for every visitor page view.
+		 */
+		if ( is_admin() )
+		{
+			$jbli_files = array_merge( $jbli_files, array(
+				'includes/jbli-admin-columns.php',
+				'modules/admin/jbli-admin-panel.php',
+				'modules/admin/jbli-settings.php',
+				'modules/admin/jbli-cache.php',
+				'modules/import/jbli-import.php',
+			) );
+		}
 
 		ob_start();
 

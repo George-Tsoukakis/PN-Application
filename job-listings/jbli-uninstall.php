@@ -89,6 +89,16 @@ $jbli_options = array(
 	'jbli_apply_email_subject',
 	'jbli_apply_email_body',
 	'jbli_apply_retention_days',
+	/* 9.9.60: options the uninstaller used to leave behind. */
+	'jbli_google_map_api_key',
+	'jbli_public_address',
+	'jbli_public_email',
+	'jbli_public_phone',
+	'jbli_recent_cache_version',
+	'jbli_salary_options',
+	'jbli_type_options',
+	'jbli_seeded_v1',
+	'jbli_seeded_v3',
 );
 
 foreach ( $jbli_options as $jbli_option ) {
@@ -100,6 +110,23 @@ foreach ( $jbli_options as $jbli_option ) {
 delete_transient( 'jbli_listings_page_url' );
 delete_transient( 'jbli_form_page_url' );
 delete_transient( 'jbli_dashboard_page_url' );
+delete_transient( 'jbli_listing_page_ids' );
+
+/* 9.9.60: per-user / per-page transients (form drafts, notices, recent-listings fragments). */
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s
+		 OR option_name LIKE %s OR option_name LIKE %s
+		 OR option_name LIKE %s OR option_name LIKE %s",
+		$wpdb->esc_like( '_transient_jbli_form_data_' ) . '%',
+		$wpdb->esc_like( '_transient_timeout_jbli_form_data_' ) . '%',
+		$wpdb->esc_like( '_transient_jbli_notice_' ) . '%',
+		$wpdb->esc_like( '_transient_timeout_jbli_notice_' ) . '%',
+		$wpdb->esc_like( '_transient_jbli_rc_' ) . '%',
+		$wpdb->esc_like( '_transient_timeout_jbli_rc_' ) . '%'
+	)
+);
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $wpdb->query(
@@ -140,6 +167,11 @@ $jbli_meta_keys = array(
 	'jbli_featured',
 	'jbli_views',
 	'jbli_email',
+	'jbli_source_url',
+	'jbli_source_site',
+	'_jbli_admin_hidden',
+	/* Stored on pages (asset loading), not on listings. */
+	'_jbli_shortcodes',
 );
 
 foreach ( $jbli_meta_keys as $jbli_key ) {
@@ -148,3 +180,37 @@ foreach ( $jbli_meta_keys as $jbli_key ) {
 	$wpdb->delete( $wpdb->postmeta, array( 'meta_key' => $jbli_key ), array( '%s' ) );
 
 }
+
+/*
+ * 9.9.60: the plugin's taxonomy terms (categories and the 51 νομοί).
+ * The taxonomies are not registered during uninstall, so this is SQL; terms
+ * shared with another taxonomy (never the case for these) are left alone.
+ */
+foreach ( array( 'job_category', 'job_nomos' ) as $jbli_taxonomy ) {
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$jbli_tt = $wpdb->get_results( $wpdb->prepare( "SELECT term_taxonomy_id, term_id FROM {$wpdb->term_taxonomy} WHERE taxonomy = %s", $jbli_taxonomy ) );
+
+	foreach ( (array) $jbli_tt as $jbli_row ) {
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->delete( $wpdb->term_relationships, array( 'term_taxonomy_id' => (int) $jbli_row->term_taxonomy_id ), array( '%d' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->delete( $wpdb->term_taxonomy, array( 'term_taxonomy_id' => (int) $jbli_row->term_taxonomy_id ), array( '%d' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$jbli_other = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE term_id = %d", (int) $jbli_row->term_id ) );
+
+		if ( 0 === $jbli_other )
+		{
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->delete( $wpdb->termmeta, array( 'term_id' => (int) $jbli_row->term_id ), array( '%d' ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->delete( $wpdb->terms, array( 'term_id' => (int) $jbli_row->term_id ), array( '%d' ) );
+		}
+
+	}
+
+}
+
+wp_cache_flush();

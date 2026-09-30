@@ -20,7 +20,7 @@ require_once __DIR__ . '/jbli-apply-submissions.php';
 
 function jbli_apply_default_subject(): string {
 
-	return 'Νέο ενδιαφέρον για τη θέση «{position}» — {name}';
+	return __( 'Νέο ενδιαφέρον για τη θέση «{position}» — {name}', 'job-listings' );
 
 }
 
@@ -30,7 +30,7 @@ function jbli_apply_default_subject(): string {
  */
 function jbli_apply_default_body(): string {
 
-	return "Γεια σας,\n\nΟ/Η {name} εκδήλωσε ενδιαφέρον για τη θέση «{position}» μέσω του PharmacyNeeds. Παρακάτω θα βρείτε τα στοιχεία επικοινωνίας του/της και τα στοιχεία της αγγελίας σας.";
+	return __( "Γεια σας,\n\nΟ/Η {name} εκδήλωσε ενδιαφέρον για τη θέση «{position}» μέσω του PharmacyNeeds. Παρακάτω θα βρείτε τα στοιχεία επικοινωνίας του/της και τα στοιχεία της αγγελίας σας.", 'job-listings' );
 
 }
 
@@ -64,7 +64,8 @@ function jbli_apply_email_html( int $jbli_post_id, array $jbli_ph, string $jbli_
 
 	$jbli_phone_href = 'tel:' . preg_replace( '/[^\d+]/', '', (string) $jbli_ph['phone'] );
 	$jbli_mail_href  = 'mailto:' . rawurlencode( (string) $jbli_ph['email'] )
-		. '?subject=' . rawurlencode( 'Σχετικά με τη θέση «' . $jbli_ph['position'] . '»' );
+		/* translators: %s: job position */
+		. '?subject=' . rawurlencode( sprintf( __( 'Σχετικά με τη θέση «%s»', 'job-listings' ), $jbli_ph['position'] ) );
 
 	$jbli_nomoi = wp_get_post_terms( $jbli_post_id, 'job_nomos', array( 'fields' => 'names' ) );
 	$jbli_cats  = wp_get_post_terms( $jbli_post_id, 'job_category', array( 'fields' => 'names' ) );
@@ -85,7 +86,8 @@ function jbli_apply_email_html( int $jbli_post_id, array $jbli_ph, string $jbli_
 
 	$jbli_body = '<h1 style="margin:0 0 6px;font-size:22px;line-height:1.3;color:#111827;">' . esc_html__( 'Νέο ενδιαφέρον για την αγγελία σας', 'job-listings' ) . '</h1>'
 		. '<p style="margin:0 0 18px;font-size:14px;color:#6b7280;">'
-		. esc_html( sprintf( 'Θέση: %s · %s', $jbli_ph['position'], wp_date( 'd/m/Y, H:i' ) ) )
+		/* translators: 1: job position, 2: date and time */
+		. esc_html( sprintf( __( 'Θέση: %1$s · %2$s', 'job-listings' ), $jbli_ph['position'], wp_date( 'd/m/Y, H:i' ) ) )
 		. '</p>'
 		. '<div style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#374151;">' . nl2br( esc_html( $jbli_intro ) ) . '</div>'
 
@@ -308,7 +310,7 @@ function jbli_apply_handle_ajax(): void {
 
 	$jbli_sent = wp_mail(
 		$jbli_to,
-		'[PharmacyNeeds] ' . $jbli_subject,
+		( function_exists( 'jbli_email_subject_prefix' ) ? jbli_email_subject_prefix() : '[PharmacyNeeds]' ) . ' ' . $jbli_subject,
 		$jbli_email_html,
 		$jbli_headers
 	);

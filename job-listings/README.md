@@ -1,4 +1,4 @@
-# Job Listings – PharmacyNeeds  v9.9.59
+# Job Listings – PharmacyNeeds  v9.9.60
 
 Πλατφόρμα αγγελιών εργασίας αποκλειστικά για φαρμακεία.
 Ελαφρύ, ασφαλές, χωρίς εξαρτήσεις.
@@ -45,97 +45,95 @@
 
 ```
 job-listings/
-├── job-jbli-listings.php    ← Bootstrap (constants, includes)
+├── job-listings.php             ← Bootstrap (σταθερές JBLI_*, autoloader)
+├── uninstall.php / jbli-uninstall.php  ← Απεγκατάσταση (διαγραφή μόνο αν ενεργοποιηθεί)
 │
-├── includes/
-│   ├── jbli-helpers.php         ← Utility functions, permissions, labels
-│   ├── jbli-capabilities.php    ← Caps για φαρμακοποιούς (runtime)
-│   ├── jbli-post-type.php       ← CPT job_listing + status job-expired
-│   ├── jbli-taxonomies.php      ← job_category + job_nomos (51 νομοί)
-│   ├── jbli-storage.php         ← Dashboard/storage index/cache sync
-│   ├── jbli-expiry.php          ← Hourly cron, λήξη 30 ημερών, HTML emails
-│   ├── jbli-assets.php          ← Enqueue CSS/JS (vanilla JS, χωρίς jQuery)
-│   ├── jbli-admin-columns.php   ← Backend columns, filters, row actions
-│   ├── jbli-view-counter.php    ← Μοναδικές προβολές ανά αγγελία (IP hash)
-│   ├── jbli-featured.php        ← Featured αγγελίες από admin (row action)
-│   └── jbli-tokens.css          ← Frontend CSS Tokens
+├── src/                         ← OOP layer (Plugin, ListingsController, Listing, Html, View)
+├── views/partials/              ← Μικρά κοινά templates (badges, notices, login gate)
 │
-├── modules/
-│   ├── form/
-│   │   ├── jbli-form.php            ← Λογική [new-listing]
-│   │   └── jbli-form-template.php   ← HTML φόρμας
-│   │
-│   ├── dashboard/
-│   │   ├── jbli-dashboard.php           ← Λογική [dashboard]
-│   │   └── jbli-dashboard-template.php  ← HTML dashboard
-│   │
-│   ├── listings/
-│   │   ├── jbli-listings.php            ← Λογική [listings] + AJAX handler
-│   │   ├── jbli-listings-template.php   ← HTML με AJAX hooks
-│   │   └── jbli-listing-card.php        ← Card partial (επαναχρησιμοποιείται)
-│   │
-│   ├── single/
-│   │   ├── jbli-single.php              ← Template override
-│   │   └── jbli-single-template.php     ← HTML single αγγελίας
-│   │
-│   └── admin/
-│       ├── jbli-admin-panel.php             ← Admin panel λογική
-│       ├── jbli-admin-panel-template.php    ← Admin panel HTML
-│       ├── jbli-admin-panel.css             ← Admin panel styles
-│       ├── jbli-cache.php                   ← Settings & Cache λογική
-│       └── jbli-cache-template.php          ← Settings & Cache HTML
+├── includes/                    ← Φορτώνονται σε κάθε request
+│   ├── jbli-helpers.php             ← Meta keys, helpers (+ helpers-parts/)
+│   ├── jbli-capabilities.php        ← Caps φαρμακοποιών, προστασία meta, αποκλεισμός wp-admin
+│   ├── jbli-post-type.php           ← CPT job_listing + status job-expired
+│   ├── jbli-taxonomies.php          ← job_category + job_nomos (51 νομοί)
+│   ├── jbli-storage*.php            ← Πίνακες index/αιτήσεων, schema, migrations
+│   ├── jbli-expiry.php              ← Cron λήξης/υπενθυμίσεων, emails (+ expiry-parts/)
+│   ├── jbli-assets.php              ← CSS/JS μόνο όπου υπάρχουν τα shortcodes
+│   ├── jbli-view-counter.php        ← Μετρητής προβολών (beacon, cache-proof)
+│   ├── jbli-featured.php            ← Featured αγγελίες
+│   ├── jbli-cache-invalidation.php  ← Καθαρισμός cache (Rocket, LiteSpeed, W3TC, …)
+│   ├── jbli-rocket-compat.php       ← Εξαιρέσεις WP Rocket
+│   ├── jbli-admin-columns.php       ← Στήλες/φίλτρα λίστας wp-admin (μόνο στο admin)
+│   └── jbli-tokens.css              ← CSS μεταβλητές (--jbli_*)
 │
-
+└── modules/
+    ├── form/        ← [new-listing]      φόρμα καταχώρησης/επεξεργασίας (jQuery)
+    ├── dashboard/   ← [dashboard]        αγγελίες του φαρμακείου, ενέργειες
+    ├── listings/    ← [listings]         λίστα με AJAX φίλτρα (vanilla JS)
+    ├── recent/      ← [recent-listings]  grid πρόσφατων (αρχική)
+    ├── single/      ← σελίδα αγγελίας + JSON-LD JobPosting
+    ├── apply/       ← «Εκδήλωση Ενδιαφέροντος» + αιτήσεις (admin, CSV, GDPR)
+    ├── admin/       ← Διαχείριση Αγγελιών, Ρυθμίσεις, Cache (μόνο στο admin)
+    └── import/      ← Εισαγωγή αγγελιών από URL (μόνο στο admin)
 ```
 
 ---
 
 ## 🔑 Αναγνώριση Φαρμακοποιού
 
-Διαβάζει `user_meta → account_type`. Αποδεκτές τιμές:
+Διαβάζει `user_meta → account_type` ή `user_registration_account_type` (ή ρόλο `pharmacist`/`pharmacy`/…). Αποδεκτές τιμές:
 ```
 pharmacist | farmakopios | φαρμακοποιός | φαρμακοποιος | pharmacy | farmakeio | φαρμακείο
 ```
+
+Οι φαρμακοποιοί δουλεύουν μόνο από το frontend: το wp-admin τους ανακατευθύνει στο Dashboard
+(φίλτρο `jbli_block_pharmacist_admin` για απενεργοποίηση).
 
 ---
 
 ## ⚙️ Constants
 
 ```php
-JL_VERSION  // '9.9.41'
-JL_DIR      // Απόλυτο path plugin
-JL_URL      // URL plugin
-JL_CPT      // 'job_listing'
+JBLI_VERSION   // έκδοση plugin
+JBLI_FILE      // κύριο αρχείο
+JBLI_DIR       // απόλυτο path plugin
+JBLI_URL       // URL plugin
+JBLI_CPT       // 'job_listing'
 ```
 
 ---
 
 ## 🗄️ Meta Keys
 
-| Key                    | Περιγραφή                          |
-|------------------------|------------------------------------|
-| `jbli_position`        | Τίτλος θέσης                       |
-| `jbli_salary`          | Αμοιβή (key)                       |
-| `jbli_type`            | Τύπος απασχόλησης                  |
-| `jbli_address`         | Διεύθυνση                          |
-| `jbli_lat` / `jbli_lng`| Συντεταγμένες                      |
-| `jbli_contact_phone`   | Τηλέφωνο αγγελίας                  |
-| `jbli_pharmacy_name`   | Όνομα φαρμακείου                   |
-| `jbli_expires`         | Ημ/νία λήξης (datetime)            |
-| `jbli_expired`         | Flag λήξης (1/0)                   |
-| `jbli_reminder_sent`   | Flag reminder email (1/0)          |
-| `jbli_views`           | Αριθμός μοναδικών προβολών         |
-| `jbli_featured`        | Featured flag (1/'')               |
-| `jbli_email`           | Email αγγελίας                     |
+| Key                    | Περιγραφή                                   |
+|------------------------|---------------------------------------------|
+| `jbli_position`        | Τίτλος θέσης                                |
+| `jbli_salary`          | Αμοιβή (key, π.χ. `2200+`)                  |
+| `jbli_type`            | Τύπος απασχόλησης                           |
+| `jbli_address`         | Διεύθυνση                                   |
+| `jbli_lat` / `jbli_lng`| Συντεταγμένες                               |
+| `jbli_contact_phone`   | Τηλέφωνο αγγελίας                           |
+| `jbli_pharmacy_name`   | Όνομα φαρμακείου                            |
+| `jbli_expires`         | Λήξη (`Y-m-d H:i:s`, **τοπική ώρα site**)   |
+| `jbli_expired`         | Flag λήξης (1)                              |
+| `jbli_reminder_sent`   | Flag reminder email (1)                     |
+| `jbli_views`           | Προβολές                                    |
+| `jbli_featured`        | Featured flag (1/0)                         |
+| `jbli_email`           | Email αγγελίας (αιτήσεις)                   |
+| `jbli_source_url` / `jbli_source_site` | Πηγή αγγελίας από εισαγωγή  |
+| `_jbli_admin_hidden`   | Απενεργοποιήθηκε από διαχειριστή            |
+
+Τα meta αλλάζουν από «Custom Fields» μόνο από διαχειριστή.
 
 ---
 
 ## ⏰ Σύστημα Λήξης & Emails
 
 - Αγγελία λήγει **30 ημέρες** μετά τη δημοσίευση
-- **Hourly cron** → status `job-expired` + meta `_job_expired = 1` + HTML email λήξης
-- **Daily cron** → HTML reminder email 3 μέρες πριν τη λήξη (αποστέλλεται μία φορά)
-- Ανανέωση από dashboard ή admin panel → reset reminder flag
+- **Hourly cron** → status `job-expired` + meta `jbli_expired = 1` + HTML email λήξης
+- **Daily cron** → HTML reminder email 3 μέρες πριν τη λήξη (μία φορά)
+- Ανανέωση από dashboard (μόνο ληγμένες, με όριο ενεργών) ή admin panel → νέες 30 ημέρες
+- Πρόθεμα θέματος emails: φίλτρο `jbli_email_subject_prefix` (προεπιλογή `[PharmacyNeeds]`)
 
 ---
 
@@ -143,58 +141,70 @@ JL_CPT      // 'job_listing'
 
 - Admin μόνο → Row Action **"☆ Ορισμός Featured"** / **"★ Αφαίρεση Featured"**
 - Featured αγγελίες εμφανίζονται **πρώτες** στη λίστα με ειδικό ribbon
-- Ειδική στήλη (★) στο admin list view
 - Meta key: `jbli_featured`
 
 ---
 
 ## 👁️ View Counter
 
-- Μετράει μοναδικές προβολές ανά αγγελία
-- Deduplication: IP hash + 6ωρο transient throttle (χωρίς αποθήκευση IP)
-- Administrators δεν μετρώνται
-- Εμφανίζεται στα cards και στη single σελίδα
-- Meta key: `jbli_views`
+- Μέτρηση από τη σελίδα (αίτημα `admin-ajax.php?action=jbli_view` 2″ αφού γίνει ορατή) — μετράει και με WP Rocket/CDN cache
+- Μία προβολή ανά επισκέπτη (HMAC της IP, χωρίς αποθήκευση IP) ανά αγγελία / 6 ώρες
+- Δεν μετρώνται bots, link previews, WP Rocket preload, διαχειριστές, ο ιδιοκτήτης
+- Φίλτρο `jbli_view_bot_signatures` για τη λίστα bots
+
+---
+
+## ✉️ Εκδήλωση Ενδιαφέροντος
+
+- Email στο φαρμακείο (Reply-To: ο υποψήφιος), αποθήκευση με κατάσταση στάλθηκε/απέτυχε
+- Όρια: 3 ανά αγγελία και 10 συνολικά ανά ώρα ανά επισκέπτη (φίλτρα `jbli_apply_limit_per_listing`, `jbli_apply_limit_per_ip`)
+- Anti-spam: honeypot + έλεγχος χρόνου
+- Διατήρηση αιτήσεων: 60 ημέρες (Ρυθμίσεις → «Διατήρηση αιτήσεων»), Εξαγωγή/Διαγραφή προσωπικών δεδομένων WordPress
 
 ---
 
 ## ⚡ AJAX Φίλτρα
 
 - Τα φίλτρα (νομός, κατηγορία, τύπος, αμοιβή) ενημερώνουν τα αποτελέσματα **χωρίς page reload**
-- Debounced text search (400ms)
-- URL update με `history.replaceState` (bookmarkable / shareable)
-- Vanilla JS — **χωρίς jQuery dependency**
-- Graceful fallback: λειτουργεί και χωρίς JS (κανονικό GET)
+- Debounced text search (400ms), URL με `history.replaceState`
+- Vanilla JS (η λίστα)· μόνο η φόρμα καταχώρησης χρησιμοποιεί jQuery
+- Λειτουργεί και χωρίς JS (κανονικό GET)
 
 ---
 
 ## 🔒 Ασφάλεια
 
-- `capability_type => ['job_listing', 'job_listings']` — custom capabilities με πλήρη Rank Math / Yoast συμβατότητα
-- `show_in_rest => true` — Gutenberg support
-- POST actions με **nonce** σε όλες τις φόρμες
-- Ownership check: φαρμακοποιός επεξεργάζεται **μόνο δικές του** αγγελίες
-- `$_SERVER['REQUEST_URI']` αντικαταστάθηκε με `get_permalink()` (XSS fix)
-- Admin stats με `wp_count_posts()` αντί για 4× WP_Query
-- Πλήρες `sanitize` + `escape` παντού
+- `capability_type => ['job_listing', 'job_listings']` + `map_meta_cap` (ownership)
+- `show_in_rest => false` (χωρίς REST / Gutenberg)
+- Nonce + έλεγχος δικαιωμάτων σε όλες τις φόρμες, AJAX και admin ενέργειες
+- Φαρμακοποιός επεξεργάζεται **μόνο δικές του** αγγελίες, χωρίς πρόσβαση στο wp-admin
+- Η περιγραφή εμφανίζεται χωρίς εκτέλεση shortcodes
+- Εισαγωγή από URL με `wp_safe_remote_get()` (μόνο διαχειριστής)
 
 ---
 
 ## 🎨 Προσαρμογή χρωμάτων
 
-`assets/css/jl.css`:
+`includes/jbli-tokens.css`:
 ```css
 :root {
-  --jl-green:    #0d7a3e;
-  --jl-green-dk: #095e30;
-  --jl-featured: #f0a500;
-  --jl-radius:   10px;
+  --jbli_green:    #059669;
+  --jbli_green_dk: #047857;
+  /* … */
 }
 ```
 
 ---
 
 ## 📝 Changelog
+
+### v9.9.60
+- **Φόρτωση ανά περιβάλλον**: οι σελίδες διαχείρισης, ρυθμίσεων, cache και η εισαγωγή από URL φορτώνονται μόνο στο wp-admin (όχι σε κάθε επισκέπτη).
+- **Καθαρισμός**: αφαιρέθηκαν οι παλιές συναρτήσεις purge του WP Rocket (ανενεργές από 9.9.55), κενές συναρτήσεις seed, αχρησιμοποίητος parser και τα κενά JS αρχεία (recent/single/dashboard). Το cache του [recent-listings] δεν αδειάζει πια σε κάθε διαγραφή revision.
+- **Μεταφράσιμα κείμενα**: τα emails λήξης/υπενθύμισης και τα προεπιλεγμένα κείμενα του email αίτησης περνούν από `__()`. Φίλτρο `jbli_email_subject_prefix`.
+- **Απεγκατάσταση** (όταν είναι ενεργή η διαγραφή δεδομένων): σβήνει πλέον και τις υπόλοιπες ρυθμίσεις, τα transients, τα meta εισαγωγής και τους όρους κατηγοριών/νομών.
+- **README**: ενημερώθηκε με την πραγματική δομή, σταθερές (`JBLI_*`), meta και λειτουργίες.
+- **Tests**: `tests/job-listings` (49 έλεγχοι PHP + 2 σε Chromium), `npm run test:jobs`, και νέο job στο CI.
 
 ### v9.9.59
 - **Προβολές αγγελιών — ακριβείς με cache**: η μέτρηση γίνεται από τη σελίδα (μικρό αίτημα 2 δευτερόλεπτα αφού γίνει ορατή), οπότε μετράνε και οι επισκέψεις που σερβίρονται από WP Rocket/CDN, και η σελίδα δείχνει τον τρέχοντα αριθμό. Μία προβολή ανά επισκέπτη (IP) ανά αγγελία κάθε 6 ώρες, αύξηση με ένα ατομικό UPDATE (δεν χάνονται ταυτόχρονες), εκτεταμένη λίστα bots (link previews, WP Rocket preload, monitors). Διαχειριστές και ο ιδιοκτήτης δεν μετρώνται.

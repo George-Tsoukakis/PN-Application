@@ -1,6 +1,6 @@
 # PlanDose — δοκιμές (δεν μπαίνουν στο πακέτο)
 
-Φάκελοι του repository: `plandose/` (το plugin), `tests/` (αυτός ο φάκελος), `build/` (zip), `.github/workflows/ci.yml` (CI).
+Φάκελοι του repository: `plandose/` (το plugin), `job-listings/` (plugin αγγελιών — `npm run test:jobs`), `tests/` (αυτός ο φάκελος), `build/` (zip), `.github/workflows/ci.yml` (CI).
 Οι δοκιμές βρίσκουν το plugin μόνες τους στο `../plandose/assets/js`, `../plugin/plandose/assets/js` ή `../assets/js`
 (ή όπου δείχνει το `PLANDOSE_JS`). Δεν μπαίνουν ποτέ σε πραγματικό site.
 

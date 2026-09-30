@@ -436,7 +436,8 @@ add_action( 'jbli_expired',     'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_renewed',     'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_activated',   'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_deactivated', 'jbli_recent_flush_listings_cache' );
-add_action( 'before_delete_post',      'jbli_recent_flush_listings_cache' );
+/* 9.9.60: only when a listing is deleted (every revision cleanup used to empty the cache). */
+add_action( 'before_delete_post', static function ( $jbli_post_id ) { if ( JBLI_CPT === get_post_type( (int) $jbli_post_id ) ) { jbli_recent_flush_listings_cache(); } } );
 add_action( 'jbli_deleted',            'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_admin_deleted',      'jbli_recent_flush_listings_cache' );
 add_action( 'jbli_featured_changed',   'jbli_recent_flush_listings_cache' );

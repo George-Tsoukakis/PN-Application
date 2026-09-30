@@ -97,14 +97,6 @@ function jbli_replace_all_categories() {
 
 }
 
-function jbli_seed_categories() {
-
-}
-
-function jbli_seed_categories_v2() {
-
-}
-
 /**
  * Category taxonomy labels.
  *

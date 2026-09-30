@@ -40,6 +40,8 @@ defined( 'JBLI_META_REMINDER_SENT' ) || define( 'JBLI_META_REMINDER_SENT', 'jbli
 defined( 'JBLI_META_FEATURED' )      || define( 'JBLI_META_FEATURED',      'jbli_featured' );
 defined( 'JBLI_META_VIEWS' )         || define( 'JBLI_META_VIEWS',         'jbli_views' );
 defined( 'JBLI_META_EMAIL' )         || define( 'JBLI_META_EMAIL',         'jbli_email' );
+defined( 'JBLI_META_SOURCE_URL' )    || define( 'JBLI_META_SOURCE_URL',    'jbli_source_url' );
+defined( 'JBLI_META_SOURCE_SITE' )   || define( 'JBLI_META_SOURCE_SITE',   'jbli_source_site' );
 
 foreach ( array( 'permissions', 'sanitizers', 'formatters', 'urls' ) as $jbli_sub ) {
 

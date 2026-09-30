@@ -26,15 +26,19 @@ function jbli_send_expiry_email( $jbli_post_id ) {
 
 	if ( empty( $jbli_data ) ) { return; }
 
-	$jbli_body = jbli_email_heading( 'Η αγγελία σας έληξε' )
-		. jbli_email_paragraph( 'Αγαπητέ/ή <strong>' . esc_html( $jbli_data['pharmacy'] ) . '</strong>,' )
-		. jbli_email_paragraph( 'Η αγγελία σας για τη θέση <strong>«' . esc_html( $jbli_data['jbli_position'] ) . '»</strong> έχει λήξει.' )
-		. jbli_email_button( 'Ανανέωση Αγγελίας', $jbli_data['renew_url'] );
+	$jbli_title = __( 'Η αγγελία σας έληξε', 'job-listings' );
+
+	$jbli_body = jbli_email_heading( $jbli_title )
+		/* translators: %s: pharmacy name */
+		. jbli_email_paragraph( sprintf( __( 'Αγαπητέ/ή %s,', 'job-listings' ), '<strong>' . esc_html( $jbli_data['pharmacy'] ) . '</strong>' ) )
+		/* translators: %s: job position */
+		. jbli_email_paragraph( sprintf( __( 'Η αγγελία σας για τη θέση %s έχει λήξει.', 'job-listings' ), '<strong>«' . esc_html( $jbli_data['jbli_position'] ) . '»</strong>' ) )
+		. jbli_email_button( __( 'Ανανέωση Αγγελίας', 'job-listings' ), $jbli_data['renew_url'] );
 
 	wp_mail(
 		$jbli_data['jbli_email'],
-		'[PharmacyNeeds] Η αγγελία σας έληξε',
-		jbli_email_wrap( 'Η αγγελία σας έληξε', $jbli_body ),
+		jbli_email_subject_prefix() . ' ' . $jbli_title,
+		jbli_email_wrap( $jbli_title, $jbli_body ),
 		jbli_email_headers()
 	);
 
@@ -62,16 +66,20 @@ function jbli_send_reminder_email( $jbli_post_id ) {
 		$jbli_date      = false !== $jbli_timestamp ? wp_date( 'd/m/Y', $jbli_timestamp ) : '—';
 	}
 
-	$jbli_body = jbli_email_heading( 'Η αγγελία σας λήγει σε 3 μέρες' )
-		. jbli_email_paragraph( 'Αγαπητέ/ή <strong>' . esc_html( $jbli_data['pharmacy'] ) . '</strong>,' )
-		. jbli_email_paragraph( 'Η αγγελία σας για τη θέση <strong>«' . esc_html( $jbli_data['jbli_position'] ) . '»</strong> λήγει στις <strong>' . esc_html( $jbli_date ) . '</strong>.' )
-		. jbli_email_paragraph( 'Μπορείτε να την ανανεώσετε από τον πίνακα ελέγχου σας.' )
-		. jbli_email_button( 'Ανανέωση Αγγελίας', $jbli_data['renew_url'] );
+	$jbli_subject = __( 'Υπενθύμιση λήξης αγγελίας', 'job-listings' );
+
+	$jbli_body = jbli_email_heading( __( 'Η αγγελία σας λήγει σε 3 μέρες', 'job-listings' ) )
+		/* translators: %s: pharmacy name */
+		. jbli_email_paragraph( sprintf( __( 'Αγαπητέ/ή %s,', 'job-listings' ), '<strong>' . esc_html( $jbli_data['pharmacy'] ) . '</strong>' ) )
+		/* translators: 1: job position, 2: expiry date */
+		. jbli_email_paragraph( sprintf( __( 'Η αγγελία σας για τη θέση %1$s λήγει στις %2$s.', 'job-listings' ), '<strong>«' . esc_html( $jbli_data['jbli_position'] ) . '»</strong>', '<strong>' . esc_html( $jbli_date ) . '</strong>' ) )
+		. jbli_email_paragraph( __( 'Μπορείτε να την ανανεώσετε από τον πίνακα ελέγχου σας.', 'job-listings' ) )
+		. jbli_email_button( __( 'Ανανέωση Αγγελίας', 'job-listings' ), $jbli_data['renew_url'] );
 
 	return wp_mail(
 		$jbli_data['jbli_email'],
-		'[PharmacyNeeds] Υπενθύμιση λήξης αγγελίας',
-		jbli_email_wrap( 'Υπενθύμιση λήξης αγγελίας', $jbli_body ),
+		jbli_email_subject_prefix() . ' ' . $jbli_subject,
+		jbli_email_wrap( $jbli_subject, $jbli_body ),
 		jbli_email_headers()
 	);
 
@@ -206,15 +214,15 @@ function jbli_email_wrap( $jbli_title, $jbli_body_html, $jbli_preheader = '' ) {
 		. '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(2,44,34,.08);">'
 		. '<tr><td style="background:#065f46;background-image:linear-gradient(135deg,#064e3b 0%,#047857 60%,#10b981 100%);padding:26px 32px;">'
 		. '<a href="' . $jbli_home . '" style="text-decoration:none;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-.01em;">' . $jbli_site . '</a>'
-		. '<div style="margin-top:4px;color:#a7f3d0;font-size:13px;">Αγγελίες εργασίας για φαρμακεία</div>'
+		. '<div style="margin-top:4px;color:#a7f3d0;font-size:13px;">' . esc_html__( 'Αγγελίες εργασίας για φαρμακεία', 'job-listings' ) . '</div>'
 		. '</td></tr>'
 		. '<tr><td style="padding:30px 32px 26px;">' . wp_kses_post( (string) $jbli_body_html ) . '</td></tr>'
 		. '<tr><td style="background:#f7faf9;padding:18px 32px;border-top:1px solid #e5efeb;text-align:center;">'
 		. '<p style="margin:0 0 6px;font-size:12px;color:#6b7280;">'
 		. '<a href="' . $jbli_home . '" style="color:#047857;text-decoration:none;font-weight:600;">' . $jbli_site . '</a>'
-		. ' &nbsp;·&nbsp; <a href="' . $jbli_dash . '" style="color:#047857;text-decoration:none;font-weight:600;">Οι αγγελίες μου</a>'
+		. ' &nbsp;·&nbsp; <a href="' . $jbli_dash . '" style="color:#047857;text-decoration:none;font-weight:600;">' . esc_html__( 'Οι αγγελίες μου', 'job-listings' ) . '</a>'
 		. '</p>'
-		. '<p style="margin:0;font-size:11px;color:#9ca3af;">© ' . $jbli_year . ' ' . $jbli_site . '. Αυτό το email στάλθηκε αυτόματα.</p>'
+		. '<p style="margin:0;font-size:11px;color:#9ca3af;">© ' . $jbli_year . ' ' . $jbli_site . '. ' . esc_html__( 'Αυτό το email στάλθηκε αυτόματα.', 'job-listings' ) . '</p>'
 		. '</td></tr>'
 		. '</table>'
 		. '</td></tr>'
@@ -289,5 +297,17 @@ function jbli_email_buttons( array $jbli_buttons ) {
 	}
 
 	return '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0 4px;"><tr>' . $jbli_cells . '</tr></table>';
+
+}
+
+/**
+ * Subject prefix for the plugin's emails ("[PharmacyNeeds]").
+ *
+ * @since 9.9.60
+ * @return string
+ */
+function jbli_email_subject_prefix() {
+
+	return (string) apply_filters( 'jbli_email_subject_prefix', '[PharmacyNeeds]' );
 
 }

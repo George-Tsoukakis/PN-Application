@@ -414,44 +414,6 @@ if ( ! function_exists( 'jbli_fields_handle_save' ) )
 
 add_action( 'admin_init', 'jbli_fields_handle_save' );
 
-if ( ! function_exists( 'jbli_parse_key_label_lines' ) )
-{
-
-	/**
-	 * Parse a textarea of "slug|Label" lines into an associative array.
-	 *
-	 * Lines that don't contain "|" or produce an empty slug are skipped.
-	 *
-	 * @param string $jbli_raw Raw textarea value.
-	 * @return array<string,string>
-	 */
-	function jbli_parse_key_label_lines( string $jbli_raw ): array {
-
-		$jbli_result = array();
-		$jbli_lines  = explode( "\n", $jbli_raw );
-
-		foreach ( $jbli_lines as $jbli_line ) {
-
-			$jbli_line = trim( $jbli_line );
-
-			if ( '' === $jbli_line ) { continue; }
-
-			$jbli_parts = explode( '|', $jbli_line, 2 );
-
-			if ( count( $jbli_parts ) !== 2 ) { continue; }
-
-			$jbli_key   = jbli_sanitize_option_key( $jbli_parts[0] );
-			$jbli_label = sanitize_text_field( trim( $jbli_parts[1] ) );
-
-			if ( $jbli_key && $jbli_label ) { $jbli_result[ $jbli_key ] = $jbli_label; }
-
-		}
-
-		return $jbli_result;
-
-	}
-}
-
 if ( ! function_exists( 'jbli_parse_parallel_arrays' ) )
 {
 	/**
