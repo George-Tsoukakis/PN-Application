@@ -424,26 +424,6 @@ tests['f. 2.16.0: no provenance note on screen or on the printed label'] = async
   await t.context.close();
 };
 
-tests['h. 2.16.0: a new scan does not spend the email link token'] = async (browser) => {
-  const token = 'a'.repeat(32);
-  const f0 = fieldsFor(1);
-  const t = await newTool(browser, { prefill: { pc: f0.PC, sn: f0.SN, lot: f0.LOT, exp: f0.EXP, token } });
-  // Rebuild straight from the email link: the token is sent.
-  t.handlers.qrrp_rebuild = async (p) => rebuildOkFor(p);
-  await t.page.click('#qrrp-regenerate');
-  await waitRequests(t, 'qrrp_rebuild', 1);
-  check('[h] rebuild from the email link carries rebuild_token', t.requests.filter((r) => r.action === 'qrrp_rebuild')[0].params.get('rebuild_token') === token);
-
-  // Fresh tool from the same link, but the user scans a different pack first.
-  const t2 = await newTool(browser, { prefill: { pc: f0.PC, sn: f0.SN, lot: f0.LOT, exp: f0.EXP, token } });
-  await scanAndBuild(t2, 2);
-  const rb = t2.requests.filter((r) => r.action === 'qrrp_rebuild');
-  check('[h] rebuild of a newly scanned pack does not send the old link token', rb.length === 1 && rb[0].params.get('rebuild_token') === null, rb[0] && rb[0].params.get('rebuild_token'));
-  check('[h] no JS errors', t.errors.length === 0 && t2.errors.length === 0, t.errors.concat(t2.errors));
-  await t.context.close();
-  await t2.context.close();
-};
-
 tests['g. 2.15.7: Greek passthrough, parse announcement, stale email status'] = async (browser) => {
   // Paste: Greek characters reach the server unchanged (the server recovers the layout and asks to confirm).
   let t = await newTool(browser);
@@ -489,6 +469,86 @@ tests['g. 2.15.7: Greek passthrough, parse announcement, stale email status'] = 
   check('[g] email reply after «Νέα σάρωση» does not show «sent» on the reset tool', !/στάλθηκε/.test(s.status) && !/στάλθηκε/.test(s.statusLive), s);
   check('[g] no JS errors', t.errors.length === 0, t.errors);
   await t.context.close();
+};
+
+tests['h. 2.15.7: visible email confirmation next to the button'] = async (browser) => {
+  const fb = (page) => page.evaluate(() => {
+    const el = document.getElementById('qrrp-email-feedback');
+    const btn = document.getElementById('qrrp-send-email');
+    const r = el ? el.getBoundingClientRect() : null;
+    return el ? { hidden: el.hidden, text: el.textContent, cls: el.className, visible: !!r && r.height > 0,
+      button: btn.textContent.trim(), busy: btn.getAttribute('aria-busy'), statusLive: document.getElementById('qrrp-status-live').textContent,
+      alertLive: document.getElementById('qrrp-alert-live').textContent } : null;
+  });
+  const t = await newTool(browser);
+  const { page } = t;
+  await scanAndBuild(t, 1);
+  let s = await fb(page);
+  check('[h] feedback element exists and starts hidden', s && s.hidden === true, s);
+
+  // Sending: button shows progress, neutral feedback.
+  const gate = deferred();
+  t.handlers.qrrp_send_email = async () => { await gate.promise; return json({ success: true, data: {} }); };
+  await page.fill('#qrrp-email-input', 'tsoukakispharmacy@gmail.com');
+  await page.click('#qrrp-send-email');
+  await waitRequests(t, 'qrrp_send_email', 1);
+  s = await fb(page);
+  check('[h] while sending: button says «Αποστολή…», aria-busy, neutral feedback', s.button === 'Αποστολή…' && s.busy === 'true' && /qrrp-email-feedback-sending/.test(s.cls) && !s.hidden, s);
+  gate.resolve();
+  await page.waitForFunction(() => /qrrp-email-feedback-success/.test(document.getElementById('qrrp-email-feedback').className));
+  await sleep(80);
+  s = await fb(page);
+  check('[h] success: green confirmation under the button names the recipient', s.visible && /στάλθηκε στο tsoukakispharmacy@gmail\.com/.test(s.text) && /qrrp-email-feedback-success/.test(s.cls), s);
+  check('[h] success: button label restored, not busy', s.button === 'Αποστολή email' && s.busy === null, s);
+  check('[h] success: also announced to screen readers', /στάλθηκε/.test(s.statusLive), s.statusLive);
+
+  // Editing the address clears the old confirmation.
+  await page.fill('#qrrp-email-input', 'other@example.org');
+  s = await fb(page);
+  check('[h] typing a new address hides the previous confirmation', s.hidden === true, s);
+
+  // Server refusal: red message under the button, no jump to the top.
+  t.handlers.qrrp_send_email = async () => json({ success: false, data: { code: 'recipient_rate_limited', message: 'LIMIT-MSG' } }, 429);
+  await page.click('#qrrp-send-email');
+  await page.waitForFunction(() => /qrrp-email-feedback-error/.test(document.getElementById('qrrp-email-feedback').className));
+  await sleep(80);
+  s = await fb(page);
+  check('[h] error: red message under the button with the server text', s.visible && s.text === 'LIMIT-MSG' && /qrrp-email-feedback-error/.test(s.cls), s);
+  check('[h] error: announced via the alert region', s.alertLive === 'LIMIT-MSG', s.alertLive);
+
+  // Invalid address: local error, no request.
+  const before = t.requests.filter((r) => r.action === 'qrrp_send_email').length;
+  await page.fill('#qrrp-email-input', 'not-an-email');
+  await page.click('#qrrp-send-email');
+  s = await fb(page);
+  check('[h] invalid address: error under the button, nothing sent', /qrrp-email-feedback-error/.test(s.cls) && !s.hidden && t.requests.filter((r) => r.action === 'qrrp_send_email').length === before, s);
+
+  // «Νέα σάρωση» clears it.
+  await page.click('#qrrp-rescan');
+  s = await fb(page);
+  check('[h] «Νέα σάρωση» hides the email feedback', s.hidden === true, s);
+  check('[h] no JS errors', t.errors.length === 0, t.errors);
+  await t.context.close();
+};
+
+tests['i. 2.16.0: a new scan does not spend the email link token'] = async (browser) => {
+  const token = 'a'.repeat(32);
+  const f0 = fieldsFor(1);
+  const t = await newTool(browser, { prefill: { pc: f0.PC, sn: f0.SN, lot: f0.LOT, exp: f0.EXP, token } });
+  // Rebuild straight from the email link: the token is sent.
+  t.handlers.qrrp_rebuild = async (p) => rebuildOkFor(p);
+  await t.page.click('#qrrp-regenerate');
+  await waitRequests(t, 'qrrp_rebuild', 1);
+  check('[i] rebuild from the email link carries rebuild_token', t.requests.filter((r) => r.action === 'qrrp_rebuild')[0].params.get('rebuild_token') === token);
+
+  // Fresh tool from the same link, but the user scans a different pack first.
+  const t2 = await newTool(browser, { prefill: { pc: f0.PC, sn: f0.SN, lot: f0.LOT, exp: f0.EXP, token } });
+  await scanAndBuild(t2, 2);
+  const rb = t2.requests.filter((r) => r.action === 'qrrp_rebuild');
+  check('[i] rebuild of a newly scanned pack does not send the old link token', rb.length === 1 && rb[0].params.get('rebuild_token') === null, rb[0] && rb[0].params.get('rebuild_token'));
+  check('[i] no JS errors', t.errors.length === 0 && t2.errors.length === 0, t.errors.concat(t2.errors));
+  await t.context.close();
+  await t2.context.close();
 };
 
 // ---------------------------------------------------------------- main

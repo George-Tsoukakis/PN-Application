@@ -38,7 +38,9 @@ $r=QRRP_Mailer::send(...$args);
 $left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
 echo ($r===true && count($left)===1 && count($GLOBALS['sched'])===1 ? 'PASS':'FAIL')," deferred (queue) mailer: attachment kept + sweep scheduled\n";
 unset($GLOBALS['__filters']['qrrp_mail_attachment_deferred']); $GLOBALS['sched']=array();
-/* 2.16.0: καμία σήμανση προέλευσης στο email. */
+/* 2.16.0: καμία σήμανση προέλευσης στο email, ακόμη κι αν κάποιος καλών περάσει τα metadata (παλιό 8ο όρισμα, 2.15.2–2.15.7). */
+array_map('unlink', glob(__DIR__.'/tmpmail/*'));
+QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'manual_reconstruction','changed_fields'=>array('SN'),'changed_fields_unknown'=>false))));
 echo (strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή')===false && strpos($GLOBALS['last_body'],'Χειροκίνητη καταχώριση')===false && strpos($GLOBALS['last_body'],'Δηλωμένο')===false && strpos($GLOBALS['last_body'],'Μη επαληθευμένη')===false ? 'PASS':'FAIL')," 2.16.0: email carries no provenance note\n";
 // failure
 array_map('unlink', glob(__DIR__.'/tmpmail/*')); $GLOBALS['mail_ok']=false;
@@ -80,7 +82,7 @@ $GLOBALS['__filters']['qrrp_email_tool_page_url']=null;
 QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array());
 $logged_link = strpos($GLOBALS['last_body'],'qrrp_token=')!==false;
 $GLOBALS['__logged_in']=false;
-QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array());
+QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array(),array('provenance'=>'user_declared','source_method'=>'scan'));
 echo (strpos($GLOBALS['last_body'],'Δηλωμένο από τον χρήστη')===false ? 'PASS':'FAIL')," 2.16.0: guest email has no user_declared note\n";
 $GLOBALS['__logged_in']=true;
 $f0=array('PC'=>'05012345678900','SN'=>'SN1','LOT'=>'LOT','EXP'=>'2028-02-00');

@@ -1,10 +1,10 @@
-QR ReBuilder Pro 2.15.6 — regression scripts (εκτός πακέτου plugin).
+QR ReBuilder Pro 2.16.0 — regression scripts (εκτός πακέτου plugin).
 Τρέχουν με PHP 8.2+, χωρίς WordPress (stubs). GD προαιρετικό (χωρίς αυτό τα integration tests βγαίνουν SKIP)· pdo_sqlite για t_storage_longrun / t_token_sweep_edges (αλλιώς SKIP). Διαδρομή plugin: αυτόματα ο φάκελος qr-rebuilder-pro δίπλα στον φάκελο των tests (αρκεί να αποσυμπιεστούν τα δύο zip στον ίδιο φάκελο)· αλλιώς PDIR=/path/to/qr-rebuilder-pro.
   php tp1.php        provenance: SN=ABC δεν περνά πια ως scan
   php tp4.php        picker σε πραγματικά ασαφή σάρωση (αμετάβλητο)
   php t_rebuild.php  end-to-end rebuild: χωρίς ψευδές AI 240· 2.15.5: ρητός έλεγχος κάθε βήματος (πριν περνούσε και με αποτυχία)
   php t_race.php     ταυτόχρονη αποστολή με ίδιο σύνδεσμο: 1 email
-  php t_mailer.php   κύκλος ζωής temp PNG, sweep, σήμανση στο email (χρειάζεται φάκελο tmpmail/)
+  php t_mailer.php   κύκλος ζωής temp PNG, sweep, 2.16.0: καμία σήμανση προέλευσης στο email (χρειάζεται φάκελο tmpmail/)
   php golden.php     έξοδος parser για 4.021 εισόδους (σύγκριση πριν/μετά)
   php bench.php      CPU κατασκευασμένης εισόδου
   php t_greek_sigma.php  2.15.3: «Σ» = S ή W (picker και με τις δύο), «΅»→W, U+037E→q
@@ -32,5 +32,5 @@ Renderer (2.15.4, lib/renderer.php): τα tests λογικής (t_guest, t_maile
 Όλα μαζί:   ./run-all.sh      (2.15.5: FAIL και όταν ένα script δεν τυπώνει κανένα PASS ή βγαίνει με κωδικό ≠ 0)
 Άλλη PHP:   PHP=php8.3 ./run-all.sh
 Χωρίς GD:   NOGD=1 ./run-all.sh      (προσομοίωση σε Debian/Ubuntu)
-.pot:       cd ../qr-rebuilder-pro && python3 ../tests/lib/makepot.py 2.15.6
+.pot:       cd ../qr-rebuilder-pro && python3 ../tests/lib/makepot.py 2.16.0
 Browser (Playwright, frontend JS): cd browser && npm install && npm test   — βλ. browser/README.txt
