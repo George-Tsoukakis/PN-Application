@@ -2335,11 +2335,18 @@ var qrcode = function() {
 	PD.qrcode = qrcode;
 
 	/**
-	 * Longest link printed as a QR: ≤ version 18 (89 modules) at error
-	 * correction L, i.e. modules of ~0.38 mm in the 34 mm box — readable by
-	 * a phone camera from a laser or inkjet print.
+	 * Longest link printed as a QR: 620 bytes fit version 17 (85 modules)
+	 * at error correction L, i.e. modules of ~0.40 mm in the 34 mm box —
+	 * readable by a phone camera from a laser or inkjet print.
 	 */
 	PD.CAL_MAX_LINK = 620;
+
+	/**
+	 * The largest QR the 34 mm box takes: the version CAL_MAX_LINK needs
+	 * at level L (4 × 17 + 17 = 85 modules). calendarQrCode() never goes
+	 * past it, so raising CAL_MAX_LINK means checking this too.
+	 */
+	PD.CAL_QR_MAX_MODULES = 85;
 
 	/** Longest plan the patient page accepts (public/calendar.js decode()). */
 	PD.CAL_MAX_DAYS = 400;
@@ -2624,6 +2631,27 @@ var qrcode = function() {
 		return out.join(' ');
 	};
 
+	/**
+	 * The QR of a calendar link. A paper handout gets creased, smudged and
+	 * scribbled on, so level M (~15% of the code can be lost) is used
+	 * whenever the link fits at M without a larger QR than the longest link
+	 * needs at L (CAL_QR_MAX_MODULES) — up to ~500 bytes. A longer link
+	 * falls back to L (~7%), exactly as before, so the notes/pharmacy
+	 * fallbacks of calendarLink() and its 620-byte cap are unchanged.
+	 */
+	PD.calendarQrCode = function calendarQrCode(link) {
+		var qr = PD.qrcode(0, 'M');
+		qr.addData(link, 'Byte');
+		qr.make();
+		if (qr.getModuleCount() <= PD.CAL_QR_MAX_MODULES) {
+			return qr;
+		}
+		qr = PD.qrcode(0, 'L');
+		qr.addData(link, 'Byte');
+		qr.make();
+		return qr;
+	};
+
 	/** The QR box of the A4 sheet, or ''. */
 	PD.calendarQrHtml = function calendarQrHtml() {
 		var link;
@@ -2636,10 +2664,13 @@ var qrcode = function() {
 		if (!link) {
 			return '';
 		}
-		var qr = PD.qrcode(0, 'L');
-		qr.addData(link, 'Byte');
-		qr.make();
-		var svg = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
+		var qr = PD.calendarQrCode(link);
+		/* An image with a name for screen readers, and crisp module
+		   edges instead of anti-aliased seams between the squares. */
+		var svg = qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true }).replace(
+			'<svg ',
+			'<svg role="img" aria-label="' + PD.escapeHtml(PD.txt('calQrAlt', 'QR για το ημερολόγιο του ασθενή')) + '" shape-rendering="crispEdges" '
+		);
 		return '<div class="pd-info-box pd-cal-box">' +
 			'<div class="pd-cal-qr">' + svg + '</div>' +
 			'<div class="pd-cal-text"><h3>' + PD.escapeHtml(PD.txt('calQrTitle', 'Υπενθυμίσεις στο κινητό')) + '</h3>' +

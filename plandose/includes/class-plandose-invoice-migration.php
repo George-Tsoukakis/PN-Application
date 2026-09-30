@@ -281,7 +281,10 @@ class Plandose_Invoice_Migration {
 
 		try {
 			self::cleanup_unrecorded_copies();
-			self::run_legacy_invoice_migration( false, self::INLINE_BUDGET_SECONDS, self::INLINE_BUDGET_FILES );
+			// Cached privacy verdict only (see usable_storage()): this is an
+			// ordinary page load, and the live probe is several HTTP
+			// requests with their own timeouts.
+			self::run_legacy_invoice_migration( false, self::INLINE_BUDGET_SECONDS, self::INLINE_BUDGET_FILES, false );
 		} finally {
 			self::release_legacy_migration_lock();
 		}
@@ -292,7 +295,17 @@ class Plandose_Invoice_Migration {
 	 * next event is scheduled.
 	 */
 	public static function run_cron_batch() {
-		if ( ! self::migration_pending() || ! self::acquire_legacy_migration_lock() ) {
+		if ( ! self::migration_pending() ) {
+			return;
+		}
+
+		// Busy (a page-load batch or a manual retry holds the lock): this
+		// event has already been consumed, so returning without a successor
+		// would end the chain — and with it the migration, until someone
+		// happens to open a PlanDose screen. Try again shortly instead.
+		if ( ! self::acquire_legacy_migration_lock() ) {
+			self::$blocked = false;
+			self::schedule_next_batch();
 			return;
 		}
 
@@ -329,16 +342,19 @@ class Plandose_Invoice_Migration {
 	 * The invoice folder, if it may receive copies now: usable and
 	 * verified private (as for uploads), else the reason as a WP_Error.
 	 *
+	 * @param bool $probe False on a page load: decide on the cached, fresh
+	 *                    privacy verdict only and never run the live probe
+	 *                    (see Plandose_Invoice_Storage::upload_allowed()).
 	 * @return string|WP_Error
 	 */
-	private static function usable_storage() {
+	private static function usable_storage( $probe = true ) {
 		$dir = Plandose_Invoice_Storage::invoice_dir();
 
 		if ( is_wp_error( $dir ) ) {
 			return $dir;
 		}
 
-		$allowed = Plandose_Invoice_Storage::upload_allowed();
+		$allowed = Plandose_Invoice_Storage::upload_allowed( $probe );
 
 		return is_wp_error( $allowed ) ? $allowed : $dir;
 	}
@@ -768,9 +784,10 @@ class Plandose_Invoice_Migration {
 	 * @param bool $manual         Report back even when nothing changed.
 	 * @param int  $budget_seconds Stop before the next copy after this long.
 	 * @param int  $budget_files   Stop after this many copies.
+	 * @param bool $probe          May run the live privacy probe (false: page load, cached verdict only).
 	 * @return bool Whether the run stopped on its budget.
 	 */
-	private static function run_legacy_invoice_migration( $manual = false, $budget_seconds = self::BUDGET_SECONDS, $budget_files = self::BUDGET_FILES ) {
+	private static function run_legacy_invoice_migration( $manual = false, $budget_seconds = self::BUDGET_SECONDS, $budget_files = self::BUDGET_FILES, $probe = true ) {
 		global $wpdb;
 
 		$table  = Plandose_Subscriptions::table_name();
@@ -865,7 +882,7 @@ class Plandose_Invoice_Migration {
 				}
 
 				if ( null === $dir ) {
-					$dir = self::usable_storage();
+					$dir = self::usable_storage( $probe );
 
 					if ( is_wp_error( $dir ) ) {
 						self::$blocked = true;
@@ -947,8 +964,16 @@ class Plandose_Invoice_Migration {
 				$fresh   = Plandose_Subscriptions::get_row( (int) $row->user_id, false );
 				$current = $fresh ? Plandose_Subscriptions::decode_invoices( $fresh->invoices ) : array();
 
+				// EVERY occurrence of a copied attachment ID is rewritten,
+				// to the same copy: a row listing one ID twice (a hand-edited
+				// row, an old double submit) would otherwise keep a numeric
+				// entry for ever — has_legacy_entries() stays true and the
+				// uninstall keeps all data — while the batch loop above
+				// skips the ID as already copied. Two entries sharing one
+				// file is safe: the delete handler removes the file only
+				// once no entry lists it any more.
 				foreach ( $current as $i => $entry ) {
-					if ( is_numeric( $entry ) && isset( $copied[ (int) $entry ] ) && ! isset( $migrated[ (int) $entry ] ) ) {
+					if ( is_numeric( $entry ) && isset( $copied[ (int) $entry ] ) ) {
 						$current[ $i ]            = $copied[ (int) $entry ];
 						$migrated[ (int) $entry ] = $copied[ (int) $entry ];
 					}
@@ -986,6 +1011,15 @@ class Plandose_Invoice_Migration {
 						} else {
 							Plandose_Admin_Invoices::forget_legacy_originals( $row_records );
 						}
+					} elseif ( method_exists( 'Plandose_Admin_Invoices', 'forget_legacy_originals' ) ) {
+						// The read-back failed, but the list may still have
+						// been (partly) written. Those records would name
+						// copies that are rolled back below, so the
+						// «πρωτότυπα» list would point at files that no
+						// longer exist while the row still lists the IDs.
+						// forget_legacy_originals() matches on the fresh,
+						// random copy name, so nothing else is touched.
+						Plandose_Admin_Invoices::forget_legacy_originals( $row_records );
 					}
 				}
 			} finally {

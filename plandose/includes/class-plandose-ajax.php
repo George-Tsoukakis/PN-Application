@@ -14,9 +14,11 @@
  * - register_print() : records one print credit. The client calls it
  *                      BEFORE the plan is written into the print
  *                      window, and prints only once it succeeds (see
- *                      doPrintSafely() in assets/js/print.js). It
- *                      receives nothing but a random token — never any
- *                      patient data.
+ *                      doPrintSafely() in assets/js/print.js). Besides
+ *                      the AJAX nonce it receives only two random ids —
+ *                      the plan's print token and the request_id of this
+ *                      press (see Plandose_Print_Request::read_post()) —
+ *                      never any plan or patient data.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -67,12 +69,22 @@ class Plandose_Ajax {
 	 * recorded is a new print, subject to the limit. At most
 	 * MAX_FREE_REPRINTS reprints per recorded plan are free within
 	 * PRINT_RECEIPT_TTL; the next one is charged as a new print. The server
-	 * only ever sees a token, never the plan, so a reused token can print
-	 * a DIFFERENT plan on every free reprint: at most 3 prints per charge,
-	 * and only for half an hour. Each request id may also be answered again
-	 * up to Plandose_Print_Charges::MAX_REPLAYS times when its answer was
-	 * lost. The sheet itself is built in the browser, so the limit is an
-	 * honest-client limit in any case (see readme.txt, «Known limits»).
+	 * only ever sees a token and a request id, never the plan, so a reused
+	 * token can print a DIFFERENT plan on every free reprint.
+	 *
+	 * The real ceiling per charge, within PRINT_RECEIPT_TTL (30 minutes):
+	 * the charged print plus MAX_FREE_REPRINTS (2) free reprints make 3
+	 * request ids, and each of those may be answered again ("print")
+	 * up to Plandose_Print_Charges::MAX_REPLAYS (2) times as a retry after
+	 * a lost answer — 3 × (1 + 2) = up to 9 successful answers for one
+	 * charge. A client that deliberately re-sends request ids gets them.
+	 *
+	 * And all of it is honour-based: the sheet is built and printed in the
+	 * browser, so a user with the developer console can print without
+	 * calling register_print at all. That is an accepted trade-off, not an
+	 * oversight — keeping the plan (patient data) out of the server is
+	 * worth more than an enforceable count; the limit only keeps the
+	 * shipped script honest (see readme.txt, «Για τον μετρητή εκτυπώσεων»).
 	 *
 	 * PRINT_RECEIPT_META_KEY is the user-meta key of the receipts before
 	 * the ledger. Nothing reads it; it stays so leftover rows are still

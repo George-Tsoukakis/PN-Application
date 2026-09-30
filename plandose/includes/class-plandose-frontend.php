@@ -962,6 +962,8 @@ class Plandose_Frontend {
 				'firstSlotHelp'       => __( 'Οι δόσεις που έχουν ήδη περάσει μεταφέρονται στο τέλος — το σύνολο δόσεων δεν αλλάζει.', 'plandose' ),
 				/* translators: 1: daypart of the first dose, 2: its day, 3: daypart of the last dose, 4: its day. */
 				'courseLine'          => __( 'Πρώτη δόση: %1$s %2$s • Τελευταία δόση: %3$s %4$s', 'plandose' ),
+				/* translators: 1: medicine name, 2: its first dose, e.g. «Πρωί Πέμ 01/10». */
+				'firstDoseShiftWarn'  => __( 'Το «%1$s» ξεκινά αύριο (%2$s), γιατί η ώρα της πρώτης δόσης του πέρασε σήμερα. Αν πρέπει να πάρει δόση σήμερα, αλλάξτε την «Πρώτη δόση την ημέρα έναρξης».', 'plandose' ),
 
 				'drug'                => __( 'Όνομα φαρμάκου', 'plandose' ),
 				'drugPlaceholder'     => __( 'π.χ. Depon 500mg', 'plandose' ),
@@ -1207,6 +1209,7 @@ class Plandose_Frontend {
 				'calQrTitle'          => __( 'Υπενθυμίσεις στο κινητό', 'plandose' ),
 				'calQrText'           => __( 'Σκανάρετε με την κάμερα του κινητού: οι δόσεις μπαίνουν στο ημερολόγιό σας με ειδοποίηση.', 'plandose' ),
 				'calQrPrivate'        => __( 'Δεν στέλνεται στο φαρμακείο. Το QR περιέχει τα φάρμακα του πλάνου.', 'plandose' ),
+				'calQrAlt'            => __( 'QR για το ημερολόγιο του ασθενή', 'plandose' ),
 				'calQrTooBig'         => __( 'Το πλάνο είναι πολύ μεγάλο για το QR «Υπενθυμίσεις στο κινητό»: το φύλλο θα τυπωθεί χωρίς QR.', 'plandose' ),
 				'calQrNoNotes'        => __( 'Οι σημειώσεις των φαρμάκων δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: οι υπενθυμίσεις στο κινητό θα είναι χωρίς σημειώσεις. Στο τυπωμένο φύλλο υπάρχουν κανονικά.', 'plandose' ),
 				'calQrNoPharmacy'     => __( 'Το όνομα του φαρμακείου (και τυχόν σημειώσεις των φαρμάκων) δεν χωρούν στο QR «Υπενθυμίσεις στο κινητό»: στο κινητό οι υπενθυμίσεις θα είναι χωρίς αυτά. Στο τυπωμένο φύλλο υπάρχουν κανονικά.', 'plandose' ),
@@ -1277,6 +1280,10 @@ class Plandose_Frontend {
 				'rxFieldDays' => __( 'Διάρκεια', 'plandose' ),
 				'rxOriginal' => __( 'Στη συνταγή', 'plandose' ),
 				'rxAddBlocked' => __( 'Για να ενεργοποιηθεί η «Προσθήκη», επιλέξτε ή επιβεβαιώστε τα σημειωμένα πεδία των επιλεγμένων φαρμάκων.', 'plandose' ),
+				/* translators: 1: medicine name, 2: how many times it is selected, 3: the doses, joined with rxAnd. */
+				'rxSameDrugTwice' => __( 'Το %1$s θα μπει %2$d φορές στο πλάνο (%3$s). Αν πρέπει να τα πάρει όλα, πατήστε ξανά «Προσθήκη»· αλλιώς ξετσεκάρετε όσα δεν ισχύουν.', 'plandose' ),
+				/* translators: joins two doses: «1 Δισκίο(α) και 0,5 Δισκίο(α)». */
+				'rxAnd' => __( 'και', 'plandose' ),
 				'rxCountAck' => __( 'Έλεγξα τη συνταγή και ξέρω ποια φάρμακα λείπουν από τη λίστα.', 'plandose' ),
 				'rxPatientConfirm' => __( 'Επιβεβαιώνω ότι τα φάρμακα που επιλέγω είναι του ασθενή αυτού του πλάνου.', 'plandose' ),
 				/* translators: 1: medicines found on the prescription, 2: medicines read. */
@@ -2042,6 +2049,7 @@ class Plandose_Frontend {
 			'firstSlotLabel'      => 'First dose on the start day',
 			'firstSlotHelp'       => 'Doses that have already passed move to the end — the total number of doses does not change.',
 			'courseLine'          => 'First dose: %1$s %2$s • Last dose: %3$s %4$s',
+			'firstDoseShiftWarn'  => '“%1$s” starts tomorrow (%2$s), because its dose time has already passed today. If it must be taken today, change “First dose on the start day”.',
 
 			'drug'                => 'Medicine name',
 			'drugPlaceholder'     => 'e.g. Depon 500mg',
@@ -2230,6 +2238,7 @@ class Plandose_Frontend {
 			'calQrTitle'          => 'Reminders on your phone',
 			'calQrText'           => 'Scan with your phone camera: the doses go into your calendar with an alert.',
 			'calQrPrivate'        => 'Not sent to the pharmacy. The QR contains the plan’s medicines.',
+			'calQrAlt'            => 'QR code for the patient’s calendar',
 			'calQrTooBig'         => 'The plan is too large for the “Reminders on your phone” QR: the sheet will print without a QR.',
 			'calQrNoNotes'        => 'The medicine notes do not fit in the “Reminders on your phone” QR: the phone reminders will have no notes. The printed sheet has them as usual.',
 			'calQrNoPharmacy'     => 'The pharmacy name (and any medicine notes) do not fit in the “Reminders on your phone” QR: the phone reminders will be without them. The printed sheet has them as usual.',
@@ -2300,6 +2309,8 @@ class Plandose_Frontend {
 			'rxFieldDays' => 'Duration',
 			'rxOriginal' => 'On the prescription',
 			'rxAddBlocked' => 'To enable “Add”, choose or confirm the marked fields of the selected medicines.',
+			'rxSameDrugTwice' => '%1$s will go into the plan %2$d times (%3$s). If the patient must take all of them, press “Add” again; otherwise untick the ones that do not apply.',
+			'rxAnd' => 'and',
 			'rxCountAck' => 'I have checked the prescription and know which medicines are missing from the list.',
 			'rxPatientConfirm' => 'I confirm that the medicines I select belong to the patient of this plan.',
 			/* translators: 1: medicines found on the prescription, 2: medicines read. */

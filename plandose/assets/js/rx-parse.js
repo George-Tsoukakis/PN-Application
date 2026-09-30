@@ -75,7 +75,8 @@
 		var l = latin(plain(text));
 		var g = greekAll(text);
 		return /(^|[^A-Z0-9])(SOS|PRN)(?=[^A-Z0-9]|$)/.test(l) ||
-			/(^|[^Α-ΩA-Z0-9])(ΕΑΝ|ΑΝ|ΕΦΟΣΟΝ|ΟΤΑΝ)(?=[^Α-ΩA-Z0-9]|$)/.test(g) ||
+			/* «ΣΟΣ» in Greek letters is SOS. */
+			/(^|[^Α-ΩA-Z0-9])(ΕΑΝ|ΑΝ|ΕΦΟΣΟΝ|ΟΤΑΝ|ΣΟΣ)(?=[^Α-ΩA-Z0-9]|$)/.test(g) ||
 			/* «ΕΠΙ» is also plain «for» in a duration («ΕΠΙ 7 ΗΜΕΡΕΣ»,
 			   «ΕΠΙ ΔΥΟ ΕΒΔΟΜΑΔΕΣ», «ΕΠΙ ΜΑΚΡΟΝ»), which is not «when
 			   needed». Any OTHER «ΕΠΙ …» («επί πόνου / ανάγκης / εμέτου»,
@@ -346,6 +347,17 @@
 		/* A liquid, drops or a sachet for tablets / capsules
 		   («DEPON F.C.TAB» + «5 ML») is the dose line of another medicine. */
 		if (('ml' === unit || 'drops' === unit || 'sachet' === unit) && oralSolid && !parenteral) {
+			return true;
+		}
+		/* A dose in mg of an oral liquid («ZIRTEK SYR 1MG/ML» + «5 MG»,
+		   «… PD.ORA.SUS» + «250 MG»): the plan counts what is measured
+		   (ml, drops), and mg of a liquid is how many ml only through the
+		   strength — never converted, never planned as mg. Not for an
+		   injection, an inhaled, nasal, eye or ear liquid. */
+		var liquidOral = has(/^(OR|ORA|ORAL|POR|PS|SYR|SIR|SYRUP|ELIX|GTT|DRO|DROP|DROPS|DR|SOL|SUS|SUSP|EMUL|EMULS)$/) &&
+			!oralSolid && !supp &&
+			!has(/^(INJ|IN|SO|PEN|PFS|PF|AMP|VIAL|INF|CART|INH|INHAL|NE|NEB|NASPR|NAS|SPR|EY|EYE|EA|EAR|OT|OPHT|CUT|TOP|DERM|VAG|RECT|LOT|CREAM|GEL|OINT|SPRAY|GR|EF|TAB|CAP)$/);
+		if ('mg' === unit && liquidOral) {
 			return true;
 		}
 		return false;
@@ -947,18 +959,33 @@
 				}
 				return item;
 			}
-			item.source = m[0].replace(/^ΔΟΣΟΛΟΓΙΑ\s*:\s*/, '').replace(/ημέρ(?:ες|ας|α)?$/i, 'ημέρες');
+			item.source = m[0].replace(/^ΔΟΣΟΛΟΓΙΑ\s*:\s*/, '').replace(/ημ[εέ]ρ(?:ες|ας|α)?$/i, 'ημέρες');
 			var qtyRaw = m[1].replace(/\s+/g, ' ');
 			/* Fail closed: without the shared checker (state.js) the
 			   amount is unread (NaN → the hard «amount» warning below),
 			   never parseFloat(), which reads «1/2» as 1 and «1,5» as 1. */
 			var qty = typeof PD.checkDoseAmount === 'function' ? PD.checkDoseAmount(qtyRaw, PD.DOSE_NO_LIMIT).value : NaN;
-			/* «1 - 2 ΔΙΣΚΙΑ», «1 ή 2», «1 ΕΩΣ 2», or a number left over at
-			   the start of the phrase: a range or a broken number. */
-			var range = /^([^A-ZΑ-Ω]|ΕΩΣ\s|ΜΕΧΡΙ\s|Η\s)/.test(plain(m[2]));
+			/* «1 - 2 ΔΙΣΚΙΑ», «1 ή 2», «1 ΕΩΣ 2», «1 ως 2», «1 και 1/2»,
+			   «2 x 1», «1 + 1/2», or a number left over at the start of the
+			   phrase: a range, a sum, a product or a broken number. The
+			   first number alone is not the dose (nor with «ΗΜΙΣΥ» / «ΜΙΣΟ»
+			   after it) — the amount stays empty and the text is shown as
+			   written, up to the unit words. */
+			var QTY_WORD = /^([^A-ZΑ-Ω]|(?:ΕΩΣ|ΩΣ|ΜΕΧΡΙ|Η|ΚΑΙ|Χ|X)(?![A-ZΑ-Ω])|Η?ΜΙΣ[Α-Ω]*(?![A-Z]))/;
+			var range = QTY_WORD.test(plain(m[2]));
 			if (splitQty || range) {
 				qty = NaN;
-				qtyRaw = (qtyRaw + ' ' + (range ? m[2].split(/\s+/).slice(0, 2).join(' ') : '')).trim();
+				var rawWords = [];
+				if (range) {
+					m[2].split(/\s+/).some(function (w, at) {
+						if (at >= 4 || (at > 0 && !QTY_WORD.test(plain(w)))) {
+							return true;
+						}
+						rawWords.push(w);
+						return false;
+					});
+				}
+				qtyRaw = (qtyRaw + ' ' + rawWords.join(' ')).trim();
 			}
 			/* With no drug line recognised, the insulin rule also
 			   looks at the unread lines right above the dose line. */

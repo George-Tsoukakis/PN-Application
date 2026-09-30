@@ -10,9 +10,11 @@
      the page never scrolls sideways;
    - no two text blocks overlap;
    - no day card is split across pages (a marker at the top and bottom of
-     every card must land on the same PDF page — pdftotext; without it, the
-     card rows must be break-inside: avoid and shorter than a page);
-   - every medicine name and note is in the sheet in full;
+     every card must land on the same PDF page — pdftotext; without it,
+     only the CSS rule: every card, and every row without a full-width
+     dense card, is break-inside: avoid and shorter than a page);
+   - every medicine name and note, and the footer (disclaimer and the two
+     thanks lines, the plugin's default settings), is in the sheet in full;
    - the on-screen preview (#pd-preview-area in the popup, real
      plandose.css + plandose-guest.css) lays the sheet out exactly like
      the printed page: same boxes, same card widths, same colours;
@@ -362,13 +364,18 @@ function inspectSheet(expectTexts) {
 		}
 	}
 
+	const avoids = (el) => {
+		const cs = getComputedStyle(el);
+		return cs.breakInside === 'avoid' || cs.breakInside === 'avoid-page' || cs.pageBreakInside === 'avoid';
+	};
 	for (const row of document.querySelectorAll('.pd-day-row')) {
-		const cs = getComputedStyle(row);
 		problems.rows.push({
 			h: row.getBoundingClientRect().height,
-			avoid: cs.breakInside === 'avoid' || cs.breakInside === 'avoid-page' || cs.pageBreakInside === 'avoid'
+			avoid: avoids(row),
+			dense: !!row.querySelector('.pd-day-card-dense')
 		});
 	}
+	problems.cardRules = Array.from(document.querySelectorAll('.pd-day-card'), (c) => ({ h: c.getBoundingClientRect().height, avoid: avoids(c) }));
 	problems.cards = document.querySelectorAll('.pd-day-card').length;
 	problems.cardHeights = Array.from(document.querySelectorAll('.pd-day-card'), (c) => Math.round(c.getBoundingClientRect().height));
 	return problems;
@@ -517,6 +524,12 @@ fs.mkdirSync(BASELINE, { recursive: true });
 let browser;
 let builder;
 const dicts = dictionaries();
+/* The printed footer (disclaimer, the two thanks lines), as a site that never
+   edited them prints it: the dictionary values (Plandose_Settings defaults).
+   Without the real dictionaries: the sheet shows the JS fallbacks, unchecked. */
+const DICTS_REAL = Object.keys(dicts.el).length > 0;
+const FOOTER_KEYS = ['disclaimer', 'thanksLine1', 'thanksLine2'];
+const FOOTER = DICTS_REAL ? FOOTER_KEYS.map((k) => dicts.el[k] || '') : [];
 
 test.before(async () => {
 	assert.ok(JS_DIR, 'PlanDose assets/js not found (PLANDOSE_JS)');
@@ -561,7 +574,7 @@ for (const plan of VARIANTS) {
 			t.diagnostic(built.skipped + ' — those items left out');
 		}
 		const kept = plan.monthday && built.skipped ? plan.items.filter((it) => it.customMode !== 'monthday') : plan.items;
-		const expectTexts = [plan.patient, HEADER.name].concat(kept.map((it) => it.name)).concat(kept.map((it) => it.notes).filter(Boolean));
+		const expectTexts = [plan.patient, HEADER.name].concat(kept.map((it) => it.name)).concat(kept.map((it) => it.notes).filter(Boolean)).concat(FOOTER.filter(Boolean));
 
 		const ctx = await browser.newContext({ locale: 'el-GR', timezoneId: 'Europe/Athens', viewport: { width: PRINT_WIDTH, height: PRINT_HEIGHT } });
 		const sheet = await ctx.newPage();
@@ -604,7 +617,9 @@ for (const plan of VARIANTS) {
 		await t.test('no text blocks overlap', () => {
 			assert.deepStrictEqual(r.overlap.slice(0, 20), []);
 		});
-		await t.test('every name and note is there in full', () => {
+		await t.test('every name, note and footer text is there in full', () => {
+			/* An empty dictionary value prints an empty footer: that is missing too. */
+			assert.deepStrictEqual(FOOTER_KEYS.filter((k, i) => DICTS_REAL && !FOOTER[i]).map((k) => 'footer text «' + k + '» is empty'), []);
 			assert.deepStrictEqual(r.missing, []);
 		});
 		await t.test('no day card split across pages', async () => {
@@ -626,8 +641,33 @@ for (const plan of VARIANTS) {
 				assert.deepStrictEqual(split, []);
 				t.diagnostic(n + ' cards on ' + pages.length + ' pages');
 			} else {
-				assert.ok(r.rows.every((row) => row.avoid), 'rows are break-inside: avoid');
-				assert.ok(r.rows.every((row) => row.h < PRINT_HEIGHT), 'every row fits on a page');
+				/* Not authoritative (the pdftotext path above is): the print CSS
+				   rule itself. Every card is break-inside: avoid and fits on a
+				   page. A row is kept whole too, except a row with a full-width
+				   (dense) card: it may break between its cards
+				   (.pd-day-row:has(.pd-day-card-dense), print-styles.js). */
+				const bad = [];
+				r.cardRules.forEach((c, i) => {
+					if (!c.avoid) {
+						bad.push('card ' + (i + 1) + ' is not break-inside: avoid');
+					}
+					if (c.h >= PRINT_HEIGHT) {
+						bad.push('card ' + (i + 1) + ' is taller than a page: ' + Math.round(c.h) + 'px');
+					}
+				});
+				r.rows.forEach((row, i) => {
+					if (row.dense) {
+						return;
+					}
+					if (!row.avoid) {
+						bad.push('row ' + (i + 1) + ' is not break-inside: avoid');
+					}
+					if (row.h >= PRINT_HEIGHT) {
+						bad.push('row ' + (i + 1) + ' is taller than a page: ' + Math.round(row.h) + 'px');
+					}
+				});
+				assert.deepStrictEqual(bad.slice(0, 20), []);
+				t.diagnostic('pdftotext not installed: checked the print CSS rule only');
 			}
 		});
 		await t.test('matches the baseline', { skip: !PIXELS ? 'PD_VISUAL_PIXELS=0' : (HAS_POPPLER ? false : 'pdftoppm not installed (poppler-utils)') }, () => {

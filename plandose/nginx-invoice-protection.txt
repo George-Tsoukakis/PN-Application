@@ -85,14 +85,17 @@ and download stops working. Do it in this order:
   1. Create the new folder EMPTY (no .htaccess, no index.php, nothing),
      readable and writable by the PHP user.
   2. Add the define() to wp-config.php.
-  3. Let PlanDose adopt it: in wp-admin → PlanDose → Συνδρομές, click any
-     existing invoice button («Τιμολόγιο N»). PlanDose resolves the new
-     folder, finds it empty, and writes its `.plandose-invoice-storage`
-     marker and its protection files; the download itself then says the
-     file was not found, which is expected at this point. Uploading an
-     invoice also works. Merely loading an admin page is NOT enough, and
-     `wp plandose check` is read-only and does not adopt the folder either.
-     Confirm the marker is there:
+  3. Let PlanDose adopt it while it is still EMPTY: in wp-admin →
+     PlanDose → Διαγνωστικά, press «Επανέλεγχος» (needs an administrator).
+     PlanDose resolves the new folder, finds it empty, and writes its
+     `.plandose-invoice-storage` marker and its protection files, then
+     re-runs the privacy check on it. Uploading a new invoice adopts it
+     too. Opening an existing invoice («Τιμολόγιο N» in PlanDose →
+     Συνδρομές) does NOT: downloads only read, and a folder without the
+     marker is refused with «δεν φέρει το αρχείο ιδιοκτησίας» instead of
+     being adopted. Merely loading an admin page is not enough either, and
+     `wp plandose check` is read-only and does not adopt the folder.
+     Confirm the marker is there before going on:
          ls -la /home/account/private/plandose-invoices/.plandose-invoice-storage
   4. Only now move the existing invoice files from the old folder
      (wp-content/uploads/plandose-invoices/) into the new one, keeping

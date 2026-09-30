@@ -230,10 +230,24 @@ class Plandose_Admin {
 		}
 
 		if ( class_exists( 'Plandose_Subscriptions' ) ) {
-			$row      = Plandose_Subscriptions::get_row( $user_id, false );
-			$invoices = $row ? Plandose_Subscriptions::decode_invoices( $row->invoices ) : array();
+			global $wpdb;
 
-			if ( $invoices ) {
+			// get_row() returns null both for "no row" and for a failed
+			// read. Taking a failed read for "no invoices" would delete the
+			// only record of which invoice files belong to this pharmacy,
+			// so a database error retires the row instead (a retired row
+			// without invoices is harmless; a lost invoice list is not).
+			// wpdb clears last_error at the start of every query, so it
+			// describes get_row()'s SELECT (the user ID is non-zero here,
+			// so get_row() always runs it).
+			$row         = Plandose_Subscriptions::get_row( $user_id, false );
+			$read_failed = null === $row && '' !== (string) $wpdb->last_error;
+			$invoices    = $row ? Plandose_Subscriptions::decode_invoices( $row->invoices ) : array();
+
+			if ( $read_failed ) {
+				error_log( 'PlanDose: the subscription row of deleted user ' . $user_id . ' could not be read, so it was retired, not deleted: ' . $wpdb->last_error ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Server-side trace of a failed read; no admin screen is showing.
+				Plandose_Subscriptions::retire_row( $user_id );
+			} elseif ( $invoices ) {
 				Plandose_Subscriptions::retire_row( $user_id );
 				self::audit( 'account_deleted_invoices_kept', $user_id, array( 'invoices' => count( $invoices ) ) );
 			} else {

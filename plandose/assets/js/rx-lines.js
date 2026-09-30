@@ -24,6 +24,7 @@
 	var plain = R.plain;
 	var clean = R.clean;
 	var fold = R.fold;
+	var MAX_LINE = R.MAX_LINE;
 
 	/* Segments that end the block of the previous medicine (or the header). */
 	function isBoundary(line) {
@@ -259,9 +260,13 @@
 				(m = /(?:(?:^|[^A-Z])BT|BOTTLE)\s*X\s*(\d+)/.exec(t)) || (m = /(?:^|[^A-Z0-9,.])(\d+X\d+)\s*$/.exec(t))) {
 				var parts = m[1].split('X');
 				var count = parts.length > 1 ? parseInt(parts[0], 10) * parseInt(parts[1], 10) : parseInt(parts[0], 10);
+				var after = t.slice(m.index + m[0].length);
 				/* «BTx1FLx30»: one bottle of 30, not one tablet. */
-				var inner = /^1$/.test(m[1]) && /X\s*(\d+)(?!\s*(?:ML|G)(?![A-Z]))/.exec(t.slice(m.index + m[0].length));
-				p.count = inner ? parseInt(inner[1], 10) : count;
+				var inner = /^1$/.test(m[1]) && /X\s*(\d+)(?!\s*(?:ML|G)(?![A-Z]))/.exec(after);
+				/* «BTx2 BLIST x 14», «BTx3x10»: boxes of blisters, 28 and
+				   30 — never 2 or 3. Only a count right after the box. */
+				var blisters = !inner && /^\s*(?:(?:BLIST[A-Z]*|BLST|STRIPS?)\s*)?X\s*(\d+)(?![\d.,]|\s*(?:ML|G|MG|MCG)(?![A-Z]))/.exec(after);
+				p.count = inner ? parseInt(inner[1], 10) : (blisters ? count * parseInt(blisters[1], 10) : count);
 			}
 		} else if ((/BT\s*X\s*1\s*(PF(?![.,]?\s?PEN)|AMP|VIAL\+1)/.test(t) || /(^|[^0-9])1 PF\.SYR X/.test(t)) && /INJ|IN\.SO|PFS/.test(t)) {
 			/* (never a pen: it holds several doses) */
@@ -721,6 +726,10 @@
 			var end = f + 1;
 			var inStatus = false;
 			var countAt = -1;
+			/* Brackets still open in words f+1 … end−1, kept as the loop
+			   goes (parenDepth() of the joined words at every step made a
+			   long paste of form codes take seconds). */
+			var depth = 0;
 			while (end < words.length) {
 				var tk = words[end];
 				if (/^\((?:Πρωτότυπο|Γενόσημο)/.test(tk)) {
@@ -756,7 +765,7 @@
 				   or closing a bracket of this drug line («(BLIST 3 x7)»);
 				   anywhere else it may be an instruction. */
 				if (!inStatus && /^[xX×Χ]\d+[)\]]?$/.test(tk) &&
-					!(/\)$/.test(tk) && parenDepth(words.slice(f + 1, end).join(' ')) > 0) &&
+					!(/\)$/.test(tk) && depth > 0) &&
 					!LONE_COUNT_AFTER.test(fold(words[end - 1]))) {
 					break;
 				}
@@ -766,7 +775,7 @@
 				   after the box («BTx20 X 2 TABS» — «VIAL HDPE X 31 CAPS» is
 				   fine), a bare number only after «x» or «+», «TABS» / «CAPS»
 				   only after a number. Anything else is not the drug line. */
-				if (!inStatus && !/^\(/.test(tk) && parenDepth(words.slice(f + 1, end).join(' ')) <= 0) {
+				if (!inStatus && !/^\(/.test(tk) && depth <= 0) {
 					var fk = fold(tk);
 					var prevF = end > f + 1 ? fold(words[end - 1]) : '';
 					if (countAt < 0) {
@@ -782,6 +791,7 @@
 						break;
 					}
 				}
+				depth += parenDepth(tk);
 				end++;
 			}
 			var tail = latin(words.slice(f + 1, end).join(' ')).toUpperCase();
@@ -864,7 +874,7 @@
 
 	/* A dose-like fragment, for lines no medicine was read from. */
 	var DOSE_LIKE = [
-		/(^|\s)[xΧχ×]\s+\d+\s*ημέρ/i,
+		/(^|\s)[xΧχ×]\s+\d+\s*ημ[εέ]ρ/i,
 		/(^|\s)[xΧχ×]\s+εφάπαξ/i,
 		/\d+\s+φορ(?:ά|ές|α|ες)\s+(?:την|τον)\s+(?:ημέρα|ημερα|εβδομάδα|εβδομαδα|μήνα|μηνα)/i,
 		/κάθε\s+\d+\s+ώρ/i
@@ -1088,6 +1098,12 @@
 			var canContinue = function (k) {
 				return i + k < lines.length && plainText(i + k) && !glued[i + k];
 			};
+			/* A join is never longer than one line may be (MAX_LINE): four
+			   long lines of form codes joined made findBrand() take seconds
+			   on a paste that is not a prescription. No drug line is that long. */
+			var fitsLine = function (text, more) {
+				return text.length + 1 + more.length <= MAX_LINE;
+			};
 			if (plainText(i)) {
 				var max = glued[i] ? 1 : 3;
 				var full = isWhole(first, max);
@@ -1099,7 +1115,7 @@
 				   (with its form code) complete. */
 				if (!full && hasForm) {
 					var trial = first;
-					for (var k = 1; k <= 3 && canContinue(k) && (continuationOk(lines[i + k]) || closesBracket(trial, lines[i + k])); k++) {
+					for (var k = 1; k <= 3 && canContinue(k) && fitsLine(trial, lines[i + k]) && (continuationOk(lines[i + k]) || closesBracket(trial, lines[i + k])); k++) {
 						trial += ' ' + lines[i + k];
 						if (isWhole(trial, max)) {
 							take = k;
@@ -1119,7 +1135,7 @@
 					var unitLine = lines[i + take + 2];
 					if (i + take + 2 < lines.length && glued[i + take + 1] && /^\d+[.,]\d+$/.test(vol || '') && /[xX×Χ]$/.test(joinedText) &&
 						plainText(i + take + 2) && !glued[i + take + 2] && /^(ML|G)(?![A-Z])/i.test(unitLine) &&
-						isWhole(joinedText + ' ' + vol + ' ' + unitLine, max)) {
+						fitsLine(joinedText, vol + ' ' + unitLine) && isWhole(joinedText + ' ' + vol + ' ' + unitLine, max)) {
 						joinedText += ' ' + vol + ' ' + unitLine;
 						take += 2;
 					}
@@ -1127,7 +1143,7 @@
 						var next = lines[i + take + 1];
 						var fits = closesBracket(joinedText, next) || isStatusLine(next) || statusWrapOk(next, parenDepth(joinedText)) || repeatsTail(joinedText, next) ||
 							(/\+$/.test(joinedText) && continuationOk(next));
-						if (!fits || !isWhole(joinedText + ' ' + next, max)) {
+						if (!fits || !fitsLine(joinedText, next) || !isWhole(joinedText + ' ' + next, max)) {
 							break;
 						}
 						joinedText += ' ' + next;
@@ -1161,8 +1177,9 @@
 		return !!b && 0 === b.start && b.end === b.words.length;
 	}
 
-	/* Quantity: «1», «1/2», «0,5», «1 1/2», «1 ½», «1½». */
-	var DOSE_LINE = /^ΔΟΣΟΛΟΓΙΑ\s*:\s*([\d\/.,½¼¾]+(?:\s+\d+\s*\/\s*\d+|\s*[½¼¾])?)\s+(.*?)\s+[xΧχ×]\s+(.+?)\s+[xΧχ×]\s+(\d+)\s*ημέρ(?:ες|ας|α)?/i;
+	/* Quantity: «1», «1/2», «0,5», «1 1/2», «1 ½», «1½». «ημέρες»
+	   also without its accent («ημερες», «ΗΜΕΡΕΣ»). */
+	var DOSE_LINE = /^ΔΟΣΟΛΟΓΙΑ\s*:\s*([\d\/.,½¼¾]+(?:\s+\d+\s*\/\s*\d+|\s*[½¼¾])?)\s+(.*?)\s+[xΧχ×]\s+(.+?)\s+[xΧχ×]\s+(\d+)\s*ημ[εέ]ρ(?:ες|ας|α)?/i;
 
 	/* The memo holds whole segments of the paste: rx-parse.js empties it
 	   before and after every parse. */

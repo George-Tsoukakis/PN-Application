@@ -159,6 +159,41 @@ class Plandose_Lock {
 	}
 
 	/**
+	 * The value a lock row holds right now, read from the database.
+	 *
+	 * get_option() is not good enough for a row written behind WordPress's
+	 * back: forget_cached() can only do a read-modify-write of the shared
+	 * 'notoptions' list, so with a persistent object cache another request
+	 * can put the name back as "known absent" while the row exists. A lock
+	 * read through get_option() would then look free forever and a dead
+	 * holder's row would never be taken over. This bypasses every cache.
+	 *
+	 * @param string $option_name Option row to read.
+	 * @return mixed The unserialized value, or false when there is no row
+	 *               (or the read failed — callers then simply do not take
+	 *               the lock over).
+	 */
+	public static function held_value( $option_name ) {
+		global $wpdb;
+
+		$option_name = (string) $option_name;
+
+		if ( '' === $option_name || strlen( $option_name ) > self::MAX_OPTION_NAME_LENGTH ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- An uncached read is the point (see the docblock above).
+		$value = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+				$option_name
+			)
+		);
+
+		return null === $value ? false : maybe_unserialize( $value );
+	}
+
+	/**
 	 * Release a lock. Plain delete_option(), which already handles every
 	 * cache WordPress keeps for the row — there is nothing atomic to get
 	 * right on the way out, only on the way in.

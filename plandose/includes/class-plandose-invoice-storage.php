@@ -57,36 +57,64 @@ class Plandose_Invoice_Storage {
 	}
 
 	/**
-	 * Lazily initialize and return the WP_Filesystem abstraction, used in
-	 * place of raw @-silenced file_put_contents()/unlink()/chmod()/copy()
-	 * calls throughout this class.
+	 * The filesystem decision for this request: null until filesystem()
+	 * first runs, then a WP_Filesystem_Direct instance or false (plain-PHP
+	 * fallback).
 	 *
-	 * On the overwhelming majority of hosts WP_Filesystem() resolves to the
-	 * 'direct' method transparently (no credentials prompt) because
-	 * wp-content/uploads is already writable by the PHP process — which is
-	 * a precondition for this plugin to work at all, since every invoice
-	 * lives under wp_upload_dir(). The rare host that forces FTP/SSH
-	 * credentials for filesystem writes would prompt for those via
-	 * request_filesystem_credentials(), which has no sane place to surface
-	 * itself from inside an AJAX/admin-post handler — so on THAT class of
-	 * host WP_Filesystem() returns null here and every caller below falls
-	 * back to direct PHP calls plus a log entry rather than
-	 * hard-failing invoice storage entirely.
+	 * @var WP_Filesystem_Direct|false|null
+	 */
+	private static $filesystem = null;
+
+	/**
+	 * The WP_Filesystem object to use in place of raw @-silenced
+	 * file_put_contents()/unlink()/chmod()/copy() calls throughout this
+	 * class — but ONLY when WordPress resolves the 'direct' method
+	 * (get_filesystem_method(), which honours FS_METHOD and the
+	 * 'filesystem_method' filter). Otherwise null, and every caller below
+	 * uses the plain-PHP fallback plus a log entry.
 	 *
-	 * @return WP_Filesystem_Base|null
+	 * Why not the global $wp_filesystem: WP_Filesystem() assigns that global
+	 * BEFORE it calls connect(), and core or another plugin may have created
+	 * it without credentials. On a host that forces FTP/SSH the global is
+	 * then a WP_Filesystem_Base that was never connected, and reusing it
+	 * made every later write, delete, chmod and copy here fail (an upload
+	 * refused, an uninstall leaving invoice files behind). A connected
+	 * FTP/SSH object would not help either: it works in the FTP user's
+	 * paths, not the absolute server paths used here, and asking for
+	 * credentials has no sane place to show from inside an admin-post
+	 * handler, a cron batch or uninstall. The PHP process itself must be
+	 * able to write the invoice folder anyway (invoice_dir() checks
+	 * is_writable()), so plain PHP is the right fallback on those hosts.
+	 *
+	 * On 'direct' hosts a private WP_Filesystem_Direct instance is built,
+	 * so the global is neither read nor replaced. The decision is made once
+	 * per request (get_filesystem_method() writes a temporary file to test
+	 * ownership) and cached in self::$filesystem.
+	 *
+	 * @return WP_Filesystem_Direct|null
 	 */
 	private static function filesystem() {
-		global $wp_filesystem;
+		if ( null === self::$filesystem ) {
+			self::$filesystem = false;
 
-		if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
-			return $wp_filesystem;
+			if ( ! function_exists( 'get_filesystem_method' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			if ( 'direct' === get_filesystem_method() ) {
+				if ( ! class_exists( 'WP_Filesystem_Base' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+				}
+
+				if ( ! class_exists( 'WP_Filesystem_Direct' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+				}
+
+				self::$filesystem = new WP_Filesystem_Direct( null );
+			}
 		}
 
-		if ( ! function_exists( 'WP_Filesystem' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-
-		return WP_Filesystem() && $wp_filesystem instanceof WP_Filesystem_Base ? $wp_filesystem : null;
+		return self::$filesystem ? self::$filesystem : null;
 	}
 
 	/**
@@ -149,7 +177,7 @@ class Plandose_Invoice_Storage {
 	public static function fs_copy( $source, $target, $context ) {
 		$fs = self::filesystem();
 		$ok = $fs
-			? $fs->copy( $source, $target, true )
+			? $fs->copy( $source, $target, true, defined( 'FS_CHMOD_FILE' ) ? FS_CHMOD_FILE : 0644 )
 			: @copy( $source, $target ); // phpcs:ignore WordPress.PHP.NoSilencedErrors -- fallback when WP_Filesystem is unavailable; failure is logged below.
 
 		if ( ! $ok ) {
@@ -1798,14 +1826,31 @@ class Plandose_Invoice_Storage {
 	 *
 	 * Call after invoice_dir(), so the folder exists for the canary.
 	 *
+	 * With $probe false only the cached verdict is used, and only while it
+	 * is fresh: no HTTP request is made. The probe requests one canary per
+	 * invoice extension plus a control file, each with its own timeout, so
+	 * running it from an ordinary admin page load (the inline batch of the
+	 * legacy migration, Plandose_Invoice_Migration::maybe_migrate_legacy_invoices())
+	 * could stall that page for many seconds. A missing or stale verdict is
+	 * then refused like an unverified one; re-probing is left to the daily
+	 * cron, the migration's cron batch, uploads and «Επανέλεγχος».
+	 *
+	 * @param bool $probe Probe the server when the cached verdict is missing, stale or a refusal.
 	 * @return true|WP_Error
 	 */
-	public static function upload_allowed() {
-		$state = self::privacy_status( true );
+	public static function upload_allowed( $probe = true ) {
+		$state = self::privacy_status( $probe );
+
+		if ( ! $probe && ! empty( $state['stale'] ) ) {
+			return new WP_Error(
+				'plandose_invoice_storage_not_checked',
+				__( 'Δεν υπάρχει πρόσφατος έλεγχος ότι ο φάκελος τιμολογίων είναι κλειστός για το internet. Πατήστε «Επανέλεγχος» στο PlanDose → Διαγνωστικά.', 'plandose' )
+			);
+		}
 
 		// A cached refusal is re-checked on the spot: the admin may just
 		// have fixed the server.
-		if ( 'private' !== $state['status'] && ! self::$probed_this_request ) {
+		if ( $probe && 'private' !== $state['status'] && ! self::$probed_this_request ) {
 			$state = self::privacy_status( true, true );
 		}
 

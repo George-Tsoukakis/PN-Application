@@ -355,6 +355,51 @@ function plandose_uninstall_count_legacy_originals( $stored ) {
 }
 
 /**
+ * How many of the invoice files listed in the database are still in the
+ * invoice folder after the cleanup: 0 when all are gone (or none was
+ * listed), -1 when that cannot be established — the folder is unknown or
+ * cannot be read. Anything but 0 means the tables must be kept.
+ *
+ * A folder that does not exist holds none of them. The names were already
+ * reduced to plain, sanitized basenames by the caller.
+ *
+ * @param string   $dir   Invoice folder ('' when it could not be resolved).
+ * @param string[] $names Invoice basenames read from the database.
+ * @return int
+ */
+function plandose_uninstall_invoice_files_left( $dir, array $names ) {
+	if ( empty( $names ) ) {
+		return 0;
+	}
+
+	if ( '' === (string) $dir ) {
+		return -1;
+	}
+
+	clearstatcache();
+
+	if ( ! file_exists( $dir ) && ! is_link( $dir ) ) {
+		return 0;
+	}
+
+	if ( ! is_dir( $dir ) || false === scandir( $dir ) ) {
+		return -1;
+	}
+
+	$left = 0;
+
+	foreach ( $names as $name ) {
+		$path = trailingslashit( $dir ) . $name;
+
+		if ( file_exists( $path ) || is_link( $path ) ) {
+			++$left;
+		}
+	}
+
+	return $left;
+}
+
+/**
  * Run the full uninstall routine.
  *
  * Wrapped in a function so its working variables are function-scoped
@@ -385,13 +430,24 @@ function plandose_run_uninstall() {
 	// foreign files sharing that directory are never removed.
 	$plandose_invoice_filenames = array();
 
-	if ( ! $plandose_keep_data && is_string( $prefix ) && preg_match( '/^[A-Za-z0-9_]+$/', $prefix ) ) {
-		$table         = $prefix . 'plandose_subscriptions';
-		$audit_table   = $prefix . 'plandose_audit_log';
-		$history_table = $prefix . 'plandose_print_history';
-		$charges_table = $prefix . 'plandose_print_charges';
-		$requests_table = $prefix . 'plandose_print_requests';
-		$print_log_table = $prefix . 'plandose_print_log';
+	// The tables to drop, filled below only once the prefix passed the guard
+	// and the invoice list was read. They are dropped AFTER the invoice
+	// files are removed (see further down), never before.
+	$plandose_tables = array();
+
+	// An unusable prefix means the invoice list cannot be read, so which
+	// files are PlanDose's cannot be known: keep-data mode for everything
+	// (tables, options, usermeta, files), exactly as after a failed read
+	// below — not a half-uninstall that deletes the options (the list of
+	// public Media Library originals among them) but leaves the tables.
+	if ( ! $plandose_keep_data && ! ( is_string( $prefix ) && preg_match( '/^[A-Za-z0-9_]+$/', $prefix ) ) ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the uninstaller has no UI to report to.
+		error_log( 'PlanDose uninstall: the database table prefix contains unexpected characters, so PlanDose data (tables, options, invoice files) was kept.' );
+		$plandose_keep_data = true;
+	}
+
+	if ( ! $plandose_keep_data ) {
+		$table = $prefix . 'plandose_subscriptions';
 
 		// Read the invoice list only from a table that exists, and treat a
 		// FAILED read as "keep everything": a lost connection or timeout here
@@ -479,12 +535,9 @@ function plandose_run_uninstall() {
 		$plandose_invoice_filenames = plandose_uninstall_filter_invoice_names( $plandose_invoice_filenames, plandose_uninstall_protection_files() );
 
 		if ( ! $plandose_keep_data ) { // Not after a failed read (above).
-			$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own table on uninstall; $table is $wpdb->prefix (regex-validated) + fixed suffix, not user input.
-			$wpdb->query( "DROP TABLE IF EXISTS `{$audit_table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own table on uninstall; $audit_table is $wpdb->prefix (regex-validated) + fixed suffix, not user input.
-			$wpdb->query( "DROP TABLE IF EXISTS `{$history_table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own table on uninstall; $history_table is $wpdb->prefix (regex-validated) + fixed suffix, not user input.
-			$wpdb->query( "DROP TABLE IF EXISTS `{$charges_table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own table on uninstall; $charges_table is $wpdb->prefix (regex-validated) + fixed suffix, not user input.
-			$wpdb->query( "DROP TABLE IF EXISTS `{$requests_table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own table on uninstall; $requests_table is $wpdb->prefix (regex-validated) + fixed suffix, not user input.
-			$wpdb->query( "DROP TABLE IF EXISTS `{$print_log_table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own table on uninstall; $print_log_table is $wpdb->prefix (regex-validated) + fixed suffix, not user input.
+			foreach ( array( 'plandose_subscriptions', 'plandose_audit_log', 'plandose_print_history', 'plandose_print_charges', 'plandose_print_requests', 'plandose_print_log' ) as $plandose_suffix ) {
+				$plandose_tables[] = $prefix . $plandose_suffix;
+			}
 		}
 	}
 
@@ -534,6 +587,41 @@ function plandose_run_uninstall() {
 			Plandose_Invoice_Storage::delete_custom_dir_contents( $invoice_dir, $plandose_invoice_filenames );
 		} else {
 			plandose_uninstall_delete_known_files( $invoice_dir, $plandose_invoice_filenames );
+		}
+	}
+
+	/*
+	 * The tables are the only record of which files in the invoice folder
+	 * are invoices (with tax numbers). They go only once every invoice file
+	 * they list is really gone. When a file is still there — the cleanup
+	 * was skipped (a PLANDOSE_INVOICE_DIR without a valid ownership marker,
+	 * no usable uploads folder) or a delete failed (permissions) — dropping
+	 * them would leave those PDFs on disk with nothing left to find them
+	 * by. Keep-data mode instead, like after a failed read above: tables,
+	 * options and usermeta stay, and a reinstall + delete can finish the job
+	 * once the cause is fixed. Only the protection files may already be
+	 * gone — and delete_custom_dir_contents() removes those solely from a
+	 * folder with nothing else left in it.
+	 */
+	if ( ! $plandose_keep_data ) {
+		$plandose_files_left = plandose_uninstall_invoice_files_left( $invoice_dir, $plandose_invoice_filenames );
+
+		if ( 0 !== $plandose_files_left ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the uninstaller has no UI to report to.
+			error_log(
+				sprintf(
+					'PlanDose uninstall: %s invoice file(s) listed in the database could not be removed from the invoice folder (%s), so PlanDose data (tables, options) was kept. Check the folder permissions and, for PLANDOSE_INVOICE_DIR, its .plandose-invoice-storage marker, then reinstall the plugin and delete it again.',
+					$plandose_files_left < 0 ? 'the' : (string) $plandose_files_left,
+					'' !== $invoice_dir ? $invoice_dir : 'folder unknown'
+				)
+			);
+			$plandose_keep_data = true;
+		}
+	}
+
+	if ( ! $plandose_keep_data ) {
+		foreach ( $plandose_tables as $plandose_table_name ) {
+			$wpdb->query( "DROP TABLE IF EXISTS `{$plandose_table_name}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dropping this plugin's own tables on uninstall; each name is $wpdb->prefix (regex-validated above) + a fixed suffix, not user input.
 		}
 	}
 

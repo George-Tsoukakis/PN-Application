@@ -605,6 +605,66 @@
 		rx.usePatient = false;
 	}
 
+	/**
+	 * Patient safety: the ticked rows that are the same
+	 * medicine more than once (SINTROM 4MG 1 δισκίο and 1/2 δισκίο — the
+	 * «sameDrugOtherDose» rows, each confirmed on its own). Both can be
+	 * right (1 in the morning, 1/2 in the evening), so this is never
+	 * refused, but it is added only on a second «Προσθήκη» with the same
+	 * selection (as the form does with PD.s.duplicateAck). A medicine
+	 * already in the plan counts as one of them.
+	 *
+	 * @return {{key:string, text:string}} key '' when there is none.
+	 */
+	function sameDrugTwice(rx) {
+		var groups = {};
+		var order = [];
+		rx.rows.forEach(function (row, i) {
+			if (row.loaded || !row.include || PD.rxItemProblem(row.item)) {
+				return;
+			}
+			var k = PD.medicineKey(row.item.name);
+			if (!groups[k]) {
+				groups[k] = [];
+				order.push(k);
+			}
+			groups[k].push({ at: i, item: row.item });
+		});
+		/* A medicine already in the plan (the soft «inPlan» note) counts
+		   too, first: ticking it again would put it in twice. A plan entry
+		   alone never asks. */
+		(PD.s.items || []).forEach(function (planItem, p) {
+			var k = PD.medicineKey(planItem.name);
+			if (groups[k]) {
+				groups[k].splice(groups[k].filter(function (x) {
+					return 'string' === typeof x.at;
+				}).length, 0, { at: 'p' + p, item: planItem });
+			}
+		});
+		var keys = [];
+		var texts = [];
+		order.forEach(function (k) {
+			var list = groups[k];
+			if (list.length < 2) {
+				return;
+			}
+			var doses = list.map(function (x) {
+				return PD.formatDose(x.item.doseAmount) + ' ' + PD.unitLabel(x.item.doseUnit);
+			});
+			keys.push(k + '|' + list.map(function (x) {
+				return x.at;
+			}).join(',') + '|' + doses.join(','));
+			texts.push(PD.format(
+				t('rxSameDrugTwice', 'Το %1$s θα μπει %2$d φορές στο πλάνο (%3$s). Αν πρέπει να τα πάρει όλα, πατήστε ξανά «Προσθήκη»· αλλιώς ξετσεκάρετε όσα δεν ισχύουν.'),
+				/* The name as read from the prescription. */
+				list.filter(function (x) {
+					return 'number' === typeof x.at;
+				})[0].item.name, list.length, doses.join(' ' + t('rxAnd', 'και') + ' ')
+			));
+		});
+		return { key: keys.join('||'), text: texts.join(' ') };
+	}
+
 	function addSelected() {
 		var rx = PD.s.rx;
 		if (!rx || 'review' !== rx.stage) {
@@ -620,6 +680,15 @@
 			PD.setMessage(t('rxAddBlocked', 'Για να ενεργοποιηθεί η «Προσθήκη», επιλέξτε ή επιβεβαιώστε τα σημειωμένα πεδία των επιλεγμένων φαρμάκων.'), 'error');
 			return;
 		}
+		/* The same medicine ticked twice: said first, added on the second
+		   press with the same selection. */
+		var twice = sameDrugTwice(rx);
+		if (twice.key && rx.sameDrugAck !== twice.key) {
+			rx.sameDrugAck = twice.key;
+			PD.setMessage(twice.text, 'error');
+			return;
+		}
+		rx.sameDrugAck = '';
 		applyPatient(rx);
 		var added = 0;
 		var left = [];
@@ -770,6 +839,9 @@
 		host.querySelectorAll('[data-rx-include]').forEach(function (box) {
 			box.addEventListener('change', function () {
 				rowOf(box, 'data-rx-include').include = box.checked;
+				/* Another selection: a «same medicine twice» already said
+				   is said again. */
+				PD.s.rx.sameDrugAck = '';
 				rerender(box.id);
 			});
 		});

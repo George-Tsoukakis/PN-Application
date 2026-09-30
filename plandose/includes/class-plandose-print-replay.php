@@ -28,7 +28,10 @@ final class Plandose_Print_Replay {
 	 * @return Plandose_Print_Result|null
 	 */
 	public static function answer( Plandose_Print_Request $request ) {
-		// 1. The same request again: answer from its record.
+		// 1. The same request again: answer from its record — up to
+		// MAX_REPLAYS times per request id, on top of the charged print and
+		// its free reprints (the full per-charge ceiling is spelled out
+		// above Plandose_Ajax::PRINT_RECEIPT_META_KEY).
 		$prior = Plandose_Print_Charges::find_request( $request->user_id, $request->request_hash );
 
 		if ( false === $prior ) {

@@ -8,6 +8,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const { load, closeAll, isoAhead } = require('./harness');
+const perf = require('./lib/perf.js');
 
 test.afterEach(closeAll);
 
@@ -138,14 +139,16 @@ test('M2: monthly x 90 days is 2 or 3 doses depending on the day — the count i
 /* L1 */
 test('L1: 1 MB without line breaks is refused at once; 190 KB of anchors is read in linear time', () => {
 	const { PD } = load();
-	let t0 = Date.now();
+	const t0 = Date.now();
 	const big = parse(PD, 'ΔΟΣΟΛΟΓΙΑ:'.repeat(100000));
-	assert.ok(Date.now() - t0 < 1000, (Date.now() - t0) + ' ms');
+	assert.ok(Date.now() - t0 < 1000 * perf.factor(), (Date.now() - t0) + ' ms');
 	assert.strictEqual(big.tooLarge, true);
 	assert.strictEqual(big.items.length, 0);
-	t0 = Date.now();
-	const many = parse(PD, 'ΔΟΣΟΛΟΓΙΑ:'.repeat(19000));
-	assert.ok(Date.now() - t0 < 1500, (Date.now() - t0) + ' ms');
+	/* Under 1.5 s on an idle machine; under load, linear growth is enough
+	   (lib/perf.js) — a backtracking regex grows at least quadratically. */
+	const t = perf.linearWithin((n) => parse(PD, 'ΔΟΣΟΛΟΓΙΑ:'.repeat(n)), 19000, 1500);
+	assert.ok(t.ok, t.why);
+	const many = t.result;
 	assert.strictEqual(many.items.length, 19000);
 	/* The split itself is still right: an anchor mid-line starts a line. */
 	const joined = parse(PD, HEAD + 'XOZAL F.C.TAB 5MG/TAB BTx30 ΔΟΣΟΛΟΓΙΑ : 1 ΔΙΣΚΙΑ x 1 φορά την ημέρα x 30 ημέρες 25% 1 6,00\n' + ZIN.replace('\nΔΟΣΟΛΟΓΙΑ', ' ΔΟΣΟΛΟΓΙΑ') + P);

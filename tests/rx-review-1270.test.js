@@ -21,9 +21,9 @@ const patientHead = (s, f) => 'ΕΠΩΝΥΜΟ : ΙΑΤΡΟΥ ΕΠΩΝΥΜΟ : ' 
 const ZIN = one('ZINADOL F.C.TAB 500MG/TAB BTx10', '1 ΔΙΣΚΙΑ x 2 φορές την ημέρα x 7 ημέρες');
 const BESPAR = one('BESPAR TAB 10MG/TAB BTx30', '1 ΔΙΣΚΙΑ x 1 φορά την ημέρα x 30 ημέρες');
 
-function app() {
-	const env = load();
-	env.PD.s.startDate = isoAhead(1);
+function app(opts) {
+	const env = load(opts);
+	env.PD.s.startDate = (opts && opts.now) ? env.isoAhead(1) : isoAhead(1);
 	env.PD.buildApp();
 	env.d = env.w.document;
 	return env;
@@ -173,7 +173,12 @@ test('weekly row: the weekday is chosen in the row, then the dates and the durat
 
 /* (12) */
 test('monthly row: the day of the month is typed in the row; the last-day rule from 29 on', () => {
-	const env = app();
+	/* Fixed «today» (Mon 5/1/2026): the plan runs 60 days from Tue 6/1, to
+	   Fri 6/3, so day 31 lands on Sat 31/1 and, by the last-day rule, on
+	   Sat 28/2 — two doses. With the real clock the count is 1, 2 or 3
+	   depending on the month lengths in the window (e.g. from 1/10: only
+	   31/10, as 30/11 is past 29/11). */
+	const env = app({ now: '2026-01-05T09:00:00' });
 	const { PD, d } = env;
 	paste(env, one('PROLIA INJ.SOL 60MG/ML BTx1', '1 ΕΝΕΣΗ x 1 φορά τον μήνα x 60 ημέρες'));
 	assert.match(d.querySelector('.pd-rx-warns').textContent, /τελευταία ημέρα του μήνα/);
@@ -192,6 +197,8 @@ test('monthly row: the day of the month is typed in the row; the last-day rule f
 	assert.strictEqual(d.getElementById('pd-rx-md-0').getAttribute('aria-describedby'), 'pd-rx-md-0-note');
 	assert.match(d.querySelector('.pd-rx-value').parentNode.parentNode.parentNode.textContent, /PROLIA/);
 	assert.match(d.querySelector('.pd-rx-total').textContent, /Σύνολο: 2 δόσεις/);
+	assert.match(d.querySelector('.pd-rx-total').textContent, /31\/01/);
+	assert.match(d.querySelector('.pd-rx-total').textContent, /28\/02/, 'the last-day rule: 28/2 for day 31');
 	/* Round 3: the count is confirmed on «Διάρκεια», offered only now. */
 	assert.strictEqual(addBtn(env).disabled, true);
 	change(env, d.getElementById('pd-rx-cf-0-days'), true);

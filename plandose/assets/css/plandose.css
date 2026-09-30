@@ -11,6 +11,19 @@
  * correctly on its own.
  */
 
+/*
+ * The edge of a form control (field, select, chip, date switch). WCAG
+ * 1.4.11 asks 3:1 for the boundary that shows where a control is;
+ * --pd-border (#d8d8d5, 1.43:1 on white) stays for decorative edges —
+ * cards, sections, separators. #7d8380 is 3.87:1 on white, 3.70:1 on
+ * the section background, 3.4:1 on its green tint and 3.51:1 on the
+ * preview's grey. Only this stylesheet's controls use it, so it lives
+ * here rather than with the shared tokens in plandose-trigger.css.
+ */
+:root {
+	--pd-border-control: #7d8380;
+}
+
 #plandose-confirm-close {
 	position: fixed;
 	inset: 0;
@@ -206,7 +219,7 @@
 	width: 100%;
 	padding: 12px 14px !important;
 	box-sizing: border-box;
-	border: 1.5px solid var(--pd-border) !important;
+	border: 1.5px solid var(--pd-border-control) !important;
 	border-radius: 10px !important;
 	font-size: 16px;
 	font-family: inherit;
@@ -311,7 +324,7 @@
 	font-weight: 700;
 	text-align: center;
 	border-radius: 10px;
-	border: 1.5px solid var(--pd-border);
+	border: 1.5px solid var(--pd-border-control);
 	background: #ffffff;
 	color: var(--pd-text);
 	cursor: pointer;
@@ -359,7 +372,7 @@
 }
 
 .pd-interval-preset {
-	border: 1px solid var(--pd-border);
+	border: 1px solid var(--pd-border-control);
 	background: #ffffff;
 	color: var(--pd-muted);
 	border-radius: 8px;
@@ -955,7 +968,7 @@
 	min-height: 36px;
 	max-width: 100%;
 	padding: 4px 8px;
-	border: 1px solid var(--pd-border);
+	border: 1px solid var(--pd-border-control);
 	border-radius: 6px;
 	background: #ffffff;
 	color: var(--pd-text);
@@ -992,7 +1005,7 @@
 	width: 5.5em;
 	min-height: 34px;
 	padding: 4px 6px;
-	border: 1px solid var(--pd-border);
+	border: 1px solid var(--pd-border-control);
 	border-radius: 6px;
 	background: #ffffff;
 	color: var(--pd-text);
@@ -1089,7 +1102,7 @@
 	align-items: stretch;
 	gap: 3px;
 	padding: 3px;
-	border: 1.5px solid var(--pd-border);
+	border: 1.5px solid var(--pd-border-control);
 	border-radius: 10px;
 	background: #ffffff;
 	box-sizing: border-box;
@@ -1393,7 +1406,7 @@
 	max-width: 100%;
 	height: 118px;
 	padding: 12px 14px;
-	border: 1px solid #b9d9cc;
+	border: 1px solid var(--pd-border-control);
 	border-radius: 10px;
 	background: #fff;
 	color: #16211d;
@@ -1979,6 +1992,30 @@
 	font-size: 13px;
 	line-height: 1.45;
 	font-weight: 600;
+}
+
+/* Medicines whose first dose moved to tomorrow, above the sheet
+   (preview.js renderPreview()); never on the printed sheet. */
+#plandose-modal .pd-preview-shift {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	background: #fff4d6;
+	color: #5c3d00;
+	border: 1px solid #b07800;
+	border-left-width: 4px;
+	border-radius: 8px;
+	font-size: 13px;
+	line-height: 1.45;
+	font-weight: 600;
+}
+
+#plandose-modal .pd-preview-shift ul {
+	margin: 0;
+	padding: 0 0 0 18px;
+}
+
+#plandose-modal .pd-preview-shift li + li {
+	margin-top: 4px;
 }
 
 /* The preview while the start date is unusable. */

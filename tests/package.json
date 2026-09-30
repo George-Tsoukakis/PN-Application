@@ -1,6 +1,6 @@
 {
   "name": "plandose-tests",
-  "version": "1.30.2",
+  "version": "1.30.3",
   "private": true,
   "description": "Tests for the PlanDose WordPress plugin (not shipped with the plugin).",
   "license": "GPL-2.0-or-later",

@@ -282,9 +282,13 @@ update_post_meta( $host, '_price', (string) $att );
 pdt_same( '', $usage(), 'a price equal to the ID is not usage' );
 delete_post_meta( $host, '_price' );
 
-update_post_meta( $host, '_product_image_gallery', '5,' . $att . ',7' );
+/* Neighbours that can never be the attachment itself (a fresh DB may give
+   it any small ID, e.g. 5 or 7). */
+$other1 = (string) ( $att + 1000 );
+$other2 = (string) ( $att + 2000 );
+update_post_meta( $host, '_product_image_gallery', $other1 . ',' . $att . ',' . $other2 );
 pdt_same( 'in_meta', $usage(), 'WooCommerce gallery comma list → in use' );
-update_post_meta( $host, '_product_image_gallery', '5,' . $att . '1,7' );
+update_post_meta( $host, '_product_image_gallery', $other1 . ',' . $att . '1,1' . $att . ',' . $other2 );
 pdt_same( '', $usage(), '… but not a longer ID containing it' );
 delete_post_meta( $host, '_product_image_gallery' );
 
@@ -292,7 +296,7 @@ update_post_meta( $host, 'hero_image', (string) $att );
 pdt_same( 'in_meta', $usage(), 'ACF image field (exact ID) → in use' );
 delete_post_meta( $host, 'hero_image' );
 
-update_post_meta( $host, 'gallery', array( '3', (string) $att ) );
+update_post_meta( $host, 'gallery', array( $other1, (string) $att ) );
 pdt_same( 'in_meta', $usage(), 'ACF gallery (serialized) → in use' );
 delete_post_meta( $host, 'gallery' );
 

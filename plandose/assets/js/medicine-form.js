@@ -379,21 +379,32 @@
 		PD.renderMedicationList();
 		PD.renderPreview();
 		PD.updateStepButtons();
+		/* Its first dose moved to tomorrow (the plan starts today and
+		   its daypart is before «Πρώτη δόση»): said right away, not only
+		   in the preview, which the pharmacist sees much later. A medicine
+		   safety warning below replaces it (the preview still lists it). */
+		var shiftText = typeof PD.firstDoseShiftText === 'function' ? PD.firstDoseShiftText(item) : '';
 		/* Patient safety: methotrexate is taken once a WEEK;
 		   daily dosing is a well-known fatal error. A warning, not a
 		   block — the pharmacist has the final word. */
 		if (PD.methotrexateTooOften(item)) {
 			PD.setMessage(PD.txt('rxWarn_methotrexateDaily', 'ΠΡΟΣΟΧΗ: η μεθοτρεξάτη χορηγείται συνήθως μία φορά την εβδομάδα. Επιβεβαιώστε τη συχνότητα.'), 'error');
+			shiftText = '';
 		} else if (PD.weeklyOnlyTooOften && PD.weeklyOnlyTooOften(item)) {
 			/* The other once-a-week medicines, the same way. */
 			PD.setMessage(PD.txt('rxWarn_weeklyOnly', 'ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα, εδώ είναι συχνότερα. Επαληθεύστε τη συχνότητα με τον γιατρό που το συνταγογράφησε.'), 'error');
+			shiftText = '';
 		} else if (PD.weeklyRepeatedItems) {
 			/* Each entry weekly, but the same once-a-week medicine
 			   in two entries (printing asks again, see validation.js). */
 			var rep = PD.weeklyRepeatedItems(PD.s.items);
 			if (rep.mtx.indexOf(item) !== -1 || rep.weekly.indexOf(item) !== -1) {
 				PD.setMessage(PD.txt('weeklyRepeatedWarn', 'ΠΡΟΣΟΧΗ: αυτό το φάρμακο χορηγείται συνήθως μία φορά την εβδομάδα και υπάρχει ήδη σε άλλη εγγραφή του πλάνου. Επιβεβαιώστε ότι μαζί δεν δίνουν δόση συχνότερα από το σωστό.'), 'error');
+				shiftText = '';
 			}
+		}
+		if (shiftText) {
+			PD.setMessage(shiftText, 'error');
 		}
 		var drugEl = document.getElementById('pd-drug');
 		if (drugEl) {

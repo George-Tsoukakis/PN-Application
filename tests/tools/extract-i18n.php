@@ -13,7 +13,11 @@
  *
  * Values are evaluated the way the page would see them with default settings:
  * __()/_x()/esc_*__() give their source string, sanitize_*()/(string) are
- * transparent, Plandose_Settings::setting( 'x', DEFAULT ) gives DEFAULT, a
+ * transparent, Plandose_Settings::setting( 'x', FALLBACK ) gives the value of
+ * 'x' in Plandose_Settings::default_settings() (includes/class-plandose-
+ * settings.php, what settings() returns on a site that never saved them —
+ * e.g. the disclaimer and thanks lines of the printout) and FALLBACK only
+ * when that has no evaluable 'x', a
  * ternary gives its first evaluable branch, local variables are followed.
  * sprintf() is filled server-side, so it is marked "formatted": true and its
  * arguments are substituted when they are known ($max_days = --max-days,
@@ -54,17 +58,21 @@ foreach ( glob( $plugin_dir . '/includes/*.php' ) as $inc ) {
 }
 
 /* Tokens without whitespace/comments; single chars become [ char, char ]. */
-$tokens = array();
-foreach ( token_get_all( file_get_contents( $file ) ) as $tok ) {
-	if ( is_array( $tok ) ) {
-		if ( in_array( $tok[0], array( T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ), true ) ) {
-			continue;
+function php_tokens( $path ) {
+	$out = array();
+	foreach ( token_get_all( file_get_contents( $path ) ) as $tok ) {
+		if ( is_array( $tok ) ) {
+			if ( in_array( $tok[0], array( T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ), true ) ) {
+				continue;
+			}
+			$out[] = array( $tok[0], $tok[1] );
+		} else {
+			$out[] = array( $tok, $tok );
 		}
-		$tokens[] = array( $tok[0], $tok[1] );
-	} else {
-		$tokens[] = array( $tok, $tok );
 	}
+	return $out;
 }
+$tokens = php_tokens( $file );
 
 function tk_is( $t, $what ) {
 	return $t[0] === $what;
@@ -306,6 +314,14 @@ function ev( $toks, $ctx ) {
 		return isset( $args[0] ) ? ev( $args[0], $ctx ) : array( null, false );
 	}
 	if ( '::setting' === substr( $name, -9 ) ) {
+		global $setting_defaults;
+		$key = ( isset( $args[0] ) && 1 === count( $args[0] ) && T_CONSTANT_ENCAPSED_STRING === $args[0][0][0] ) ? unquote( $args[0][0][1] ) : null;
+		if ( null !== $key && isset( $setting_defaults[ $key ] ) ) {
+			$d = ev( $setting_defaults[ $key ], array( 'max_days' => $ctx['max_days'], 'vars' => array() ) );
+			if ( null !== $d[0] ) {
+				return array( $d[0], false );
+			}
+		}
 		return isset( $args[1] ) ? ev( $args[1], $ctx ) : array( '', false );
 	}
 	if ( 'sprintf' === $name && isset( $args[0] ) ) {
@@ -339,6 +355,16 @@ function evaluate_dict( $arr, $ctx ) {
 }
 
 $bodies = function_bodies( $tokens );
+
+/* Plandose_Settings::default_settings(): key => value tokens. */
+$setting_defaults = array();
+$settings_file    = $plugin_dir . '/includes/class-plandose-settings.php';
+if ( is_readable( $settings_file ) ) {
+	$settings_bodies = function_bodies( php_tokens( $settings_file ) );
+	if ( isset( $settings_bodies['default_settings'] ) ) {
+		$setting_defaults = largest_keyed_array( $settings_bodies['default_settings'] );
+	}
+}
 
 /* Greek. */
 $el_arr = array();
