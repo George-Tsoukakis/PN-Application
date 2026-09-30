@@ -240,3 +240,42 @@ function jbli_single_description_html( $jbli_content ) {
 	return wpautop( wptexturize( $jbli_content ) );
 
 }
+
+/**
+ * Google Maps link for a listing's address (no API key, just a link).
+ *
+ * Uses the saved coordinates when the address was picked from Google's
+ * suggestions, so the pin is exact; otherwise searches for the address with
+ * the νομός and "Ελλάδα", so "Βύρωνας" finds Βύρωνας Αττικής.
+ *
+ * @since 9.9.63
+ *
+ * @param string   $jbli_address Street / area as typed.
+ * @param string[] $jbli_nomoi   νομός names.
+ * @param string   $jbli_lat     Latitude ('' if none).
+ * @param string   $jbli_lng     Longitude ('' if none).
+ * @return string URL, or '' without an address.
+ */
+function jbli_google_maps_url( $jbli_address, array $jbli_nomoi = array(), $jbli_lat = '', $jbli_lng = '' ) {
+
+	$jbli_address = trim( (string) $jbli_address );
+
+	if ( '' === $jbli_address ) { return ''; }
+
+	$jbli_lat = trim( (string) $jbli_lat );
+	$jbli_lng = trim( (string) $jbli_lng );
+
+	if ( is_numeric( $jbli_lat ) && is_numeric( $jbli_lng ) && ( 0.0 !== (float) $jbli_lat || 0.0 !== (float) $jbli_lng ) )
+	{
+		$jbli_query = (float) $jbli_lat . ',' . (float) $jbli_lng;
+	}
+	else
+	{
+		$jbli_parts = array_merge( array( $jbli_address ), array_values( array_filter( array_map( 'strval', $jbli_nomoi ) ) ) );
+		$jbli_parts[] = 'Ελλάδα';
+		$jbli_query   = implode( ', ', array_unique( $jbli_parts ) );
+	}
+
+	return 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode( $jbli_query );
+
+}

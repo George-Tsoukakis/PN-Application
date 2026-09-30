@@ -147,6 +147,15 @@ function jbli_rocket_rucss_safelist_selectors(): array {
 		'.jbli_form_layout',
 		'.jbli_form_aside',
 		'.jbli_form_media(.*)',
+		/*
+		 * 9.9.63: every plugin selector. The used CSS of a page is generated
+		 * once, from what the page showed at that moment; a new listing card,
+		 * a badge or the map that was not on the page then lost its styles
+		 * until «Clear Used CSS». All plugin classes start with jbli_.
+		 */
+		'.jbli_(.*)',
+		'#jbli_(.*)',
+		'[data-jbli_(.*)',
 	);
 
 }
@@ -166,6 +175,33 @@ if ( ! function_exists( 'jbli_rocket_rucss_safelist' ) )
 }
 
 add_filter( 'rocket_rucss_safelist', 'jbli_rocket_rucss_safelist' );
+
+/**
+ * Keep the plugin's stylesheets out of Remove Unused CSS altogether.
+ *
+ * WP Rocket then loads these files as they are (they are only enqueued on
+ * pages that show listings), so listings added after the used CSS was built
+ * are always styled. Complements the safelist above.
+ *
+ * @since 9.9.63
+ * @param array $jbli_exclusions Excluded stylesheet paths.
+ * @return array
+ */
+function jbli_rocket_rucss_external_exclusions( $jbli_exclusions ): array {
+
+	$jbli_exclusions = is_array( $jbli_exclusions ) ? $jbli_exclusions : array();
+
+	return jbli_rocket_add_exclusions(
+		$jbli_exclusions,
+		array(
+			'/job-listings/includes/jbli-tokens.css',
+			'/job-listings/modules/(.*)/css/(.*).css',
+		)
+	);
+
+}
+
+add_filter( 'rocket_rucss_external_exclusions', 'jbli_rocket_rucss_external_exclusions' );
 
 if ( ! function_exists( 'jbli_rocket_add_exclusions' ) )
 {

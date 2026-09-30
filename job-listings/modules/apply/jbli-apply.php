@@ -91,7 +91,7 @@ function jbli_apply_email_html( int $jbli_post_id, array $jbli_ph, string $jbli_
 		. '</p>'
 		. '<div style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#374151;">' . nl2br( esc_html( $jbli_intro ) ) . '</div>'
 
-		. jbli_email_section_title( __( 'Στοιχεία υποψηφίου', 'job-listings' ) )
+		. jbli_email_section_title( __( 'Στοιχεία Υποψηφίου', 'job-listings' ) )
 		. jbli_email_info_table( array(
 			array( __( 'Ονοματεπώνυμο', 'job-listings' ), esc_html( $jbli_ph['name'] ) ),
 			array( __( 'Κινητό', 'job-listings' ), '<a href="' . esc_url( $jbli_phone_href, array( 'tel' ) ) . '" style="color:#047857;text-decoration:none;">' . esc_html( $jbli_ph['phone'] ) . '</a>' ),

@@ -25,3 +25,13 @@ $uas = array(
 	'' => true,
 );
 foreach ( $uas as $ua => $e ) { ok( jbli_is_bot_user_agent( $ua ) === $e, 'bot check: ' . substr( $ua, 0, 40 ) ); }
+
+/* Google Maps link for the address (9.9.63). */
+jbli_test_load( 'includes/jbli-formatters.php', 'jbli_google_maps_url' );
+$u = jbli_google_maps_url( 'Βύρωνας', array( 'Αττική' ) );
+ok( 0 === strpos( $u, 'https://www.google.com/maps/search/?api=1&query=' ), 'maps link uses the public search URL' );
+ok( rawurldecode( substr( $u, strpos( $u, 'query=' ) + 6 ) ) === 'Βύρωνας, Αττική, Ελλάδα', 'no coordinates: address + νομός + Ελλάδα' );
+$u = jbli_google_maps_url( 'Σταδίου 10', array( 'Αττική' ), '37.9790', '23.7310' );
+ok( rawurldecode( substr( $u, strpos( $u, 'query=' ) + 6 ) ) === '37.979,23.731', 'coordinates win when saved' );
+ok( '' === jbli_google_maps_url( '  ' ), 'no address → no link' );
+ok( false === strpos( jbli_google_maps_url( 'a&b <c>' ), '<' ), 'address is URL-encoded' );

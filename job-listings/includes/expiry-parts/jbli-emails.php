@@ -240,7 +240,8 @@ function jbli_email_wrap( $jbli_title, $jbli_body_html, $jbli_preheader = '' ) {
  */
 function jbli_email_section_title( $jbli_text ) {
 
-	return '<p style="margin:22px 0 8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#047857;">'
+	/* 9.9.63: normal case (was uppercase); the title is written as it should read, e.g. «Στοιχεία Υποψηφίου». */
+	return '<p style="margin:22px 0 8px;font-size:14px;font-weight:800;letter-spacing:0;color:#047857;">'
 		. esc_html( (string) $jbli_text )
 		. '</p>';
 

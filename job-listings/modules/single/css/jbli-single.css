@@ -446,3 +446,40 @@
 .jbli_page_wrap_single .jbli_single_source .jbli_btn {
   text-decoration: none;
 }
+
+/* 9.9.63 — address opens in Google Maps */
+.jbli_maps_link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--jbli_green_dk);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.jbli_maps_link:hover,
+.jbli_maps_link:focus-visible {
+  text-decoration: underline;
+}
+
+.jbli_maps_link_hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--jbli_green_lt);
+  color: var(--jbli_green_ink);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.jbli_maps_link .screen-reader-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

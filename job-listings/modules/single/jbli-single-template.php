@@ -25,6 +25,8 @@ get_header();
 		$jbli_address  		= isset($jbli_meta[JBLI_META_ADDRESS][0]) ? sanitize_text_field((string) $jbli_meta[JBLI_META_ADDRESS][0]) : '';
 		$jbli_phone    		= isset($jbli_meta[JBLI_META_CONTACT_PHONE][0]) ? (string) $jbli_meta[JBLI_META_CONTACT_PHONE][0] : '';
 		$jbli_email    		= isset($jbli_meta[JBLI_META_EMAIL][0]) ? (string) $jbli_meta[JBLI_META_EMAIL][0] : '';
+		$jbli_lat      		= isset($jbli_meta[JBLI_META_LAT][0]) ? (string) $jbli_meta[JBLI_META_LAT][0] : '';
+		$jbli_lng      		= isset($jbli_meta[JBLI_META_LNG][0]) ? (string) $jbli_meta[JBLI_META_LNG][0] : '';
 
 		$jbli_expires 		= function_exists('jbli_get_or_create_expiry_date') ? jbli_get_or_create_expiry_date($jbli_id) : (string) ($jbli_meta[JBLI_META_EXPIRES][0] ?? '');
 
@@ -223,7 +225,30 @@ get_header();
 									?>
 									<div class="jbli_info_card_row">
 										<span class="jbli_info_card_label"><?php esc_html_e( 'Διεύθυνση', 'job-listings' ); ?></span>
-										<span class="jbli_info_card_value"><?php echo esc_html( $jbli_address ); ?></span>
+										<span class="jbli_info_card_value">
+											<?php
+												/* 9.9.63: the address opens in Google Maps. */
+												$jbli_maps_url = function_exists( 'jbli_google_maps_url' ) ? jbli_google_maps_url( $jbli_address, $jbli_nomoi, $jbli_lat, $jbli_lng ) : '';
+
+												if ( '' !== $jbli_maps_url )
+												{
+													?>
+													<a class="jbli_maps_link" href="<?php echo esc_url( $jbli_maps_url ); ?>" target="_blank" rel="noopener noreferrer">
+														<?php echo esc_html( $jbli_address ); ?>
+														<span class="jbli_maps_link_hint">
+															<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+															<?php esc_html_e( 'Χάρτης', 'job-listings' ); ?>
+														</span>
+														<span class="screen-reader-text"><?php esc_html_e( '(ανοίγει το Google Maps σε νέα καρτέλα)', 'job-listings' ); ?></span>
+													</a>
+													<?php
+												}
+												else
+												{
+													echo esc_html( $jbli_address );
+												}
+											?>
+										</span>
 									</div>
 									<?php
 								}
