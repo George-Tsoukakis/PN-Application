@@ -4,17 +4,19 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A chat assistant that answers only from the knowledge you train it with. No AI, no third-party services.
+A chat assistant that answers from the knowledge you train it with and from your own pages. AI (Claude) is optional and off by default.
 
 == Description ==
 
-PN Chat adds a chat assistant to your site. It runs entirely inside your
-WordPress, for free: it does **not** use artificial intelligence and does not
-send anything to any outside service.
+PN Chat adds a chat assistant to your site. By default it runs entirely
+inside your WordPress, for free, and sends nothing to any outside service.
+Two optional features, both off by default, use Claude (Anthropic): an
+administrators' training assistant, and AI answers in the public chat (see
+Privacy).
 
 * **Answers only from your knowledge base.** Each entry holds the questions
   (as many phrasings as you like) and the answer. It never guesses.
@@ -29,7 +31,12 @@ send anything to any outside service.
   and no outside service.
 * **Optional AI training assistant (admin only):** Claude reads pages of your
   own site and drafts knowledge entries that you review before they are saved.
-  The public chat never uses AI.
+* **Optional AI answers in the chat:** when no trained answer fits but pages
+  of the site are about the question, Claude answers from those pages. The
+  answer is shown at once, labelled as automatic and not yet checked by a
+  person, and waits in Questions for review. Questions close to a blocked
+  topic, or with medical words (dosage, side effects, pills, mg…; filter
+  `pnchat_ai_medical_terms`), never go to the AI.
 * **Blocked questions:** questions it must not answer (for example medical
   advice) get your own message instead. You train them like answers.
 * **Mobile friendly:** full screen on phones, stays above the on-screen
@@ -69,8 +76,17 @@ topic (medical questions). Review and change them freely.
 
 = Does it send questions anywhere? =
 
-No. The chat talks only to your own site (REST API namespace `pn-chat/v1`).
-There is no connection to any AI or other service.
+Not by default. The chat talks only to your own site (REST API namespace
+`pn-chat/v1`). Only if you switch on "AI in the chat" are questions without a
+trained answer sent to the Claude API, as described under Privacy.
+
+= The site is behind Cloudflare (or another proxy). =
+
+Then every visitor seems to come from the proxy's address and the per-visitor
+limits become one limit for the whole site. Name the header that carries the
+real address in wp-config.php, for example
+`define( 'PNCHAT_IP_HEADER', 'HTTP_CF_CONNECTING_IP' );`. Only use a header
+your proxy always sets: visitors can forge any other.
 
 = How do I make it understand more questions? =
 
@@ -87,25 +103,43 @@ copy from the Brain screen before big changes.
 == Privacy ==
 
 * AI answers in the chat (off by default): when there is no trained answer
-  but pages of the site are about the question, the visitor's question
-  (never their e-mail or name) and those public pages are sent to the Claude
-  API of Anthropic; the answer is marked as automatic and waits for an
-  administrator's review. Daily limit set by the administrator.
+  but pages of the site are about the question, the text of the question and
+  those public pages are sent to the Claude API of Anthropic. The e-mail and
+  name fields are never sent; e-mail addresses, Greek phone numbers and
+  11-digit numbers (AMKA) typed inside the question are replaced before
+  sending, but other personal details in the text are not detected. The
+  answer is shown at once, marked as automatic, and waits for an
+  administrator's review. Daily limit of AI calls set by the administrator.
 * AI training assistant (off by default): when an administrator presses a
-  "✨" button, the chosen question (never the visitor's e-mail or name) and
-  public pages of the site are sent to the Claude API of Anthropic
+  "✨" button, the text of the chosen question (cleaned as above) and public
+  pages of the site are sent to the Claude API of Anthropic
   (https://www.anthropic.com/legal/privacy). Nothing is sent otherwise.
 
 * Stored: the questions, and the e-mail address and name only if the visitor
   enters them. Questions are deleted automatically after 365 days (setting).
 * IP addresses are not stored; a hash is kept briefly (up to one hour) for
-  the rate limit.
+  the rate limit. The page a question was asked on is stored without its
+  query string.
 * The conversation stays in the browser's sessionStorage until the tab is
   closed.
 * Hooks into the WordPress personal data export and erase tools, and suggests
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.8.0 =
+* Privacy export: every question of a person is exported (it stopped at 500 and said it was done).
+* Brain upload "replace": the file is checked first; a file without a usable entry changes nothing, and the entries are swapped all at once or not at all.
+* Brain download with questions keeps the AI answers waiting for review and the page of each question.
+* AI daily limit, per-visitor limits and AI cost totals are atomic counters (parallel requests can no longer pass together). Calls that never reached Claude do not use the daily limit.
+* The e-mail form and the "did this help?" buttons come back after the visitor opens another page.
+* A save the database refused is reported as an error (entries, questions, e-mail, feedback); the same e-mail sent twice no longer notifies twice.
+* Texts with {question} and {email} instead of %s; a "%" in a text can no longer break the chat.
+* AI: questions close to a blocked topic or with medical words never go to the AI; medical questions are refused in the prompt; e-mails, phone numbers and AMKA inside a question are replaced before sending; the source link must be one of the pages sent. Texts about what is sent are corrected.
+* No more "no AI" in the plugin description, readme and settings.
+* PNCHAT_IP_HEADER for sites behind Cloudflare or another proxy.
+* Site search reads only the pages that hold a question word; "update now" indexes in the background.
+* Notifications follow the site's admin e-mail when no address is set; cache writes priced at 1.25x; page addresses stored without query strings; topic of an entry from its title and questions first; assets in the page head where possible; request time-out and Greek error texts in the chat; keyboard focus kept inside the full-screen chat; multisite uninstall.
 
 = 1.7.0 =
 * E-mail replies are sent as a light HTML message (one card in the site colour, no images) with the plain text as the alternative part: the visitor's question as a quote, "- " lines as a list, a line with only a link as a button, other links clickable, a short footer. The text is still written as plain text on the reply screen.

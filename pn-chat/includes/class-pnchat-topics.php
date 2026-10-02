@@ -132,7 +132,9 @@ final class PNChat_Topics {
 	}
 
 	/**
-	 * Topic of a trained entry, from its title, questions and answer.
+	 * Topic of a trained entry: from its title, questions and keywords; the
+	 * answer only when those name no topic (an answer that mentions another
+	 * product in passing must not move the entry to that topic).
 	 *
 	 * @param int $id Entry id.
 	 * @return string
@@ -140,8 +142,15 @@ final class PNChat_Topics {
 	public static function of_entry( $id ) {
 		static $cache = array();
 		if ( ! isset( $cache[ $id ] ) ) {
-			$e            = PNChat_Store::entry( (int) $id );
-			$cache[ $id ] = $e ? self::detect( $e['title'] . ' . ' . implode( ' . ', $e['phrasings'] ) . ' . ' . implode( ' . ', $e['keywords'] ) . ' . ' . $e['answer'] ) : '';
+			$e = PNChat_Store::entry( (int) $id );
+			$t = '';
+			if ( $e ) {
+				$t = self::detect( $e['title'] . ' . ' . implode( ' . ', $e['phrasings'] ) . ' . ' . implode( ' . ', $e['keywords'] ) );
+				if ( '' === $t ) {
+					$t = self::detect( $e['answer'] );
+				}
+			}
+			$cache[ $id ] = $t;
 		}
 		return $cache[ $id ];
 	}

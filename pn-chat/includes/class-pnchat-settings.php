@@ -31,9 +31,9 @@ final class PNChat_Settings {
 			'welcome'          => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds.',
 			'placeholder'      => 'Γράψτε την ερώτησή σας…',
 			'fallback'         => 'Δεν έχουμε πληροφορίες για το συγκεκριμένο ερώτημα. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
-			'partial'          => 'Για το «%s» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
+			'partial'          => 'Για το «{question}» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'unhelpful'        => 'Λυπούμαστε που δεν βοήθησε. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
-			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.',
+			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο {email}.',
 			'suggestions'      => "# Ερωτήσεις για το QR ReBuilder\nΤι είναι το QR ReBuilder;\nΠώς χρησιμοποιώ το QR ReBuilder;\nΆνοιγμα του QR ReBuilder | /qr-rebuilder/\n# Ερωτήσεις για το PlanDose\nΤι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;\nΆνοιγμα του PlanDose | /plandose/",
 			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει, δωρεάν\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει",
 			'topics'           => "QR ReBuilder, rebuilder, datamatrix, gs1\nPlanDose, πλάνο δοσολογίας, πλάνα δοσολογίας, pro\nΚοινότητα Viber, viber\nΕλλείψεις ΕΟΦ, ελλείψεις, έλλειψη, εοφ\nΥπολογισμός αποθέματος, απόθεμα",
@@ -75,11 +75,39 @@ final class PNChat_Settings {
 		if ( ! is_array( $saved ) ) {
 			$saved = array();
 		}
-		$all = array_merge( self::defaults(), array_intersect_key( $saved, self::defaults() ) );
-		if ( '' === $all['notify_email'] ) {
-			$all['notify_email'] = (string) get_option( 'admin_email' );
-		}
-		return $all;
+		return array_merge( self::defaults(), array_intersect_key( $saved, self::defaults() ) );
+	}
+
+	/**
+	 * Where notifications go: the setting, or the site's admin e-mail when it
+	 * is empty (read each time, so a new admin e-mail is followed).
+	 *
+	 * @return string
+	 */
+	public static function notify_address() {
+		$email = (string) self::value( 'notify_email' );
+		return '' !== $email ? $email : (string) get_option( 'admin_email' );
+	}
+
+	/**
+	 * An editable text with its placeholder filled in. No sprintf(): a «%»
+	 * typed in the text (e.g. «10%») can never break the chat.
+	 *
+	 * @param string $text  Setting text.
+	 * @param string $token Placeholder name: «{question}» or «{email}».
+	 * @param string $value Value.
+	 * @return string
+	 */
+	public static function fill( $text, $token, $value ) {
+		// Texts saved before 1.8.0 use %s (and %% for a percent sign).
+		return strtr(
+			(string) $text,
+			array(
+				'{' . $token . '}' => (string) $value,
+				'%s'               => (string) $value,
+				'%%'               => '%',
+			)
+		);
 	}
 
 	/**
@@ -165,15 +193,24 @@ final class PNChat_Settings {
 	 */
 	public static function migrate() {
 		$version = (int) get_option( 'pnchat_settings_version' );
-		if ( $version >= 6 ) {
+		if ( $version >= 7 ) {
 			return;
 		}
 		if ( $version < 5 ) {
 			self::migrate_to_5( $version );
 		}
-		// 1.7.0: «…στην PharmacyNeeds» in the e-mail subject.
-		self::replace_old_defaults( array( 'reply_subject' => array( 'Απάντηση στην ερώτησή σας στο PharmacyNeeds' ) ) );
-		update_option( 'pnchat_settings_version', 6, false );
+		if ( $version < 6 ) {
+			// 1.7.0: «…στην PharmacyNeeds» in the e-mail subject.
+			self::replace_old_defaults( array( 'reply_subject' => array( 'Απάντηση στην ερώτησή σας στο PharmacyNeeds' ) ) );
+		}
+		// 1.8.0: {question} and {email} instead of %s.
+		self::replace_old_defaults(
+			array(
+				'partial'      => array( 'Για το «%s» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.' ),
+				'email_thanks' => array( 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.' ),
+			)
+		);
+		update_option( 'pnchat_settings_version', 7, false );
 	}
 
 	/**

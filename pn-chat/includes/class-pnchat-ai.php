@@ -1,8 +1,11 @@
 <?php
 /**
- * AI training assistant (admin only). Claude reads pages of THIS site and
- * drafts knowledge entries; an administrator reviews them before anything is
- * saved. The public chat never calls the API.
+ * Claude, both off by default:
+ * - training assistant (admin): reads pages of THIS site and drafts
+ *   knowledge entries that an administrator reviews before they are saved;
+ * - AI answers in the chat («ai_chat»): when no trained answer fits but
+ *   pages of the site are about the question, Claude answers from those
+ *   pages; the answer is labelled and waits in Ερωτήματα for review.
  *
  * Plain HTTP through the WordPress HTTP API (wp_remote_post), as WordPress
  * plugins should, to the Claude Messages API.
@@ -28,7 +31,7 @@ final class PNChat_AI {
 	const MODELS_URL    = 'https://api.anthropic.com/v1/models?limit=1';
 	const API_VERSION   = '2023-06-01';
 	const DEFAULT_MODEL = 'claude-opus-5-5';
-	const USAGE_OPTION  = 'pnchat_ai_usage';
+	const USAGE_OPTION  = 'pnchat_ai_usage'; // Before 1.8.0; now counters «usage:…».
 	const PAGE_CHARS    = 15000; // Characters of each page sent with a question.
 	const SOURCE_CHARS  = 60000; // Characters of a page turned into entries.
 
@@ -237,30 +240,53 @@ final class PNChat_AI {
 	}
 
 	/**
-	 * Adds a call's tokens to the running total shown in the settings.
+	 * Adds a call's tokens to the running total shown in the settings. Each
+	 * number is its own atomic counter, so parallel calls all count.
 	 *
 	 * @param array<string,mixed> $usage API usage object.
 	 * @param string              $model Model id.
 	 * @return void
 	 */
 	private static function add_usage( array $usage, $model = '' ) {
-		$u = get_option( self::USAGE_OPTION, array() );
-		$u = is_array( $u ) ? $u : array();
+		$add = array( 'calls' => 1 );
 		foreach ( array( 'input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens' ) as $k ) {
-			$u[ $k ] = (int) ( $u[ $k ] ?? 0 ) + (int) ( $usage[ $k ] ?? 0 );
+			$add[ $k ] = (int) ( $usage[ $k ] ?? 0 );
 		}
-		$u['calls'] = (int) ( $u['calls'] ?? 0 ) + 1;
 		// Cost at list price, per call, so mixed models add up correctly.
+		// Cache writes cost 1.25 times the input price.
 		$p = self::prices( (string) $model );
 		if ( $p ) {
-			$usd           = ( (int) ( $usage['input_tokens'] ?? 0 ) + (int) ( $usage['cache_creation_input_tokens'] ?? 0 ) ) * $p[0] / 1e6
-				+ (int) ( $usage['output_tokens'] ?? 0 ) * $p[1] / 1e6
-				+ (int) ( $usage['cache_read_input_tokens'] ?? 0 ) * $p[2] / 1e6;
-			$u['micro_usd'] = (int) ( $u['micro_usd'] ?? 0 ) + (int) round( $usd * 1e6 );
+			$usd              = $add['input_tokens'] * $p[0] / 1e6
+				+ $add['cache_creation_input_tokens'] * $p[0] * 1.25 / 1e6
+				+ $add['output_tokens'] * $p[1] / 1e6
+				+ $add['cache_read_input_tokens'] * $p[2] / 1e6;
+			$add['micro_usd'] = (int) round( $usd * 1e6 );
 		} else {
-			$u['unpriced'] = (int) ( $u['unpriced'] ?? 0 ) + 1;
+			$add['unpriced'] = 1;
 		}
-		update_option( self::USAGE_OPTION, $u, false );
+		foreach ( $add as $k => $v ) {
+			if ( $v > 0 ) {
+				PNChat_Counter::add( 'usage:' . $k, $v );
+			}
+		}
+	}
+
+	/**
+	 * Moves the totals kept in an option before 1.8.0 into the counters.
+	 *
+	 * @return void
+	 */
+	public static function migrate_usage() {
+		$old = get_option( self::USAGE_OPTION );
+		if ( ! is_array( $old ) ) {
+			return;
+		}
+		foreach ( $old as $k => $v ) {
+			if ( (int) $v > 0 && preg_match( '/^[a-z_]+$/', (string) $k ) ) {
+				PNChat_Counter::add( 'usage:' . $k, (int) $v );
+			}
+		}
+		delete_option( self::USAGE_OPTION );
 	}
 
 	/**
@@ -284,8 +310,7 @@ final class PNChat_AI {
 	 * @return array<string,int>
 	 */
 	public static function usage() {
-		$u = get_option( self::USAGE_OPTION, array() );
-		return is_array( $u ) ? array_map( 'intval', $u ) : array();
+		return PNChat_Counter::all( 'usage:' );
 	}
 
 	/**
@@ -358,7 +383,9 @@ final class PNChat_AI {
 	 * @return array{found:bool,entry:array<string,mixed>,sources:array<int,array{title:string,url:string}>,note:string}|WP_Error
 	 */
 	public static function draft_for_question( $question, $model = '', $timeout = 180 ) {
-		$found = PNChat_Site_Search::search( $question, 4 );
+		// Without personal details, for the search and for Claude.
+		$question = self::redact( $question );
+		$found    = PNChat_Site_Search::search( $question, 4 );
 		$posts = array();
 		foreach ( $found as $r ) {
 			$p = get_post( $r['id'] );
@@ -391,16 +418,20 @@ final class PNChat_AI {
 			'required'             => array( 'found', 'note', 'entry' ),
 			'additionalProperties' => false,
 		);
-		$system = self::rules() . "\n- Αν οι σελίδες ΔΕΝ απαντούν στην ερώτηση, βάλε found=false, εξήγησε στο note τι λείπει, και άφησε τα πεδία του entry κενά.\n- note: μία πρόταση για τον διαχειριστή.";
+		$system = self::rules() . "\n- Αν οι σελίδες ΔΕΝ απαντούν στην ερώτηση, βάλε found=false, εξήγησε στο note τι λείπει, και άφησε τα πεδία του entry κενά.\n- Αν η ερώτηση ζητά ιατρική συμβουλή, διάγνωση, δοσολογία ή οδηγίες για φάρμακο, βάλε found=false, ό,τι κι αν γράφουν οι σελίδες.\n- source_url: μία από τις διευθύνσεις των σελίδων που σου δόθηκαν.\n- note: μία πρόταση για τον διαχειριστή.";
 		$user   = "Σελίδες του site:\n" . self::pages_text( $posts, self::PAGE_CHARS ) . "\nΕρώτηση επισκέπτη:\n<question>" . $question . "</question>\n\nΓράψε μία γνώση που απαντά στην ερώτηση, μόνο από τις σελίδες. Η ερώτηση του επισκέπτη να είναι η πρώτη από τις phrasings.";
 		$json   = self::call( $system, $user, $schema, $model, $timeout );
 		if ( is_wp_error( $json ) ) {
 			return $json;
 		}
 		$entry = PNChat_Brain::clean_entry( $json['entry'] ?? array() );
+		// The source must be one of the pages sent; otherwise the best match.
+		$urls   = array_column( $sources, 'url' );
+		$source = (string) ( $json['entry']['source_url'] ?? '' );
+		$source = in_array( $source, $urls, true ) ? $source : (string) ( $urls[0] ?? '' );
 		return array(
 			'found'   => ! empty( $json['found'] ) && null !== $entry,
-			'entry'   => $entry ? self::with_source( $entry, (string) ( $json['entry']['source_url'] ?? '' ) ) : array(),
+			'entry'   => $entry ? self::with_source( $entry, $source ) : array(),
 			'sources' => $sources,
 			'note'    => sanitize_text_field( (string) ( $json['note'] ?? '' ) ),
 		);
@@ -416,27 +447,108 @@ final class PNChat_AI {
 	}
 
 	/**
-	 * Takes one of today's AI chat answers; false when the day's limit is used.
+	 * Today's counter of AI calls from the chat.
+	 *
+	 * @return string
+	 */
+	private static function day_key() {
+		return 'ai_chat:' . gmdate( 'Ymd' );
+	}
+
+	/**
+	 * Takes one of today's AI chat calls; false when the day's limit is
+	 * used. Atomic, so parallel visitors cannot go over the limit. Every
+	 * call that reaches Claude counts, also when it finds no answer.
 	 *
 	 * @return bool
 	 */
 	public static function chat_take() {
-		$key  = 'pnchat_ai_chat_' . gmdate( 'Ymd' );
-		$used = (int) get_transient( $key );
-		if ( $used >= (int) PNChat_Settings::value( 'ai_chat_daily' ) ) {
-			return false;
-		}
-		set_transient( $key, $used + 1, DAY_IN_SECONDS + HOUR_IN_SECONDS );
-		return true;
+		return PNChat_Counter::take( self::day_key(), (int) PNChat_Settings::value( 'ai_chat_daily' ), 2 * DAY_IN_SECONDS, false );
 	}
 
 	/**
-	 * AI chat answers used today.
+	 * Gives today's call back (the request never reached Claude).
+	 *
+	 * @return void
+	 */
+	public static function chat_give_back() {
+		PNChat_Counter::give_back( self::day_key() );
+	}
+
+	/**
+	 * The error came before Claude did any work (nothing was charged).
+	 *
+	 * @param WP_Error $error Error of call().
+	 * @return bool
+	 */
+	public static function not_charged( WP_Error $error ) {
+		return in_array( $error->get_error_code(), array( 'pnchat_ai_key', 'pnchat_ai_http', 'pnchat_ai_status' ), true );
+	}
+
+	/**
+	 * AI chat calls used today.
 	 *
 	 * @return int
 	 */
 	public static function chat_used_today() {
-		return (int) get_transient( 'pnchat_ai_chat_' . gmdate( 'Ymd' ) );
+		return PNChat_Counter::get( self::day_key() );
+	}
+
+	/**
+	 * Words that make a question medical: such a question never goes to the
+	 * AI, whatever pages the site has. Greek as typed (accents and Greeklish
+	 * are folded); a word matches itself and the words it begins
+	 * («δοσολογ» → δοσολογία, δοσολογίες). Extend with the
+	 * «pnchat_ai_medical_terms» filter.
+	 *
+	 * @return string[]
+	 */
+	public static function medical_terms() {
+		return (array) apply_filters(
+			'pnchat_ai_medical_terms',
+			array( 'δοσολογ', 'δόση', 'δόσεις', 'παρενέργει', 'αλληλεπίδρ', 'αντένδειξ', 'χάπι', 'χάπια', 'αντιβίωσ', 'παυσίπον', 'πυρετ', 'πόνο', 'πονάει', 'σύμπτωμ', 'διάγνωσ', 'θεραπεί', 'εγκυμοσύν', 'έγκυος', 'θηλασμ', 'mg', 'ml', 'σιρόπι', 'σταγόνες', 'αλλεργί', 'φαρμάκου', 'φάρμακο', 'φάρμακα', 'φαρμάκων' )
+		);
+	}
+
+	/**
+	 * The question uses a medical word (see medical_terms()).
+	 *
+	 * @param string $question Question.
+	 * @return bool
+	 */
+	public static function is_medical( $question ) {
+		// An amount with a unit («500mg», «5 ml»).
+		if ( preg_match( '/\d\s*(?:mg|mcg|μg|ml|iu)(?![\p{L}])/iu', (string) $question ) ) {
+			return true;
+		}
+		$words = explode( ' ', PNChat_Text::fold( $question ) );
+		foreach ( self::medical_terms() as $term ) {
+			$stem = PNChat_Text::fold( str_replace( '/', ' ', (string) $term ) );
+			if ( '' === $stem || false !== strpos( $stem, ' ' ) ) {
+				continue;
+			}
+			foreach ( $words as $w ) {
+				if ( $w === $stem || ( strlen( $stem ) >= 4 && 0 === strpos( $w, $stem ) ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Personal details typed inside a question, replaced before the text
+	 * leaves the site: e-mail addresses, Greek phone numbers and 11-digit
+	 * numbers (ΑΜΚΑ). The question's own e-mail and name fields are never sent.
+	 *
+	 * @param string $text Question.
+	 * @return string
+	 */
+	public static function redact( $text ) {
+		$text = (string) preg_replace( '/[\p{L}\p{N}._%+\-]+@[\p{L}\p{N}\-]+(?:\.[\p{L}\p{N}\-]+)+/u', '[e-mail]', (string) $text );
+		$text = (string) preg_replace( '/(?<![\d+])(?:(?:\+|00)30[\s.\-]?)?(?:69\d|2\d\d)(?:[\s.\-]?\d){7}(?!\d)/u', '[τηλέφωνο]', $text );
+		$text = (string) preg_replace( '/(?<!\d)\d{11}(?!\d)/', '[αριθμός]', $text );
+		return (string) apply_filters( 'pnchat_ai_redact', $text );
 	}
 
 	/**

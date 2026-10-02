@@ -28,7 +28,26 @@ final class PNChat_Frontend {
 	 */
 	public static function init() {
 		add_shortcode( 'pn_chat', array( __CLASS__, 'shortcode' ) );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'early' ) );
 		add_action( 'wp_footer', array( __CLASS__, 'floating' ) );
+	}
+
+	/**
+	 * Loads the style and script in the normal place (the style in <head>),
+	 * where caching and optimisation plugins expect them, whenever the chat
+	 * will be on the page: the floating button, or a post with [pn_chat].
+	 * The shortcode and the footer still load them late if needed.
+	 *
+	 * @return void
+	 */
+	public static function early() {
+		if ( ! self::visible() ) {
+			return;
+		}
+		$post = get_post();
+		if ( 'floating' === PNChat_Settings::value( 'placement' ) || ( is_singular() && $post && has_shortcode( (string) $post->post_content, 'pn_chat' ) ) ) {
+			self::enqueue();
+		}
 	}
 
 	/**

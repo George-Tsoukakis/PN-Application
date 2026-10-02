@@ -33,7 +33,7 @@ jobs:
           status=0
           while IFS= read -r -d '' f; do
             php -l "$f" >/dev/null || { php -l "$f"; status=1; }
-          done < <(find plandose tests -name '*.php' -not -path '*/node_modules/*' -print0)
+          done < <(find plandose pn-chat tests -name '*.php' -not -path '*/node_modules/*' -print0)
           exit $status
 
   php-qa:

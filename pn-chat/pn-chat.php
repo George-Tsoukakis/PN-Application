@@ -2,8 +2,8 @@
 /**
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
- * Description: Our own chat assistant for PharmacyNeeds. It answers only from the knowledge we train it with, with no AI and no third-party services, and logs what it cannot answer so we can reply by e-mail and teach it.
- * Version: 1.7.0
+ * Description: Our own chat assistant for PharmacyNeeds. It answers from the knowledge we train it with and from the site's own pages, and logs what it cannot answer so we can reply by e-mail and teach it. Optional, off by default: Claude (Anthropic) drafts entries for administrators and may answer in the chat from the site's pages.
+ * Version: 1.8.0
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -19,13 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.7.0' );
+define( 'PNCHAT_VERSION', '1.8.0' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );
 
 require_once PNCHAT_PATH . 'includes/class-pnchat-text.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-matcher.php';
+require_once PNCHAT_PATH . 'includes/class-pnchat-counter.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-settings.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-store.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-brain.php';
@@ -73,6 +74,8 @@ register_deactivation_hook( __FILE__, 'pnchat_deactivate' );
 function pnchat_maybe_upgrade() {
 	if ( (int) get_option( 'pnchat_db_version' ) < PNChat_Store::DB_VERSION ) {
 		PNChat_Store::install();
+		// 1.8.0: the AI usage totals move from an option to atomic counters.
+		PNChat_AI::migrate_usage();
 	}
 	PNChat_Settings::migrate();
 	// 1.1.0: pages of existing sites get indexed once, in the background.
@@ -90,6 +93,7 @@ add_action( 'plugins_loaded', 'pnchat_maybe_upgrade' );
  */
 function pnchat_daily() {
 	PNChat_Store::purge_old( (int) PNChat_Settings::value( 'retention_days' ) );
+	PNChat_Counter::purge();
 	// Pages published without save_post (imports, direct edits) get indexed.
 	PNChat_Site_Search::index_batch();
 }

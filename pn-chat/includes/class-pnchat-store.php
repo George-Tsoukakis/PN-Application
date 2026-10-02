@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class PNChat_Store {
 
-	const DB_VERSION = 2;
+	const DB_VERSION = 3;
 
 	/**
 	 * Question statuses and their labels.
@@ -115,6 +115,15 @@ final class PNChat_Store {
 				KEY created_at (created_at)
 			) {$charset};"
 		);
+		dbDelta(
+			'CREATE TABLE ' . PNChat_Counter::table() . " (
+				k varchar(100) NOT NULL,
+				n bigint(20) NOT NULL DEFAULT 0,
+				exp bigint(20) unsigned NOT NULL DEFAULT 0,
+				PRIMARY KEY  (k),
+				KEY exp (exp)
+			) {$charset};"
+		);
 		update_option( 'pnchat_db_version', self::DB_VERSION, false );
 	}
 
@@ -209,6 +218,19 @@ final class PNChat_Store {
 	 * @return int Id, 0 on failure.
 	 */
 	public static function save_entry( array $data, $id = 0 ) {
+		$saved = self::write_entry( $data, $id );
+		self::bump();
+		return $saved;
+	}
+
+	/**
+	 * Writes an entry without marking the brain as changed.
+	 *
+	 * @param array<string,mixed> $data Entry.
+	 * @param int                 $id   0 to insert.
+	 * @return int Id, 0 on failure.
+	 */
+	private static function write_entry( array $data, $id = 0 ) {
 		global $wpdb;
 		$now = current_time( 'mysql', true );
 		$row = array(
@@ -223,15 +245,55 @@ final class PNChat_Store {
 		if ( $id > 0 ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$ok = $wpdb->update( self::entries_table(), $row, array( 'id' => $id ) );
-			self::bump();
 			return false === $ok ? 0 : (int) $id;
 		}
 		$row['created_at'] = isset( $data['created_at'] ) && preg_match( '/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/', (string) $data['created_at'] ) ? (string) $data['created_at'] : $now;
 		$row['hits']       = absint( $data['hits'] ?? 0 );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$ok = $wpdb->insert( self::entries_table(), $row );
-		self::bump();
 		return $ok ? (int) $wpdb->insert_id : 0;
+	}
+
+	/**
+	 * Replaces every entry with the given ones, all or nothing: when one of
+	 * them cannot be written, the entries that were there come back.
+	 *
+	 * @param array<int,array<string,mixed>> $entries Clean entries.
+	 * @return int|WP_Error Entries written.
+	 */
+	public static function replace_entries( array $entries ) {
+		global $wpdb;
+		$previous = self::entries();
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( 'START TRANSACTION' );
+		$ok    = false !== $wpdb->query( $wpdb->prepare( 'DELETE FROM %i', self::entries_table() ) );
+		$added = 0;
+		foreach ( $entries as $e ) {
+			if ( ! $ok ) {
+				break;
+			}
+			$ok = self::write_entry( $e ) > 0;
+			if ( $ok ) {
+				++$added;
+			}
+		}
+		if ( $ok ) {
+			$wpdb->query( 'COMMIT' );
+			self::bump();
+			return $added;
+		}
+		$wpdb->query( 'ROLLBACK' );
+		// A table without transactions (MyISAM) kept the partial write: put
+		// the previous entries back by hand.
+		if ( count( self::entries() ) !== count( $previous ) ) {
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', self::entries_table() ) );
+			foreach ( $previous as $e ) {
+				self::write_entry( $e );
+			}
+		}
+		// phpcs:enable
+		self::bump();
+		return new WP_Error( 'pnchat_replace', 'μια γνώση δεν γράφτηκε στη βάση, οπότε ο εγκέφαλος έμεινε όπως ήταν' );
 	}
 
 	/**
@@ -291,7 +353,7 @@ final class PNChat_Store {
 	}
 
 	/**
-	 * Marks the brain as changed (drops the cached matcher).
+	 * Marks the brain as changed (the version tells that it changed).
 	 *
 	 * @return void
 	 */
@@ -478,8 +540,14 @@ final class PNChat_Store {
 	public static function all_questions() {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT question, status, unmatched, email, name, reply, replied_at, created_at FROM %i ORDER BY id ASC', self::questions_table() ), ARRAY_A );
-		return is_array( $rows ) ? $rows : array();
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT question, status, unmatched, email, name, reply, replied_at, draft, page_url, created_at FROM %i ORDER BY id ASC', self::questions_table() ), ARRAY_A );
+		$out  = array();
+		foreach ( is_array( $rows ) ? $rows : array() as $r ) {
+			// The AI answer waiting for review travels with its question.
+			$r['draft'] = self::draft_of( $r );
+			$out[]      = $r;
+		}
+		return $out;
 	}
 
 	/**
@@ -498,6 +566,7 @@ final class PNChat_Store {
 			$created = isset( $r['created_at'] ) && preg_match( '/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/', (string) $r['created_at'] ) ? (string) $r['created_at'] : current_time( 'mysql', true );
 			$replied = isset( $r['replied_at'] ) && preg_match( '/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/', (string) $r['replied_at'] ) ? (string) $r['replied_at'] : null;
 			$email   = sanitize_email( (string) ( $r['email'] ?? '' ) );
+			$page    = esc_url_raw( (string) ( $r['page_url'] ?? '' ) );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$ok = $wpdb->insert(
 				self::questions_table(),
@@ -512,7 +581,8 @@ final class PNChat_Store {
 					'token_hash' => '',
 					'reply'      => wp_kses_post( (string) ( $r['reply'] ?? '' ) ),
 					'replied_at' => $replied,
-					'page_url'   => '',
+					'page_url'   => mb_substr( wp_http_validate_url( $page ) ? $page : '', 0, 255 ),
+					'draft'      => self::clean_draft( $r['draft'] ?? null ),
 					'created_at' => $created,
 				)
 			);
@@ -521,6 +591,42 @@ final class PNChat_Store {
 			}
 		}
 		return $n;
+	}
+
+	/**
+	 * An imported AI answer, cleaned like an imported entry; null for none.
+	 *
+	 * @param mixed $draft Array, or the JSON of one.
+	 * @return string|null JSON for the draft column.
+	 */
+	private static function clean_draft( $draft ) {
+		if ( is_string( $draft ) ) {
+			$draft = json_decode( $draft, true );
+		}
+		if ( ! is_array( $draft ) || ! isset( $draft['entry'] ) ) {
+			return null;
+		}
+		$entry = PNChat_Brain::clean_entry( $draft['entry'] );
+		if ( ! $entry ) {
+			return null;
+		}
+		$sources = array();
+		foreach ( (array) ( $draft['sources'] ?? array() ) as $src ) {
+			if ( is_array( $src ) && isset( $src['url'] ) ) {
+				$sources[] = array(
+					'title' => sanitize_text_field( (string) ( $src['title'] ?? '' ) ),
+					'url'   => esc_url_raw( (string) $src['url'] ),
+				);
+			}
+		}
+		return (string) wp_json_encode(
+			array(
+				'found'   => true,
+				'entry'   => $entry,
+				'sources' => $sources,
+				'note'    => sanitize_text_field( (string) ( $draft['note'] ?? '' ) ),
+			)
+		);
 	}
 
 	/**
@@ -540,14 +646,4 @@ final class PNChat_Store {
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', self::questions_table(), $cutoff ) );
 	}
 
-	/**
-	 * Drops the tables (uninstall).
-	 *
-	 * @return void
-	 */
-	public static function drop() {
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuerySchemaChange
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i, %i', self::entries_table(), self::questions_table() ) );
-	}
 }

@@ -90,6 +90,17 @@ final class PNChat_Admin {
 	}
 
 	/**
+	 * An AI request may take a few minutes.
+	 *
+	 * @return void
+	 */
+	private static function long_request() {
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 300 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- waits for the Claude API.
+		}
+	}
+
+	/**
 	 * Redirects back with a message.
 	 *
 	 * @param string              $page Page slug.
@@ -160,10 +171,12 @@ final class PNChat_Admin {
 			'key_rejected' => array( 'error', 'Οι ρυθμίσεις αποθηκεύτηκαν, αλλά το API key ΔΕΝ αποθηκεύτηκε: η Anthropic το απέρριψε (λάθος ή ακυρωμένο). Φτιάξτε νέο στο console.anthropic.com → API keys.' ),
 			'key_dead'     => array( 'error', 'Οι ρυθμίσεις αποθηκεύτηκαν, αλλά η Anthropic απορρίπτει ' . PNChat_AI::key_source() . ' (λάθος ή ακυρωμένο). Βάλτε νέο κλειδί από το console.anthropic.com → API keys.' ),
 			'not_found'    => array( 'error', 'Δεν βρέθηκε.' ),
+			'save_failed'  => array( 'error', 'Η αλλαγή ΔΕΝ αποθηκεύτηκε: η βάση δεδομένων δεν τη δέχτηκε. Δοκιμάστε ξανά· αν επαναληφθεί, δείτε το αρχείο σφαλμάτων του server.' ),
+			'replied_unsaved' => array( 'error', 'Το e-mail στάλθηκε, αλλά η ερώτηση δεν σημειώθηκε ως απαντημένη (σφάλμα βάσης δεδομένων).' ),
 			'ai_saved'     => array( 'success', sprintf( 'Αποθηκεύτηκαν %d γνώσεις από την πρόταση του AI.', $n ) ),
 			'ai_error'     => array( 'error', 'AI: ' . sanitize_text_field( self::get( 'err' ) ) ),
 			'ai_expired'   => array( 'error', 'Η πρόταση του AI έληξε (κρατιέται 1 ώρα). Ζητήστε τη ξανά.' ),
-			'reindexed'    => array( 'success', sprintf( 'Το ευρετήριο του site ενημερώθηκε: %d σελίδες.', $n ) ),
+			'reindexed'    => array( 'success', sprintf( 'Η ενημέρωση του ευρετηρίου ξεκίνησε: %d σελίδες τώρα, οι υπόλοιπες στο παρασκήνιο (40 ανά λεπτό).', $n ) ),
 		);
 		if ( isset( $map[ $msg ] ) ) {
 			printf( '<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>', esc_attr( $map[ $msg ][0] ), esc_html( $map[ $msg ][1] ) );
@@ -507,7 +520,7 @@ final class PNChat_Admin {
 	 */
 	private static function test_box() {
 		$q = self::get( 'test' );
-		echo '<div class="pnchat-card"><h2>Δοκιμή</h2><p class="description">Γράψτε μια ερώτηση για να δείτε τι θα απαντούσε ο βοηθός (δεν καταγράφεται).</p>';
+		echo '<div class="pnchat-card"><h2>Δοκιμή</h2><p class="description">Γράψτε μια ερώτηση για να δείτε τι θα απαντούσε ο βοηθός (δεν καταγράφεται). Τα ποσοστά είναι βαθμός ομοιότητας με τις εκπαιδευμένες ερωτήσεις, όχι πιθανότητα σωστής απάντησης.</p>';
 		echo '<form method="get" class="pnchat-inline-form"><input type="hidden" name="page" value="pn-chat"><input type="search" name="test" class="regular-text" value="' . esc_attr( $q ) . '" placeholder="π.χ. Τι είναι το PlanDose και πόσο κοστίζει;"> <button class="button button-primary">Δοκιμή</button></form>';
 		if ( '' !== $q ) {
 			$r      = PNChat_Brain::matcher( true )->ask( $q );
@@ -519,7 +532,7 @@ final class PNChat_Admin {
 			);
 			echo '<div class="pnchat-test-result"><p><strong>Αποτέλεσμα:</strong> ' . esc_html( $labels[ $r['status'] ] ?? $r['status'] ) . '</p>';
 			foreach ( $r['items'] as $i ) {
-				echo '<div class="pnchat-test-item ' . ( 'block' === $i['kind'] ? 'is-block' : '' ) . '"><strong>' . esc_html( $i['title'] ) . '</strong> <span class="description">(' . esc_html( number_format_i18n( $i['score'] * 100 ) ) . '%)</span><div>' . wp_kses( PNChat_Brain::render_answer( $i['answer'] ), PNChat_Brain::allowed_html() ) . '</div></div>';
+				echo '<div class="pnchat-test-item ' . ( 'block' === $i['kind'] ? 'is-block' : '' ) . '"><strong>' . esc_html( $i['title'] ) . '</strong> <span class="description">(ομοιότητα ' . esc_html( number_format_i18n( $i['score'] * 100 ) ) . '%)</span><div>' . wp_kses( PNChat_Brain::render_answer( $i['answer'] ), PNChat_Brain::allowed_html() ) . '</div></div>';
 			}
 			if ( $r['unmatched'] ) {
 				echo '<p>Χωρίς απάντηση: «' . esc_html( implode( '», «', $r['unmatched'] ) ) . '»</p>';
@@ -528,7 +541,7 @@ final class PNChat_Admin {
 			if ( $site ) {
 				echo '<p><strong>Από το site:</strong></p>';
 				foreach ( $site as $sr ) {
-					echo '<div class="pnchat-test-item is-site"><strong>' . esc_html( $sr['title'] ) . '</strong> <span class="description">(' . esc_html( number_format_i18n( $sr['score'] * 100 ) ) . '%)</span><div>' . wp_kses_post( PNChat_Site_Search::render( $sr ) ) . '</div></div>';
+					echo '<div class="pnchat-test-item is-site"><strong>' . esc_html( $sr['title'] ) . '</strong> <span class="description">(ομοιότητα ' . esc_html( number_format_i18n( $sr['score'] * 100 ) ) . '%)</span><div>' . wp_kses_post( PNChat_Site_Search::render( $sr ) ) . '</div></div>';
 				}
 			} elseif ( in_array( $r['status'], array( 'unanswered', 'partial' ), true ) && PNChat_Settings::value( 'site_search' ) ) {
 				echo '<p class="description">Δεν βρέθηκε ούτε σελίδα του site.</p>';
@@ -588,7 +601,7 @@ final class PNChat_Admin {
 	private static function ai_box() {
 		echo '<div class="pnchat-card pnchat-ai-card"><h2>✨ AI βοηθός εκπαίδευσης</h2>';
 		if ( ! PNChat_AI::enabled() ) {
-			echo '<p>Το AI διαβάζει σελίδες του site σας και γράφει έτοιμες γνώσεις, που εγκρίνετε εσείς πριν αποθηκευτούν. Το δημόσιο chat δεν χρησιμοποιεί ποτέ AI. Ενεργοποιήστε το από τις <a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-settings#pnchat-ai' ) ) . '">Ρυθμίσεις</a>.</p></div>';
+			echo '<p>Το AI διαβάζει σελίδες του site σας και γράφει έτοιμες γνώσεις, που εγκρίνετε εσείς πριν αποθηκευτούν. Αυτό δεν αλλάζει το δημόσιο chat: εκεί το AI απαντά μόνο αν ενεργοποιηθεί χωριστά το «AI και μέσα στο chat». Ενεργοποιήστε το από τις <a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-settings#pnchat-ai' ) ) . '">Ρυθμίσεις</a>.</p></div>';
 			return;
 		}
 		echo '<p class="description">Το AI διαβάζει μόνο σελίδες του δικού σας site. Ό,τι γράψει το βλέπετε και το εγκρίνετε εσείς· τίποτα δεν αποθηκεύεται μόνο του.</p>';
@@ -686,6 +699,7 @@ final class PNChat_Admin {
 	 */
 	public static function handle_ai_draft() {
 		self::guard( 'pnchat_ai_draft' );
+		self::long_request();
 		$from     = absint( self::post( 'from_question' ) );
 		$q        = $from ? PNChat_Store::question( $from ) : null;
 		$question = $q ? (string) $q['question'] : sanitize_text_field( self::post( 'question' ) );
@@ -723,6 +737,7 @@ final class PNChat_Admin {
 	 */
 	public static function handle_ai_page() {
 		self::guard( 'pnchat_ai_page' );
+		self::long_request();
 		$id = absint( self::post( 'post_id' ) );
 		$r  = PNChat_AI::drafts_from_page( $id );
 		if ( is_wp_error( $r ) ) {
@@ -858,9 +873,31 @@ final class PNChat_Admin {
 			$id
 		);
 
+		if ( ! $saved ) {
+			// Nothing was stored: keep what was typed and say so.
+			set_transient(
+				'pnchat_form_' . get_current_user_id(),
+				array(
+					'kind'      => $kind,
+					'id'        => $id,
+					'title'     => sanitize_text_field( self::post( 'title' ) ),
+					'phrasings' => $phrasings,
+					'keywords'  => $keywords,
+					'answer'    => $answer,
+					'active'    => '1' === self::post( 'active' ) ? 1 : 0,
+				),
+				10 * MINUTE_IN_SECONDS
+			);
+			$args = $id ? array( 'edit' => $id ) : array( 'new' => 1 );
+			if ( $from ) {
+				$args['from_question'] = $from;
+			}
+			self::back( $page, 'save_failed', $args );
+		}
+
 		self::warn_conflicts( $saved, $phrasings );
 
-		if ( $from && $saved ) {
+		if ( $from ) {
 			$q = PNChat_Store::question( $from );
 			if ( $q ) {
 				PNChat_Store::update_question( $from, array( 'status' => 'block' === $kind ? 'blocked' : 'trained' ) );
@@ -930,8 +967,8 @@ final class PNChat_Admin {
 			self::back( 'pn-chat', 'not_found' );
 		}
 		$e['active'] = $e['active'] ? 0 : 1;
-		PNChat_Store::save_entry( $e, $id );
-		self::back( 'block' === $e['kind'] ? 'pn-chat-blocks' : 'pn-chat', 'toggled' );
+		$ok          = PNChat_Store::save_entry( $e, $id );
+		self::back( 'block' === $e['kind'] ? 'pn-chat-blocks' : 'pn-chat', $ok ? 'toggled' : 'save_failed' );
 	}
 
 	/**
@@ -1172,7 +1209,7 @@ final class PNChat_Admin {
 		if ( ! $sent ) {
 			self::back( 'pn-chat-questions', 'mail_failed', array( 'reply' => $id ) );
 		}
-		PNChat_Store::update_question(
+		$ok = PNChat_Store::update_question(
 			$id,
 			array(
 				'status'     => 'replied',
@@ -1180,7 +1217,7 @@ final class PNChat_Admin {
 				'replied_at' => current_time( 'mysql', true ),
 			)
 		);
-		self::back( 'pn-chat-questions', 'replied' );
+		self::back( 'pn-chat-questions', $ok ? 'replied' : 'replied_unsaved' );
 	}
 
 	/**
@@ -1200,8 +1237,8 @@ final class PNChat_Admin {
 			self::back( 'pn-chat-questions', 'not_found' );
 		}
 		if ( 'dismiss' === $do ) {
-			PNChat_Store::update_question( $id, array( 'status' => 'dismissed' ) );
-			self::back( 'pn-chat-questions', 'dismissed', array( 'filter' => $filter ) );
+			$ok = PNChat_Store::update_question( $id, array( 'status' => 'dismissed' ) );
+			self::back( 'pn-chat-questions', $ok ? 'dismissed' : 'save_failed', array( 'filter' => $filter ) );
 		}
 		if ( 'delete' === $do ) {
 			PNChat_Store::delete_questions( array( $id ) );
@@ -1215,7 +1252,7 @@ final class PNChat_Admin {
 				$ok = PNChat_Store::add_phrasing( $entry_id, $p ) && $ok;
 			}
 			if ( ! $ok ) {
-				self::back( 'pn-chat-questions', 'not_found' );
+				self::back( 'pn-chat-questions', PNChat_Store::entry( $entry_id ) ? 'save_failed' : 'not_found' );
 			}
 			PNChat_Store::update_question( $id, array( 'status' => 'trained' ) );
 			if ( is_email( (string) $q['email'] ) && empty( $q['replied_at'] ) ) {
@@ -1243,10 +1280,13 @@ final class PNChat_Admin {
 			self::back( 'pn-chat-questions', 'q_deleted', array( 'n' => count( $ids ), 'filter' => $filter ) );
 		}
 		if ( 'dismiss' === $bulk ) {
+			$n = 0;
 			foreach ( $ids as $id ) {
-				PNChat_Store::update_question( $id, array( 'status' => 'dismissed' ) );
+				if ( PNChat_Store::update_question( $id, array( 'status' => 'dismissed' ) ) ) {
+					++$n;
+				}
 			}
-			self::back( 'pn-chat-questions', 'q_dismissed', array( 'n' => count( $ids ), 'filter' => $filter ) );
+			self::back( 'pn-chat-questions', $n === count( $ids ) ? 'q_dismissed' : 'save_failed', array( 'n' => $n, 'filter' => $filter ) );
 		}
 		self::back( 'pn-chat-questions', '', array( 'filter' => $filter ) );
 	}
@@ -1355,6 +1395,9 @@ final class PNChat_Admin {
 			self::back( 'pn-chat-brain', 'import_error', array( 'err' => $ok->get_error_message() ) );
 		}
 		$res = PNChat_Brain::import( $data, 'replace' === self::post( 'mode' ) ? 'replace' : 'merge', '1' === self::post( 'with_settings' ), '1' === self::post( 'with_questions' ) );
+		if ( is_wp_error( $res ) ) {
+			self::back( 'pn-chat-brain', 'import_error', array( 'err' => $res->get_error_message() ) );
+		}
 		self::back( 'pn-chat-brain', 'imported', array( 'n' => $res['added'] ) );
 	}
 
@@ -1377,7 +1420,11 @@ final class PNChat_Admin {
 			self::send_json_file( $sn['data'], 'pn-chat-brain-snapshot-' . gmdate( 'Y-m-d-His', (int) $sn['time'] ) . '.json' );
 		}
 		if ( 'restore' === $do && true === PNChat_Brain::validate( $sn['data'] ) ) {
-			PNChat_Brain::import( $sn['data'], 'replace', true, false );
+			// A snapshot of an empty brain may be restored (to empty).
+			$res = PNChat_Brain::import( $sn['data'], 'replace', true, false, true );
+			if ( is_wp_error( $res ) ) {
+				self::back( 'pn-chat-brain', 'import_error', array( 'err' => $res->get_error_message() ) );
+			}
 			self::back( 'pn-chat-brain', 'restored' );
 		}
 		self::back( 'pn-chat-brain', 'not_found' );
@@ -1459,9 +1506,9 @@ final class PNChat_Admin {
 		$text( 'placeholder', 'Κείμενο στο πεδίο ερώτησης' );
 		$area( 'suggestions', 'Προτεινόμενες ερωτήσεις', 'Μία ανά γραμμή, εμφανίζονται ως κουμπιά κάτω από το καλωσόρισμα. Γραμμή που ξεκινά με # = νέα ομάδα (π.χ. «# Ερωτήσεις για το QR ReBuilder»)· η ομάδα ανοίγει με ένα πάτημα. «Κείμενο | /διεύθυνση/» = κουμπί που ανοίγει σελίδα (π.χ. «Άνοιγμα του QR ReBuilder | /qr-rebuilder/»).', 10 );
 		$area( 'fallback', 'Όταν δεν ξέρει την απάντηση', 'Ακολουθεί φόρμα για το e-mail του επισκέπτη.' );
-		$area( 'partial', 'Όταν ξέρει μόνο ένα μέρος', 'Το %s γίνεται το μέρος της ερώτησης χωρίς απάντηση.' );
+		$area( 'partial', 'Όταν ξέρει μόνο ένα μέρος', 'Το {question} γίνεται το μέρος της ερώτησης χωρίς απάντηση. Το σύμβολο % γράφεται κανονικά.' );
 		$area( 'unhelpful', 'Όταν πατηθεί 👎', 'Ακολουθεί φόρμα για το e-mail.' );
-		$area( 'email_thanks', 'Μετά το e-mail', 'Το %s γίνεται το e-mail του επισκέπτη.' );
+		$area( 'email_thanks', 'Μετά το e-mail', 'Το {email} γίνεται το e-mail του επισκέπτη.' );
 		$text( 'privacy_note', 'Σημείωση κάτω από το πεδίο', 'Προαιρετικό. Αφήστε κενό για να μη φαίνεται τίποτα.' );
 		echo '</table>';
 
@@ -1478,7 +1525,7 @@ final class PNChat_Admin {
 		);
 		$number( 'max_answers', 'Απαντήσεις μαζί', 'Πόσες γνώσεις συνδυάζει το πολύ σε μία απάντηση (1–5).' );
 		$check( 'feedback', '«Σας βοήθησε;»', 'Κουμπιά 👍 / 👎 κάτω από τις απαντήσεις. Το 👎 ζητά e-mail και βάζει την ερώτηση στα ανοιχτά.' );
-		$number( 'rate_per_10min', 'Όριο ερωτήσεων', 'Ερωτήσεις ανά επισκέπτη ανά 10 λεπτά (προστασία από κατάχρηση).' );
+		$number( 'rate_per_10min', 'Όριο ερωτήσεων', 'Ερωτήσεις ανά επισκέπτη ανά 10 λεπτά (προστασία από κατάχρηση). Πίσω από Cloudflare ή άλλο proxy όλοι οι επισκέπτες φαίνονται με την IP του proxy: ορίστε στο wp-config.php π.χ. define( \'PNCHAT_IP_HEADER\', \'HTTP_CF_CONNECTING_IP\' ); (IP τώρα: ' . PNChat_Rest::client_ip() . ').' );
 		echo '</table>';
 
 		echo '<h2>Αναζήτηση στο site</h2><table class="form-table" role="presentation">';
@@ -1489,10 +1536,10 @@ final class PNChat_Admin {
 		$area( 'site_intro', 'Κείμενο πριν τις σελίδες' );
 		$area( 'site_more', 'Κείμενο μετά τις σελίδες', 'Ακολουθεί φόρμα για το e-mail του επισκέπτη.' );
 		echo '</table>';
-		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a></p>';
+		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα. Διαβάζεται το κείμενο της σελίδας· ό,τι βγάζουν shortcodes (π.χ. φόρμες, λίστες προϊόντων) δεν διαβάζεται. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a></p>';
 
 		echo '<h2 id="pnchat-ai">✨ AI βοηθός εκπαίδευσης (Claude)</h2>';
-		echo '<p class="description">Μόνο για το wp-admin: το AI διαβάζει σελίδες του site και προτείνει γνώσεις, που εγκρίνετε εσείς. Το δημόσιο chat δεν χρησιμοποιεί AI. Στο Claude στέλνονται μόνο σελίδες του δημόσιου site και η ερώτηση που επιλέγετε· ποτέ e-mail επισκεπτών. Χρεώνεται ανά χρήση στον λογαριασμό σας στο console.anthropic.com.</p>';
+		echo '<p class="description">Στο wp-admin: το AI διαβάζει σελίδες του site και προτείνει γνώσεις, που εγκρίνετε εσείς. Στο δημόσιο chat απαντά μόνο αν ενεργοποιήσετε παρακάτω το «AI και μέσα στο chat». Στο Claude στέλνονται σελίδες του δημόσιου site και το κείμενο της ερώτησης· τα πεδία e-mail και ονόματος του επισκέπτη δεν στέλνονται, και e-mail, τηλέφωνα και ΑΜΚΑ γραμμένα μέσα στην ερώτηση αντικαθίστανται πριν την αποστολή. Χρεώνεται ανά χρήση στον λογαριασμό σας στο console.anthropic.com.</p>';
 		echo '<table class="form-table" role="presentation">';
 		$check( 'ai_enabled', 'AI', 'Ενεργό (κουμπιά «✨ Πρόταση με AI» στην Εκπαίδευση και στα Ερωτήματα)' );
 		echo '<tr><th scope="row"><label for="pnchat-ai_key">API key</label></th><td>';
@@ -1508,8 +1555,8 @@ final class PNChat_Admin {
 		echo '</td></tr>';
 		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5). Φθηνότερα: claude-sonnet-5-5, claude-haiku-4-5.' );
 		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
-		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση.' );
-		$number( 'ai_chat_daily', 'Όριο ανά ημέρα', 'Το πολύ τόσες απαντήσεις AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετά, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
+		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση εμφανίζεται ΑΜΕΣΩΣ, με την ετικέτα παρακάτω, χωρίς να την έχει δει άνθρωπος, και μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση. Δεν πηγαίνουν ποτέ στο AI ερωτήσεις κοντά σε κάποια Απαγόρευση ή με ιατρικές λέξεις (δοσολογία, δόση, χάπια, παρενέργειες, mg κ.λπ.).' );
+		$number( 'ai_chat_daily', 'Όριο κλήσεων ανά ημέρα', 'Το πολύ τόσες κλήσεις στο AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετράει κάθε κλήση που έφτασε στο Claude, και όταν δεν βρήκε απάντηση· όσες δεν έφτασαν (σφάλμα σύνδεσης ή κλειδιού) δεν μετράνε. Μετά το όριο, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
 		$text( 'ai_chat_model', 'Μοντέλο για το chat', 'Προεπιλογή: claude-opus-5-5 (4 $ / 20 $ ανά εκατομμύριο tokens). Φθηνότερα: claude-sonnet-5-5 (2 $ / 10 $), claude-haiku-4-5 (1 $ / 5 $).' );
 		$text( 'ai_chat_label', 'Ετικέτα πάνω από την απάντηση AI' );
 		$text( 'ai_chat_wait', 'Κείμενο όσο περιμένει' );
@@ -1518,7 +1565,7 @@ final class PNChat_Admin {
 
 		echo '<h2>E-mail</h2><table class="form-table" role="presentation">';
 		$check( 'notify_on_email', 'Ειδοποίηση', 'Στείλε μου e-mail όταν ένας επισκέπτης αφήσει e-mail για απάντηση' );
-		echo '<tr><th scope="row"><label for="pnchat-notify_email">E-mail ειδοποιήσεων</label></th><td><input id="pnchat-notify_email" name="notify_email" type="email" class="regular-text" value="' . esc_attr( (string) $s['notify_email'] ) . '"></td></tr>';
+		echo '<tr><th scope="row"><label for="pnchat-notify_email">E-mail ειδοποιήσεων</label></th><td><input id="pnchat-notify_email" name="notify_email" type="email" class="regular-text" value="' . esc_attr( (string) $s['notify_email'] ) . '" placeholder="' . esc_attr( (string) get_option( 'admin_email' ) ) . '"><p class="description">Κενό = το e-mail διαχειριστή του site (αν αλλάξει εκείνο, ακολουθεί).</p></td></tr>';
 		$text( 'reply_subject', 'Θέμα απαντήσεων' );
 		echo '</table>';
 
@@ -1577,8 +1624,8 @@ final class PNChat_Admin {
 			$msg = 'key_dead';
 		}
 		if ( $clean['site_types'] !== $current['site_types'] || $clean['site_exclude'] !== $current['site_exclude'] ) {
-			delete_post_meta_by_key( PNChat_Site_Search::META );
-			PNChat_Site_Search::schedule();
+			// First batch now, the rest in the background.
+			PNChat_Site_Search::rebuild();
 		}
 		PNChat_Store::bump();
 		self::back( 'pn-chat-settings', $msg );

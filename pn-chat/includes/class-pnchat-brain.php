@@ -223,42 +223,59 @@ final class PNChat_Brain {
 	}
 
 	/**
-	 * Restores a brain.
+	 * Restores a brain. Every entry of the file is checked first: a file
+	 * with no usable entry changes nothing, and «replace» swaps the entries
+	 * all at once (or not at all). Texts and questions follow only after the
+	 * entries were written.
 	 *
 	 * @param array<string,mixed> $data           Validated data.
 	 * @param string              $mode           'merge' (add what is new) or 'replace'.
 	 * @param bool                $with_settings  Also restore texts and synonyms.
 	 * @param bool                $with_questions Also restore the question log.
-	 * @return array{added:int,skipped:int,questions:int}
+	 * @param bool                $allow_empty    «replace» with no entry empties the brain (a snapshot of an empty brain).
+	 * @return array{added:int,skipped:int,questions:int}|WP_Error
 	 */
-	public static function import( array $data, $mode = 'merge', $with_settings = true, $with_questions = false ) {
+	public static function import( array $data, $mode = 'merge', $with_settings = true, $with_questions = false, $allow_empty = false ) {
+		$clean   = array();
+		$skipped = 0;
+		foreach ( (array) $data['entries'] as $raw ) {
+			$e = self::clean_entry( $raw );
+			if ( $e ) {
+				$clean[] = $e;
+			} else {
+				++$skipped;
+			}
+		}
+		if ( 'replace' === $mode && ! $clean && ( ! $allow_empty || $data['entries'] ) ) {
+			return new WP_Error( 'pnchat_no_entries', 'το αρχείο δεν έχει καμία έγκυρη γνώση (ερώτηση και απάντηση), οπότε ο εγκέφαλος δεν άλλαξε' );
+		}
+
 		self::snapshot( 'replace' === $mode ? 'Πριν την αντικατάσταση από αρχείο' : 'Πριν την προσθήκη από αρχείο' );
 
-		$existing = array();
+		$added = 0;
 		if ( 'replace' === $mode ) {
-			PNChat_Store::delete_all_entries();
+			$added = PNChat_Store::replace_entries( $clean );
+			if ( is_wp_error( $added ) ) {
+				self::$matcher = null;
+				return $added;
+			}
 		} else {
+			$existing = array();
 			foreach ( PNChat_Store::entries() as $e ) {
 				$existing[ self::entry_key( $e ) ] = true;
 			}
-		}
-
-		$added   = 0;
-		$skipped = 0;
-		foreach ( $data['entries'] as $raw ) {
-			$e = self::clean_entry( $raw );
-			if ( ! $e ) {
-				++$skipped;
-				continue;
-			}
-			$key = self::entry_key( $e );
-			if ( isset( $existing[ $key ] ) ) {
-				++$skipped;
-				continue;
-			}
-			if ( PNChat_Store::save_entry( $e ) ) {
-				$existing[ $key ] = true;
-				++$added;
+			foreach ( $clean as $e ) {
+				$key = self::entry_key( $e );
+				if ( isset( $existing[ $key ] ) ) {
+					++$skipped;
+					continue;
+				}
+				if ( PNChat_Store::save_entry( $e ) ) {
+					$existing[ $key ] = true;
+					++$added;
+				} else {
+					++$skipped;
+				}
 			}
 		}
 
@@ -276,7 +293,7 @@ final class PNChat_Brain {
 		PNChat_Store::bump();
 		self::$matcher = null;
 		return array(
-			'added'     => $added,
+			'added'     => (int) $added,
 			'skipped'   => $skipped,
 			'questions' => $questions,
 		);

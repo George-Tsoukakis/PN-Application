@@ -51,6 +51,12 @@ final class PNChat_Site_Search {
 	 * @return int[]
 	 */
 	public static function excluded_ids() {
+		// Once per request: searchable() asks for every page it checks.
+		static $cache = array();
+		$key = (string) PNChat_Settings::value( 'site_exclude' ) . '|' . implode( ',', self::post_types() );
+		if ( isset( $cache[ $key ] ) ) {
+			return $cache[ $key ];
+		}
 		$ids = array();
 		foreach ( PNChat_Store::lines( str_replace( ',', "\n", (string) PNChat_Settings::value( 'site_exclude' ) ) ) as $item ) {
 			if ( ctype_digit( $item ) ) {
@@ -68,8 +74,9 @@ final class PNChat_Site_Search {
 				$ids[] = (int) wc_get_page_id( $wc );
 			}
 		}
-		$ids[] = (int) get_option( 'page_for_posts' );
-		return array_values( array_unique( array_filter( array_map( 'intval', (array) apply_filters( 'pnchat_site_excluded_ids', $ids ) ) ) ) );
+		$ids[]         = (int) get_option( 'page_for_posts' );
+		$cache[ $key ] = array_values( array_unique( array_filter( array_map( 'intval', (array) apply_filters( 'pnchat_site_excluded_ids', $ids ) ) ) ) );
+		return $cache[ $key ];
 	}
 
 	/**
@@ -224,22 +231,14 @@ final class PNChat_Site_Search {
 	}
 
 	/**
-	 * Rebuilds the whole index now (admin button).
+	 * Rebuilds the whole index (admin button): the first batch now, the rest
+	 * in the background, a batch a minute, so no request runs for minutes.
 	 *
-	 * @return int Pages indexed.
+	 * @return int Pages indexed now.
 	 */
 	public static function rebuild() {
 		delete_post_meta_by_key( self::META );
-		$n = 0;
-		do {
-			$batch = self::missing_ids( 200 );
-			foreach ( $batch as $id ) {
-				if ( self::index_post( $id ) ) {
-					++$n;
-				}
-			}
-		} while ( count( $batch ) >= 200 && $n < 5000 );
-		return $n;
+		return self::index_batch();
 	}
 
 	/**
@@ -254,24 +253,27 @@ final class PNChat_Site_Search {
 	}
 
 	/**
-	 * Indexed pages: id => index string.
+	 * Indexed pages: id => index string. With question words, only the pages
+	 * that hold at least one of them (or of their first four letters) are
+	 * read: the same test best_in() starts with, done by the database, so a
+	 * large site is not loaded whole for every question.
 	 *
+	 * @param array<int,string[]>|null $words Question words with synonyms; null for all pages.
 	 * @return array<int,string>
 	 */
-	private static function documents() {
+	private static function documents( $words = null ) {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				'SELECT pm.post_id, pm.meta_value FROM %i pm INNER JOIN %i p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_status = %s AND p.post_password = %s',
-				$wpdb->postmeta,
-				$wpdb->posts,
-				self::META,
-				'publish',
-				''
-			),
-			ARRAY_A
-		);
+		$sql  = 'SELECT pm.post_id, pm.meta_value FROM %i pm INNER JOIN %i p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_status = %s AND p.post_password = %s';
+		$args = array( $wpdb->postmeta, $wpdb->posts, self::META, 'publish', '' );
+		$like = self::candidate_patterns( $words );
+		if ( $like ) {
+			$sql .= ' AND ( ' . implode( ' OR ', array_fill( 0, count( $like ), 'pm.meta_value LIKE %s' ) ) . ' )';
+			foreach ( $like as $pattern ) {
+				$args[] = '%' . $wpdb->esc_like( $pattern ) . '%';
+			}
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared -- placeholders only, built above.
+		$rows     = $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A );
 		$docs     = array();
 		$excluded = array_flip( self::excluded_ids() );
 		foreach ( (array) $rows as $r ) {
@@ -283,12 +285,43 @@ final class PNChat_Site_Search {
 	}
 
 	/**
+	 * LIKE patterns that every page best_in() could match must contain;
+	 * none (read everything) when a word cannot be turned into one safely.
+	 *
+	 * @param array<int,string[]>|null $words Question words with synonyms.
+	 * @return string[]
+	 */
+	private static function candidate_patterns( $words ) {
+		if ( ! $words || ! apply_filters( 'pnchat_site_search_prefilter', true ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $words as $alts ) {
+			foreach ( $alts as $w ) {
+				$p = strlen( $w ) >= 4 ? ' ' . substr( $w, 0, 4 ) : ' ' . $w . ' ';
+				if ( ! preg_match( '//u', $p ) ) {
+					return array();
+				}
+				$out[ $p ] = true;
+			}
+		}
+		return count( $out ) <= 60 ? array_keys( $out ) : array();
+	}
+
+	/**
 	 * Number of indexed pages.
 	 *
 	 * @return int
 	 */
 	public static function count() {
-		return count( self::documents() );
+		static $n = null;
+		if ( null === $n ) {
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$ids = $wpdb->get_col( $wpdb->prepare( 'SELECT pm.post_id FROM %i pm INNER JOIN %i p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_status = %s AND p.post_password = %s', $wpdb->postmeta, $wpdb->posts, self::META, 'publish', '' ) );
+			$n   = count( array_diff( array_map( 'intval', (array) $ids ), self::excluded_ids() ) );
+		}
+		return $n;
 	}
 
 	/**
@@ -366,7 +399,7 @@ final class PNChat_Site_Search {
 		if ( ! $words ) {
 			return array();
 		}
-		$docs = self::documents();
+		$docs = self::documents( $words );
 		if ( ! $docs ) {
 			return array();
 		}
@@ -392,7 +425,8 @@ final class PNChat_Site_Search {
 			return array();
 		}
 
-		$n       = count( $docs );
+		// Pages without any question word were not read, but they count.
+		$n       = max( count( $docs ), self::count() );
 		$weights = array();
 		foreach ( $words as $i => $alts ) {
 			// A word no page has: probably filler; it counts a little.

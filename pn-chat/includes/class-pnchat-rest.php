@@ -147,13 +147,18 @@ final class PNChat_Rest {
 		// No trained answer, but pages of the site are about it: the AI may
 		// answer from those pages, and its answer waits in Ερωτήματα as a
 		// proposed entry for an administrator to approve.
-		$ai = null;
-		if ( 'unanswered' === $result['status'] && $site && PNChat_AI::chat_enabled() && self::rate_ok( 'ai', 10, HOUR_IN_SECONDS ) && PNChat_AI::chat_take() ) {
+		$ai    = null;
+		$asked = $follow ? rtrim( $question, " \t?;;.!" ) . ' (' . $context . ')' : $question;
+		if ( 'unanswered' === $result['status'] && $site && PNChat_AI::chat_enabled() && ! self::near_block( $asked ) && self::rate_ok( 'ai', 10, HOUR_IN_SECONDS ) && PNChat_AI::chat_take() ) {
 			if ( function_exists( 'set_time_limit' ) ) {
 				set_time_limit( 120 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- the API call may take up to a minute.
 			}
-			$asked = $follow ? rtrim( $question, " \t?;;.!" ) . ' (' . $context . ')' : $question;
 			$draft = PNChat_AI::draft_for_question( $asked, (string) $s['ai_chat_model'], 90 );
+			if ( is_wp_error( $draft ) && PNChat_AI::not_charged( $draft ) ) {
+				// The API was never reached (no connection, key or HTTP
+				// error): the day's limit gets the use back.
+				PNChat_AI::chat_give_back();
+			}
 			if ( ! is_wp_error( $draft ) && ! empty( $draft['found'] ) && ! empty( $draft['entry'] ) ) {
 				$ai               = $draft;
 				$result['status'] = 'ai';
@@ -192,7 +197,6 @@ final class PNChat_Rest {
 		}
 
 		$token = wp_generate_password( 32, false );
-		$page  = esc_url_raw( (string) $req->get_param( 'page' ) );
 		$id    = PNChat_Store::log_question(
 			array(
 				'question'   => $question,
@@ -208,7 +212,7 @@ final class PNChat_Rest {
 				) : $result['unmatched'],
 				'user_id'    => get_current_user_id(),
 				'token_hash' => hash( 'sha256', $token ),
-				'page_url'   => wp_http_validate_url( $page ) ? $page : '',
+				'page_url'   => self::page_url( (string) $req->get_param( 'page' ) ),
 				'draft'      => $ai,
 			)
 		);
@@ -223,7 +227,7 @@ final class PNChat_Rest {
 			$intro   = (string) $s['site_intro'];
 			$message = (string) $s['site_more'];
 		} elseif ( 'partial' === $result['status'] ) {
-			$message = $site ? (string) $s['site_more'] : sprintf( (string) $s['partial'], implode( '», «', $result['unmatched'] ) );
+			$message = $site ? (string) $s['site_more'] : PNChat_Settings::fill( (string) $s['partial'], 'question', implode( '», «', $result['unmatched'] ) );
 		}
 
 		return rest_ensure_response(
@@ -261,13 +265,30 @@ final class PNChat_Rest {
 		if ( ! is_email( $email ) ) {
 			return new WP_Error( 'pnchat_email', 'Το e-mail δεν είναι σωστό.', array( 'status' => 400 ) );
 		}
+		if ( 'blocked' === $q['status'] ) {
+			return new WP_Error( 'pnchat_email_blocked', 'Σε αυτή την ερώτηση δεν μπορούμε να απαντήσουμε με e-mail.', array( 'status' => 400 ) );
+		}
+		$s      = PNChat_Settings::get();
+		$name   = mb_substr( sanitize_text_field( (string) $req->get_param( 'name' ) ), 0, 190 );
+		$thanks = PNChat_Settings::fill( (string) $s['email_thanks'], 'email', $email );
+		$status = self::status_after_email( (string) $q['status'] );
+		// The same address again (a double tap, a page reload): nothing new to
+		// store and no second notification.
+		if ( strtolower( $email ) === strtolower( (string) $q['email'] ) && $status === $q['status'] ) {
+			if ( '' !== $name && $name !== $q['name'] ) {
+				PNChat_Store::update_question( (int) $q['id'], array( 'name' => $name ) );
+			}
+			return rest_ensure_response(
+				array(
+					'ok'      => true,
+					'message' => $thanks,
+				)
+			);
+		}
 		if ( ! self::rate_ok( 'email', 10, HOUR_IN_SECONDS ) ) {
 			return new WP_Error( 'pnchat_rate', 'Πολλές αποστολές. Δοκιμάστε ξανά αργότερα.', array( 'status' => 429 ) );
 		}
-		$name   = mb_substr( sanitize_text_field( (string) $req->get_param( 'name' ) ), 0, 190 );
-		// An AI answer stays in «Απαντήσεις AI» for review; the e-mail rides along.
-		$status = in_array( $q['status'], array_merge( PNChat_Store::open_statuses(), array( 'ai' ) ), true ) ? $q['status'] : 'unanswered';
-		PNChat_Store::update_question(
+		$saved = PNChat_Store::update_question(
 			(int) $q['id'],
 			array(
 				'email'  => $email,
@@ -275,15 +296,29 @@ final class PNChat_Rest {
 				'status' => $status,
 			)
 		);
+		if ( ! $saved ) {
+			return new WP_Error( 'pnchat_email_save', 'Το e-mail δεν αποθηκεύτηκε. Δοκιμάστε ξανά σε λίγο.', array( 'status' => 500 ) );
+		}
 		self::notify_admin( (int) $q['id'], (string) $q['question'], $email, $name );
 
-		$s = PNChat_Settings::get();
 		return rest_ensure_response(
 			array(
 				'ok'      => true,
-				'message' => sprintf( (string) $s['email_thanks'], $email ),
+				'message' => $thanks,
 			)
 		);
+	}
+
+	/**
+	 * Status of a question once the visitor left an e-mail: open questions,
+	 * AI answers waiting for review and trained ones keep theirs (they are
+	 * all in «Περιμένουν e-mail»); the rest are open again.
+	 *
+	 * @param string $status Current status.
+	 * @return string
+	 */
+	private static function status_after_email( $status ) {
+		return in_array( $status, array_merge( PNChat_Store::open_statuses(), array( 'ai', 'trained' ) ), true ) ? $status : 'unanswered';
 	}
 
 	/**
@@ -298,8 +333,8 @@ final class PNChat_Rest {
 			return $q;
 		}
 		$helpful = rest_sanitize_boolean( $req->get_param( 'helpful' ) );
-		if ( ! $helpful && in_array( $q['status'], array( 'answered', 'partial', 'site' ), true ) ) {
-			PNChat_Store::update_question( (int) $q['id'], array( 'status' => 'unhelpful' ) );
+		if ( ! $helpful && in_array( $q['status'], array( 'answered', 'partial', 'site' ), true ) && ! PNChat_Store::update_question( (int) $q['id'], array( 'status' => 'unhelpful' ) ) ) {
+			return new WP_Error( 'pnchat_feedback_save', 'Δεν αποθηκεύτηκε. Δοκιμάστε ξανά σε λίγο.', array( 'status' => 500 ) );
 		}
 		$s = PNChat_Settings::get();
 		return rest_ensure_response(
@@ -438,7 +473,68 @@ final class PNChat_Rest {
 	}
 
 	/**
-	 * Fixed-window rate limit per visitor (IP hash, or user id).
+	 * The page the question was asked on: this site's address without its
+	 * query string or fragment (they may hold e-mails or tokens).
+	 *
+	 * @param string $url Address sent by the browser.
+	 * @return string
+	 */
+	public static function page_url( $url ) {
+		$p    = wp_parse_url( esc_url_raw( (string) $url ) );
+		$home = wp_parse_url( home_url() );
+		if ( ! is_array( $p ) || empty( $p['host'] ) || ! in_array( $p['scheme'] ?? '', array( 'http', 'https' ), true ) || strtolower( $p['host'] ) !== strtolower( (string) ( $home['host'] ?? '' ) ) ) {
+			return '';
+		}
+		$out = $p['scheme'] . '://' . $p['host'] . ( isset( $p['port'] ) ? ':' . (int) $p['port'] : '' ) . ( $p['path'] ?? '/' );
+		return mb_substr( $out, 0, 255 );
+	}
+
+	/**
+	 * The AI never answers this question: it uses a medical word, or it is
+	 * close to a refusal («Απαγορεύσεις») even below the strictness. Safer
+	 * for a pharmacy site.
+	 *
+	 * @param string $question Question.
+	 * @return bool
+	 */
+	private static function near_block( $question ) {
+		if ( PNChat_AI::is_medical( $question ) ) {
+			return true;
+		}
+		$floor = (float) apply_filters( 'pnchat_ai_block_guard', 0.3 );
+		foreach ( PNChat_Brain::matcher()->rank( $question ) as $r ) {
+			if ( 'block' === $r['kind'] && (float) $r['score'] >= $floor ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The visitor's IP. Behind Cloudflare or another proxy every visitor
+	 * arrives from the proxy's address; wp-config.php can then name the
+	 * header that carries the real one, e.g.
+	 * define( 'PNCHAT_IP_HEADER', 'HTTP_CF_CONNECTING_IP' );
+	 * Only for a header the proxy always sets: visitors can forge any other.
+	 *
+	 * @return string
+	 */
+	public static function client_ip() {
+		$ip     = '';
+		$header = defined( 'PNCHAT_IP_HEADER' ) ? (string) PNCHAT_IP_HEADER : '';
+		if ( '' !== $header && isset( $_SERVER[ $header ] ) ) {
+			$first = trim( explode( ',', sanitize_text_field( wp_unslash( (string) $_SERVER[ $header ] ) ) )[0] );
+			$ip    = filter_var( $first, FILTER_VALIDATE_IP ) ? $first : '';
+		}
+		if ( '' === $ip && isset( $_SERVER['REMOTE_ADDR'] ) ) {
+			$ip = sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) );
+		}
+		return (string) apply_filters( 'pnchat_client_ip', $ip );
+	}
+
+	/**
+	 * Fixed-window rate limit per visitor (IP hash, or user id). Atomic: two
+	 * requests at the same moment cannot both take the last use.
 	 *
 	 * @param string $bucket Name.
 	 * @param int    $limit  Requests per window.
@@ -449,27 +545,8 @@ final class PNChat_Rest {
 		if ( current_user_can( PNChat_Admin::capability() ) ) {
 			return true;
 		}
-		$who = get_current_user_id() ? 'u' . get_current_user_id() : 'ip' . ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
-		$key = 'pnchat_rl_' . $bucket . '_' . substr( hash_hmac( 'sha256', $who, wp_salt( 'nonce' ) ), 0, 24 );
-		$hit = get_transient( $key );
-		$n   = is_array( $hit ) ? (int) $hit['n'] : 0;
-		$exp = is_array( $hit ) ? (int) $hit['exp'] : time() + $window;
-		if ( $n >= $limit && $exp > time() ) {
-			return false;
-		}
-		if ( $exp <= time() ) {
-			$n   = 0;
-			$exp = time() + $window;
-		}
-		set_transient(
-			$key,
-			array(
-				'n'   => $n + 1,
-				'exp' => $exp,
-			),
-			max( 1, $exp - time() )
-		);
-		return true;
+		$who = get_current_user_id() ? 'u' . get_current_user_id() : 'ip' . self::client_ip();
+		return PNChat_Counter::take( 'rl:' . $bucket . ':' . substr( hash_hmac( 'sha256', $who, wp_salt( 'nonce' ) ), 0, 24 ), $limit, $window );
 	}
 
 	/**
@@ -483,7 +560,8 @@ final class PNChat_Rest {
 	 */
 	private static function notify_admin( $id, $question, $email, $name ) {
 		$s = PNChat_Settings::get();
-		if ( empty( $s['notify_on_email'] ) || ! is_email( (string) $s['notify_email'] ) ) {
+		$to = PNChat_Settings::notify_address();
+		if ( empty( $s['notify_on_email'] ) || ! is_email( $to ) ) {
 			return;
 		}
 		$link = admin_url( 'admin.php?page=pn-chat-questions&filter=email#q-' . $id );
@@ -491,6 +569,6 @@ final class PNChat_Rest {
 			. 'Ερώτηση: ' . $question . "\n"
 			. 'Από: ' . ( '' !== $name ? $name . ' ' : '' ) . '<' . $email . ">\n\n"
 			. 'Απαντήστε ή εκπαιδεύστε τον βοηθό εδώ: ' . $link . "\n";
-		wp_mail( (string) $s['notify_email'], '[PN Chat] Νέα ερώτηση χωρίς απάντηση', $body, array( 'Reply-To: ' . $email ) );
+		wp_mail( $to, '[PN Chat] Νέα ερώτηση χωρίς απάντηση', $body, array( 'Reply-To: ' . $email ) );
 	}
 }

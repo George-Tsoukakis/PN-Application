@@ -53,17 +53,25 @@
 		} catch (e) { /* ignore */ }
 	}
 
+	// An AI answer may take up to 90 seconds on the server.
+	var TIMEOUT_ASK = 120000;
+	var TIMEOUT_OTHER = 30000;
+
 	function api(path, body, retried) {
 		var headers = { 'Content-Type': 'application/json' };
 		if (cfg.nonce && !retried) {
 			headers['X-WP-Nonce'] = cfg.nonce;
 		}
+		var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+		var timer = ctrl ? window.setTimeout(function () { ctrl.abort(); }, path === '/ask' ? TIMEOUT_ASK : TIMEOUT_OTHER) : null;
 		return fetch(cfg.api + path, {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: headers,
-			body: JSON.stringify(body)
+			body: JSON.stringify(body),
+			signal: ctrl ? ctrl.signal : undefined
 		}).then(function (res) {
+			window.clearTimeout(timer);
 			return res.json().catch(function () { return {}; }).then(function (data) {
 				if (!res.ok) {
 					// An expired nonce on a long-open page: try once without it.
@@ -76,6 +84,12 @@
 				}
 				return data;
 			});
+		}, function (e) {
+			// The browser's own errors are in English («Failed to fetch»).
+			window.clearTimeout(timer);
+			throw new Error(e && e.name === 'AbortError'
+				? 'Η απάντηση αργεί πολύ. Δοκιμάστε ξανά σε λίγο.'
+				: 'Δεν υπάρχει σύνδεση με το site. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.');
 		});
 	}
 
@@ -186,6 +200,12 @@
 					self.close(true);
 				}
 			});
+			// Full screen (phones): Tab stays inside the chat.
+			this.panel.addEventListener('keydown', function (e) {
+				if (e.key === 'Tab' && self.fullScreen()) {
+					self.trapTab(e);
+				}
+			});
 		}
 		this.root.appendChild(this.panel);
 		this.host.appendChild(this.root);
@@ -206,6 +226,31 @@
 			};
 			window.visualViewport.addEventListener('resize', fit);
 			fit();
+		}
+	};
+
+	/** The floating chat covers the whole screen (narrow screens). */
+	Chat.prototype.fullScreen = function () {
+		return !this.inline && !!window.matchMedia && window.matchMedia('(max-width: 599px)').matches;
+	};
+
+	/** Keeps keyboard focus inside the open full-screen chat. */
+	Chat.prototype.trapTab = function (e) {
+		var items = Array.prototype.filter.call(
+			this.panel.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'),
+			function (n) { return !n.disabled && n.offsetParent !== null && n.getAttribute('aria-hidden') !== 'true'; }
+		);
+		if (!items.length) {
+			return;
+		}
+		var first = items[0];
+		var last = items[items.length - 1];
+		if (e.shiftKey && document.activeElement === first) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && document.activeElement === last) {
+			e.preventDefault();
+			first.focus();
 		}
 	};
 
@@ -329,6 +374,11 @@
 		if (this.launcher) {
 			this.launcher.setAttribute('aria-expanded', 'true');
 			document.documentElement.classList.add('pnchat-open');
+			if (this.fullScreen()) {
+				this.panel.setAttribute('aria-modal', 'true');
+			} else {
+				this.panel.removeAttribute('aria-modal');
+			}
 		}
 		if (!this.log.childNodes.length && cfg.welcome) {
 			this.addBot({ text: cfg.welcome }, false);
@@ -385,7 +435,8 @@
 			if (m.role === 'user') {
 				self.addUser(m.text, false);
 			} else {
-				self.addBot(m, false);
+				// The e-mail form and «Σας βοήθησε;» come back until used.
+				self.addBot(m, false, m.live || null, m);
 			}
 		});
 		if (this.state.messages.length) {
@@ -396,8 +447,18 @@
 
 	Chat.prototype.remember = function (m) {
 		this.state.messages.push(m);
+		// Older messages leave storage: keep the array in step with it.
+		if (this.state.messages.length > MAX_KEPT) {
+			this.state.messages = this.state.messages.slice(-MAX_KEPT);
+		}
 		save(this.state);
 		this.newBtn.hidden = false;
+		return m;
+	};
+
+	/** Saves a change to a remembered message (form used, vote given). */
+	Chat.prototype.update = function () {
+		save(this.state);
 	};
 
 	/** Starts over: empty conversation, no topic, welcome and suggestions. */
@@ -432,10 +493,23 @@
 
 	/**
 	 * A bot message: plain text, trained answers (server-sanitised HTML),
-	 * refusals, and the "leave your e-mail" message.
+	 * refusals, and the "leave your e-mail" message. live: the answer's id,
+	 * token and offers (e-mail form, feedback); stored: the remembered copy
+	 * of a restored message (null for a new one).
 	 */
-	Chat.prototype.addBot = function (m, keep, live) {
+	Chat.prototype.addBot = function (m, keep, live, stored) {
+		var restoring = !!stored;
 		var wrap = el('div', { className: 'pnchat__msg pnchat__msg--bot' });
+		if (keep) {
+			stored = this.remember({
+				role: 'bot',
+				text: m.text || '',
+				items: m.items || [],
+				message: m.message || '',
+				live: live && live.id ? { id: live.id, token: live.token, ask_email: !!live.ask_email, feedback: !!live.feedback, user_email: live.user_email || '' } : null
+			});
+			live = stored.live;
+		}
 		if (m.text) {
 			wrap.appendChild(el('div', { className: 'pnchat__bubble', text: m.text }));
 		}
@@ -463,10 +537,7 @@
 			wrap.appendChild(this.feedbackRow(live, wrap));
 		}
 		this.log.appendChild(wrap);
-		if (keep) {
-			this.remember({ role: 'bot', text: m.text || '', items: m.items || [], message: m.message || '' });
-		}
-		if (live) {
+		if (live && !restoring) {
 			this.scrollToStart(wrap);
 		} else {
 			this.scroll();
@@ -525,7 +596,7 @@
 				self.state.topic = res.topic;
 				save(self.state);
 			}
-			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '' }, true, res);
+			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '' }, true, res, null);
 		}).catch(function (err) {
 			self.typing(false);
 			self.addBot({ text: err.message }, false);
@@ -559,6 +630,8 @@
 			api('/email', { id: live.id, token: live.token, email: email.value.trim(), name: name.value.trim(), website: trap.value }).then(function (res) {
 				var done = el('div', { className: 'pnchat__bubble pnchat__bubble--ok', text: res.message || 'Ευχαριστούμε!' });
 				form.replaceWith(done);
+				live.ask_email = false;
+				self.update();
 				self.remember({ role: 'bot', text: res.message || 'Ευχαριστούμε!' });
 				self.scroll();
 			}).catch(function (err) {
@@ -576,6 +649,11 @@
 			row.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
 			api('/feedback', { id: live.id, token: live.token, helpful: helpful }).then(function (res) {
 				row.replaceWith(el('p', { className: 'pnchat__feedback-done', text: helpful ? 'Ευχαριστούμε!' : '' }));
+				live.feedback = false;
+				if (!helpful && res.ask_email) {
+					live.ask_email = true;
+				}
+				self.update();
 				if (!helpful) {
 					var more = el('div', { className: 'pnchat__bubble pnchat__bubble--notice', text: res.message });
 					wrap.appendChild(more);
