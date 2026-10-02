@@ -525,6 +525,20 @@
 	padding: 0 16px 10px;
 }
 
+/* Before the first question: the welcome takes only its own height and the
+   suggestions follow right under it, using the rest of the panel (no empty
+   message area between them). */
+.pnchat__panel--start .pnchat__log {
+	flex: none;
+	padding-bottom: 10px;
+}
+
+.pnchat__panel--start .pnchat__chips {
+	flex: 1 1 auto;
+	min-height: 0;
+	max-height: none;
+}
+
 .pnchat__chip-list {
 	display: flex;
 	flex-wrap: wrap;

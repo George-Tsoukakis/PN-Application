@@ -210,6 +210,9 @@
 		this.root.appendChild(this.panel);
 		this.host.appendChild(this.root);
 
+		// The suggestion groups open as far as the space allows.
+		window.addEventListener('resize', function () { self.fitGroups(); });
+
 		// Other floating buttons in the same corner (PlanDose): sit above them.
 		if (!this.inline) {
 			var place = function () { self.placeLauncher(); };
@@ -297,6 +300,8 @@
 	Chat.prototype.buildChips = function (uid) {
 		var self = this;
 		var groups = cfg.suggestions || [];
+		this.groups = [];
+		this.groupsTouched = false;
 		// Settings saved before groups existed arrive as plain strings.
 		if (groups.length && typeof groups[0] === 'string') {
 			groups = [{ title: '', items: groups.map(function (t) { return { text: t }; }) }];
@@ -327,11 +332,12 @@
 				'aria-controls': id,
 				text: g.title,
 				onclick: function () {
-					var nowOpen = list.hidden;
-					list.hidden = !nowOpen;
-					head.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+					// The visitor chose: no more automatic opening and closing.
+					self.groupsTouched = true;
+					self.setGroup(head, list, list.hidden);
 				}
 			});
+			self.groups.push({ head: head, list: list });
 			self.chips.appendChild(el('div', { className: 'pnchat__chip-group' }, [head, list]));
 		});
 		if (!groups.length) {
@@ -339,8 +345,35 @@
 		}
 	};
 
+	Chat.prototype.setGroup = function (head, list, open) {
+		list.hidden = !open;
+		head.setAttribute('aria-expanded', open ? 'true' : 'false');
+	};
+
+	/**
+	 * Every suggestion group open when they all fit in the space the chat
+	 * gives them; otherwise only the first one (the rest open with a tap).
+	 * Left alone once the visitor opened or closed a group.
+	 */
+	Chat.prototype.fitGroups = function () {
+		var self = this;
+		if (!this.groups || this.groups.length < 2 || this.groupsTouched || this.chips.hidden || this.panel.hidden) {
+			return;
+		}
+		this.groups.forEach(function (g) { self.setGroup(g.head, g.list, true); });
+		if (this.chips.scrollHeight > this.chips.clientHeight + 1) {
+			this.groups.forEach(function (g, i) { self.setGroup(g.head, g.list, i === 0); });
+		}
+	};
+
+	/** Before the first question the suggestions sit right under the welcome. */
+	Chat.prototype.startLayout = function (on) {
+		this.panel.classList.toggle('pnchat__panel--start', !!on && !this.chips.hidden);
+	};
+
 	/** Hides the suggestions (a question was asked) and offers them again. */
 	Chat.prototype.hideChips = function () {
+		this.startLayout(false);
 		this.chips.hidden = true;
 		this.topicsBtn.hidden = !(cfg.suggestions || []).length;
 		this.topicsBtn.setAttribute('aria-expanded', 'false');
@@ -351,6 +384,7 @@
 		this.chips.hidden = !this.chips.hidden;
 		this.topicsBtn.setAttribute('aria-expanded', this.chips.hidden ? 'false' : 'true');
 		if (!this.chips.hidden) {
+			this.fitGroups();
 			this.chips.scrollTop = 0;
 		}
 	};
@@ -385,6 +419,8 @@
 		}
 		this.state.open = !this.inline;
 		save(this.state);
+		// Sizes are known only once the panel shows.
+		this.fitGroups();
 		this.scroll();
 		if (focus) {
 			this.input.focus();
@@ -442,6 +478,8 @@
 		if (this.state.messages.length) {
 			this.hideChips();
 			this.newBtn.hidden = false;
+		} else {
+			this.startLayout(true);
 		}
 	};
 
@@ -478,6 +516,8 @@
 		this.chips.hidden = !(cfg.suggestions || []).length;
 		this.topicsBtn.hidden = true;
 		this.newBtn.hidden = true;
+		this.startLayout(true);
+		this.fitGroups();
 		this.input.value = '';
 		this.autosize();
 		this.input.focus();

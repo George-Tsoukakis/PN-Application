@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.8.2 =
+* Before the first question the suggested questions sit right under the welcome (no empty area between them), on phones and desktop.
+* Every group of suggested questions is open when they all fit; otherwise the first one, as before.
 
 = 1.8.1 =
 * Brain "replace": after a failure the previous entries are checked by content (not by number) and written back with their ids when needed; a failed COMMIT counts as a failure.

@@ -1,7 +1,8 @@
 /*
- * PN Chat 1.8.0 in Chromium (TEST-ONLY): the e-mail form and «Σας βοήθησε;»
+ * PN Chat 1.8.0+ in Chromium (TEST-ONLY): the e-mail form and «Σας βοήθησε;»
  * survive opening another page, Greek network errors, Tab kept inside the
- * full-screen chat. Needs the test WordPress served at PN_BASE with PN Chat
+ * full-screen chat; 1.8.2: suggestions right under the welcome, groups
+ * open when they fit. Needs the test WordPress served at PN_BASE with PN Chat
  * active (floating button), and playwright-core from tests/node_modules.
  *   PN_BASE=http://127.0.0.1:8898 node pn-chat/browser-1800.mjs
  */
@@ -72,6 +73,47 @@ try {
 	check(/σύνδεση/.test(last) && !/Failed to fetch/.test(last), 'no network: Greek message («' + last.trim() + '»)');
 	await page.unroute('**/pn-chat/v1/ask');
 	await ctx.close();
+
+	// ---- 1.8.2: suggestions right under the welcome, groups open if they fit ----
+	async function layout(viewport, mobile) {
+		const c = await browser.newContext(Object.assign({ viewport }, mobile ? { isMobile: true, hasTouch: true } : {}));
+		await c.route((url) => !String(url).startsWith(BASE), (r) => r.abort());
+		const pg = await c.newPage();
+		await pg.goto(BASE + '/', { waitUntil: 'load' });
+		await pg.click('.pnchat__launcher');
+		await pg.waitForTimeout(300);
+		const m = await pg.evaluate(() => {
+			const welcome = document.querySelector('.pnchat__msg--bot').getBoundingClientRect();
+			const chips = document.querySelector('.pnchat__chips');
+			return {
+				gap: chips.getBoundingClientRect().top - welcome.bottom,
+				open: [...document.querySelectorAll('.pnchat__group')].map((h) => h.getAttribute('aria-expanded') === 'true'),
+				scrolls: chips.scrollHeight > chips.clientHeight + 1
+			};
+		});
+		return { c, pg, m };
+	}
+	for (const [label, vp, mobile] of [['desktop', { width: 1100, height: 760 }, false], ['phone', { width: 390, height: 780 }, true]]) {
+		const { c, m } = await layout(vp, mobile);
+		check(m.gap < 30, label + ': the suggestions start right under the welcome (gap ' + Math.round(m.gap) + 'px)');
+		check(m.open.length > 1 && m.open.every(Boolean) && !m.scrolls, label + ': every group open, as they all fit');
+		await c.close();
+	}
+	{
+		const { c, pg, m } = await layout({ width: 1100, height: 480 }, false);
+		check(m.open[0] && m.open.slice(1).every((o) => !o), 'low window: only the first group open (the rest do not fit)');
+		check(m.gap < 30, 'low window: still no gap under the welcome');
+		await ask(pg, 'Γεια σας');
+		const logGrows = await pg.evaluate(() => getComputedStyle(document.querySelector('.pnchat__log')).flexGrow === '1' && document.querySelector('.pnchat__chips').hidden);
+		check(logGrows, 'after a question: the conversation takes the space, suggestions behind «Συχνές ερωτήσεις»');
+		await pg.click('.pnchat__topics');
+		check(await pg.locator('.pnchat__chips').isVisible(), '«Συχνές ερωτήσεις» brings the suggestions back');
+		pg.once('dialog', (d) => d.accept());
+		await pg.click('.pnchat__new');
+		const back = await pg.evaluate(() => document.querySelector('.pnchat__panel').classList.contains('pnchat__panel--start') && !document.querySelector('.pnchat__chips').hidden);
+		check(back, '«Νέα συζήτηση»: suggestions under the welcome again');
+		await c.close();
+	}
 
 	// ---- phone: Tab stays inside the full-screen chat ---------------------------
 	const phone = await browser.newContext({ viewport: { width: 390, height: 780 }, isMobile: true, hasTouch: true });
