@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.9.1
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,15 @@ Privacy).
   the site uploads it in seconds and collects the answer later, so long
   PDFs never meet the web server's time limit. Monthly limit; optionally
   once a week for the pages that changed.
+* **Conversations:** a follow-up stays on its subject («Είναι δωρεάν;» after
+  QR ReBuilder), also for subjects that are only title prefixes («eΔΑΠΥ: …»),
+  and «Και πώς την ακυρώνω;» reads the previous answer. «Σχετικές ερωτήσεις»
+  of the same subject follow every answer. When it does not know, it says so
+  kindly, shows the suggested questions and keeps the e-mail form behind a
+  «Θέλω απάντηση από άνθρωπο» button.
+* **Learns from conversations:** a question it did not understand, asked
+  again in other words and answered, appears under «💡 Μάλλον εννοούσαν»;
+  one click adds the first wording to that entry.
 * **Small talk:** "nice tool", "ok", "good night" get a friendly reply in the
   topic of the conversation instead of "no information"; complaints ("you did
   not help me") get the e-mail form. Texts in Settings.
@@ -151,6 +160,13 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.9.2 =
+* Conversation topics also from title prefixes («eΔΑΠΥ: …», «Γενόσημα: …»), for follow-ups only (the AI's «tools only» check is unchanged).
+* «Και πώς την ακυρώνω;» reads the previous answer; «Πόσο κοστίζει;» is accepted when every own word is in the entry; in a conversation an entry of no topic no longer takes over unless it is word for word.
+* «Σχετικές ερωτήσεις» under each answer (same title prefix or topic, closest first, not repeated). Setting: how many (0 = off).
+* Friendlier «don't know»: suggested questions and a «Θέλω απάντηση από άνθρωπο» button instead of the form at once (setting). Old default texts are updated, also when a brain file brings them.
+* «💡 Μάλλον εννοούσαν» in Questions: an unanswered question followed in the same conversation by a typed one that was answered; one click adds it. The conversation id is a random string of the tab, stored hashed.
 
 = 1.9.1 =
 * AI proposals: every source goes to Claude as a message batch. The site uploads it in seconds and picks the answer up on a later run (usually minutes), so a 40-page PDF no longer depends on the host's time limit. In 1.9.0 some hosts stopped the long direct call and the screen showed "0 of 1 read" with no reason. Batches cost half.

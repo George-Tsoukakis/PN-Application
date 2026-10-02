@@ -205,3 +205,10 @@
 	text-align: left;
 	margin-bottom: 4px;
 }
+
+.pnchat-admin .pnchat-hint {
+	margin-top: 6px;
+	padding: 6px 8px;
+	background: #f0f6fc;
+	border-left: 3px solid #2271b1;
+}

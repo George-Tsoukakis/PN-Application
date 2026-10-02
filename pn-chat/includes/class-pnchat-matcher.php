@@ -488,6 +488,45 @@ final class PNChat_Matcher {
 	}
 
 	/**
+	 * Share of the question's own words (the ones trained anywhere) that an
+	 * entry has. «Πόσο κοστίζει;» is fully covered by «Κόστος συμμετοχής στην
+	 * Κοινότητα Viber» (κοστίζει = κόστος); «Έχει εφαρμογή για iPhone;» is not
+	 * covered by «Τι είναι το QR ReBuilder».
+	 *
+	 * @param string $text Question.
+	 * @param int    $id   Entry id.
+	 * @return float 0..1 (0 when the question has no trained word).
+	 */
+	public function coverage( $text, $id ) {
+		$entry = null;
+		foreach ( $this->entries as $e ) {
+			if ( (int) $e['id'] === (int) $id ) {
+				$entry = $e;
+				break;
+			}
+		}
+		if ( ! $entry ) {
+			return 0.0;
+		}
+		$known = array();
+		foreach ( array_merge( $entry['phrasings'], $entry['keywords'] ) as $list ) {
+			$known = array_merge( $known, $list );
+		}
+		$n   = 0;
+		$hit = 0;
+		foreach ( array_unique( $this->tokens( $text ) ) as $t ) {
+			if ( null === $this->weight( $t ) ) {
+				continue;
+			}
+			++$n;
+			if ( $this->best_match( $t, $known ) >= 0.75 ) {
+				++$hit;
+			}
+		}
+		return $n ? $hit / $n : 0.0;
+	}
+
+	/**
 	 * Every keyword token is (loosely) in the question.
 	 *
 	 * @param string[] $q  Question tokens.

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class PNChat_Store {
 
-	const DB_VERSION = 4;
+	const DB_VERSION = 5;
 
 	/**
 	 * Question statuses and their labels.
@@ -108,9 +108,12 @@ final class PNChat_Store {
 				replied_at datetime NULL DEFAULT NULL,
 				draft longtext NULL,
 				page_url varchar(255) NOT NULL DEFAULT '',
+				conv char(32) NOT NULL DEFAULT '',
+				hint_entry bigint(20) unsigned NOT NULL DEFAULT 0,
 				created_at datetime NOT NULL,
 				PRIMARY KEY  (id),
 				KEY status_created (status,created_at),
+				KEY conv (conv),
 				KEY email (email),
 				KEY created_at (created_at)
 			) {$charset};"
@@ -427,11 +430,42 @@ final class PNChat_Store {
 			'reply'      => '',
 			'page_url'   => mb_substr( (string) ( $data['page_url'] ?? '' ), 0, 255 ),
 			'draft'      => isset( $data['draft'] ) ? wp_json_encode( $data['draft'] ) : null,
+			'conv'       => (string) ( $data['conv'] ?? '' ),
 			'created_at' => current_time( 'mysql', true ),
 		);
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$ok = $wpdb->insert( self::questions_table(), $row );
 		return $ok ? (int) $wpdb->insert_id : 0;
+	}
+
+	/**
+	 * Learning from conversations: a visitor's question the chat could not
+	 * answer, followed in the same conversation by one it answered (the
+	 * visitor said it in other words), gets that entry as a hint. The
+	 * administrator sees «Μάλλον εννοούσε …» and adds it with one click;
+	 * nothing changes on its own.
+	 *
+	 * @param string $conv     Conversation (hashed).
+	 * @param int    $entry_id Entry that answered.
+	 * @param int    $minutes  How far back.
+	 * @return bool A question got the hint.
+	 */
+	public static function hint_previous( $conv, $entry_id, $minutes = 10 ) {
+		global $wpdb;
+		if ( '' === $conv || ! $entry_id ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$n = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE %i SET hint_entry = %d WHERE conv = %s AND hint_entry = 0 AND status IN ( 'unanswered', 'partial' ) AND created_at >= %s ORDER BY id DESC LIMIT 1",
+				self::questions_table(),
+				(int) $entry_id,
+				$conv,
+				gmdate( 'Y-m-d H:i:s', time() - $minutes * MINUTE_IN_SECONDS )
+			)
+		);
+		return (bool) $n;
 	}
 
 	/**
@@ -486,7 +520,7 @@ final class PNChat_Store {
 	 */
 	public static function questions( $filter = 'open', $search = '', $page = 1, $per_page = 30 ) {
 		global $wpdb;
-		if ( 'open' !== $filter && 'email' !== $filter && ! array_key_exists( $filter, self::statuses() ) ) {
+		if ( ! in_array( $filter, array( 'open', 'email', 'hint' ), true ) && ! array_key_exists( $filter, self::statuses() ) ) {
 			$filter = 'all';
 		}
 		$like   = '' !== $search ? '%' . $wpdb->esc_like( $search ) . '%' : '';
@@ -498,8 +532,10 @@ final class PNChat_Store {
 				'SELECT * FROM %i WHERE ( %s = \'all\''
 				. ' OR ( %s = \'open\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\' ) )'
 				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\', \'ai\' ) )'
+				. ' OR ( %s = \'hint\' AND hint_entry > 0 AND status IN ( \'unanswered\', \'partial\' ) )'
 				. ' OR status = %s ) AND ( %s = \'\' OR question LIKE %s OR email LIKE %s ) ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d',
 				self::questions_table(),
+				$filter,
 				$filter,
 				$filter,
 				$filter,
@@ -517,8 +553,10 @@ final class PNChat_Store {
 				'SELECT COUNT(*) FROM %i WHERE ( %s = \'all\''
 				. ' OR ( %s = \'open\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\' ) )'
 				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\', \'ai\' ) )'
+				. ' OR ( %s = \'hint\' AND hint_entry > 0 AND status IN ( \'unanswered\', \'partial\' ) )'
 				. ' OR status = %s ) AND ( %s = \'\' OR question LIKE %s OR email LIKE %s )',
 				self::questions_table(),
+				$filter,
 				$filter,
 				$filter,
 				$filter,
@@ -548,6 +586,8 @@ final class PNChat_Store {
 			'all'   => 0,
 			'open'  => 0,
 			'email' => 0,
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			'hint'  => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE hint_entry > 0 AND status IN ( 'unanswered', 'partial' )", self::questions_table() ) ),
 		);
 		foreach ( (array) $rows as $r ) {
 			$s            = (string) $r['status'];

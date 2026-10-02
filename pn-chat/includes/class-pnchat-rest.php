@@ -50,6 +50,22 @@ final class PNChat_Rest {
 					'context'  => array(
 						'type' => 'string',
 					),
+					// 1.9.2: the entry that answered last, the entries already
+					// shown in this conversation, the conversation's random id
+					// and whether the question was a button («chip»).
+					'prev'     => array(
+						'type' => 'integer',
+					),
+					'seen'     => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'integer' ),
+					),
+					'conv'     => array(
+						'type' => 'string',
+					),
+					'via'      => array(
+						'type' => 'string',
+					),
 				),
 			)
 		);
@@ -154,9 +170,15 @@ final class PNChat_Rest {
 		// «Ωραία, τι κάνει;» is searched as «τι κάνει;» (the remark is not
 		// part of the question); the log keeps what the visitor wrote.
 		$search  = PNChat_Smalltalk::strip_lead( $question );
-		$own     = PNChat_Topics::detect( $search );
+		$own     = PNChat_Topics::detect( $search, true );
 		$follow  = '' !== $context && '' === $own;
-		$result  = self::answer_in_context( $search, $follow ? $context : '' );
+		// The entry that answered last, for «Και πώς την ακυρώνω;». Not when
+		// the question names another topic.
+		$prev    = absint( $req->get_param( 'prev' ) );
+		if ( $prev && '' !== $own && PNChat_Topics::of_entry( $prev ) !== $own ) {
+			$prev = 0;
+		}
+		$result  = self::answer_in_context( $search, $follow ? $context : '', $prev );
 		$site    = self::site_results( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
 
 		// No trained answer, but pages of the site are about it: the AI may
@@ -211,10 +233,20 @@ final class PNChat_Rest {
 			);
 		}
 
+		// Learning from the conversation: the visitor typed (not a button)
+		// a question the chat answered; an unanswered one just before in
+		// the same conversation probably meant this entry.
+		$conv  = self::conv_hash( (string) $req->get_param( 'conv' ) );
+		$first = self::first_answer( $result );
+		if ( 'answered' === $result['status'] && $first && 'chip' !== $req->get_param( 'via' ) ) {
+			PNChat_Store::hint_previous( $conv, $first );
+		}
+
 		$token = wp_generate_password( 32, false );
 		$id    = PNChat_Store::log_question(
 			array(
 				'question'   => $question,
+				'conv'       => $conv,
 				'status'     => $result['status'],
 				'matched'    => $matched,
 				// Follow-up questions are logged with their topic, so the
@@ -234,6 +266,10 @@ final class PNChat_Rest {
 
 		$message = '';
 		$intro   = '';
+		// Nothing to show: a friendly «don't know yet», the suggested
+		// questions again and the e-mail form behind a button, so a remark
+		// out of the chat's subjects is not met with a form.
+		$button = 'unanswered' === $result['status'] && ! empty( $s['fallback_button'] );
 		if ( 'unanswered' === $result['status'] ) {
 			$message = (string) $s['fallback'];
 		} elseif ( 'ai' === $result['status'] ) {
@@ -253,8 +289,12 @@ final class PNChat_Rest {
 				'items'      => $items,
 				'intro'      => $intro,
 				'topic'      => self::topic_of( $result, $own, $follow ? $context : '' ),
+				'entry'      => $first,
+				'related'    => 'answered' === $result['status'] ? self::related( $first, (array) $req->get_param( 'seen' ), (int) $s['related_max'] ) : array(),
 				'message'    => $message,
-				'ask_email'  => $id && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
+				'ask_email'  => $id && ! $button && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
+				'email_button'     => $id && $button,
+				'show_suggestions' => $button,
 				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial', 'site', 'ai' ), true ),
 				'user_email' => self::user_email(),
 			)
@@ -415,14 +455,26 @@ final class PNChat_Rest {
 	 * @param string $context  Topic of the conversation ('' for none).
 	 * @return array<string,mixed> Matcher result.
 	 */
-	public static function answer_in_context( $question, $context ) {
+	public static function answer_in_context( $question, $context, $prev = 0 ) {
 		$m     = PNChat_Brain::matcher();
 		$plain = $m->ask( $question );
-		if ( '' === $context || 'blocked' === $plain['status'] ) {
+		if ( 'blocked' === $plain['status'] ) {
 			return $plain;
 		}
-		if ( 'answered' === $plain['status'] && '' === PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) ) {
+		if ( '' === $context ) {
+			return 'unanswered' === $plain['status'] ? self::after_previous( $question, $context, $prev, $plain ) : $plain;
+		}
+		// A question that is word for word a trained one of no topic is that
+		// entry («Γεια σας», «Ευχαριστώ»), whatever the conversation.
+		if ( 'answered' === $plain['status'] && (float) $plain['items'][0]['score'] >= 0.97 && '' === PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) ) {
 			return $plain;
+		}
+		// «Και πώς τη διαγράφω;»: «τη» is the previous answer, before the topic.
+		if ( $prev && self::points_back( $question ) ) {
+			$after = self::after_previous( $question, $context, $prev, array() );
+			if ( $after ) {
+				return $after;
+			}
 		}
 		// The topic goes inside the question («Είναι δωρεάν QR ReBuilder»),
 		// not after its question mark, which would split it in two.
@@ -439,23 +491,33 @@ final class PNChat_Rest {
 				}
 			}
 		}
-		if ( 'answered' === $ctx['status'] && 'answer' === $ctx['items'][0]['kind'] && $own_score >= 0.25 && PNChat_Topics::of_entry( (int) $ctx['items'][0]['id'] ) === $context ) {
+		// Or every word of its own is in that entry («Πόσο κοστίζει;» →
+		// «Κόστος συμμετοχής» of the Viber community).
+		$covered = 'answered' === $ctx['status'] && $m->coverage( $question, (int) $ctx['items'][0]['id'] ) >= 0.6;
+		if ( 'answered' === $ctx['status'] && 'answer' === $ctx['items'][0]['kind'] && ( $own_score >= 0.25 || $covered ) && PNChat_Topics::of_entry( (int) $ctx['items'][0]['id'] ) === $context ) {
 			// One answer: the added topic words would also bring its general
 			// entry («Τι είναι το …») as a second one.
 			$ctx['items'] = array_slice( $ctx['items'], 0, 1 );
 			return $ctx;
 		}
-		if ( 'answered' === $plain['status'] && PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) === $context ) {
+		$plain_topic = 'answered' === $plain['status'] ? PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) : '';
+		if ( 'answered' === $plain['status'] && $plain_topic === $context ) {
 			return $plain;
 		}
-		// A clear match elsewhere means the visitor changed topic.
-		if ( 'answered' === $plain['status'] && (float) $plain['items'][0]['score'] >= 0.85 ) {
+		// «Και πώς τη διαγράφω;» after an answer: the previous answer first.
+		$after = self::after_previous( $question, $context, $prev, array() );
+		if ( $after ) {
+			return $after;
+		}
+		// An entry of no topic (greetings, «Εγγραφή στην PharmacyNeeds»),
+		// or a clear match in another topic: the visitor moved on.
+		if ( 'answered' === $plain['status'] && ( '' === $plain_topic || (float) $plain['items'][0]['score'] >= 0.85 ) ) {
 			return $plain;
 		}
 		// A vague question with nothing about this topic: an answer about
 		// another topic would be wrong here, so it is reported as unanswered.
 		if ( in_array( $plain['status'], array( 'answered', 'partial' ), true ) ) {
-			return array(
+			$plain = array(
 				'status'    => 'unanswered',
 				'items'     => array(),
 				'unmatched' => array( $question ),
@@ -463,6 +525,147 @@ final class PNChat_Rest {
 			);
 		}
 		return $plain;
+	}
+
+	/**
+	 * The question refers to something said before («τη», «το», «αυτό»).
+	 *
+	 * @param string $question Question.
+	 * @return bool
+	 */
+	private static function points_back( $question ) {
+		$words = preg_split( '/[^\p{L}\p{N}]+/u', mb_strtolower( (string) $question, 'UTF-8' ), -1, PREG_SPLIT_NO_EMPTY );
+		return (bool) array_intersect( (array) $words, array( 'τη', 'την', 'τον', 'το', 'τα', 'τις', 'τους', 'αυτό', 'αυτή', 'αυτήν', 'αυτόν', 'αυτά', 'αυτές', 'αυτούς' ) );
+	}
+
+	/**
+	 * A follow-up that points at the previous answer, not only its topic:
+	 * after «Πώς ανοίγω περίοδο υποβολής;», «Και πώς την ακυρώνω;» is read
+	 * as «…ακυρώνω περίοδο υποβολής» and finds «Ακύρωση ανοίγματος
+	 * περιόδου». Accepted only for another entry of the same topic whose
+	 * words cover the question's own.
+	 *
+	 * @param string              $question Question.
+	 * @param string              $context  Conversation topic.
+	 * @param int                 $prev     Entry that answered last.
+	 * @param array<string,mixed> $fallback Result to keep otherwise (array() = none).
+	 * @return array<string,mixed>
+	 */
+	private static function after_previous( $question, $context, $prev, array $fallback ) {
+		$p = $prev ? PNChat_Store::entry( (int) $prev ) : null;
+		if ( ! $p || 'answer' !== $p['kind'] || empty( $p['active'] ) ) {
+			return $fallback;
+		}
+		$about = (string) $p['title'];
+		$pre   = PNChat_Topics::title_prefix( $about );
+		if ( '' !== $pre ) {
+			$about = trim( mb_substr( $about, mb_strlen( $pre ) + 1 ) );
+		}
+		$m = PNChat_Brain::matcher();
+		$r = $m->ask( rtrim( $question, " \t?;;.!" ) . ' ' . $about . ( '' !== $context ? ' ' . $context : '' ) );
+		if ( 'answered' !== $r['status'] || 'answer' !== $r['items'][0]['kind'] ) {
+			return $fallback;
+		}
+		$top = (int) $r['items'][0]['id'];
+		if ( $top === (int) $prev || $m->coverage( $question, $top ) < 0.5 || PNChat_Topics::of_entry( $top ) !== PNChat_Topics::of_entry( (int) $prev ) ) {
+			return $fallback;
+		}
+		$r['items'] = array_slice( $r['items'], 0, 1 );
+		return $r;
+	}
+
+	/**
+	 * Stored form of the conversation id the widget sends (a random string
+	 * kept in the visitor's tab): hashed, so the log never holds it.
+	 *
+	 * @param string $conv Conversation id.
+	 * @return string '' when missing or malformed.
+	 */
+	private static function conv_hash( $conv ) {
+		return preg_match( '/^[A-Za-z0-9]{16,64}$/', $conv ) ? substr( hash( 'sha256', 'pnchat|' . $conv ), 0, 32 ) : '';
+	}
+
+	/**
+	 * «Σχετικές ερωτήσεις» after an answer: other entries of the same group
+	 * (title prefix «eΔΑΠΥ: …», else the conversation topic), the closest to
+	 * the answered one first, without the ones already shown.
+	 *
+	 * @param int        $entry_id Answered entry.
+	 * @param array<int> $seen     Entries already shown in the conversation.
+	 * @param int        $max      How many (0 = none).
+	 * @return array<int,array{id:int,text:string}>
+	 */
+	public static function related( $entry_id, array $seen, $max ) {
+		if ( $max < 1 || ! $entry_id ) {
+			return array();
+		}
+		$all = PNChat_Store::entries( 'answer', true );
+		$cur = null;
+		foreach ( $all as $e ) {
+			if ( (int) $e['id'] === (int) $entry_id ) {
+				$cur = $e;
+				break;
+			}
+		}
+		if ( ! $cur ) {
+			return array();
+		}
+		$pre   = PNChat_Text::fold( PNChat_Topics::title_prefix( (string) $cur['title'] ) );
+		$topic = '' === $pre ? PNChat_Topics::of_entry_data( $cur ) : '';
+		if ( '' === $pre && '' === $topic ) {
+			return array();
+		}
+		$skip  = array_flip( array_map( 'intval', array_merge( $seen, array( $entry_id ) ) ) );
+		$group = array();
+		foreach ( $all as $e ) {
+			if ( isset( $skip[ (int) $e['id'] ] ) || ! $e['phrasings'] ) {
+				continue;
+			}
+			$same = '' !== $pre
+				? PNChat_Text::fold( PNChat_Topics::title_prefix( (string) $e['title'] ) ) === $pre
+				: PNChat_Topics::of_entry_data( $e ) === $topic;
+			if ( $same ) {
+				$group[ (int) $e['id'] ] = $e;
+			}
+		}
+		if ( ! $group ) {
+			return array();
+		}
+		// Closest first: the matcher's score of the answered entry's words.
+		$score = array();
+		foreach ( PNChat_Brain::matcher()->rank( $cur['title'] . ' ' . implode( ' ', array_slice( (array) $cur['phrasings'], 0, 3 ) ) ) as $r ) {
+			$score[ (int) $r['id'] ] = (float) $r['score'];
+		}
+		uksort(
+			$group,
+			function ( $a, $b ) use ( $score, $group ) {
+				$d = ( $score[ $b ] ?? 0 ) <=> ( $score[ $a ] ?? 0 );
+				return $d ? $d : ( (int) $group[ $b ]['hits'] <=> (int) $group[ $a ]['hits'] );
+			}
+		);
+		$out = array();
+		foreach ( array_slice( $group, 0, $max, true ) as $id => $e ) {
+			$out[] = array(
+				'id'   => (int) $id,
+				'text' => (string) $e['phrasings'][0],
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Id of the first trained answer (0 for none).
+	 *
+	 * @param array<string,mixed> $result Matcher result.
+	 * @return int
+	 */
+	private static function first_answer( array $result ) {
+		foreach ( $result['items'] as $i ) {
+			if ( 'answer' === $i['kind'] ) {
+				return (int) $i['id'];
+			}
+		}
+		return 0;
 	}
 
 	/**

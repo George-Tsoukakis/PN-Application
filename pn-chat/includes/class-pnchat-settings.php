@@ -30,7 +30,9 @@ final class PNChat_Settings {
 			'subtitle'         => 'Απαντάμε σε ερωτήσεις για την PharmacyNeeds',
 			'welcome'          => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds.',
 			'placeholder'      => 'Γράψτε την ερώτησή σας…',
-			'fallback'         => 'Δεν έχουμε πληροφορίες για το συγκεκριμένο ερώτημα. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
+			'fallback'         => 'Δεν έχω ακόμα απάντηση γι\' αυτό. Δείτε μήπως σας βοηθούν οι Συχνές ερωτήσεις, ή πατήστε «Θέλω απάντηση από άνθρωπο» για να σας απαντήσουμε εμείς.',
+			'fallback_button'  => 1,
+			'related_max'      => 3,
 			'partial'          => 'Για το «{question}» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'unhelpful'        => 'Λυπούμαστε που δεν βοήθησε. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο {email}.',
@@ -153,7 +155,7 @@ final class PNChat_Settings {
 		$d   = self::defaults();
 		$out = array();
 
-		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat', 'ai_learn_weekly' ) as $k ) {
+		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat', 'ai_learn_weekly', 'fallback_button' ) as $k ) {
 			$out[ $k ] = empty( $in[ $k ] ) ? 0 : 1;
 		}
 		$out['visibility'] = in_array( $in['visibility'] ?? '', array( 'all', 'logged_in' ), true ) ? $in['visibility'] : $d['visibility'];
@@ -182,6 +184,7 @@ final class PNChat_Settings {
 		$out['ai_chat_model'] = preg_match( '/^claude-[a-z0-9.-]+$/', $cmodel ) ? $cmodel : $d['ai_chat_model'];
 		$out['ai_chat_daily']  = max( 1, min( 1000, absint( $in['ai_chat_daily'] ?? $d['ai_chat_daily'] ) ) );
 		$out['ai_learn_monthly'] = max( 1, min( 5000, absint( $in['ai_learn_monthly'] ?? $d['ai_learn_monthly'] ) ) );
+		$out['related_max']      = min( 5, absint( $in['related_max'] ?? $d['related_max'] ) );
 		$out['site_max']       = max( 1, min( 5, absint( $in['site_max'] ?? $d['site_max'] ) ) );
 		$out['max_answers']    = max( 1, min( 5, absint( $in['max_answers'] ?? $d['max_answers'] ) ) );
 		$out['rate_per_10min'] = max( 1, min( 500, absint( $in['rate_per_10min'] ?? $d['rate_per_10min'] ) ) );
@@ -201,7 +204,11 @@ final class PNChat_Settings {
 	 */
 	public static function migrate() {
 		$version = (int) get_option( 'pnchat_settings_version' );
+		if ( $version >= 8 ) {
+			return;
+		}
 		if ( $version >= 7 ) {
+			self::migrate_to_8();
 			return;
 		}
 		if ( $version < 5 ) {
@@ -218,7 +225,18 @@ final class PNChat_Settings {
 				'email_thanks' => array( 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.' ),
 			)
 		);
-		update_option( 'pnchat_settings_version', 7, false );
+		self::migrate_to_8();
+	}
+
+	/**
+	 * 1.9.2: a friendlier «don't know» text (the e-mail form is behind a
+	 * button now). Only when the old default was never changed.
+	 *
+	 * @return void
+	 */
+	private static function migrate_to_8() {
+		self::replace_old_defaults( array( 'fallback' => array( 'Δεν έχουμε πληροφορίες για το συγκεκριμένο ερώτημα. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.' ) ) );
+		update_option( 'pnchat_settings_version', 8, false );
 	}
 
 	/**
@@ -258,6 +276,40 @@ final class PNChat_Settings {
 			PNChat_Seed::upgrade_qr();
 		}
 		update_option( 'pnchat_settings_version', 5, false );
+	}
+
+	/**
+	 * Older default texts that a newer version replaced, by setting.
+	 *
+	 * @return array<string,string[]>
+	 */
+	public static function old_defaults() {
+		return array(
+			'partial'      => array( 'Για το «%s» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.' ),
+			'email_thanks' => array( 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.' ),
+			'fallback'     => array( 'Δεν έχουμε πληροφορίες για το συγκεκριμένο ερώτημα. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.' ),
+		);
+	}
+
+	/**
+	 * Settings from a brain file made with an older version: texts that are
+	 * an older default get the current one (1.9.2: «…Αφήστε το e-mail σας»
+	 * no longer fits the form behind a button). Texts the site wrote stay.
+	 *
+	 * @param array<string,mixed> $in Settings.
+	 * @return array<string,mixed>
+	 */
+	public static function upgrade_texts( array $in ) {
+		$new  = self::defaults();
+		$norm = function ( $v ) {
+			return trim( str_replace( "\r\n", "\n", (string) $v ) );
+		};
+		foreach ( self::old_defaults() as $k => $values ) {
+			if ( isset( $in[ $k ] ) && in_array( $norm( $in[ $k ] ), array_map( $norm, $values ), true ) ) {
+				$in[ $k ] = $new[ $k ];
+			}
+		}
+		return $in;
 	}
 
 	/**

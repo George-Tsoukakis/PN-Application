@@ -37,10 +37,23 @@
 			var raw = window.sessionStorage.getItem(STORE_KEY);
 			var data = raw ? JSON.parse(raw) : null;
 			if (data && Array.isArray(data.messages)) {
+				data.seen = Array.isArray(data.seen) ? data.seen : [];
+				data.conv = data.conv || newConv();
 				return data;
 			}
 		} catch (e) { /* storage blocked or corrupt: start fresh */ }
-		return { open: false, messages: [] };
+		return { open: false, messages: [], seen: [], prev: 0, conv: newConv() };
+	}
+
+	/** Random id of this conversation (kept in the tab, hashed by the server). */
+	function newConv() {
+		var s = '';
+		var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+		var buf = window.crypto && window.crypto.getRandomValues ? window.crypto.getRandomValues(new Uint8Array(24)) : null;
+		for (var i = 0; i < 24; i++) {
+			s += chars.charAt(buf ? buf[i] % chars.length : Math.floor(Math.random() * chars.length));
+		}
+		return s;
 	}
 
 	function save(state) {
@@ -48,6 +61,9 @@
 			window.sessionStorage.setItem(STORE_KEY, JSON.stringify({
 				open: state.open,
 				topic: state.topic || '',
+				prev: state.prev || 0,
+				seen: (state.seen || []).slice(-30),
+				conv: state.conv || '',
 				messages: state.messages.slice(-MAX_KEPT)
 			}));
 		} catch (e) { /* ignore */ }
@@ -313,7 +329,7 @@
 				if (it.url) {
 					list.appendChild(el('a', { className: 'pnchat__chip pnchat__chip--link', href: it.url, text: it.text + ' →' }));
 				} else {
-					list.appendChild(el('button', { type: 'button', className: 'pnchat__chip', text: it.text, onclick: function () { self.send(it.text); } }));
+					list.appendChild(el('button', { type: 'button', className: 'pnchat__chip', text: it.text, onclick: function () { self.send(it.text, 'chip'); } }));
 				}
 			});
 			if (!g.title) {
@@ -506,6 +522,9 @@
 		}
 		this.state.messages = [];
 		this.state.topic = '';
+		this.state.prev = 0;
+		this.state.seen = [];
+		this.state.conv = newConv();
 		save(this.state);
 		while (this.log.firstChild) {
 			this.log.removeChild(this.log.firstChild);
@@ -546,7 +565,8 @@
 				text: m.text || '',
 				items: m.items || [],
 				message: m.message || '',
-				live: live && live.id ? { id: live.id, token: live.token, ask_email: !!live.ask_email, feedback: !!live.feedback, user_email: live.user_email || '' } : null
+				related: m.related || [],
+				live: live && live.id ? { id: live.id, token: live.token, ask_email: !!live.ask_email, email_button: !!live.email_button, feedback: !!live.feedback, user_email: live.user_email || '' } : null
 			});
 			live = stored.live;
 		}
@@ -572,6 +592,11 @@
 		}
 		if (live && live.ask_email) {
 			wrap.appendChild(this.emailForm(live));
+		} else if (live && live.email_button) {
+			wrap.appendChild(this.humanButton(live));
+		}
+		if ((m.related || []).length) {
+			wrap.appendChild(this.relatedRow(m.related));
 		}
 		if (live && live.feedback) {
 			wrap.appendChild(this.feedbackRow(live, wrap));
@@ -617,7 +642,7 @@
 		}
 	};
 
-	Chat.prototype.send = function (q) {
+	Chat.prototype.send = function (q, via) {
 		var self = this;
 		if (this.busy) {
 			return;
@@ -629,14 +654,27 @@
 		this.autosize();
 		this.addUser(q, true);
 		this.typing(true);
-		api('/ask', { question: q, page: window.location.href.split('#')[0], context: this.state.topic || '' }).then(function (res) {
+		api('/ask', {
+			question: q,
+			page: window.location.href.split('#')[0],
+			context: this.state.topic || '',
+			prev: this.state.prev || 0,
+			seen: this.state.seen || [],
+			conv: this.state.conv || '',
+			via: via || ''
+		}).then(function (res) {
 			self.typing(false);
-			// The topic of this answer is the context of the next question.
+			// The topic of this answer is the context of the next question,
+			// and the answer itself the subject of «και πώς το…;».
 			if (res.topic) {
 				self.state.topic = res.topic;
-				save(self.state);
 			}
-			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '' }, true, res, null);
+			if (res.entry) {
+				self.state.prev = res.entry;
+				self.state.seen = (self.state.seen || []).concat([res.entry]).slice(-30);
+			}
+			save(self.state);
+			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '', related: res.related || [] }, true, res, null);
 			// Small talk («ωραίο», «οκ»): offer the suggested questions again.
 			if (res.show_suggestions && (cfg.suggestions || []).length && self.chips.hidden) {
 				self.toggleChips();
@@ -685,6 +723,36 @@
 			});
 		});
 		return form;
+	};
+
+	/** «Σχετικές ερωτήσεις» under an answer: one tap asks it. */
+	Chat.prototype.relatedRow = function (related) {
+		var self = this;
+		var row = el('div', { className: 'pnchat__related', role: 'group', 'aria-label': 'Σχετικές ερωτήσεις' });
+		row.appendChild(el('p', { className: 'pnchat__related-title', text: 'Σχετικές ερωτήσεις' }));
+		related.forEach(function (r) {
+			row.appendChild(el('button', { type: 'button', className: 'pnchat__chip', text: r.text, onclick: function () { self.send(r.text, 'chip'); } }));
+		});
+		return row;
+	};
+
+	/** «Θέλω απάντηση από άνθρωπο»: opens the e-mail form of that question. */
+	Chat.prototype.humanButton = function (live) {
+		var self = this;
+		var btn = el('button', { type: 'button', className: 'pnchat__btn pnchat__btn--ghost pnchat__human', text: 'Θέλω απάντηση από άνθρωπο' });
+		btn.addEventListener('click', function () {
+			live.email_button = false;
+			live.ask_email = true;
+			self.update();
+			var form = self.emailForm(live);
+			btn.replaceWith(form);
+			var field = form.querySelector('input[type=email]');
+			if (field) {
+				field.focus();
+			}
+			self.scroll();
+		});
+		return btn;
 	};
 
 	Chat.prototype.feedbackRow = function (live, wrap) {

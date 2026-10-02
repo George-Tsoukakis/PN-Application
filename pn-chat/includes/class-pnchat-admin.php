@@ -1289,6 +1289,7 @@ final class PNChat_Admin {
 
 		echo '<h1>Ερωτήματα επισκεπτών</h1>';
 		self::notices();
+		echo '<p class="pnchat-intro">Στο <strong>💡 Μάλλον εννοούσαν</strong> είναι ερωτήσεις που ο βοηθός δεν κατάλαβε, αλλά ο επισκέπτης τις ξαναρώτησε με άλλα λόγια και πήρε απάντηση: με ένα κλικ ο βοηθός μαθαίνει και την πρώτη διατύπωση.</p>';
 		echo '<p class="pnchat-intro">Όλες οι ερωτήσεις που έγιναν στο chat. Οι <strong>ανοιχτές</strong> (χωρίς απάντηση, με μερική απάντηση ή «δεν βοήθησε») περιμένουν εσάς: <strong>Εκπαίδευση</strong> για να μάθει ο βοηθός την απάντηση, <strong>Απάντηση με e-mail</strong> αν ο επισκέπτης άφησε e-mail, <strong>Απαγόρευση</strong> για ερωτήσεις που δεν πρέπει να απαντώνται. Στις <strong>Απαντήσεις AI</strong> είναι όσα απάντησε το AI στο chat: με «Έλεγχος και έγκριση» γίνονται γνώσεις.</p>';
 
 		$filter = self::get( 'filter' );
@@ -1298,6 +1299,7 @@ final class PNChat_Admin {
 		$counts = PNChat_Store::question_counts();
 		$tabs   = array(
 			'open'       => 'Ανοιχτές',
+			'hint'       => '💡 Μάλλον εννοούσαν',
 			'email'      => 'Περιμένουν e-mail',
 			'ai'         => 'Απαντήσεις AI',
 			'answered'   => 'Απαντήθηκαν',
@@ -1339,6 +1341,12 @@ final class PNChat_Admin {
 			echo '<td><div class="pnchat-question">' . esc_html( (string) $q['question'] ) . '</div>';
 			if ( '' !== (string) $q['unmatched'] && 'partial' === $q['status'] ) {
 				echo '<div class="description">Χωρίς απάντηση: «' . esc_html( implode( '», «', PNChat_Store::lines( (string) $q['unmatched'] ) ) ) . '»</div>';
+			}
+			$hint = $open && ! empty( $q['hint_entry'] ) ? PNChat_Store::entry( (int) $q['hint_entry'] ) : null;
+			if ( $hint ) {
+				// The visitor asked again in other words and got this entry.
+				echo '<div class="pnchat-hint">💡 Μάλλον εννοούσε: <strong>' . esc_html( (string) $hint['title'] ) . '</strong> (το ξαναρώτησε αλλιώς και πήρε αυτή την απάντηση). ';
+				echo '<a class="button button-small" href="' . esc_url( self::action_url( 'question', array( 'id' => $id, 'do' => 'hint', 'filter' => $filter ) ) ) . '">Πρόσθεσε την ερώτηση εκεί</a></div>';
 			}
 			$qdraft = PNChat_Store::draft_of( $q );
 			if ( $qdraft ) {
@@ -1524,8 +1532,8 @@ final class PNChat_Admin {
 			$ok = PNChat_Store::delete_questions( array( $id ) );
 			self::back( 'pn-chat-questions', $ok ? 'q_deleted' : 'save_failed', array( 'n' => 1, 'filter' => $filter ) );
 		}
-		if ( 'add_to' === $do ) {
-			$entry_id = absint( self::post( 'entry_id' ) );
+		if ( 'add_to' === $do || 'hint' === $do ) {
+			$entry_id = 'hint' === $do ? (int) $q['hint_entry'] : absint( self::post( 'entry_id' ) );
 			$parts    = PNChat_Store::lines( (string) $q['unmatched'] );
 			$ok       = true;
 			foreach ( $parts ? $parts : array( (string) $q['question'] ) as $p ) {
@@ -1785,7 +1793,9 @@ final class PNChat_Admin {
 		$area( 'welcome', 'Καλωσόρισμα' );
 		$text( 'placeholder', 'Κείμενο στο πεδίο ερώτησης' );
 		$area( 'suggestions', 'Προτεινόμενες ερωτήσεις', 'Μία ανά γραμμή, εμφανίζονται ως κουμπιά κάτω από το καλωσόρισμα. Γραμμή που ξεκινά με # = νέα ομάδα (π.χ. «# Ερωτήσεις για το QR ReBuilder»)· η ομάδα ανοίγει με ένα πάτημα. «Κείμενο | /διεύθυνση/» = κουμπί που ανοίγει σελίδα (π.χ. «Άνοιγμα του QR ReBuilder | /qr-rebuilder/»).', 10 );
-		$area( 'fallback', 'Όταν δεν ξέρει την απάντηση', 'Ακολουθεί φόρμα για το e-mail του επισκέπτη.' );
+		$area( 'fallback', 'Όταν δεν ξέρει την απάντηση', 'Ταιριάζει και σε άσχετες ερωτήσεις («τι καιρό κάνει»): ο βοηθός δεν μπορεί να ξεχωρίσει με σιγουριά το άσχετο από αυτό που δεν έχει μάθει ακόμα.' );
+		$check( 'fallback_button', 'Φόρμα e-mail', 'Πίσω από κουμπί «Θέλω απάντηση από άνθρωπο», και ξανανοίγουν οι Συχνές ερωτήσεις (χωρίς τσεκ: η φόρμα εμφανίζεται αμέσως, όπως πριν την 1.9.2)' );
+		$number( 'related_max', 'Σχετικές ερωτήσεις', 'Πόσες ερωτήσεις του ίδιου θέματος προτείνει κάτω από κάθε απάντηση (0 = καμία, έως 5). Θέμα είναι το πρώτο μέρος του τίτλου πριν την άνω-κάτω τελεία («eΔΑΠΥ: …») ή ένα από τα Θέματα συζήτησης.' );
 		$area( 'partial', 'Όταν ξέρει μόνο ένα μέρος', 'Το {question} γίνεται το μέρος της ερώτησης χωρίς απάντηση. Το σύμβολο % γράφεται κανονικά.' );
 		$area( 'unhelpful', 'Όταν πατηθεί 👎', 'Ακολουθεί φόρμα για το e-mail.' );
 		$area( 'email_thanks', 'Μετά το e-mail', 'Το {email} γίνεται το e-mail του επισκέπτη.' );

@@ -3,7 +3,8 @@
  * survive opening another page, Greek network errors, Tab kept inside the
  * full-screen chat; 1.8.2: suggestions right under the welcome, groups
  * open when they fit; 1.9.0: small talk («ωραίο») gets a reply and brings
- * the suggestions back. Needs the test WordPress served at PN_BASE with PN Chat
+ * the suggestions back; 1.9.2: «Σχετικές ερωτήσεις» under an answer, the
+ * «Θέλω απάντηση από άνθρωπο» button, both kept on another page. Needs the test WordPress served at PN_BASE with PN Chat
  * active (floating button), and playwright-core from tests/node_modules.
  *   PN_BASE=http://127.0.0.1:8898 node pn-chat/browser-1800.mjs
  */
@@ -42,6 +43,8 @@ try {
 	await page.goto(BASE + '/', { waitUntil: 'load' });
 	await openChat(page);
 	await ask(page, 'Πού βρίσκεται το κατάστημα στη Λάρισα;');
+	// 1.9.2: the form is behind «Θέλω απάντηση από άνθρωπο».
+	await page.click('.pnchat__human');
 	check(await page.locator('.pnchat__email').count() === 1, 'unanswered: the e-mail form is shown');
 	await page.goto(BASE + '/?p=1', { waitUntil: 'load' });
 	await openChat(page);
@@ -123,7 +126,7 @@ try {
 		const pg = await c.newPage();
 		await pg.goto(BASE + '/', { waitUntil: 'load' });
 		await openChat(pg);
-		await ask(pg, 'Γεια σας τι ώρα ανοίγετε');
+		await ask(pg, 'Τι είναι το PlanDose;');
 		check(await pg.locator('.pnchat__chips').isHidden(), 'small talk: suggestions hidden after a question');
 		const forms = await pg.locator('.pnchat__email').count();
 		await ask(pg, 'ωραίο!');
@@ -131,6 +134,39 @@ try {
 		check(/Χαίρομαι/.test(last) && !/πληροφορ/.test(last), 'small talk: «ωραίο!» gets a friendly reply («' + last.trim().slice(0, 60) + '»)');
 		check(await pg.locator('.pnchat__chips').isVisible(), 'small talk: the suggestions come back');
 		check(await pg.locator('.pnchat__email').count() === forms, 'small talk: no new e-mail form');
+		await c.close();
+	}
+
+	// ---- related questions and the «human» button ---------------------------------------
+	{
+		const c = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+		await c.route((url) => !String(url).startsWith(BASE), (r) => r.abort());
+		const pg = await c.newPage();
+		pg.on('pageerror', (e) => check(false, 'no page error: ' + e.message));
+		await pg.goto(BASE + '/', { waitUntil: 'load' });
+		await openChat(pg);
+		await ask(pg, 'Τι είναι το QR ReBuilder;');
+		const chips = pg.locator('.pnchat__msg--bot').last().locator('.pnchat__related .pnchat__chip');
+		const n = await chips.count();
+		check(n >= 1 && n <= 3, 'related: ' + n + ' questions under the answer');
+		const first = n ? await chips.first().innerText() : '';
+		if (n) {
+			await chips.first().click();
+			await pg.waitForFunction((t) => [...document.querySelectorAll('.pnchat__msg--user')].some((m) => m.innerText.trim() === t), first, { timeout: 30000 });
+			await pg.waitForFunction(() => !document.querySelector('.pnchat__typing'), null, { timeout: 30000 });
+			const last = await pg.locator('.pnchat__msg--bot').last().innerText();
+			check(!/Δεν έχω ακόμα/.test(last), 'related: tapping «' + first + '» answers it');
+		}
+		await ask(pg, 'Τι καιρό θα κάνει αύριο στη Θεσσαλονίκη;');
+		const bot = pg.locator('.pnchat__msg--bot').last();
+		check(await bot.locator('.pnchat__human').count() === 1 && await bot.locator('.pnchat__email').count() === 0, 'don\'t know: a «Θέλω απάντηση από άνθρωπο» button, no form');
+		check(await pg.locator('.pnchat__chips').isVisible(), 'don\'t know: the suggested questions come back');
+		await bot.locator('.pnchat__human').click();
+		check(await bot.locator('.pnchat__email').count() === 1 && await pg.evaluate(() => document.activeElement && document.activeElement.type === 'email'), 'don\'t know: the button opens the e-mail form, focused');
+		await pg.reload({ waitUntil: 'load' });
+		await openChat(pg);
+		check(await pg.locator('.pnchat__email').count() === 1, 'another page: the opened form is still there');
+		check(await pg.locator('.pnchat__related .pnchat__chip').count() >= 1, 'another page: the related questions are still there');
 		await c.close();
 	}
 

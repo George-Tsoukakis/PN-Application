@@ -281,7 +281,7 @@ final class PNChat_Brain {
 
 		if ( $with_settings && isset( $data['settings'] ) && is_array( $data['settings'] ) ) {
 			$current  = PNChat_Settings::get();
-			$incoming = array_intersect_key( $data['settings'], array_flip( self::BRAIN_SETTINGS ) );
+			$incoming = PNChat_Settings::upgrade_texts( array_intersect_key( $data['settings'], array_flip( self::BRAIN_SETTINGS ) ) );
 			PNChat_Settings::save( PNChat_Settings::sanitize( array_merge( $current, $incoming ) ) );
 		}
 

@@ -688,3 +688,28 @@
 .pnchat--floating .pnchat__privacy {
 	padding-bottom: max(8px, env(safe-area-inset-bottom));
 }
+
+/* 1.9.2: «Σχετικές ερωτήσεις» under an answer, and «Θέλω απάντηση από άνθρωπο». */
+.pnchat__related {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+	max-width: 100%;
+}
+
+.pnchat__related-title {
+	flex-basis: 100%;
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--pnchat-muted);
+}
+
+.pnchat .pnchat__btn.pnchat__btn--ghost {
+	margin-top: 8px;
+	padding: 0 14px;
+	border: 1px solid var(--pnchat-accent);
+	background: #fff;
+	color: var(--pnchat-accent);
+}
