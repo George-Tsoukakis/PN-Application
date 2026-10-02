@@ -84,6 +84,11 @@
 	color: #8a4b0b;
 }
 
+.pnchat-admin .pnchat-pill--ai {
+	background: #f1ebff;
+	color: #5b2fc9;
+}
+
 .pnchat-admin .pnchat-pill--site {
 	background: #e5f0fa;
 	color: #135e96;

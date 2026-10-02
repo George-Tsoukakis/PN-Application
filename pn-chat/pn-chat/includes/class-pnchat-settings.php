@@ -39,6 +39,11 @@ final class PNChat_Settings {
 			'topics'           => "QR ReBuilder, rebuilder, datamatrix, gs1\nPlanDose, πλάνο δοσολογίας, πλάνα δοσολογίας, pro\nΚοινότητα Viber, viber\nΕλλείψεις ΕΟΦ, ελλείψεις, έλλειψη, εοφ\nΥπολογισμός αποθέματος, απόθεμα",
 			'ai_enabled'       => 0,
 			'ai_model'         => 'claude-opus-5-5',
+			'ai_chat'          => 0,
+			'ai_chat_daily'    => 50,
+			'ai_chat_model'    => 'claude-opus-5-5',
+			'ai_chat_label'    => 'Αυτόματη απάντηση από τις σελίδες μας. Δεν την έχει ελέγξει ακόμα άνθρωπος.',
+			'ai_chat_wait'     => 'Ψάχνω στις σελίδες μας…',
 			'site_search'      => 1,
 			'site_types'       => 'post, page',
 			'site_exclude'     => '',
@@ -113,7 +118,7 @@ final class PNChat_Settings {
 		$d   = self::defaults();
 		$out = array();
 
-		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled' ) as $k ) {
+		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat' ) as $k ) {
 			$out[ $k ] = empty( $in[ $k ] ) ? 0 : 1;
 		}
 		$out['visibility'] = in_array( $in['visibility'] ?? '', array( 'all', 'logged_in' ), true ) ? $in['visibility'] : $d['visibility'];
@@ -121,7 +126,7 @@ final class PNChat_Settings {
 		$out['strictness'] = in_array( $in['strictness'] ?? '', array( 'loose', 'normal', 'strict' ), true ) ? $in['strictness'] : $d['strictness'];
 		$out['position']   = in_array( $in['position'] ?? '', array( 'right', 'left' ), true ) ? $in['position'] : $d['position'];
 
-		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types' ) as $k ) {
+		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types', 'ai_chat_label', 'ai_chat_wait' ) as $k ) {
 			$out[ $k ] = sanitize_text_field( (string) ( $in[ $k ] ?? '' ) );
 		}
 		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_exclude', 'site_intro', 'site_more' ) as $k ) {
@@ -138,6 +143,9 @@ final class PNChat_Settings {
 
 		$model           = trim( sanitize_text_field( (string) ( $in['ai_model'] ?? '' ) ) );
 		$out['ai_model'] = preg_match( '/^claude-[a-z0-9.-]+$/', $model ) ? $model : $d['ai_model'];
+		$cmodel               = trim( sanitize_text_field( (string) ( $in['ai_chat_model'] ?? '' ) ) );
+		$out['ai_chat_model'] = preg_match( '/^claude-[a-z0-9.-]+$/', $cmodel ) ? $cmodel : $d['ai_chat_model'];
+		$out['ai_chat_daily']  = max( 1, min( 1000, absint( $in['ai_chat_daily'] ?? $d['ai_chat_daily'] ) ) );
 		$out['site_max']       = max( 1, min( 5, absint( $in['site_max'] ?? $d['site_max'] ) ) );
 		$out['max_answers']    = max( 1, min( 5, absint( $in['max_answers'] ?? $d['max_answers'] ) ) );
 		$out['rate_per_10min'] = max( 1, min( 500, absint( $in['rate_per_10min'] ?? $d['rate_per_10min'] ) ) );

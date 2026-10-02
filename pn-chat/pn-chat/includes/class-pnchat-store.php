@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class PNChat_Store {
 
-	const DB_VERSION = 1;
+	const DB_VERSION = 2;
 
 	/**
 	 * Question statuses and their labels.
@@ -29,6 +29,7 @@ final class PNChat_Store {
 			'answered'   => 'Απαντήθηκε',
 			'blocked'    => 'Απαγορευμένη',
 			'site'       => 'Βρέθηκε στο site',
+			'ai'         => 'Απάντηση AI (για έλεγχο)',
 			'trained'    => 'Εκπαιδεύτηκε',
 			'replied'    => 'Στάλθηκε e-mail',
 			'dismissed'  => 'Αγνοήθηκε',
@@ -105,6 +106,7 @@ final class PNChat_Store {
 				token_hash char(64) NOT NULL DEFAULT '',
 				reply longtext NOT NULL,
 				replied_at datetime NULL DEFAULT NULL,
+				draft longtext NULL,
 				page_url varchar(255) NOT NULL DEFAULT '',
 				created_at datetime NOT NULL,
 				PRIMARY KEY  (id),
@@ -316,6 +318,7 @@ final class PNChat_Store {
 			'token_hash' => (string) ( $data['token_hash'] ?? '' ),
 			'reply'      => '',
 			'page_url'   => mb_substr( (string) ( $data['page_url'] ?? '' ), 0, 255 ),
+			'draft'      => isset( $data['draft'] ) ? wp_json_encode( $data['draft'] ) : null,
 			'created_at' => current_time( 'mysql', true ),
 		);
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -337,6 +340,17 @@ final class PNChat_Store {
 	}
 
 	/**
+	 * The AI answer stored with a question (proposed entry), if any.
+	 *
+	 * @param array<string,mixed> $q Question row.
+	 * @return array<string,mixed>|null
+	 */
+	public static function draft_of( array $q ) {
+		$d = isset( $q['draft'] ) && is_string( $q['draft'] ) ? json_decode( $q['draft'], true ) : null;
+		return is_array( $d ) && isset( $d['entry'] ) && is_array( $d['entry'] ) ? $d : null;
+	}
+
+	/**
 	 * Updates columns of a question.
 	 *
 	 * @param int                 $id   Id.
@@ -345,7 +359,7 @@ final class PNChat_Store {
 	 */
 	public static function update_question( $id, array $cols ) {
 		global $wpdb;
-		$allowed = array_intersect_key( $cols, array_flip( array( 'status', 'email', 'name', 'reply', 'replied_at', 'token_hash' ) ) );
+		$allowed = array_intersect_key( $cols, array_flip( array( 'status', 'email', 'name', 'reply', 'replied_at', 'token_hash', 'draft' ) ) );
 		if ( ! $allowed ) {
 			return false;
 		}
@@ -375,7 +389,7 @@ final class PNChat_Store {
 			$wpdb->prepare(
 				'SELECT * FROM %i WHERE ( %s = \'all\''
 				. ' OR ( %s = \'open\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\' ) )'
-				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\' ) )'
+				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\', \'ai\' ) )'
 				. ' OR status = %s ) AND ( %s = \'\' OR question LIKE %s OR email LIKE %s ) ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d',
 				self::questions_table(),
 				$filter,
@@ -394,7 +408,7 @@ final class PNChat_Store {
 			$wpdb->prepare(
 				'SELECT COUNT(*) FROM %i WHERE ( %s = \'all\''
 				. ' OR ( %s = \'open\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\' ) )'
-				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\' ) )'
+				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\', \'ai\' ) )'
 				. ' OR status = %s ) AND ( %s = \'\' OR question LIKE %s OR email LIKE %s )',
 				self::questions_table(),
 				$filter,
@@ -435,7 +449,7 @@ final class PNChat_Store {
 			if ( in_array( $s, self::open_statuses(), true ) ) {
 				$counts['open'] += $n;
 			}
-			if ( in_array( $s, array_merge( self::open_statuses(), array( 'trained' ) ), true ) ) {
+			if ( in_array( $s, array_merge( self::open_statuses(), array( 'trained', 'ai' ) ), true ) ) {
 				$counts['email'] += (int) $r['e'];
 			}
 		}

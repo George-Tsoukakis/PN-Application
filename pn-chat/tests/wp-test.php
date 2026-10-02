@@ -332,6 +332,58 @@ check( 'topic: unknown follow-up logged with its topic', 'unanswered' === $d['st
 check( 'topic: unknown context ignored', 'QR ReBuilder' !== $fu( 'Είναι δωρεάν;', '<script>' )['topic'] || true );
 wp_set_current_user( $admin->ID );
 
+// ---- 1.5.0: AI answers in the chat (API mocked) ------------------------------------
+wp_set_current_user( $admin->ID );
+check( 'db: draft column exists', (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', PNChat_Store::questions_table(), 'draft' ) ) );
+$ai_page = $mk( 'Ωράριο εξυπηρέτησης PharmacyNeeds', '<p>Η εξυπηρέτηση της PharmacyNeeds απαντά Δευτέρα έως Παρασκευή, 9:00 με 17:00, στη φόρμα επικοινωνίας.</p>' );
+update_option( 'pnchat_ai_key', 'sk-ant-test-chat-0000000000', false );
+$chat_settings = array_merge( PNChat_Settings::get(), array( 'ai_chat' => 1, 'ai_chat_daily' => 2, 'ai_chat_model' => 'claude-sonnet-5-5' ) );
+update_option( PNChat_Settings::OPTION, $chat_settings );
+delete_transient( 'pnchat_ai_chat_' . gmdate( 'Ymd' ) );
+$GLOBALS['pnchat_ai_reqs'] = array();
+$chat_fake = function ( $pre, $args, $url ) {
+	if ( 0 !== strpos( $url, 'https://api.anthropic.com/' ) ) {
+		return $pre;
+	}
+	$GLOBALS['pnchat_ai_reqs'][] = json_decode( $args['body'], true );
+	$entry = array( 'title' => 'Ώρες εξυπηρέτησης', 'phrasings' => array( 'Τι ώρες έχει εξυπηρέτηση;', 'Πότε απαντάτε;' ), 'keywords' => array(), 'answer' => '<p>Δευτέρα έως Παρασκευή, 9:00 με 17:00.</p>', 'source_url' => '' );
+	return array( 'headers' => array(), 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'body' => wp_json_encode( array( 'stop_reason' => 'end_turn', 'content' => array( array( 'type' => 'text', 'text' => wp_json_encode( array( 'found' => true, 'note' => '', 'entry' => $entry ) ) ) ), 'usage' => array( 'input_tokens' => 900, 'output_tokens' => 120 ) ) ) );
+};
+add_filter( 'pre_http_request', $chat_fake, 10, 3 );
+wp_set_current_user( 0 );
+$_SERVER['REMOTE_ADDR'] = '127.0.0.' . wp_rand( 20, 250 );
+$d = rest( 'ask', array( 'question' => 'Τι ώρες έχει εξυπηρέτηση η PharmacyNeeds;' ) )->get_data();
+check( 'AI chat: answers with a labelled AI item', 'ai' === $d['status'] && 1 === count( $d['items'] ) && 'ai' === $d['items'][0]['kind'] && '' !== $d['items'][0]['label'] && false !== strpos( $d['items'][0]['html'], '9:00' ) && $d['ask_email'] && $d['feedback'], wp_json_encode( $d, JSON_UNESCAPED_UNICODE ) );
+$req = end( $GLOBALS['pnchat_ai_reqs'] );
+check( 'AI chat: chat model and short timeout used, page sent', $req && 'claude-sonnet-5-5' === $req['model'] && false !== strpos( $req['messages'][0]['content'], 'Δευτέρα έως Παρασκευή' ) );
+$qrow = PNChat_Store::question( $d['id'] );
+$dr   = PNChat_Store::draft_of( $qrow );
+check( 'AI chat: logged as «ai» with the proposed entry', 'ai' === $qrow['status'] && $dr && 'Ώρες εξυπηρέτησης' === $dr['entry']['title'] );
+rest( 'email', array( 'id' => $d['id'], 'token' => $d['token'], 'email' => 'aichat@example.test' ) );
+check( 'AI chat: leaving an e-mail keeps it in «Απαντήσεις AI»', 'ai' === PNChat_Store::question( $d['id'] )['status'] );
+$n = count( $GLOBALS['pnchat_ai_reqs'] );
+$d2 = rest( 'ask', array( 'question' => 'Ποια είναι η πρωτεύουσα της Ιταλίας;' ) )->get_data();
+check( 'AI chat: no page about it, no AI call', 'unanswered' === $d2['status'] && count( $GLOBALS['pnchat_ai_reqs'] ) === $n );
+$d3 = rest( 'ask', array( 'question' => 'Τι είναι το PlanDose;' ) )->get_data();
+check( 'AI chat: trained answers never call the AI', 'answered' === $d3['status'] && count( $GLOBALS['pnchat_ai_reqs'] ) === $n );
+$d4 = rest( 'ask', array( 'question' => 'Τι δόση να πάρω;' ) )->get_data();
+check( 'AI chat: refusals never call the AI', 'blocked' === $d4['status'] && count( $GLOBALS['pnchat_ai_reqs'] ) === $n );
+rest( 'ask', array( 'question' => 'Πότε απαντάει η εξυπηρέτηση της PharmacyNeeds;' ) );
+$d5 = rest( 'ask', array( 'question' => 'Ποιες ώρες λειτουργεί η εξυπηρέτηση της PharmacyNeeds;' ) )->get_data();
+check( 'AI chat: daily limit falls back to the site pages', 'site' === $d5['status'] && 2 === PNChat_AI::chat_used_today(), wp_json_encode( array( $d5['status'], PNChat_AI::chat_used_today() ) ) );
+update_option( PNChat_Settings::OPTION, array_merge( $chat_settings, array( 'ai_chat' => 0 ) ) );
+delete_transient( 'pnchat_ai_chat_' . gmdate( 'Ymd' ) );
+$n  = count( $GLOBALS['pnchat_ai_reqs'] );
+$d6 = rest( 'ask', array( 'question' => 'Τι ώρες έχει εξυπηρέτηση η PharmacyNeeds;' ) )->get_data();
+check( 'AI chat: off means no call', 'site' === $d6['status'] && count( $GLOBALS['pnchat_ai_reqs'] ) === $n );
+remove_filter( 'pre_http_request', $chat_fake, 10 );
+wp_set_current_user( $admin->ID );
+delete_option( 'pnchat_ai_key' );
+delete_option( PNChat_AI::USAGE_OPTION );
+delete_transient( 'pnchat_ai_chat_' . gmdate( 'Ymd' ) );
+update_option( PNChat_Settings::OPTION, $original_settings );
+wp_delete_post( $ai_page, true );
+
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );
 PNChat_Brain::import( $original, 'replace', true, false );

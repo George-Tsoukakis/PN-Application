@@ -143,6 +143,23 @@ final class PNChat_Rest {
 		$follow  = '' !== $context && '' === $own;
 		$result  = self::answer_in_context( $question, $follow ? $context : '' );
 		$site    = self::site_results( $result, $follow ? rtrim( $question, " \t?;;.!" ) . ' ' . $context : $question );
+
+		// No trained answer, but pages of the site are about it: the AI may
+		// answer from those pages, and its answer waits in Ερωτήματα as a
+		// proposed entry for an administrator to approve.
+		$ai = null;
+		if ( 'unanswered' === $result['status'] && $site && PNChat_AI::chat_enabled() && self::rate_ok( 'ai', 10, HOUR_IN_SECONDS ) && PNChat_AI::chat_take() ) {
+			if ( function_exists( 'set_time_limit' ) ) {
+				set_time_limit( 120 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- the API call may take up to a minute.
+			}
+			$asked = $follow ? rtrim( $question, " \t?;;.!" ) . ' (' . $context . ')' : $question;
+			$draft = PNChat_AI::draft_for_question( $asked, (string) $s['ai_chat_model'], 90 );
+			if ( ! is_wp_error( $draft ) && ! empty( $draft['found'] ) && ! empty( $draft['entry'] ) ) {
+				$ai               = $draft;
+				$result['status'] = 'ai';
+				$site             = array();
+			}
+		}
 		if ( $site && 'unanswered' === $result['status'] ) {
 			$result['status'] = 'site';
 		}
@@ -158,6 +175,14 @@ final class PNChat_Rest {
 			);
 		}
 		PNChat_Store::count_hits( $matched );
+		if ( $ai ) {
+			$items[] = array(
+				'kind'  => 'ai',
+				'title' => '',
+				'label' => (string) $s['ai_chat_label'],
+				'html'  => PNChat_Brain::render_answer( (string) $ai['entry']['answer'] ),
+			);
+		}
 		foreach ( $site as $r ) {
 			$items[] = array(
 				'kind'  => 'site',
@@ -184,6 +209,7 @@ final class PNChat_Rest {
 				'user_id'    => get_current_user_id(),
 				'token_hash' => hash( 'sha256', $token ),
 				'page_url'   => wp_http_validate_url( $page ) ? $page : '',
+				'draft'      => $ai,
 			)
 		);
 
@@ -191,6 +217,8 @@ final class PNChat_Rest {
 		$intro   = '';
 		if ( 'unanswered' === $result['status'] ) {
 			$message = (string) $s['fallback'];
+		} elseif ( 'ai' === $result['status'] ) {
+			$message = (string) $s['site_more'];
 		} elseif ( 'site' === $result['status'] ) {
 			$intro   = (string) $s['site_intro'];
 			$message = (string) $s['site_more'];
@@ -207,8 +235,8 @@ final class PNChat_Rest {
 				'intro'      => $intro,
 				'topic'      => self::topic_of( $result, $own, $follow ? $context : '' ),
 				'message'    => $message,
-				'ask_email'  => $id && in_array( $result['status'], array( 'unanswered', 'partial', 'site' ), true ),
-				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial', 'site' ), true ),
+				'ask_email'  => $id && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
+				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial', 'site', 'ai' ), true ),
 				'user_email' => self::user_email(),
 			)
 		);
@@ -237,7 +265,8 @@ final class PNChat_Rest {
 			return new WP_Error( 'pnchat_rate', 'Πολλές αποστολές. Δοκιμάστε ξανά αργότερα.', array( 'status' => 429 ) );
 		}
 		$name   = mb_substr( sanitize_text_field( (string) $req->get_param( 'name' ) ), 0, 190 );
-		$status = in_array( $q['status'], PNChat_Store::open_statuses(), true ) ? $q['status'] : 'unanswered';
+		// An AI answer stays in «Απαντήσεις AI» for review; the e-mail rides along.
+		$status = in_array( $q['status'], array_merge( PNChat_Store::open_statuses(), array( 'ai' ) ), true ) ? $q['status'] : 'unanswered';
 		PNChat_Store::update_question(
 			(int) $q['id'],
 			array(

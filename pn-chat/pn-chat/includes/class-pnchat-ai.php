@@ -87,16 +87,18 @@ final class PNChat_AI {
 	 *
 	 * @param string              $system System prompt.
 	 * @param string              $user   User message.
-	 * @param array<string,mixed> $schema JSON schema of the answer.
+	 * @param array<string,mixed> $schema  JSON schema of the answer.
+	 * @param string              $model   Model id ('' = the setting).
+	 * @param int                 $timeout Seconds.
 	 * @return array<string,mixed>|WP_Error
 	 */
-	public static function call( $system, $user, array $schema ) {
+	public static function call( $system, $user, array $schema, $model = '', $timeout = 180 ) {
 		$key = self::api_key();
 		if ( '' === $key ) {
 			return new WP_Error( 'pnchat_ai_key', 'Δεν έχει οριστεί API key (Ρυθμίσεις → AI βοηθός εκπαίδευσης).' );
 		}
 		$body = array(
-			'model'         => self::model(),
+			'model'         => '' !== $model ? $model : self::model(),
 			'max_tokens'    => 16000,
 			'system'        => $system,
 			'messages'      => array(
@@ -121,7 +123,7 @@ final class PNChat_AI {
 		$res  = wp_remote_post(
 			self::ENDPOINT,
 			array(
-				'timeout' => 180,
+				'timeout' => (int) $timeout,
 				'headers' => array(
 					'content-type'      => 'application/json',
 					'x-api-key'         => $key,
@@ -260,9 +262,11 @@ final class PNChat_AI {
 	 * Drafts one entry answering a visitor's question from the site's pages.
 	 *
 	 * @param string $question Question.
+	 * @param string $model    Model id ('' = the setting).
+	 * @param int    $timeout  Seconds.
 	 * @return array{found:bool,entry:array<string,mixed>,sources:array<int,array{title:string,url:string}>,note:string}|WP_Error
 	 */
-	public static function draft_for_question( $question ) {
+	public static function draft_for_question( $question, $model = '', $timeout = 180 ) {
 		$found = PNChat_Site_Search::search( $question, 4 );
 		$posts = array();
 		foreach ( $found as $r ) {
@@ -298,7 +302,7 @@ final class PNChat_AI {
 		);
 		$system = self::rules() . "\n- Αν οι σελίδες ΔΕΝ απαντούν στην ερώτηση, βάλε found=false, εξήγησε στο note τι λείπει, και άφησε τα πεδία του entry κενά.\n- note: μία πρόταση για τον διαχειριστή.";
 		$user   = "Σελίδες του site:\n" . self::pages_text( $posts, self::PAGE_CHARS ) . "\nΕρώτηση επισκέπτη:\n<question>" . $question . "</question>\n\nΓράψε μία γνώση που απαντά στην ερώτηση, μόνο από τις σελίδες. Η ερώτηση του επισκέπτη να είναι η πρώτη από τις phrasings.";
-		$json   = self::call( $system, $user, $schema );
+		$json   = self::call( $system, $user, $schema, $model, $timeout );
 		if ( is_wp_error( $json ) ) {
 			return $json;
 		}
@@ -309,6 +313,39 @@ final class PNChat_AI {
 			'sources' => $sources,
 			'note'    => sanitize_text_field( (string) ( $json['note'] ?? '' ) ),
 		);
+	}
+
+	/**
+	 * AI answers in the public chat are on and have a key.
+	 *
+	 * @return bool
+	 */
+	public static function chat_enabled() {
+		return ! empty( PNChat_Settings::value( 'ai_chat' ) ) && '' !== self::api_key();
+	}
+
+	/**
+	 * Takes one of today's AI chat answers; false when the day's limit is used.
+	 *
+	 * @return bool
+	 */
+	public static function chat_take() {
+		$key  = 'pnchat_ai_chat_' . gmdate( 'Ymd' );
+		$used = (int) get_transient( $key );
+		if ( $used >= (int) PNChat_Settings::value( 'ai_chat_daily' ) ) {
+			return false;
+		}
+		set_transient( $key, $used + 1, DAY_IN_SECONDS + HOUR_IN_SECONDS );
+		return true;
+	}
+
+	/**
+	 * AI chat answers used today.
+	 *
+	 * @return int
+	 */
+	public static function chat_used_today() {
+		return (int) get_transient( 'pnchat_ai_chat_' . gmdate( 'Ymd' ) );
 	}
 
 	/**

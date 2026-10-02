@@ -273,6 +273,45 @@ for (const t of ['Θερινό ωράριο (AI)', 'Ποιος ορίζει το
 		await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&s=` + encodeURIComponent(t));
 	}
 }
+// AI in the chat: visitor gets a labelled answer, admin approves it as an entry.
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
+await a.check('input[name=ai_chat]');
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=settings/);
+const vis = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+const v = await vis.newPage();
+v.on('pageerror', (e) => errors.push(e.message));
+await v.goto(BASE + '/');
+await v.click('.pnchat__launcher');
+await v.fill('.pnchat__input', 'Ποιος ορίζει το θερινό ωράριο των φαρμακείων;');
+await v.keyboard.press('Enter');
+await v.locator('.pnchat__answer--ai').waitFor();
+check('chat: AI answer shown with its label', (await v.locator('.pnchat__answer--ai .pnchat__answer-label').innerText()).includes('Αυτόματη απάντηση') && (await v.locator('.pnchat__answer--ai').innerText()).includes('θερινό ωράριο'));
+await shot(v, '4c-phone-ai-answer');
+await vis.close();
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-questions&filter=ai`);
+const aiRow = a.locator('tr', { hasText: 'Ποιος ορίζει το θερινό ωράριο των φαρμακείων;' });
+check('admin: AI answer waits in «Απαντήσεις AI»', (await aiRow.count()) === 1);
+await shot(a, '10-admin-ai-answers');
+await aiRow.getByRole('link', { name: /Έλεγχος και έγκριση/ }).click();
+check('admin: approval form prefilled from the AI answer', (await a.inputValue('#pnchat-title')) === 'Θερινό ωράριο (AI)' && (await a.inputValue('#pnchat-phr')).includes('Ποιος ορίζει το θερινό ωράριο των φαρμακείων;'));
+await a.click('form.pnchat-form #submit');
+await a.waitForURL(/pnchat_msg=saved/);
+const approved = await (await a.request.post(`${BASE}/?rest_route=/pn-chat/v1/ask`, { data: { question: 'Ποιος ορίζει το θερινό ωράριο των φαρμακείων;' } })).json();
+check('approved: answered from the brain, no AI', approved.status === 'answered' && approved.items[0].kind === 'answer', JSON.stringify(approved.status));
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
+await a.uncheck('input[name=ai_chat]');
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=settings/);
+
+// The approved entry goes too.
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&s=` + encodeURIComponent('Θερινό ωράριο (AI)'));
+while ((await a.locator('tr', { hasText: 'Θερινό ωράριο (AI)' }).count()) > 0) {
+	a.once('dialog', (dg) => dg.accept());
+	await a.locator('tr', { hasText: 'Θερινό ωράριο (AI)' }).locator('a.pnchat-danger').first().click();
+	await a.waitForURL(/pnchat_msg=deleted/);
+	await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&s=` + encodeURIComponent('Θερινό ωράριο (AI)'));
+}
 await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
 await a.uncheck('input[name=ai_enabled]');
 await a.check('input[name=ai_key_delete]');

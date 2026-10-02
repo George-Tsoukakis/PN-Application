@@ -47,7 +47,9 @@ final class PNChat_Admin {
 	public static function menu() {
 		$cap    = self::capability();
 		$counts = PNChat_Store::question_counts();
-		$badge  = $counts['email'] > 0 ? ' <span class="awaiting-mod count-' . (int) $counts['email'] . '"><span class="pending-count">' . (int) $counts['email'] . '</span></span>' : '';
+		// Waiting for an administrator: e-mails to answer and AI answers to review.
+		$todo   = (int) $counts['email'] + (int) ( $counts['ai'] ?? 0 );
+		$badge  = $todo > 0 ? ' <span class="awaiting-mod count-' . $todo . '"><span class="pending-count">' . $todo . '</span></span>' : '';
 
 		add_menu_page( 'PN Chat', 'PN Chat' . $badge, $cap, 'pn-chat', array( __CLASS__, 'page_training' ), 'dashicons-format-chat', 58 );
 		add_submenu_page( 'pn-chat', 'Εκπαίδευση', 'Εκπαίδευση', $cap, 'pn-chat', array( __CLASS__, 'page_training' ) );
@@ -349,7 +351,8 @@ final class PNChat_Admin {
 		$keywords = $entry['keywords'] ?? array();
 
 		// Values of a save that was refused (missing field): shown again.
-		$kept = get_transient( 'pnchat_form_' . get_current_user_id() );
+		$kept      = get_transient( 'pnchat_form_' . get_current_user_id() );
+		$kept_used = false;
 		if ( is_array( $kept ) && ( $kept['kind'] ?? '' ) === $kind && (int) ( $kept['id'] ?? 0 ) === (int) ( $entry['id'] ?? 0 ) ) {
 			delete_transient( 'pnchat_form_' . get_current_user_id() );
 			$title     = (string) $kept['title'];
@@ -357,12 +360,26 @@ final class PNChat_Admin {
 			$keywords  = (array) $kept['keywords'];
 			$answer    = (string) $kept['answer'];
 			$active    = (int) $kept['active'];
+			$kept_used = true;
 		}
 
 		// A draft written by the AI from the site's pages, to review.
 		$ai = ( ! $entry && ! $is_block ) ? self::ai_stash_get( self::get( 'ai' ) ) : null;
 		if ( '' !== self::get( 'ai' ) && null === $ai && ! $entry ) {
 			echo '<div class="notice notice-error inline"><p>Η πρόταση του AI έληξε (κρατιέται 1 ώρα). Ζητήστε τη ξανά.</p></div>';
+		}
+		// The answer the AI gave in the chat, stored with the question.
+		$draft = ( ! $ai && ! $entry && ! $is_block && $from && ! $kept_used ) ? PNChat_Store::draft_of( $from ) : null;
+		if ( $draft ) {
+			$ai = array(
+				'type'   => 'question',
+				'result' => array(
+					'found'   => true,
+					'entry'   => $draft['entry'],
+					'sources' => (array) ( $draft['sources'] ?? array() ),
+					'note'    => 'Αυτή την απάντηση έδωσε το AI στον επισκέπτη στο chat. Με την αποθήκευση γίνεται γνώση και απαντιέται από εδώ και πέρα χωρίς AI.',
+				),
+			);
 		}
 		if ( $ai && 'question' === ( $ai['type'] ?? '' ) ) {
 			$r = $ai['result'];
@@ -955,7 +972,7 @@ final class PNChat_Admin {
 
 		echo '<h1>Ερωτήματα επισκεπτών</h1>';
 		self::notices();
-		echo '<p class="pnchat-intro">Όλες οι ερωτήσεις που έγιναν στο chat. Οι <strong>ανοιχτές</strong> (χωρίς απάντηση, με μερική απάντηση ή «δεν βοήθησε») περιμένουν εσάς: <strong>Εκπαίδευση</strong> για να μάθει ο βοηθός την απάντηση, <strong>Απάντηση με e-mail</strong> αν ο επισκέπτης άφησε e-mail, <strong>Απαγόρευση</strong> για ερωτήσεις που δεν πρέπει να απαντώνται.</p>';
+		echo '<p class="pnchat-intro">Όλες οι ερωτήσεις που έγιναν στο chat. Οι <strong>ανοιχτές</strong> (χωρίς απάντηση, με μερική απάντηση ή «δεν βοήθησε») περιμένουν εσάς: <strong>Εκπαίδευση</strong> για να μάθει ο βοηθός την απάντηση, <strong>Απάντηση με e-mail</strong> αν ο επισκέπτης άφησε e-mail, <strong>Απαγόρευση</strong> για ερωτήσεις που δεν πρέπει να απαντώνται. Στις <strong>Απαντήσεις AI</strong> είναι όσα απάντησε το AI στο chat: με «Έλεγχος και έγκριση» γίνονται γνώσεις.</p>';
 
 		$filter = self::get( 'filter' );
 		$filter = '' === $filter ? 'open' : $filter;
@@ -965,6 +982,7 @@ final class PNChat_Admin {
 		$tabs   = array(
 			'open'       => 'Ανοιχτές',
 			'email'      => 'Περιμένουν e-mail',
+			'ai'         => 'Απαντήσεις AI',
 			'answered'   => 'Απαντήθηκαν',
 			'site'       => 'Από το site',
 			'blocked'    => 'Απαγορευμένες',
@@ -1005,6 +1023,10 @@ final class PNChat_Admin {
 			if ( '' !== (string) $q['unmatched'] && 'partial' === $q['status'] ) {
 				echo '<div class="description">Χωρίς απάντηση: «' . esc_html( implode( '», «', PNChat_Store::lines( (string) $q['unmatched'] ) ) ) . '»</div>';
 			}
+			$qdraft = PNChat_Store::draft_of( $q );
+			if ( $qdraft ) {
+				echo '<details' . ( 'ai' === $q['status'] ? ' open' : '' ) . '><summary>Η απάντηση του AI στο chat</summary><div class="pnchat-test-item is-site">' . wp_kses( PNChat_Brain::render_answer( (string) $qdraft['entry']['answer'] ), PNChat_Brain::allowed_html() ) . '</div></details>';
+			}
 			if ( '' !== (string) $q['reply'] ) {
 				echo '<details><summary>Η απάντηση που στάλθηκε</summary><div class="pnchat-reply-text">' . nl2br( esc_html( (string) $q['reply'] ) ) . '</div></details>';
 			}
@@ -1015,7 +1037,10 @@ final class PNChat_Admin {
 			echo '<td class="pnchat-actions">';
 			$acts = array();
 			if ( 'blocked' !== $q['status'] ) {
-				$acts[] = '<a href="' . esc_url( admin_url( 'admin.php?page=pn-chat&new=1&from_question=' . $id ) ) . '"><strong>Εκπαίδευση</strong></a>';
+				$acts[] = '<a href="' . esc_url( admin_url( 'admin.php?page=pn-chat&new=1&from_question=' . $id ) ) . '"><strong>' . ( 'ai' === $q['status'] ? '✔ Έλεγχος και έγκριση ως γνώση' : 'Εκπαίδευση' ) . '</strong></a>';
+			}
+			if ( 'ai' === $q['status'] ) {
+				$acts[] = '<a href="' . esc_url( self::action_url( 'question', array( 'id' => $id, 'do' => 'dismiss', 'filter' => $filter ) ) ) . '">Απόρριψη</a>';
 			}
 			if ( '' !== (string) $q['email'] ) {
 				$acts[] = '<a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-questions&reply=' . $id ) ) . '">' . ( $q['replied_at'] ? 'Νέο e-mail' : 'Απάντηση με e-mail' ) . '</a>';
@@ -1482,6 +1507,12 @@ final class PNChat_Admin {
 		}
 		echo '</td></tr>';
 		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5).' );
+		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
+		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση.' );
+		$number( 'ai_chat_daily', 'Όριο ανά ημέρα', 'Το πολύ τόσες απαντήσεις AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετά, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
+		$text( 'ai_chat_model', 'Μοντέλο για το chat', 'Προεπιλογή: claude-opus-5-5. Το claude-sonnet-5-5 κοστίζει περίπου το μισό.' );
+		$text( 'ai_chat_label', 'Ετικέτα πάνω από την απάντηση AI' );
+		$text( 'ai_chat_wait', 'Κείμενο όσο περιμένει' );
 		echo '<tr><th scope="row">Κόστος έως τώρα</th><td>' . esc_html( self::ai_cost_text() ) . '</td></tr>';
 		echo '</table>';
 

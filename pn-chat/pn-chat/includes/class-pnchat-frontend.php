@@ -75,6 +75,7 @@ final class PNChat_Frontend {
 			'suggestions' => PNChat_Settings::suggestion_groups( (string) $s['suggestions'] ),
 			'position'    => (string) $s['position'],
 			'maxLength'   => PNChat_Rest::MAX_QUESTION,
+			'aiWait'      => PNChat_AI::chat_enabled() ? (string) $s['ai_chat_wait'] : '',
 			// Fixed buttons the chat button must not cover; it sits above them.
 			'avoid'       => array_values( array_filter( (array) apply_filters( 'pnchat_avoid_selectors', array( '#plandose-trigger' ) ), 'is_string' ) ),
 		);

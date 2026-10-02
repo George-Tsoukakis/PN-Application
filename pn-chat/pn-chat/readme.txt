@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,11 @@ copy from the Brain screen before big changes.
 
 == Privacy ==
 
+* AI answers in the chat (off by default): when there is no trained answer
+  but pages of the site are about the question, the visitor's question
+  (never their e-mail or name) and those public pages are sent to the Claude
+  API of Anthropic; the answer is marked as automatic and waits for an
+  administrator's review. Daily limit set by the administrator.
 * AI training assistant (off by default): when an administrator presses a
   "✨" button, the chosen question (never the visitor's e-mail or name) and
   public pages of the site are sent to the Claude API of Anthropic
@@ -101,6 +106,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.5.0 =
+* Optional AI answers in the chat: when no trained answer fits but pages of the site are about the question, Claude answers from those pages only; the answer is labelled as automatic and waits in Questions → "Απαντήσεις AI", where "Έλεγχος και έγκριση" opens a prefilled new entry. Daily limit, per-visitor limit, separate chat model; never for trained, refused or page-less questions.
 
 = 1.4.0 =
 * Conversation topics: a follow-up question that names no topic ("Είναι δωρεάν;") is answered for the topic of the previous answer ("…το QR ReBuilder"); naming another topic switches. Topics are edited on the Training screen.

@@ -390,7 +390,10 @@
 			wrap.appendChild(el('div', { className: 'pnchat__bubble', text: m.text }));
 		}
 		(m.items || []).forEach(function (it) {
-			var card = el('div', { className: 'pnchat__bubble pnchat__answer' + (it.kind === 'block' ? ' pnchat__answer--block' : '') + (it.kind === 'site' ? ' pnchat__answer--site' : '') });
+			var card = el('div', { className: 'pnchat__bubble pnchat__answer' + (it.kind === 'block' ? ' pnchat__answer--block' : '') + (it.kind === 'site' ? ' pnchat__answer--site' : '') + (it.kind === 'ai' ? ' pnchat__answer--ai' : '') });
+			if (it.label) {
+				card.appendChild(el('p', { className: 'pnchat__answer-label', text: it.label }));
+			}
 			// Site pages always show their title; trained answers only when combined.
 			if (it.title && (it.kind === 'site' || m.items.length > 1)) {
 				card.appendChild(el('p', { className: 'pnchat__answer-title', text: it.title }));
@@ -424,7 +427,19 @@
 			]);
 			this.log.appendChild(this.typingNode);
 			this.scroll();
+			// An AI answer takes a while: say so after a few seconds.
+			if (cfg.aiWait) {
+				var node = this.typingNode;
+				var self = this;
+				this.typingTimer = window.setTimeout(function () {
+					if (node === self.typingNode) {
+						node.querySelector('.pnchat__bubble').appendChild(el('em', { className: 'pnchat__wait', text: cfg.aiWait }));
+						self.scroll();
+					}
+				}, 3000);
+			}
 		} else if (this.typingNode) {
+			window.clearTimeout(this.typingTimer);
 			this.typingNode.remove();
 			this.typingNode = null;
 		}

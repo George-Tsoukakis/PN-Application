@@ -307,6 +307,24 @@
 	border-left: 4px solid var(--pnchat-accent);
 }
 
+.pnchat__answer--ai {
+	background: #fff;
+	border: 1px dashed var(--pnchat-accent);
+}
+
+.pnchat__answer-label {
+	margin: 0 0 6px;
+	font-size: 12px;
+	color: var(--pnchat-muted);
+}
+
+.pnchat__typing .pnchat__wait {
+	margin-left: 8px;
+	font-size: 13px;
+	color: var(--pnchat-muted);
+	white-space: nowrap;
+}
+
 .pnchat__bubble--notice {
 	background: #eef6ff;
 	border: 1px solid #cfe2fb;
@@ -320,6 +338,7 @@
 /* typing dots */
 .pnchat__typing .pnchat__bubble {
 	display: flex;
+	align-items: center;
 	gap: 4px;
 	padding: 14px;
 }
