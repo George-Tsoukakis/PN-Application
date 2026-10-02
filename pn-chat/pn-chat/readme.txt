@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -90,6 +90,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.0.2 =
+* Close button: black circle with a red ×; the chat icons are styled so that themes cannot hide them.
 
 = 1.0.1 =
 * The chat button sits above the PlanDose button instead of covering it.

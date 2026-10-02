@@ -106,6 +106,25 @@ check('chat button sits above the PlanDose button', chatBox.y + chatBox.height <
 check('subtitle says «για την PharmacyNeeds»', (await d.locator('.pnchat__subtitle').count()) === 1 && (await d.locator('.pnchat__subtitle').textContent()).includes('για την PharmacyNeeds'));
 check('no note under the input', (await d.locator('.pnchat__privacy').count()) === 0);
 await shot(d, '0-desktop-with-plandose');
+
+// Close button: black circle with a red ×, even under theme CSS that restyles buttons and icons.
+await d.addStyleTag({ content: 'button{background:transparent;color:inherit;padding:20px;border:0} svg{display:none} svg path{fill:currentColor;stroke:none}' });
+await d.locator('.pnchat__launcher').click({ force: true });
+const close = d.locator('.pnchat__close');
+const cs = await close.evaluate((n) => {
+	const b = getComputedStyle(n);
+	const icon = n.querySelector('svg');
+	const ic = getComputedStyle(icon);
+	const path = getComputedStyle(icon.querySelector('path'));
+	const r = icon.getBoundingClientRect();
+	return { bg: b.backgroundColor, display: ic.display, stroke: path.stroke, w: r.width, h: r.height };
+});
+check('close button: black background, visible red ×', cs.bg === 'rgb(17, 17, 17)' && cs.display === 'block' && cs.stroke === 'rgb(239, 68, 68)' && cs.w >= 16 && cs.h >= 16, JSON.stringify(cs));
+const sendIcon = await d.locator('.pnchat__send svg').boundingBox();
+check('send icon survives theme CSS', sendIcon && sendIcon.width >= 16, JSON.stringify(sendIcon));
+await shot(d, '0b-desktop-open-close-button');
+await close.click();
+check('close button closes', !(await d.locator('.pnchat__panel').isVisible()));
 await pc.close();
 
 // ---- admin: questions -> training -> e-mail reply ---------------------------------
