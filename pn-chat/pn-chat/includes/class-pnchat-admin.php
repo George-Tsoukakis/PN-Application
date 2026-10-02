@@ -145,6 +145,9 @@ final class PNChat_Admin {
 			'mail_failed'  => array( 'error', 'Το e-mail ΔΕΝ στάλθηκε. Ελέγξτε τις ρυθμίσεις αποστολής e-mail του WordPress (π.χ. SMTP plugin).' ),
 			'bad_email'    => array( 'error', 'Η ερώτηση δεν έχει σωστό e-mail.' ),
 			'empty'        => array( 'error', 'Συμπληρώστε τουλάχιστον μία ερώτηση ή λέξη-κλειδί και την απάντηση.' ),
+			'empty_phr'    => array( 'error', 'Δεν αποθηκεύτηκε: γράψτε τουλάχιστον μία ερώτηση στο πεδίο «Ερωτήσεις» (ή μια λέξη-κλειδί). Ό,τι είχατε γράψει κρατήθηκε.' ),
+			'empty_ans'    => array( 'error', 'Δεν αποθηκεύτηκε: το πεδίο «Απάντηση» είναι κενό. Γράψτε την απάντηση που θα δίνει ο βοηθός. Ό,τι είχατε γράψει κρατήθηκε.' ),
+			'empty_both'   => array( 'error', 'Δεν αποθηκεύτηκε: γράψτε τουλάχιστον μία ερώτηση και την απάντηση. Ό,τι είχατε γράψει κρατήθηκε.' ),
 			'empty_reply'  => array( 'error', 'Γράψτε την απάντηση.' ),
 			'imported'     => array( 'success', sprintf( 'Ο εγκέφαλος φορτώθηκε: προστέθηκαν %d γνώσεις.', $n ) ),
 			'import_error' => array( 'error', 'Το αρχείο δεν φορτώθηκε: ' . sanitize_text_field( self::get( 'err' ) ) ),
@@ -344,6 +347,17 @@ final class PNChat_Admin {
 		$active   = $entry ? (int) $entry['active'] : 1;
 		$title    = $entry['title'] ?? '';
 		$keywords = $entry['keywords'] ?? array();
+
+		// Values of a save that was refused (missing field): shown again.
+		$kept = get_transient( 'pnchat_form_' . get_current_user_id() );
+		if ( is_array( $kept ) && ( $kept['kind'] ?? '' ) === $kind && (int) ( $kept['id'] ?? 0 ) === (int) ( $entry['id'] ?? 0 ) ) {
+			delete_transient( 'pnchat_form_' . get_current_user_id() );
+			$title     = (string) $kept['title'];
+			$phrasings = (array) $kept['phrasings'];
+			$keywords  = (array) $kept['keywords'];
+			$answer    = (string) $kept['answer'];
+			$active    = (int) $kept['active'];
+		}
 
 		// A draft written by the AI from the site's pages, to review.
 		$ai = ( ! $entry && ! $is_block ) ? self::ai_stash_get( self::get( 'ai' ) ) : null;
@@ -782,8 +796,28 @@ final class PNChat_Admin {
 		if ( '' === $title ) {
 			$title = $phrasings ? $phrasings[0] : ( $keywords ? $keywords[0] : '' );
 		}
-		if ( ( ! $phrasings && ! $keywords ) || '' === trim( wp_strip_all_tags( $answer ) ) ) {
-			self::back( $page, 'empty', $id ? array( 'edit' => $id ) : array( 'new' => 1 ) );
+		$no_q = ! $phrasings && ! $keywords;
+		$no_a = '' === trim( wp_strip_all_tags( $answer ) );
+		if ( $no_q || $no_a ) {
+			// Keep what was typed, and the question it was trained from.
+			set_transient(
+				'pnchat_form_' . get_current_user_id(),
+				array(
+					'kind'      => $kind,
+					'id'        => $id,
+					'title'     => sanitize_text_field( self::post( 'title' ) ),
+					'phrasings' => $phrasings,
+					'keywords'  => $keywords,
+					'answer'    => $answer,
+					'active'    => '1' === self::post( 'active' ) ? 1 : 0,
+				),
+				10 * MINUTE_IN_SECONDS
+			);
+			$args = $id ? array( 'edit' => $id ) : array( 'new' => 1 );
+			if ( $from ) {
+				$args['from_question'] = $from;
+			}
+			self::back( $page, $no_q && $no_a ? 'empty_both' : ( $no_q ? 'empty_phr' : 'empty_ans' ), $args );
 		}
 		if ( $id ) {
 			$old = PNChat_Store::entry( $id );

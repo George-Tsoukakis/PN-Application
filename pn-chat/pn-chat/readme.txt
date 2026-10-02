@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.2.2 =
+* Training form: a save with a missing question or answer keeps everything typed (and the question it came from) and says which field is missing.
 
 = 1.2.1 =
 * QR ReBuilder questions were answered with the PlanDose QR-reminders entry (its bare "qr" keyword). The starter entry is fixed on existing sites unless edited; QR ReBuilder and a "which QR?" entry are added.

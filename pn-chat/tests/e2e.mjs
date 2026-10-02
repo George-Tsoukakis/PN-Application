@@ -195,6 +195,18 @@ const [dl] = await Promise.all([a.waitForEvent('download'), a.click('input[value
 const brain = JSON.parse(readFileSync(await dl.path(), 'utf8'));
 check('brain download', brain.format === 'pn-chat-brain' && brain.entries.some((e) => e.title === 'Πληρωμή με κάρτα') && !brain.questions, dl.suggestedFilename());
 
+// Saving without an answer: clear message, nothing typed is lost, question kept.
+const tq = await (await a.request.post(`${BASE}/?rest_route=/pn-chat/v1/ask`, { data: { question: 'Τι ώρα είναι τώρα;' } })).json();
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&new=1&from_question=${tq.id}`);
+await a.fill('#pnchat-title', 'Δοκιμή χωρίς απάντηση');
+await a.click('form.pnchat-form #submit');
+await a.waitForURL(/pnchat_msg=empty_ans/);
+check('missing answer: says which field', (await a.locator('.notice-error').innerText()).includes('«Απάντηση» είναι κενό'));
+check('missing answer: typed values and question kept', (await a.inputValue('#pnchat-title')) === 'Δοκιμή χωρίς απάντηση' && (await a.inputValue('#pnchat-phr')).includes('Τι ώρα είναι τώρα;') && a.url().includes(`from_question=${tq.id}`));
+// The advice for off-topic questions: a refusal, from the same question.
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-blocks&new=1&from_question=${tq.id}`);
+check('refusal form comes with a ready message', (await a.inputValue('#pnchat-answer')).length > 10 && (await a.inputValue('#pnchat-phr')).includes('Τι ώρα είναι τώρα;'));
+
 // AI training assistant (the test site fakes the Claude API, see setup-wp.sh).
 await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
 await a.check('input[name=ai_enabled]');
