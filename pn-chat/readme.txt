@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.8.2
+Stable tag: 1.8.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,12 +34,15 @@ Privacy).
 * **Optional AI answers in the chat:** when no trained answer fits but pages
   of the site are about the question, Claude answers from those pages. The
   answer is shown at once, labelled as automatic and not yet checked by a
-  person, and waits in Questions for review. Questions close to a blocked
-  topic, or asking for medical advice ("how many pills", side effects,
-  symptoms, "500mg", or a medicine word without a tool of the site), never
-  go to the AI; questions about the tools ("print medicine labels in
-  PlanDose", "dosage plan") still do. Filters `pnchat_ai_medical_terms`,
-  `pnchat_ai_medicine_words`, `pnchat_ai_tool_words`.
+  person, and waits in Questions for review. The AI answers only questions
+  about the site's tools (a chat topic or a tool word such as print, label,
+  plan, account) with no medical sign ("how many pills", side effects,
+  symptoms, "500mg", "which medicine"), not close to a blocked topic; the
+  model also flags medical questions itself, and those get no answer. All
+  other questions get the site's pages and the e-mail form, as without AI.
+  Filters `pnchat_ai_tools_only`, `pnchat_ai_medical_terms`,
+  `pnchat_ai_medicine_words`, `pnchat_ai_advice_phrases`,
+  `pnchat_ai_tool_words`.
 * **Blocked questions:** questions it must not answer (for example medical
   advice) get your own message instead. You train them like answers.
 * **Mobile friendly:** full screen on phones, stays above the on-screen
@@ -130,6 +133,11 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.8.3 =
+* AI in the chat answers only questions about the site's tools with no medical sign. Word lists cannot know every medicine: on 20 new medical questions the 1.8.2 guard let 12 through, this one none.
+* The model also returns "medical_advice"; when true, no answer is shown.
+* Advice phrases ("which medicine", "is it safe", "does it help") count as medical even in a tool question; more conditions; «τι δόση» no longer catches «τη δόση».
 
 = 1.8.2 =
 * Before the first question the suggested questions sit right under the welcome (no empty area between them), on phones and desktop.

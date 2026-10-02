@@ -15,7 +15,7 @@ if [ ! -r "$WP_LOAD" ]; then
 	echo "SKIP: no WordPress at $WP_LOAD (set WP_LOAD)"
 	exit 2
 fi
-for t in test-*-1800.php; do
+for t in test-*-1[0-9][0-9]0.php; do
 	echo "== $t"
 	php "$t" || status=1
 done

@@ -435,14 +435,15 @@ final class PNChat_AI {
 		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'found' => array( 'type' => 'boolean' ),
-				'note'  => array( 'type' => 'string' ),
-				'entry' => self::entry_schema(),
+				'medical_advice' => array( 'type' => 'boolean' ),
+				'found'          => array( 'type' => 'boolean' ),
+				'note'           => array( 'type' => 'string' ),
+				'entry'          => self::entry_schema(),
 			),
-			'required'             => array( 'found', 'note', 'entry' ),
+			'required'             => array( 'medical_advice', 'found', 'note', 'entry' ),
 			'additionalProperties' => false,
 		);
-		$system = self::rules() . "\n- Αν οι σελίδες ΔΕΝ απαντούν στην ερώτηση, βάλε found=false, εξήγησε στο note τι λείπει, και άφησε τα πεδία του entry κενά.\n- Αν η ερώτηση ζητά ιατρική συμβουλή, διάγνωση, δοσολογία ή οδηγίες για φάρμακο, βάλε found=false, ό,τι κι αν γράφουν οι σελίδες.\n- source_url: μία από τις διευθύνσεις των σελίδων που σου δόθηκαν.\n- note: μία πρόταση για τον διαχειριστή.";
+		$system = self::rules() . "\n- Αν οι σελίδες ΔΕΝ απαντούν στην ερώτηση, βάλε found=false, εξήγησε στο note τι λείπει, και άφησε τα πεδία του entry κενά.\n- medical_advice: true αν η ερώτηση ζητά ιατρική ή φαρμακευτική συμβουλή (ποιο φάρμακο, δόση, παρενέργειες, συμπτώματα, συνδυασμοί, εγκυμοσύνη κ.λπ.), false αν αφορά τη χρήση του site ή των εργαλείων του (π.χ. πώς βάζω ένα φάρμακο σε πλάνο ή τυπώνω ετικέτα). Αν είναι true, βάλε found=false, ό,τι κι αν γράφουν οι σελίδες.\n- source_url: μία από τις διευθύνσεις των σελίδων που σου δόθηκαν.\n- note: μία πρόταση για τον διαχειριστή.";
 		$user   = "Σελίδες του site:\n" . self::pages_text( $posts, self::PAGE_CHARS ) . "\nΕρώτηση επισκέπτη:\n<question>" . $question . "</question>\n\nΓράψε μία γνώση που απαντά στην ερώτηση, μόνο από τις σελίδες. Η ερώτηση του επισκέπτη να είναι η πρώτη από τις phrasings.";
 		$json   = self::call( $system, $user, $schema, $model, $timeout );
 		if ( is_wp_error( $json ) ) {
@@ -453,11 +454,18 @@ final class PNChat_AI {
 		$urls   = array_column( $sources, 'url' );
 		$source = (string) ( $json['entry']['source_url'] ?? '' );
 		$source = in_array( $source, $urls, true ) ? $source : (string) ( $urls[0] ?? '' );
+		// Second check, by the model itself: a medical question gets no
+		// answer, even if the word lists let it through.
+		$medical = ! empty( $json['medical_advice'] );
+		if ( $medical ) {
+			$json['found'] = false;
+		}
 		return array(
 			'found'   => ! empty( $json['found'] ) && null !== $entry,
 			'entry'   => $entry ? self::with_source( $entry, $source ) : array(),
 			'sources' => $sources,
-			'note'    => sanitize_text_field( (string) ( $json['note'] ?? '' ) ),
+			'note'    => $medical ? 'Το AI έκρινε ότι η ερώτηση ζητά ιατρική συμβουλή, οπότε δεν απάντησε.' : sanitize_text_field( (string) ( $json['note'] ?? '' ) ),
+			'medical' => $medical,
 		);
 	}
 
@@ -539,9 +547,13 @@ final class PNChat_AI {
 			'pnchat_ai_medical_terms',
 			array(
 				// Asking how much to take.
-				'πόση δόση', 'τι δόση', 'ποια δόση', 'πόση δοσολογία', 'τι δοσολογία', 'ποια δοσολογία', 'πόσα χάπια', 'πόσες σταγόνες', 'πόσο σιρόπι',
+				// Not «τι δόση»: folded it reads like «τη δόση» (the article).
+				'πόση δόση', 'ποια δόση', 'πόση δοσολογία', 'ποια δοσολογία', 'πόσα mg', 'πόσο mg', 'πόσα ml', 'πόσο ml', 'πόσα χάπια', 'πόσες σταγόνες', 'πόσο σιρόπι',
+				// Asking what to take, or what not to take together.
+				'τι να πάρω για', 'να μην πάρω', 'πάρω μαζί', 'πάρει μαζί', 'κάνει να πάρω', 'ξέχασα μια δόση', 'ξέχασα τη δόση', 'διπλή δόση',
 				// Effects, conditions, symptoms.
 				'παρενέργει', 'αλληλεπίδρ', 'αντένδειξ', 'πυρετ', 'πόνο', 'πονάει', 'πονάω', 'σύμπτωμ', 'διάγνωσ', 'εγκυμοσύν', 'έγκυος', 'θηλασμ', 'αλλεργί', 'βήχα', 'ζάχαρο', 'λοίμωξ',
+				'κρυολόγ', 'γρίπη', 'διάρροι', 'δυσκοιλιότ', 'ναυτί', 'στομάχ', 'αϋπνί', 'ημικρανί', 'αντιπηκτ', 'άρρωστ', 'αρρώστι',
 			)
 		);
 	}
@@ -562,6 +574,20 @@ final class PNChat_AI {
 	}
 
 	/**
+	 * Phrases that turn a medicine word into a request for advice even in a
+	 * tool question («Τι φάρμακο να πάρει η μητέρα μου; Έχω PlanDose»).
+	 * Filter «pnchat_ai_advice_phrases».
+	 *
+	 * @return string[]
+	 */
+	public static function advice_phrases() {
+		return (array) apply_filters(
+			'pnchat_ai_advice_phrases',
+			array( 'τι φάρμακο', 'ποιο φάρμακο', 'ποια φάρμακα', 'τι χάπι', 'ποιο χάπι', 'κάνει για', 'βοηθάει', 'βοηθά', 'ασφαλές', 'ασφαλής', 'να πάρει', 'να πιει', 'να πίνει', 'να πάρω', 'να πίνω', 'να δώσω', 'πόσο συχνά', 'πριν το φαγητό', 'μετά το φαγητό', 'κόψω το χάπι' )
+		);
+	}
+
+	/**
 	 * Words of using the site's tools. With a topic of the chat (PlanDose,
 	 * QR ReBuilder…) they make a medicine word a tool question.
 	 * Filter «pnchat_ai_tool_words».
@@ -571,14 +597,15 @@ final class PNChat_AI {
 	public static function tool_words() {
 		return (array) apply_filters(
 			'pnchat_ai_tool_words',
-			array( 'εκτυπ', 'τυπών', 'ετικέτ', 'πλάνο', 'πλάνα', 'ημερολόγ', 'εφαρμογ', 'εργαλεί', 'λογαριασμ', 'εγγραφ', 'συνδρομ', 'κουμπί', 'σελίδα', 'ρύθμισ', 'καταχωρ', 'προσθέτ', 'προσθήκ', 'σβήν', 'διαγραφ', 'αλλάζ', 'αλλαγ', 'qr', 'pdf', 'print', 'barcode', 'σάρωσ', 'σκαν' )
+			array( 'εκτυπ', 'τυπών', 'ετικέτ', 'πλάνο', 'πλάνα', 'ημερολόγ', 'εφαρμογ', 'εργαλεί', 'λογαριασμ', 'εγγραφ', 'συνδρομ', 'κουμπί', 'σελίδα', 'ρύθμισ', 'καταχωρ', 'προσθέτ', 'προσθήκ', 'σβήν', 'διαγραφ', 'αλλάζ', 'αλλαγ', 'qr', 'pdf', 'print', 'barcode', 'σάρωσ', 'σκαν', 'αλλάξ', 'υπενθύμ', 'κινητ', 'ειδοποί', 'αποθήκευ', 'στείλ', 'email', 'mail' )
 		);
 	}
 
 	/**
-	 * The question asks for medical advice (see medical_terms()), or uses a
-	 * medicine word without being about a tool of the site, or names an
-	 * amount with a unit («500mg», «5 ml»).
+	 * The question asks for medical advice (see medical_terms()), or names
+	 * an amount with a unit («500mg», «5 ml»), or uses a medicine word
+	 * without being about a tool of the site, or with an advice phrase
+	 * («τι φάρμακο», «κάνει για», «ασφαλές») even in a tool question.
 	 *
 	 * Examples: «Πόσα χάπια ντεπόν την ημέρα;», «παρενέργειες ibuprofen»,
 	 * «δοσολογία παρακεταμόλης για παιδιά» are medical; «Πώς εκτυπώνω
@@ -595,7 +622,10 @@ final class PNChat_AI {
 		if ( self::has_any( $words, self::medical_terms() ) ) {
 			return true;
 		}
-		return self::has_any( $words, self::medicine_words() ) && ! self::tool_context( $question, $words );
+		if ( ! self::has_any( $words, self::medicine_words() ) ) {
+			return false;
+		}
+		return ! self::tool_context( $question, $words ) || self::has_any( $words, self::advice_phrases() );
 	}
 
 	/**
@@ -608,6 +638,35 @@ final class PNChat_AI {
 	 */
 	private static function tool_context( $question, array $words ) {
 		return '' !== PNChat_Topics::detect( $question ) || self::has_any( $words, self::tool_words() );
+	}
+
+	/**
+	 * The question is about the site's tools (a topic of the chat or a tool
+	 * word).
+	 *
+	 * @param string $question Question.
+	 * @return bool
+	 */
+	public static function about_tools( $question ) {
+		return self::tool_context( $question, explode( ' ', PNChat_Text::fold( $question ) ) );
+	}
+
+	/**
+	 * The AI may answer this question in the public chat. A word list cannot
+	 * know every medicine or illness (Xanax, κορτιζόνη, κολικοί…), so the AI
+	 * answers only what is shown to be about the site's tools and has no
+	 * medical sign; everything else gets the site's pages and the e-mail
+	 * form, as without AI. Filter «pnchat_ai_tools_only» (false: any
+	 * question without a medical sign).
+	 *
+	 * @param string $question Question.
+	 * @return bool
+	 */
+	public static function may_answer( $question ) {
+		if ( self::is_medical( $question ) ) {
+			return false;
+		}
+		return ! apply_filters( 'pnchat_ai_tools_only', true ) || self::about_tools( $question );
 	}
 
 	/**

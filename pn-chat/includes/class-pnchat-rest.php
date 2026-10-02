@@ -490,15 +490,16 @@ final class PNChat_Rest {
 	}
 
 	/**
-	 * The AI never answers this question: it uses a medical word, or it is
-	 * close to a refusal («Απαγορεύσεις») even below the strictness. Safer
-	 * for a pharmacy site.
+	 * The AI never answers this question: it is not about the site's tools
+	 * or has a medical sign (PNChat_AI::may_answer()), or it is close to a
+	 * refusal («Απαγορεύσεις») even below the strictness. Safer for a
+	 * pharmacy site.
 	 *
 	 * @param string $question Question.
 	 * @return bool
 	 */
 	private static function near_block( $question ) {
-		if ( PNChat_AI::is_medical( $question ) ) {
+		if ( ! PNChat_AI::may_answer( $question ) ) {
 			return true;
 		}
 		$floor = (float) apply_filters( 'pnchat_ai_block_guard', 0.3 );

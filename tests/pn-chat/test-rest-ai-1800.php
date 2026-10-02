@@ -138,6 +138,13 @@ pnt_defer(
 	}
 );
 pnt_check( (bool) PNChat_Site_Search::search( 'παράδοση παραγγελιών Θεσσαλονίκη' ), 'site search finds the delivery page' );
+$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE k LIKE %s', $ct, 'ai_chat:%' ) );
+
+// 1.8.3: by default the AI answers only questions about the site's tools.
+pnt_check( ! PNChat_AI::may_answer( 'Πότε γίνεται η παράδοση στη Θεσσαλονίκη;' ), 'AI gate: a question not about the tools does not reach the AI by default' );
+// The AI mechanics below (personal details, sources, limits) are tested
+// with the gate open, on the delivery page.
+add_filter( 'pnchat_ai_tools_only', '__return_false' );
 
 $sent   = array();
 $answer = null;
@@ -172,7 +179,7 @@ $user_text = (string) ( $sent[0]['messages'][0]['content'] ?? '' );
 pnt_check( false === strpos( $user_text, 'maria.k@gmail.com' ) && false !== strpos( $user_text, '[e-mail]' ), 'AI: the e-mail typed in the question is not sent' );
 pnt_check( false === strpos( $user_text, '694 123 4567' ) && false !== strpos( $user_text, '[τηλέφωνο]' ), 'AI: the phone number is not sent' );
 pnt_check( false === strpos( $user_text, '01019012345' ), 'AI: the ΑΜΚΑ is not sent' );
-pnt_check( false !== strpos( (string) ( $sent[0]['system'] ?? '' ), 'ιατρική συμβουλή' ), 'AI: the prompt refuses medical questions' );
+pnt_check( false !== strpos( (string) ( $sent[0]['system'] ?? '' ), 'medical_advice' ) && in_array( 'medical_advice', (array) ( $sent[0]['output_config']['format']['schema']['required'] ?? array() ), true ), 'AI: the model must say whether the question asks for medical advice' );
 $html = (string) ( $r['items'][0]['html'] ?? '' );
 pnt_check( false === strpos( $html, 'evil.example' ), 'AI: links to other sites removed' );
 pnt_check( false !== strpos( $html, (string) get_permalink( $page_id ) ), 'AI: an invented source is replaced by the page that was sent' );
@@ -238,6 +245,8 @@ $before = PNChat_AI::chat_used_today();
 $answer = pnt_claude_reply( array(), 500 );
 pnt_rest( '/ask', array( 'question' => 'Η παράδοση παραγγελιών Θεσσαλονίκη πόσο κοστίζει;' ), '198.51.100.12' );
 pnt_same( $before, PNChat_AI::chat_used_today(), 'AI: an HTTP 500 does not use the daily limit either' );
+
+remove_filter( 'pnchat_ai_tools_only', '__return_false' );
 
 // ---- per-visitor limit and the proxy header -----------------------------------
 pnt_settings( array( 'rate_per_10min' => 3, 'ai_chat' => 0 ) );
