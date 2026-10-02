@@ -5,8 +5,10 @@
  * the chat before an administrator approves it. The chat itself keeps
  * answering from the approved entries, without AI.
  *
- * Reading runs in the background (WP-Cron, one source at a time), so a whole
- * site or a long PDF never hits a web server's time limit.
+ * Reading runs in the background (WP-Cron). Each source is sent to Claude
+ * as a message batch: the site only uploads it (seconds) and picks the
+ * answer up on a later run, so a long PDF never meets a web server's time
+ * limit (it stopped 1.9.0's direct calls on some hosts). Batches cost half.
  *
  * @package PNChat
  */
@@ -21,6 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class PNChat_Learn {
 
 	const QUEUE      = 'pnchat_learn_queue';
+	const BATCHES    = 'pnchat_learn_batches'; // Sources sent to Claude, waiting for the answer.
+	const MAX_SENT   = 3; // Sources waiting at Claude at the same time.
 	const STATE      = 'pnchat_learn_state';
 	const CRON       = 'pnchat_learn';
 	const WEEKLY     = 'pnchat_learn_weekly';
@@ -171,6 +175,7 @@ final class PNChat_Learn {
 				'paused'    => '',
 				'errors'    => array(),
 				'last'      => '',
+				'current'   => array(),
 			),
 			is_array( $s ) ? $s : array()
 		);
@@ -213,7 +218,7 @@ final class PNChat_Learn {
 	public static function enqueue( array $jobs, $label ) {
 		$queue = self::queue();
 		$state = self::state();
-		if ( ! $queue ) {
+		if ( ! $queue && ! self::sent() ) {
 			// A new reading: the progress starts again.
 			$state = array_merge(
 				$state,
@@ -307,20 +312,37 @@ final class PNChat_Learn {
 	}
 
 	/**
-	 * Runs the next job soon, in the background.
+	 * Sources sent to Claude and not answered yet.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function sent() {
+		$b = get_option( self::BATCHES, array() );
+		return is_array( $b ) ? array_values( $b ) : array();
+	}
+
+	/**
+	 * Runs the next step soon, in the background: a new source in a few
+	 * seconds, a check on the waiting ones in a minute.
 	 *
 	 * @return void
 	 */
 	public static function schedule() {
-		if ( self::queue() && ! wp_next_scheduled( self::CRON ) ) {
+		if ( wp_next_scheduled( self::CRON ) ) {
+			return;
+		}
+		if ( self::queue() && count( self::sent() ) < self::MAX_SENT ) {
 			wp_schedule_single_event( time() + 5, self::CRON );
+		} elseif ( self::sent() || self::queue() ) {
+			wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::CRON );
 		}
 	}
 
 	/**
-	 * Stops: the waiting jobs are dropped (with their uploaded files).
+	 * Stops: the waiting sources are dropped (with their uploaded files) and
+	 * the ones at Claude are cancelled.
 	 *
-	 * @return int Jobs dropped.
+	 * @return int Sources dropped.
 	 */
 	public static function stop() {
 		$queue = self::queue();
@@ -329,31 +351,40 @@ final class PNChat_Learn {
 				self::delete_file( (string) $j['file'] );
 			}
 		}
+		$sent = self::sent();
+		foreach ( $sent as $b ) {
+			PNChat_AI::batch_cancel( (string) $b['id'] );
+		}
 		delete_option( self::QUEUE );
+		delete_option( self::BATCHES );
 		wp_clear_scheduled_hook( self::CRON );
-		$state           = self::state();
-		$state['total'] -= count( $queue );
-		$state['paused'] = '';
+		$state            = self::state();
+		$state['total']  -= count( $queue ) + count( $sent );
+		$state['paused']  = '';
+		$state['current'] = array();
 		self::save_state( $state );
-		return count( $queue );
+		return count( $queue ) + count( $sent );
 	}
 
 	/**
-	 * WP-Cron: one job, then the next one is scheduled.
+	 * WP-Cron: one step, then the next one is scheduled.
 	 *
 	 * @return void
 	 */
 	public static function run_cron() {
 		$r = self::process_next();
-		if ( 'limit' !== $r['status'] && 'off' !== $r['status'] ) {
+		if ( 'off' !== $r['status'] ) {
 			self::schedule();
 		}
 	}
 
 	/**
-	 * Reads the next source of the queue.
+	 * One step: picks up the answers Claude finished, then sends the next
+	 * source. Each step takes seconds, never Claude's reading time.
 	 *
-	 * @return array{status:string,added:int,error:string} status: 'done', 'error', 'empty', 'busy', 'limit' (month), 'off' (no AI).
+	 * @return array{status:string,added:int,error:string} status: 'done' (answers picked up),
+	 *   'error', 'submitted' (a source was sent), 'waiting' (Claude is still reading),
+	 *   'empty', 'busy', 'limit' (month), 'off' (no AI).
 	 */
 	public static function process_next() {
 		$out = array(
@@ -361,7 +392,7 @@ final class PNChat_Learn {
 			'added'  => 0,
 			'error'  => '',
 		);
-		if ( ! self::queue() ) {
+		if ( ! self::queue() && ! self::sent() ) {
 			return $out;
 		}
 		if ( ! self::available() ) {
@@ -371,57 +402,234 @@ final class PNChat_Learn {
 			$out['status'] = 'off';
 			return $out;
 		}
-		// One job at a time: the queue option is read and written whole.
-		if ( ! PNChat_Counter::take( 'learn_lock', 1, 15 * MINUTE_IN_SECONDS, false ) ) {
+		// One step at a time: the queue and the list of sent sources are
+		// read and written whole.
+		if ( ! PNChat_Counter::take( 'learn_lock', 1, 5 * MINUTE_IN_SECONDS, false ) ) {
 			$out['status'] = 'busy';
 			return $out;
 		}
 		try {
 			if ( function_exists( 'set_time_limit' ) ) {
-				set_time_limit( 600 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- a long PDF takes minutes.
+				set_time_limit( 300 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- downloading a page or uploading a PDF.
 			}
-			$queue = self::queue();
-			if ( ! $queue ) {
-				return $out;
-			}
-			if ( ! PNChat_Counter::take( self::month_key(), self::monthly_limit(), 40 * DAY_IN_SECONDS, false ) ) {
-				$state           = self::state();
-				$state['paused'] = 'limit';
-				self::save_state( $state );
-				$out['status'] = 'limit';
-				return $out;
-			}
-			$job = array_shift( $queue );
-			update_option( self::QUEUE, $queue, false );
-
-			$r     = self::run_job( $job );
 			$state = self::state();
-			++$state['done'];
-			$state['paused'] = '';
-			if ( is_wp_error( $r ) ) {
-				if ( PNChat_AI::not_charged( $r ) || 'pnchat_learn_source' === $r->get_error_code() ) {
-					// Claude was never asked: the month's limit gets it back.
-					PNChat_Counter::give_back( self::month_key() );
-				}
-				$state['errors'][] = array(
-					'source' => self::job_label( $job ),
-					'error'  => $r->get_error_message(),
-					'at'     => current_time( 'mysql', true ),
-				);
-				$state['errors'] = array_slice( $state['errors'], -self::MAX_ERRORS );
-				$out['status']   = 'error';
-				$out['error']    = $r->get_error_message();
-			} else {
-				$state['proposals'] += $r['added'];
-				$state['skipped']   += $r['skipped'];
-				$out['status']       = 'done';
-				$out['added']        = $r['added'];
+			// A step that the server stopped half-way is reported, not lost.
+			if ( $state['current'] && (int) $state['current']['at'] < time() - 15 * MINUTE_IN_SECONDS ) {
+				self::fail( $state, (string) $state['current']['label'], 'Η ανάγνωση διακόπηκε: ο server σταμάτησε την εργασία στη μέση (πιθανόν όριο χρόνου του hosting). Ζητήστε την ξανά.' );
+				$state['current'] = array();
+				self::save_state( $state );
 			}
-			$state['last'] = self::job_label( $job );
-			self::save_state( $state );
-			return $out;
+			$out = self::collect( $out );
+			return self::submit( $out );
 		} finally {
 			PNChat_Counter::give_back( 'learn_lock' );
+		}
+	}
+
+	/**
+	 * Records a source that could not be read.
+	 *
+	 * @param array<string,mixed> $state State (changed).
+	 * @param string              $label Source.
+	 * @param string              $error Why.
+	 * @return void
+	 */
+	private static function fail( array &$state, $label, $error ) {
+		++$state['done'];
+		$state['errors'][] = array(
+			'source' => $label,
+			'error'  => $error,
+			'at'     => current_time( 'mysql', true ),
+		);
+		$state['errors'] = array_slice( $state['errors'], -self::MAX_ERRORS );
+		$state['last']   = $label;
+	}
+
+	/**
+	 * Picks up the answers of the sources Claude has finished.
+	 *
+	 * @param array{status:string,added:int,error:string} $out Step result so far.
+	 * @return array{status:string,added:int,error:string}
+	 */
+	private static function collect( array $out ) {
+		$sent = self::sent();
+		if ( ! $sent ) {
+			return $out;
+		}
+		$left = array();
+		foreach ( $sent as $b ) {
+			$info = PNChat_AI::batch_get( (string) $b['id'] );
+			if ( is_wp_error( $info ) || 'ended' !== ( $info['processing_status'] ?? '' ) ) {
+				// Not ready (or not reachable now): checked again next time.
+				// Claude ends every batch within 24 hours.
+				if ( (int) $b['at'] < time() - 3 * DAY_IN_SECONDS ) {
+					$state = self::state();
+					self::fail( $state, (string) $b['label'], 'Δεν ήρθε απάντηση από το Claude μέσα σε 3 ημέρες.' );
+					self::save_state( $state );
+					$out['status'] = 'error';
+					$out['error']  = 'Δεν ήρθε απάντηση από το Claude.';
+					continue;
+				}
+				$left[] = $b;
+				if ( 'empty' === $out['status'] ) {
+					$out['status'] = 'waiting';
+				}
+				continue;
+			}
+			$results = PNChat_AI::batch_results( (string) ( $info['results_url'] ?? '' ) );
+			if ( is_wp_error( $results ) ) {
+				$left[] = $b;
+				continue;
+			}
+			$r     = self::finish( $b, $results[ (string) $b['custom_id'] ] ?? array() );
+			$state = self::state();
+			if ( is_wp_error( $r ) ) {
+				self::fail( $state, (string) $b['label'], $r->get_error_message() );
+				$out['status'] = 'error';
+				$out['error']  = $r->get_error_message();
+			} else {
+				++$state['done'];
+				$state['proposals'] += $r['added'];
+				$state['skipped']   += $r['skipped'];
+				$state['last']       = (string) $b['label'];
+				if ( 'error' !== $out['status'] ) {
+					$out['status'] = 'done';
+				}
+				$out['added'] += $r['added'];
+			}
+			self::save_state( $state );
+		}
+		update_option( self::BATCHES, $left, false );
+		return $out;
+	}
+
+	/**
+	 * Turns one batch result into proposals.
+	 *
+	 * @param array<string,mixed> $b      Sent source.
+	 * @param array<string,mixed> $result Batch result object.
+	 * @return array{added:int,skipped:int}|WP_Error
+	 */
+	private static function finish( array $b, array $result ) {
+		$type = (string) ( $result['type'] ?? '' );
+		if ( 'succeeded' !== $type ) {
+			// Errored, cancelled and expired requests are not charged.
+			PNChat_Counter::give_back( self::month_key() );
+			$msg = (string) ( $result['error']['error']['message'] ?? ( $result['error']['message'] ?? '' ) );
+			$map = array(
+				'errored'  => 'Το Claude δεν μπόρεσε να διαβάσει την πηγή' . ( '' !== $msg ? ': ' . $msg : '.' ),
+				'expired'  => 'Το Claude δεν πρόλαβε να τη διαβάσει μέσα σε 24 ώρες (μεγάλος φόρτος). Ζητήστε την ξανά.',
+				'canceled' => 'Ακυρώθηκε.',
+			);
+			return new WP_Error( 'pnchat_learn_batch', $map[ $type ] ?? 'Δεν βρέθηκε αποτέλεσμα για την πηγή.' );
+		}
+		$json = PNChat_AI::parse_message( (array) ( $result['message'] ?? array() ), (string) ( $b['model'] ?? '' ), 0.5 );
+		if ( is_wp_error( $json ) ) {
+			return $json;
+		}
+		$src     = (array) $b['src'];
+		$added   = 0;
+		$skipped = 0;
+		foreach ( PNChat_AI::drafts_from_json( $json, $src ) as $e ) {
+			if ( self::add_proposal( $e, $src ) ) {
+				++$added;
+			} else {
+				++$skipped;
+			}
+		}
+		if ( ! empty( $src['post_id'] ) ) {
+			update_post_meta( (int) $src['post_id'], self::META, (string) $src['hash'] );
+		}
+		return array(
+			'added'   => $added,
+			'skipped' => $skipped,
+		);
+	}
+
+	/**
+	 * Sends the next source of the queue to Claude.
+	 *
+	 * @param array{status:string,added:int,error:string} $out Step result so far.
+	 * @return array{status:string,added:int,error:string}
+	 */
+	private static function submit( array $out ) {
+		$queue = self::queue();
+		if ( ! $queue || count( self::sent() ) >= self::MAX_SENT ) {
+			return $out;
+		}
+		if ( ! PNChat_Counter::take( self::month_key(), self::monthly_limit(), 40 * DAY_IN_SECONDS, false ) ) {
+			$state           = self::state();
+			$state['paused'] = 'limit';
+			self::save_state( $state );
+			if ( 'empty' === $out['status'] || 'waiting' === $out['status'] ) {
+				$out['status'] = 'limit';
+			}
+			return $out;
+		}
+		$job = array_shift( $queue );
+		update_option( self::QUEUE, $queue, false );
+		$label            = self::job_label( $job );
+		$state            = self::state();
+		$state['paused']  = '';
+		$state['current'] = array(
+			'label' => $label,
+			'at'    => time(),
+		);
+		self::save_state( $state );
+
+		$r     = self::send_job( $job );
+		$state = self::state();
+		if ( is_wp_error( $r ) ) {
+			// Nothing reached Claude: the month's limit gets the use back.
+			PNChat_Counter::give_back( self::month_key() );
+			self::fail( $state, $label, $r->get_error_message() );
+			$out['status'] = 'error';
+			$out['error']  = $r->get_error_message();
+		} else {
+			$r['label'] = $label;
+			$sent       = self::sent();
+			$sent[]     = $r;
+			update_option( self::BATCHES, $sent, false );
+			if ( 'done' !== $out['status'] && 'error' !== $out['status'] ) {
+				$out['status'] = 'submitted';
+			}
+		}
+		$state['current'] = array();
+		self::save_state( $state );
+		return $out;
+	}
+
+	/**
+	 * Reads a source and sends it to Claude as a batch.
+	 *
+	 * @param array<string,mixed> $job Job.
+	 * @return array<string,mixed>|WP_Error What to collect later: id, custom_id, model, src, at.
+	 */
+	public static function send_job( array $job ) {
+		try {
+			$src = self::load_source( $job );
+			if ( is_wp_error( $src ) ) {
+				return $src;
+			}
+			$params    = PNChat_AI::source_request( $src );
+			$custom_id = 'pnchat-' . strtolower( wp_generate_password( 20, false ) );
+			$id        = PNChat_AI::batch_create( $custom_id, $params );
+			if ( is_wp_error( $id ) ) {
+				return $id;
+			}
+			// Kept for the answer: everything but the content.
+			unset( $src['text'], $src['pdf'] );
+			return array(
+				'id'        => $id,
+				'custom_id' => $custom_id,
+				'model'     => (string) $params['model'],
+				'src'       => $src,
+				'at'        => time(),
+			);
+		} finally {
+			if ( 'file' === ( $job['type'] ?? '' ) ) {
+				self::delete_file( (string) $job['file'] );
+			}
 		}
 	}
 
@@ -439,45 +647,6 @@ final class PNChat_Learn {
 				return (string) $job['url'];
 			default:
 				return (string) ( $job['name'] ?? 'PDF' );
-		}
-	}
-
-	/**
-	 * Reads one source and stores its proposals.
-	 *
-	 * @param array<string,mixed> $job Job.
-	 * @return array{added:int,skipped:int}|WP_Error
-	 */
-	public static function run_job( array $job ) {
-		try {
-			$src = self::load_source( $job );
-			if ( is_wp_error( $src ) ) {
-				return $src;
-			}
-			$drafts = PNChat_AI::drafts_from_source( $src );
-			if ( is_wp_error( $drafts ) ) {
-				return $drafts;
-			}
-			$added   = 0;
-			$skipped = 0;
-			foreach ( $drafts as $e ) {
-				if ( self::add_proposal( $e, $src ) ) {
-					++$added;
-				} else {
-					++$skipped;
-				}
-			}
-			if ( ! empty( $src['post_id'] ) ) {
-				update_post_meta( (int) $src['post_id'], self::META, (string) $src['hash'] );
-			}
-			return array(
-				'added'   => $added,
-				'skipped' => $skipped,
-			);
-		} finally {
-			if ( 'file' === ( $job['type'] ?? '' ) ) {
-				self::delete_file( (string) $job['file'] );
-			}
 		}
 	}
 

@@ -182,12 +182,14 @@ final class PNChat_Admin {
 			'ai_partial'   => array( 'error', sprintf( 'Αποθηκεύτηκαν %1$d γνώσεις· %2$d ΔΕΝ αποθηκεύτηκαν (η βάση δεδομένων τις αρνήθηκε). Ζητήστε ξανά πρόταση για τη σελίδα.', $n, absint( self::get( 'failed' ) ) ) ),
 			'ai_error'     => array( 'error', 'AI: ' . sanitize_text_field( self::get( 'err' ) ) ),
 			'ai_expired'   => array( 'error', 'Η πρόταση του AI έληξε (κρατιέται 1 ώρα). Ζητήστε τη ξανά.' ),
-			'learn_queued' => array( 'success', sprintf( 'Μπήκαν %d πηγές για διάβασμα. Το AI τις διαβάζει στο παρασκήνιο, μία-μία· οι προτάσεις εμφανίζονται παρακάτω. Μπορείτε να κλείσετε τη σελίδα.', $n ) ),
+			'learn_queued' => array( 'success', sprintf( 'Μπήκαν %d πηγές για διάβασμα. Στέλνονται στο Claude στο παρασκήνιο και οι προτάσεις εμφανίζονται παρακάτω, συνήθως σε λίγα λεπτά. Μπορείτε να κλείσετε τη σελίδα.', $n ) ),
 			'learn_none'   => array( 'success', sprintf( 'Δεν υπάρχει κάτι νέο να διαβαστεί: %d σελίδες δεν άλλαξαν από την τελευταία φορά.', $n ) ),
 			'learn_dupe'   => array( 'error', 'Αυτή η πηγή περιμένει ήδη να διαβαστεί.' ),
 			'learn_bad'    => array( 'error', 'Γράψτε μια διεύθυνση που ξεκινά με http:// ή https://, ή επιλέξτε ένα PDF.' ),
 			'learn_stopped' => array( 'success', sprintf( 'Το διάβασμα σταμάτησε· %d πηγές δεν διαβάστηκαν.', $n ) ),
-			'learn_step'   => array( 'success', sprintf( 'Διαβάστηκε μία πηγή: %d νέες προτάσεις.', $n ) ),
+			'learn_step'   => array( 'success', sprintf( 'Ήρθε η απάντηση του Claude: %d νέες προτάσεις.', $n ) ),
+			'learn_sent'   => array( 'success', 'Η πηγή στάλθηκε στο Claude. Η απάντηση έρχεται συνήθως σε λίγα λεπτά· η σελίδα ανανεώνεται μόνη της.' ),
+			'learn_waiting' => array( 'success', 'Το Claude διαβάζει ακόμα. Ξαναδείτε σε λίγα λεπτά.' ),
 			'learn_busy'   => array( 'error', 'Το AI διαβάζει ήδη μια πηγή στο παρασκήνιο. Περιμένετε λίγο.' ),
 			'learn_limit'  => array( 'error', 'Έφτασε το όριο του μήνα για διάβασμα με AI (Ρυθμίσεις → AI). Οι υπόλοιπες πηγές περιμένουν.' ),
 			'approved'     => array( 'success', 'Η γνώση εγκρίθηκε. Ο βοηθός την ξέρει από τώρα.' ),
@@ -742,8 +744,9 @@ final class PNChat_Admin {
 			wp_die( esc_html__( 'Δεν έχετε δικαίωμα πρόσβασης.', 'pn-chat' ), 403 );
 		}
 		$queue = PNChat_Learn::queue();
+		$sent  = PNChat_Learn::sent();
 		$state = PNChat_Learn::state();
-		$live  = $queue && '' === $state['paused'];
+		$live  = ( $queue && '' === $state['paused'] ) || $sent;
 		if ( $live ) {
 			// The reading goes on in the background; the page follows it.
 			PNChat_Learn::schedule();
@@ -779,7 +782,7 @@ final class PNChat_Admin {
 			);
 		}
 
-		self::learn_progress( $queue, $state );
+		self::learn_progress( $queue, $sent, $state );
 		self::proposals_list();
 		echo '</div>';
 	}
@@ -788,14 +791,16 @@ final class PNChat_Admin {
 	 * Progress of the reading and its errors.
 	 *
 	 * @param array<int,array<string,mixed>> $queue Waiting jobs.
+	 * @param array<int,array<string,mixed>> $sent  Sources at Claude.
 	 * @param array<string,mixed>            $state Progress.
 	 * @return void
 	 */
-	private static function learn_progress( array $queue, array $state ) {
-		if ( ! $queue && ! $state['total'] ) {
+	private static function learn_progress( array $queue, array $sent, array $state ) {
+		if ( ! $queue && ! $sent && ! $state['total'] ) {
 			return;
 		}
-		echo '<div class="pnchat-card"><h2>' . ( $queue ? 'Διάβασμα σε εξέλιξη' : 'Τελευταίο διάβασμα' ) . '</h2>';
+		$busy = $queue || $sent;
+		echo '<div class="pnchat-card"><h2>' . ( $busy ? 'Διάβασμα σε εξέλιξη' : 'Τελευταίο διάβασμα' ) . '</h2>';
 		printf(
 			'<p><strong>%1$s</strong><br>Διαβάστηκαν %2$d από %3$d πηγές · %4$d νέες προτάσεις%5$s.</p>',
 			esc_html( (string) $state['label'] ),
@@ -804,7 +809,11 @@ final class PNChat_Admin {
 			(int) $state['proposals'],
 			$state['skipped'] ? ' · ' . (int) $state['skipped'] . ' παραλείφθηκαν (υπάρχουν ήδη ή τις είχατε απορρίψει)' : ''
 		);
-		if ( $queue ) {
+		if ( $sent ) {
+			echo '<p>Στάλθηκαν στο Claude και περιμένουν απάντηση: <strong>' . esc_html( implode( ' · ', array_map( fn( $b ) => (string) $b['label'], $sent ) ) ) . '</strong></p>';
+			echo '<p class="description">Το Claude τα διαβάζει στους δικούς του servers, συνήθως σε λίγα λεπτά (το πολύ 24 ώρες). Το site ελέγχει κάθε λεπτό, όσο έχει επισκέψεις· μπορείτε να κλείσετε τη σελίδα.</p>';
+		}
+		if ( $busy ) {
 			$total = max( 1, (int) $state['total'] );
 			echo '<progress max="' . (int) $total . '" value="' . (int) $state['done'] . '" style="width:100%;max-width:600px"></progress>';
 			if ( 'limit' === $state['paused'] ) {
@@ -812,13 +821,15 @@ final class PNChat_Admin {
 			} elseif ( 'off' === $state['paused'] ) {
 				echo '<p class="pnchat-warn">Σταμάτησε: το AI είναι απενεργοποιημένο ή δεν έχει API key.</p>';
 			} else {
-				echo '<p class="description">Το AI διαβάζει στο παρασκήνιο, μία πηγή τη φορά (μια σελίδα θέλει περίπου 20–60 δευτερόλεπτα, ένα PDF μερικά λεπτά). Η σελίδα ανανεώνεται μόνη της· μπορείτε και να την κλείσετε.</p>';
+				echo '<p class="description">Η σελίδα ανανεώνεται μόνη της.</p>';
 			}
-			$next = array_map( array( 'PNChat_Learn', 'job_label' ), array_slice( $queue, 0, 5 ) );
-			echo '<p class="description">Επόμενες: ' . esc_html( implode( ' · ', $next ) ) . ( count( $queue ) > 5 ? ' …' : '' ) . '</p>';
+			if ( $queue ) {
+				$next = array_map( array( 'PNChat_Learn', 'job_label' ), array_slice( $queue, 0, 5 ) );
+				echo '<p class="description">Επόμενες: ' . esc_html( implode( ' · ', $next ) ) . ( count( $queue ) > 5 ? ' …' : '' ) . '</p>';
+			}
 			echo '<p><a class="button" href="' . esc_url( self::action_url( 'learn_control', array( 'do' => 'step' ) ) ) . '">Συνέχεια τώρα</a> ';
 			echo '<a class="button" href="' . esc_url( self::action_url( 'learn_control', array( 'do' => 'stop' ) ) ) . '" onclick="return confirm(\'Να σταματήσει το διάβασμα; Οι προτάσεις που έγιναν μένουν.\')">Διακοπή</a></p>';
-			echo '<p class="description">Αν δεν προχωρά (π.χ. το WP-Cron είναι κλειστό στον server), πατήστε «Συνέχεια τώρα»: διαβάζει την επόμενη πηγή αμέσως.</p>';
+			echo '<p class="description">Αν δεν προχωρά (π.χ. το WP-Cron είναι κλειστό στον server), πατήστε «Συνέχεια τώρα»: ελέγχει αμέσως αν απάντησε το Claude και στέλνει την επόμενη πηγή.</p>';
 		}
 		if ( $state['errors'] ) {
 			echo '<details><summary>Πηγές που δεν διαβάστηκαν (' . count( $state['errors'] ) . ')</summary><ul class="pnchat-list">';
@@ -968,7 +979,9 @@ final class PNChat_Admin {
 		$r = PNChat_Learn::process_next();
 		PNChat_Learn::schedule();
 		$map = array(
-			'done'  => array( 'learn_step', array( 'n' => $r['added'] ) ),
+			'done'      => array( 'learn_step', array( 'n' => $r['added'] ) ),
+			'submitted' => array( 'learn_sent', array() ),
+			'waiting'   => array( 'learn_waiting', array() ),
 			'error' => array( 'ai_error', array( 'err' => $r['error'] ) ),
 			'busy'  => array( 'learn_busy', array() ),
 			'limit' => array( 'learn_limit', array() ),
@@ -1829,7 +1842,7 @@ final class PNChat_Admin {
 		}
 		echo '</td></tr>';
 		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5). Φθηνότερα: claude-sonnet-5-5, claude-haiku-4-5.' );
-		$number( 'ai_learn_monthly', 'Όριο διαβάσματος ανά μήνα', 'Το πολύ τόσες πηγές (σελίδες, διευθύνσεις ή PDF) διαβάζει το AI τον μήνα για τις «Προτάσεις AI» (αυτόν τον μήνα: ' . PNChat_Learn::used_this_month() . '). Μια σελίδα κοστίζει περίπου 0,02–0,10 $, ένα PDF 40 σελίδων περίπου 0,50–1,50 $ με το προεπιλεγμένο μοντέλο.' );
+		$number( 'ai_learn_monthly', 'Όριο διαβάσματος ανά μήνα', 'Το πολύ τόσες πηγές (σελίδες, διευθύνσεις ή PDF) διαβάζει το AI τον μήνα για τις «Προτάσεις AI» (αυτόν τον μήνα: ' . PNChat_Learn::used_this_month() . '). Το διάβασμα γίνεται με το Batch API της Anthropic, στη μισή τιμή: μια σελίδα περίπου 0,01–0,05 $, ένα PDF 40 σελίδων περίπου 0,25–0,75 $ με το προεπιλεγμένο μοντέλο.' );
 		$check( 'ai_learn_weekly', 'Κάθε εβδομάδα', 'Ξαναδιάβαζε μόνο του, μία φορά την εβδομάδα, τις σελίδες του site που άλλαξαν ή είναι καινούριες. Οι νέες γνώσεις μπαίνουν στις Προτάσεις· δεν φτάνουν στο chat χωρίς έγκριση.' );
 		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
 		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση εμφανίζεται ΑΜΕΣΩΣ, με την ετικέτα παρακάτω, χωρίς να την έχει δει άνθρωπος, και μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση. Το AI απαντά ΜΟΝΟ σε ερωτήσεις για τα εργαλεία του site (ένα από τα «Θέματα συζήτησης» ή λέξεις όπως εκτύπωση, ετικέτα, πλάνο, λογαριασμός), όχι κοντά σε κάποια Απαγόρευση και χωρίς ιατρικό σήμα (π.χ. «πόσα χάπια», «παρενέργειες», «500mg», «φάρμακο για τον πόνο»)· και το ίδιο το AI δηλώνει αν η ερώτηση ζητά ιατρική συμβουλή, οπότε δεν απαντά. Όλες οι άλλες ερωτήσεις παίρνουν τις σελίδες του site και τη φόρμα e-mail, όπως χωρίς AI.' );

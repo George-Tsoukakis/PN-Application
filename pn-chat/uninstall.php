@@ -35,6 +35,7 @@ if ( ! function_exists( 'pnchat_uninstall_site' ) ) {
 		}
 		delete_option( 'pnchat_learn_queue' );
 		delete_option( 'pnchat_learn_state' );
+		delete_option( 'pnchat_learn_batches' );
 		// The API key is a secret, not data: it never outlives the plugin.
 		delete_option( 'pnchat_ai_key' );
 		// Rate limits and AI totals are not data either.

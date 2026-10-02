@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,8 +36,10 @@ Privacy).
   approved entries, without AI. Keywords that would pull a whole topic
   (tool names, words already in two entries) are taken off, and a proposal
   close to an existing entry says so and can be added to it instead.
-  Reading runs in the background, one source at a time, with a monthly limit;
-  optionally once a week for the pages that changed.
+  Each source goes to Claude as a message batch (Batches API, half price):
+  the site uploads it in seconds and collects the answer later, so long
+  PDFs never meet the web server's time limit. Monthly limit; optionally
+  once a week for the pages that changed.
 * **Small talk:** "nice tool", "ok", "good night" get a friendly reply in the
   topic of the conversation instead of "no information"; complaints ("you did
   not help me") get the e-mail form. Texts in Settings.
@@ -149,6 +151,11 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.9.1 =
+* AI proposals: every source goes to Claude as a message batch. The site uploads it in seconds and picks the answer up on a later run (usually minutes), so a 40-page PDF no longer depends on the host's time limit. In 1.9.0 some hosts stopped the long direct call and the screen showed "0 of 1 read" with no reason. Batches cost half.
+* A step the server stops half-way is now listed under "not read", with the reason.
+* "Stop" also cancels the sources waiting at Claude. At most 3 wait at once.
 
 = 1.9.0 =
 * New "AI proposals" screen: Claude reads a page, the whole site (or only the pages that changed), a web address or a PDF, and proposes entries. Nothing reaches the chat before approval; the chat answers stay without AI.

@@ -5,8 +5,9 @@
  * reaches the chat before approval. Keyword hygiene, similarity notes,
  * duplicates, rejected titles, changed-only, the monthly limit, uses given
  * back when Claude was never asked, the lock, stop, weekly schedule, and the
- * admin approve / merge / reject / bulk handlers. Claude and the web are
- * faked through pre_http_request.
+ * admin approve / merge / reject / bulk handlers. 1.9.1: sources go to
+ * Claude as message batches (sent in one step, collected in a later one).
+ * Claude's Batches API and the web are faked through pre_http_request.
  */
 require __DIR__ . '/lib.php';
 require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -44,19 +45,77 @@ pnt_defer(
 $reset();
 
 // ---- fakes ------------------------------------------------------------------------
-$sent   = array(); // Requests to Claude.
-$reply  = array(); // Next entries Claude returns.
-$fail   = null;    // A WP_Error instead of Claude's answer.
-$web    = array(); // Address => [content-type, body, code].
+$sent    = array(); // Params of every request sent to Claude.
+$headers = array(); // Their headers.
+$reply   = array(); // Next entries Claude returns.
+$fail    = null;    // A WP_Error instead of Claude's answer (on sending).
+$web     = array(); // Address => [content-type, body, code].
+$batches = array(); // Batch id => [custom_id, entries].
+$hold    = false;   // Batches stay «in_progress».
+$outcome = 'succeeded';
+$cancels = array();
 add_filter(
 	'pre_http_request',
-	function ( $pre, $args, $url ) use ( &$sent, &$reply, &$fail, &$web ) {
-		if ( 0 === strpos( $url, 'https://api.anthropic.com/' ) ) {
-			$sent[] = json_decode( (string) $args['body'], true );
+	function ( $pre, $args, $url ) use ( &$sent, &$headers, &$reply, &$fail, &$web, &$batches, &$hold, &$outcome, &$cancels ) {
+		$json = function ( $data, $code = 200 ) {
+			return array(
+				'headers'  => array(),
+				'body'     => is_string( $data ) ? $data : wp_json_encode( $data ),
+				'response' => array(
+					'code'    => $code,
+					'message' => 'x',
+				),
+				'cookies'  => array(),
+			);
+		};
+		$base = PNChat_AI::BATCHES_URL;
+		if ( $url === $base ) {
+			$body      = json_decode( (string) $args['body'], true );
+			$sent[]    = $body['requests'][0]['params'];
+			$headers[] = $args['headers'];
 			if ( $fail ) {
 				return $fail;
 			}
-			return pnt_claude_reply( array( 'entries' => $reply ) );
+			$id             = 'msgbatch_' . count( $batches );
+			$batches[ $id ] = array( $body['requests'][0]['custom_id'], $reply );
+			return $json(
+				array(
+					'id'                => $id,
+					'processing_status' => 'in_progress',
+				)
+			);
+		}
+		if ( preg_match( '#^' . preg_quote( $base, '#' ) . '/(msgbatch_\d+)(/results|/cancel)?$#', $url, $m ) ) {
+			$id = $m[1];
+			if ( '/cancel' === ( $m[2] ?? '' ) ) {
+				$cancels[] = $id;
+				return $json( array( 'id' => $id ) );
+			}
+			if ( '/results' === ( $m[2] ?? '' ) ) {
+				$result = 'succeeded' === $outcome
+					? array(
+						'type'    => 'succeeded',
+						'message' => json_decode( pnt_claude_reply( array( 'entries' => $batches[ $id ][1] ) )['body'], true ),
+					)
+					: array(
+						'type'  => $outcome,
+						'error' => array(
+							'type'  => 'error',
+							'error' => array( 'message' => 'fake batch error' ),
+						),
+					);
+				return $json( wp_json_encode( array( 'custom_id' => 'other', 'result' => array( 'type' => 'expired' ) ) ) . "\n" . wp_json_encode( array( 'custom_id' => $batches[ $id ][0], 'result' => $result ) ) . "\n" );
+			}
+			return $json(
+				array(
+					'id'                => $id,
+					'processing_status' => $hold ? 'in_progress' : 'ended',
+					'results_url'       => $hold ? null : $base . '/' . $id . '/results',
+				)
+			);
+		}
+		if ( 0 === strpos( $url, 'https://api.anthropic.com/' ) ) {
+			return $json( array( 'error' => array( 'message' => 'unexpected call ' . $url ) ), 400 );
 		}
 		if ( isset( $web[ $url ] ) ) {
 			return array(
@@ -74,6 +133,11 @@ add_filter(
 	10,
 	3
 );
+// Sends the next source and, when it went, collects Claude's answer.
+function pnt_learn_step() {
+	$r = PNChat_Learn::process_next();
+	return 'submitted' === $r['status'] ? PNChat_Learn::process_next() : $r;
+}
 $entry = function ( $title, array $phrasings, array $keywords = array(), $answer = '<p>Απάντηση.</p>' ) {
 	return array(
 		'title'      => $title,
@@ -133,7 +197,7 @@ pnt_same( 1, PNChat_Learn::enqueue( array( array( 'type' => 'post', 'id' => $pos
 pnt_same( 0, PNChat_Learn::enqueue( array( array( 'type' => 'post', 'id' => $post_id ) ), 'Οδηγός' ), 'enqueue: the same page is not queued twice' );
 pnt_check( false !== wp_next_scheduled( PNChat_Learn::CRON ), 'enqueue: background reading scheduled' );
 $before = PNChat_Counter::get( $month );
-$r      = PNChat_Learn::process_next();
+$r      = pnt_learn_step();
 pnt_same( array( 'done', 2 ), array( $r['status'], $r['added'] ), 'page: read, 2 proposals' );
 pnt_same( $before + 1, PNChat_Counter::get( $month ), 'page: counts for the month' );
 $req = end( $sent );
@@ -166,7 +230,7 @@ $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE k LIKE %s', $ct, 'rl:%' ) );
 
 // The same page again: same titles are skipped.
 PNChat_Learn::enqueue( array( array( 'type' => 'post', 'id' => $post_id ) ), 'Οδηγός' );
-$r = PNChat_Learn::process_next();
+$r = pnt_learn_step();
 pnt_same( array( 'done', 0 ), array( $r['status'], $r['added'] ), 'again: proposals with the same title are not added twice' );
 pnt_same( 2, (int) PNChat_Learn::state()['skipped'], 'again: counted as skipped' );
 
@@ -189,7 +253,7 @@ delete_option( PNChat_Learn::STATE );
 $web['https://example.test/odigos'] = array( 'text/html; charset=UTF-8', '<html><head><title>Οδηγός eΔΑΠΥ</title><script>var x="ΚΡΥΦΟ";</script></head><body><nav>Μενού Αρχική Επικοινωνία</nav><main><h1>Υποβολή</h1><p>' . str_repeat( 'Η υποβολή γίνεται από το μενού Υποβολές και θέλει κλειδάριθμο. ', 6 ) . '</p></main><footer>Copyright</footer></body></html>' );
 $reply = array( $entry( 'Υποβολή στο eΔΑΠΥ', array( 'Πώς κάνω υποβολή στο eΔΑΠΥ;' ), array(), '<p>Από το μενού Υποβολές. <a href="https://example.test/odigos#b">Οδηγός</a> <a href="https://evil.example/">x</a></p>' ) );
 PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos' ) ), 'url' );
-$r   = PNChat_Learn::process_next();
+$r   = pnt_learn_step();
 $req = end( $sent );
 $txt = (string) $req['messages'][0]['content'];
 $txt = substr( $txt, 0, (int) strpos( $txt, '</page>' ) ); // The page, without the list of existing titles.
@@ -205,7 +269,7 @@ $pdf                                     = "%PDF-1.4\n% fake test pdf\n" . str_r
 $web['https://example.test/manual.pdf'] = array( 'application/pdf', $pdf );
 $reply                                   = array( $entry( 'Πιστοποίηση παρόχου', array( 'Πώς γίνεται η πιστοποίηση παρόχου στο eΔΑΠΥ;' ) ) );
 PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/manual.pdf' ) ), 'pdf' );
-$r     = PNChat_Learn::process_next();
+$r     = pnt_learn_step();
 $req   = end( $sent );
 $block = $req['messages'][0]['content'][0] ?? array();
 pnt_same( 'done', $r['status'], 'PDF address: read' );
@@ -225,7 +289,7 @@ pnt_check( is_wp_error( PNChat_Learn::store_upload( $tmp, 'x.pdf' ) ), 'upload: 
 wp_delete_file( $tmp );
 $reply = array( $entry( 'Δημιουργία χρήστη eΔΑΠΥ', array( 'Πώς φτιάχνω χρήστη στο eΔΑΠΥ;' ) ) );
 PNChat_Learn::enqueue( array( $job ), $job['name'] );
-$r   = PNChat_Learn::process_next();
+$r   = pnt_learn_step();
 $req = end( $sent );
 pnt_same( 'done', $r['status'], 'upload: read' );
 pnt_same( base64_encode( $pdf ), $req['messages'][0]['content'][0]['source']['data'] ?? '', 'upload: the file is sent as a document' );
@@ -236,7 +300,7 @@ $used = PNChat_Counter::get( $month );
 $web['https://example.test/missing'] = array( 'text/html', 'Not found', 404 );
 PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/missing' ) ), 'missing' );
 $n = count( $sent );
-$r = PNChat_Learn::process_next();
+$r = pnt_learn_step();
 pnt_same( 'error', $r['status'], 'HTTP 404: error' );
 pnt_same( array( $used, $n ), array( PNChat_Counter::get( $month ), count( $sent ) ), 'HTTP 404: Claude not asked, the use given back' );
 $errors = PNChat_Learn::state()['errors'];
@@ -244,13 +308,73 @@ pnt_check( false !== strpos( (string) end( $errors )['error'], '404' ), 'HTTP 40
 
 $fail = new WP_Error( 'http_request_failed', 'cURL error 7: Failed to connect' );
 PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos' ) ), 'again' );
-$r = PNChat_Learn::process_next();
+$r = pnt_learn_step();
 pnt_same( array( 'error', $used ), array( $r['status'], PNChat_Counter::get( $month ) ), 'no connection to Claude: error, the use given back' );
-$fail = new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' );
-PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos' ) ), 'again' );
-PNChat_Learn::process_next();
-pnt_same( $used + 1, PNChat_Counter::get( $month ), 'time-out after sending: counts (it may have been charged)' );
 $fail = null;
+
+// ---- batches -------------------------------------------------------------------------------
+$req = end( $sent );
+$hdr = end( $headers );
+pnt_check( ! isset( $req['fallbacks'] ) && ! isset( $hdr['anthropic-beta'] ) && 'json_schema' === ( $req['output_config']['format']['type'] ?? '' ), 'batch: structured output, no fallbacks (the Batches API rejects them)' );
+$direct = PNChat_AI::body( 'σύστημα', 'ερώτηση', array( 'type' => 'object' ) );
+pnt_check( 'default' === ( $direct['fallbacks'] ?? '' ) && 'medium' === ( $direct['output_config']['effort'] ?? '' ), 'direct calls (AI in the chat) keep server-side fallbacks and effort' );
+$haiku = PNChat_AI::body( 'σύστημα', 'ερώτηση', array( 'type' => 'object' ), 'claude-haiku-4-5' );
+pnt_check( ! isset( $haiku['fallbacks'] ) && ! isset( $haiku['output_config']['effort'] ), 'Claude Haiku 4.5: no fallbacks, no effort' );
+$usage = PNChat_AI::usage();
+$hold  = true;
+PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/manual.pdf' ) ), 'held' );
+pnt_same( 'submitted', PNChat_Learn::process_next()['status'], 'batch: the source is sent in one step' );
+pnt_same( 0, count( PNChat_Learn::queue() ), 'batch: it left the queue' );
+pnt_same( 'waiting', PNChat_Learn::process_next()['status'], 'batch: while Claude reads, the step only checks' );
+pnt_same( 1, count( PNChat_Learn::sent() ), 'batch: still waiting' );
+wp_clear_scheduled_hook( PNChat_Learn::CRON );
+PNChat_Learn::schedule();
+$next = (int) wp_next_scheduled( PNChat_Learn::CRON );
+pnt_check( $next > time() + 30, 'batch: the next check is in a minute, not seconds' );
+$hold = false;
+$r    = PNChat_Learn::process_next();
+pnt_same( array( 0, 'done' ), array( count( PNChat_Learn::sent() ), $r['status'] ), 'batch: collected once Claude ended' );
+$after = PNChat_AI::usage();
+pnt_same( 3000, (int) ( $after['micro_usd'] ?? 0 ) - (int) ( $usage['micro_usd'] ?? 0 ), 'batch: cost counted at half price (1000 in + 100 out on Opus 5.5 = $0.006 → $0.003)' );
+
+$used    = PNChat_Counter::get( $month );
+$outcome = 'errored';
+$reply   = array( $entry( 'Κάτι νέο 1', array( 'Ερώτηση νέα 1;' ) ) );
+PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos' ) ), 'errored' );
+$r = pnt_learn_step();
+pnt_same( array( 'error', $used ), array( $r['status'], PNChat_Counter::get( $month ) ), 'batch errored: error, not charged so the use is given back' );
+pnt_check( false !== strpos( $r['error'], 'fake batch error' ), 'batch errored: the reason is shown' );
+$outcome = 'expired';
+PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos' ) ), 'expired' );
+$r = pnt_learn_step();
+pnt_check( 'error' === $r['status'] && false !== strpos( $r['error'], '24 ώρες' ), 'batch expired: said so' );
+$outcome = 'succeeded';
+
+// A step the server killed half-way is reported.
+$st            = PNChat_Learn::state();
+$st['current'] = array(
+	'label' => 'odigies.pdf',
+	'at'    => time() - HOUR_IN_SECONDS,
+);
+update_option( PNChat_Learn::STATE, $st, false );
+PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos' ) ), 'after' );
+pnt_learn_step();
+$errors = PNChat_Learn::state()['errors'];
+$labels = array_column( $errors, 'source' );
+pnt_check( in_array( 'odigies.pdf', $labels, true ) && array() === PNChat_Learn::state()['current'], 'interrupted step: listed as not read, with the reason (1.9.0 showed «0 από 1» and nothing else)' );
+
+// At most three sources wait at Claude.
+$hold = true;
+foreach ( array( 'a', 'b', 'c', 'd' ) as $x ) {
+	PNChat_Learn::enqueue( array( array( 'type' => 'url', 'url' => 'https://example.test/odigos?' . $x ) ), $x );
+	$web[ 'https://example.test/odigos?' . $x ] = $web['https://example.test/odigos'];
+	PNChat_Learn::process_next();
+}
+pnt_same( array( 3, 1 ), array( count( PNChat_Learn::sent() ), count( PNChat_Learn::queue() ) ), 'batch: at most 3 at Claude, the rest wait' );
+$cancels = array();
+pnt_same( 4, PNChat_Learn::stop(), 'stop: queued and sent sources dropped' );
+pnt_same( 3, count( $cancels ), 'stop: the batches at Claude are cancelled' );
+$hold = false;
 
 // ---- monthly limit, lock, AI off, stop -----------------------------------------------------
 pnt_settings( array( 'ai_learn_monthly' => PNChat_Counter::get( $month ) ) );

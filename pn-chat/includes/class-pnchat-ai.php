@@ -29,6 +29,7 @@ final class PNChat_AI {
 	const ENDPOINT      = 'https://api.anthropic.com/v1/messages';
 	// phpcs:ignore PluginCheck.CodeAnalysis.AIProvider.DirectIntegration -- see above; key check only.
 	const MODELS_URL    = 'https://api.anthropic.com/v1/models?limit=1';
+	const BATCHES_URL   = 'https://api.anthropic.com/v1/messages/batches';
 	const API_VERSION   = '2023-06-01';
 	const DEFAULT_MODEL = 'claude-opus-5-5';
 	const USAGE_OPTION  = 'pnchat_ai_usage'; // Before 1.8.0; now counters «usage:…».
@@ -156,6 +157,38 @@ final class PNChat_AI {
 		if ( '' === $key ) {
 			return new WP_Error( 'pnchat_ai_key', 'Δεν έχει οριστεί API key (Ρυθμίσεις → AI βοηθός εκπαίδευσης).' );
 		}
+		$body    = self::body( $system, $user, $schema, $model, $max_tokens );
+		$headers = self::headers();
+		if ( isset( $body['fallbacks'] ) ) {
+			$headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
+		}
+		$res = wp_remote_post(
+			self::ENDPOINT,
+			array(
+				'timeout' => (int) $timeout,
+				'headers' => $headers,
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+		$data = self::response_data( $res );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		return self::parse_message( $data, (string) $body['model'] );
+	}
+
+	/**
+	 * Request body of a call (also a batch request's params).
+	 *
+	 * @param string                  $system     System prompt.
+	 * @param string|array<int,mixed> $user       User message: text or content blocks.
+	 * @param array<string,mixed>     $schema     JSON schema of the answer.
+	 * @param string                  $model      Model id ('' = the setting).
+	 * @param int                     $max_tokens Longest answer.
+	 * @param bool                    $batch      For the Batches API (it takes no fallbacks).
+	 * @return array<string,mixed>
+	 */
+	public static function body( $system, $user, array $schema, $model = '', $max_tokens = 16000, $batch = false ) {
 		$model = '' !== $model ? $model : self::model();
 		$body  = array(
 			'model'         => $model,
@@ -176,29 +209,42 @@ final class PNChat_AI {
 					'schema' => $schema,
 				),
 			),
-			// A safety-classifier decline is retried server-side on the model
-			// Anthropic recommends for that category, instead of failing.
-			'fallbacks'     => 'default',
 		);
-		$headers = array(
-			'content-type'      => 'application/json',
-			'x-api-key'         => $key,
-			'anthropic-version' => self::API_VERSION,
-			'anthropic-beta'    => 'server-side-fallback-2026-07-01',
-		);
-		// Claude Haiku 4.5 takes neither the effort setting nor server-side
-		// fallbacks (no safety classifiers to fall back from).
-		if ( 0 === strpos( $model, 'claude-haiku-' ) ) {
-			unset( $body['output_config']['effort'], $body['fallbacks'], $headers['anthropic-beta'] );
+		// A safety-classifier decline is retried server-side on the model
+		// Anthropic recommends for that category, instead of failing. Not
+		// on Claude Haiku 4.5 (no safety classifiers) nor in batches (the
+		// Batches API rejects the parameter).
+		$haiku = 0 === strpos( $model, 'claude-haiku-' );
+		if ( ! $batch && ! $haiku ) {
+			$body['fallbacks'] = 'default';
 		}
-		$res  = wp_remote_post(
-			self::ENDPOINT,
-			array(
-				'timeout' => (int) $timeout,
-				'headers' => $headers,
-				'body'    => wp_json_encode( $body ),
-			)
+		// Claude Haiku 4.5 does not take the effort setting.
+		if ( $haiku ) {
+			unset( $body['output_config']['effort'] );
+		}
+		return $body;
+	}
+
+	/**
+	 * Headers of every API request.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function headers() {
+		return array(
+			'content-type'      => 'application/json',
+			'x-api-key'         => self::api_key(),
+			'anthropic-version' => self::API_VERSION,
 		);
+	}
+
+	/**
+	 * Decoded JSON of an API response, or the error in Greek.
+	 *
+	 * @param array<string,mixed>|WP_Error $res wp_remote_*() result.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function response_data( $res ) {
 		if ( is_wp_error( $res ) ) {
 			// Only errors before the request left the site prove that Claude
 			// did no work. A time-out or a lost answer may have been charged.
@@ -224,7 +270,19 @@ final class PNChat_AI {
 			}
 			return new WP_Error( 'pnchat_ai_status', ( $map[ $code ] ?? 'Σφάλμα του Claude API.' ) . ' (' . $msg . ')' );
 		}
-		self::add_usage( is_array( $data['usage'] ?? null ) ? $data['usage'] : array(), $model );
+		return $data;
+	}
+
+	/**
+	 * The JSON answer inside a message (from a call or a batch result).
+	 *
+	 * @param array<string,mixed> $data   Message object.
+	 * @param string              $model  Model id, for the cost.
+	 * @param float               $factor Price factor (0.5 for batches).
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public static function parse_message( array $data, $model, $factor = 1.0 ) {
+		self::add_usage( is_array( $data['usage'] ?? null ) ? $data['usage'] : array(), $model, $factor );
 
 		$stop = (string) ( $data['stop_reason'] ?? '' );
 		if ( 'refusal' === $stop ) {
@@ -248,6 +306,108 @@ final class PNChat_AI {
 	}
 
 	/**
+	 * Sends one request as a message batch (Batches API: processed on
+	 * Anthropic's side, usually within minutes, at half the price). The
+	 * site only waits for the upload, never for Claude.
+	 *
+	 * @param string              $custom_id Request id (letters, digits, - and _).
+	 * @param array<string,mixed> $params    Request body from body( …, true ).
+	 * @return string|WP_Error Batch id.
+	 */
+	public static function batch_create( $custom_id, array $params ) {
+		if ( '' === self::api_key() ) {
+			return new WP_Error( 'pnchat_ai_key', 'Δεν έχει οριστεί API key (Ρυθμίσεις → AI βοηθός εκπαίδευσης).', array( 'not_sent' => true ) );
+		}
+		$res  = wp_remote_post(
+			self::BATCHES_URL,
+			array(
+				'timeout' => 120,
+				'headers' => self::headers(),
+				'body'    => wp_json_encode(
+					array(
+						'requests' => array(
+							array(
+								'custom_id' => $custom_id,
+								'params'    => $params,
+							),
+						),
+					)
+				),
+			)
+		);
+		$data = self::response_data( $res );
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		$id = (string) ( $data['id'] ?? '' );
+		return '' !== $id ? $id : new WP_Error( 'pnchat_ai_json', 'Το Claude API δεν επέστρεψε αριθμό παρτίδας.' );
+	}
+
+	/**
+	 * State of a batch.
+	 *
+	 * @param string $id Batch id.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public static function batch_get( $id ) {
+		return self::response_data(
+			wp_remote_get(
+				self::BATCHES_URL . '/' . rawurlencode( $id ),
+				array(
+					'timeout' => 30,
+					'headers' => self::headers(),
+				)
+			)
+		);
+	}
+
+	/**
+	 * Results of an ended batch, by custom_id.
+	 *
+	 * @param string $url results_url of the batch.
+	 * @return array<string,array<string,mixed>>|WP_Error custom_id => result object.
+	 */
+	public static function batch_results( $url ) {
+		if ( 0 !== strpos( $url, 'https://api.anthropic.com/' ) ) {
+			return new WP_Error( 'pnchat_ai_json', 'Άγνωστη διεύθυνση αποτελεσμάτων.' );
+		}
+		$res = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 60,
+				'headers' => self::headers(),
+			)
+		);
+		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			return new WP_Error( 'pnchat_ai_http', 'Τα αποτελέσματα της παρτίδας δεν κατέβηκαν· θα ξαναδοκιμαστεί.' );
+		}
+		$out = array();
+		foreach ( preg_split( '/\r?\n/', (string) wp_remote_retrieve_body( $res ) ) as $line ) {
+			$row = json_decode( $line, true );
+			if ( is_array( $row ) && isset( $row['custom_id'], $row['result'] ) && is_array( $row['result'] ) ) {
+				$out[ (string) $row['custom_id'] ] = $row['result'];
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Cancels a batch (best effort: «Διακοπή»).
+	 *
+	 * @param string $id Batch id.
+	 * @return void
+	 */
+	public static function batch_cancel( $id ) {
+		wp_remote_post(
+			self::BATCHES_URL . '/' . rawurlencode( $id ) . '/cancel',
+			array(
+				'timeout' => 15,
+				'headers' => self::headers(),
+			)
+		);
+	}
+
+	/**
 	 * The HTTP error happened before the request reached Anthropic: blocked
 	 * by WordPress, or the name, the proxy, the connection or TLS failed.
 	 *
@@ -268,11 +428,12 @@ final class PNChat_AI {
 	 * Adds a call's tokens to the running total shown in the settings. Each
 	 * number is its own atomic counter, so parallel calls all count.
 	 *
-	 * @param array<string,mixed> $usage API usage object.
-	 * @param string              $model Model id.
+	 * @param array<string,mixed> $usage  API usage object.
+	 * @param string              $model  Model id.
+	 * @param float               $factor Price factor (batches cost half).
 	 * @return void
 	 */
-	private static function add_usage( array $usage, $model = '' ) {
+	private static function add_usage( array $usage, $model = '', $factor = 1.0 ) {
 		$add = array( 'calls' => 1 );
 		foreach ( array( 'input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens' ) as $k ) {
 			$add[ $k ] = (int) ( $usage[ $k ] ?? 0 );
@@ -285,7 +446,7 @@ final class PNChat_AI {
 				+ $add['cache_creation_input_tokens'] * $p[0] * 1.25 / 1e6
 				+ $add['output_tokens'] * $p[1] / 1e6
 				+ $add['cache_read_input_tokens'] * $p[2] / 1e6;
-			$add['micro_usd'] = (int) round( $usd * 1e6 );
+			$add['micro_usd'] = (int) round( $usd * $factor * 1e6 );
 		} else {
 			$add['unpriced'] = 1;
 		}
@@ -726,12 +887,15 @@ final class PNChat_AI {
 	 * Drafts entries from a source: a page of the site, a web page or a PDF
 	 * (sent to Claude as a document, so it also reads tables and pictures).
 	 *
-	 * @param array<string,mixed> $src Source from PNChat_Learn::load_source().
-	 * @return array<int,array<string,mixed>>|WP_Error Clean entries.
+	 * Returns the request body, for a batch (or a direct call).
+	 *
+	 * @param array<string,mixed> $src   Source from PNChat_Learn::load_source().
+	 * @param bool                $batch For the Batches API.
+	 * @return array<string,mixed>
 	 */
-	public static function drafts_from_source( array $src ) {
+	public static function source_request( array $src, $batch = true ) {
 		$is_pdf = '' !== (string) ( $src['pdf'] ?? '' );
-		$max    = $is_pdf ? 25 : 8;
+		$max    = self::source_max( $src );
 		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
@@ -772,12 +936,29 @@ final class PNChat_AI {
 			$user = $about . "\n<page url=\"" . esc_url_raw( (string) $src['url'] ) . '" title="' . esc_attr( (string) $src['title'] ) . "\">\n"
 				. mb_substr( (string) $src['text'], 0, self::SOURCE_CHARS ) . "\n</page>\n\n" . $known . "\n\nΓράψε τις γνώσεις.";
 		}
-		$json = self::call( $system, $user, $schema, '', 300, $is_pdf ? 24000 : 16000 );
-		if ( is_wp_error( $json ) ) {
-			return $json;
-		}
+		return self::body( $system, $user, $schema, '', $is_pdf ? 24000 : 16000, $batch );
+	}
+
+	/**
+	 * Most entries drafted from one source.
+	 *
+	 * @param array<string,mixed> $src Source.
+	 * @return int
+	 */
+	public static function source_max( array $src ) {
+		return '' !== (string) ( $src['pdf'] ?? '' ) ? 25 : 8;
+	}
+
+	/**
+	 * Clean entries from Claude's answer for a source.
+	 *
+	 * @param array<string,mixed> $json Answer.
+	 * @param array<string,mixed> $src  Source (url, external; no content needed).
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function drafts_from_json( array $json, array $src ) {
 		$out = array();
-		foreach ( array_slice( (array) ( $json['entries'] ?? array() ), 0, $max ) as $raw ) {
+		foreach ( array_slice( (array) ( $json['entries'] ?? array() ), 0, self::source_max( $src ) ) as $raw ) {
 			$e = PNChat_Brain::clean_entry( $raw );
 			if ( $e ) {
 				$out[] = self::with_source( $e, (string) $src['url'], ! empty( $src['external'] ) );
