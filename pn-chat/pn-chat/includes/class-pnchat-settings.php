@@ -59,7 +59,7 @@ final class PNChat_Settings {
 			'rate_per_10min'   => 30,
 			'notify_email'     => '',
 			'notify_on_email'  => 1,
-			'reply_subject'    => 'Απάντηση στην ερώτησή σας στο PharmacyNeeds',
+			'reply_subject'    => 'Απάντηση στην ερώτησή σας στην PharmacyNeeds',
 			'retention_days'   => 365,
 			'keep_on_uninstall' => 1,
 		);
@@ -165,9 +165,24 @@ final class PNChat_Settings {
 	 */
 	public static function migrate() {
 		$version = (int) get_option( 'pnchat_settings_version' );
-		if ( $version >= 5 ) {
+		if ( $version >= 6 ) {
 			return;
 		}
+		if ( $version < 5 ) {
+			self::migrate_to_5( $version );
+		}
+		// 1.7.0: «…στην PharmacyNeeds» in the e-mail subject.
+		self::replace_old_defaults( array( 'reply_subject' => array( 'Απάντηση στην ερώτησή σας στο PharmacyNeeds' ) ) );
+		update_option( 'pnchat_settings_version', 6, false );
+	}
+
+	/**
+	 * Migrations up to 1.4.0.
+	 *
+	 * @param int $version Stored settings version.
+	 * @return void
+	 */
+	private static function migrate_to_5( $version ) {
 		if ( $version >= 2 ) {
 			// 1.2.1: QR ReBuilder no longer answered as PlanDose's QR.
 			// 1.3.0: grouped suggestions, shorter welcome, QR ReBuilder how-to.

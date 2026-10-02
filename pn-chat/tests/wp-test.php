@@ -182,6 +182,11 @@ foreach ( array( $p1, $p2, $p3 ) as $p ) {
 	wp_delete_post( $p, true );
 }
 
+// ---- Reply e-mail -------------------------------------------------------------------
+$mail = PNChat_Mail::html( 'Θέμα', "Καλησπέρα,\n\nσας ευχαριστούμε για την ερώτησή σας:\n«Τι είναι <b>;»\n\nΑπάντηση:\nΚείμενο με https://pharmacyneeds.gr/a/.\n- ένα\n- δύο\n\nhttps://pharmacyneeds.gr/viber-community/\n\n<script>alert(1)</script>" );
+check( 'reply e-mail: quote, label, list, link, button', false !== strpos( $mail, 'font-style:italic' ) && false !== strpos( $mail, 'Τι είναι &lt;b&gt;;' ) && false !== strpos( $mail, '<strong>Απάντηση:</strong>' ) && 2 === substr_count( $mail, '<li ' ) && false !== strpos( $mail, 'href="https://pharmacyneeds.gr/a/"' ) && false !== strpos( $mail, 'Δείτε τη σελίδα' ) );
+check( 'reply e-mail: text is escaped', false === strpos( $mail, '<script>' ) && false !== strpos( $mail, '&lt;script&gt;' ) );
+
 // ---- AI training assistant (Claude API mocked, no network) ------------------------
 wp_set_current_user( $admin->ID );
 delete_option( 'pnchat_ai_key' );
@@ -296,7 +301,16 @@ check( 'migration: entries the admin wrote are untouched', array( 'qr' ) === PNC
 $titles = array_column( PNChat_Store::entries( 'answer' ), 'title' );
 check( 'migration: QR ReBuilder and «which QR» added once', 1 === count( array_keys( $titles, 'Τι είναι το QR ReBuilder', true ) ) && in_array( 'QR: QR ReBuilder ή QR του PlanDose;', $titles, true ) );
 PNChat_Settings::migrate();
-check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 5 === (int) get_option( 'pnchat_settings_version' ) );
+check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 6 === (int) get_option( 'pnchat_settings_version' ) );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'reply_subject' => 'Απάντηση στην ερώτησή σας στο PharmacyNeeds' ) ) );
+update_option( 'pnchat_settings_version', 5 );
+PNChat_Settings::migrate();
+check( 'migration: e-mail subject «…στην PharmacyNeeds»', 'Απάντηση στην ερώτησή σας στην PharmacyNeeds' === PNChat_Settings::value( 'reply_subject' ) );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'reply_subject' => 'Δικό μου θέμα' ) ) );
+update_option( 'pnchat_settings_version', 5 );
+PNChat_Settings::migrate();
+check( 'migration: own e-mail subject kept', 'Δικό μου θέμα' === PNChat_Settings::value( 'reply_subject' ) );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'reply_subject' => PNChat_Settings::defaults()['reply_subject'] ) ) );
 PNChat_Store::delete_entry( $edited );
 $r = PNChat_Brain::matcher( true )->ask( 'Τι είναι το QR-REBUILDER;' );
 check( 'after migration: QR-REBUILDER answered as QR ReBuilder', 'Τι είναι το QR ReBuilder' === ( $r['items'][0]['title'] ?? '' ), wp_json_encode( $r['items'], JSON_UNESCAPED_UNICODE ) );

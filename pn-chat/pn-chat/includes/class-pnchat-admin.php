@@ -1168,7 +1168,7 @@ final class PNChat_Admin {
 			}
 		}
 
-		$sent = wp_mail( (string) $q['email'], '' !== $subject ? $subject : (string) PNChat_Settings::value( 'reply_subject' ), $body );
+		$sent = PNChat_Mail::send_reply( (string) $q['email'], '' !== $subject ? $subject : (string) PNChat_Settings::value( 'reply_subject' ), $body );
 		if ( ! $sent ) {
 			self::back( 'pn-chat-questions', 'mail_failed', array( 'reply' => $id ) );
 		}

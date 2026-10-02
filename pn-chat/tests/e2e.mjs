@@ -217,6 +217,7 @@ await a.click('#submit');
 await a.waitForURL(/pnchat_msg=replied/);
 const last = mails().at(-1);
 check('reply e-mail sent to visitor', last && last.to === 'farmakeio@example.gr' && last.message.includes('όλες τις κάρτες'), JSON.stringify(last));
+check('reply e-mail: HTML with the new subject', last.subject === 'Απάντηση στην ερώτησή σας στην PharmacyNeeds' && last.message.startsWith('<!DOCTYPE html>') && JSON.stringify(last.headers).includes('text/html'));
 
 // The brain learned it.
 await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&test=` + encodeURIComponent('mporw na plirwsw me karta?'));

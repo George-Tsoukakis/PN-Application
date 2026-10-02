@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.6.2
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,10 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.7.0 =
+* E-mail replies are sent as a light HTML message (one card in the site colour, no images) with the plain text as the alternative part: the visitor's question as a quote, "- " lines as a list, a line with only a link as a button, other links clickable, a short footer. The text is still written as plain text on the reply screen.
+* Default subject "Απάντηση στην ερώτησή σας στην PharmacyNeeds" (changed on existing sites only where the old default was kept).
 
 = 1.6.2 =
 * API key: a new key is tested with Anthropic when the settings are saved (listing models, free); a rejected key is not saved and the screen says so. A pasted header line (`x-api-key: sk-ant-...`) is reduced to the key; text that is not a key is reported instead of silently ignored. With AI on, a saved key that Anthropic rejects is reported on every settings save.
