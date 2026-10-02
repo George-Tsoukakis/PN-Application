@@ -26,7 +26,7 @@ final class PNChat_Brain {
 	 *
 	 * @var string[]
 	 */
-	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note' );
+	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' );
 
 	/**
 	 * Matcher of this request.

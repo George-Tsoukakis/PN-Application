@@ -32,6 +32,7 @@ require_once PNCHAT_PATH . 'includes/class-pnchat-store.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-brain.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-seed.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-topics.php';
+require_once PNCHAT_PATH . 'includes/class-pnchat-smalltalk.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-site-search.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-rest.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-frontend.php';

@@ -2,7 +2,8 @@
  * PN Chat 1.8.0+ in Chromium (TEST-ONLY): the e-mail form and «Σας βοήθησε;»
  * survive opening another page, Greek network errors, Tab kept inside the
  * full-screen chat; 1.8.2: suggestions right under the welcome, groups
- * open when they fit. Needs the test WordPress served at PN_BASE with PN Chat
+ * open when they fit; 1.9.0: small talk («ωραίο») gets a reply and brings
+ * the suggestions back. Needs the test WordPress served at PN_BASE with PN Chat
  * active (floating button), and playwright-core from tests/node_modules.
  *   PN_BASE=http://127.0.0.1:8898 node pn-chat/browser-1800.mjs
  */
@@ -112,6 +113,24 @@ try {
 		await pg.click('.pnchat__new');
 		const back = await pg.evaluate(() => document.querySelector('.pnchat__panel').classList.contains('pnchat__panel--start') && !document.querySelector('.pnchat__chips').hidden);
 		check(back, '«Νέα συζήτηση»: suggestions under the welcome again');
+		await c.close();
+	}
+
+	// ---- small talk ---------------------------------------------------------------
+	{
+		const c = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+		await c.route((url) => !String(url).startsWith(BASE), (r) => r.abort());
+		const pg = await c.newPage();
+		await pg.goto(BASE + '/', { waitUntil: 'load' });
+		await openChat(pg);
+		await ask(pg, 'Γεια σας τι ώρα ανοίγετε');
+		check(await pg.locator('.pnchat__chips').isHidden(), 'small talk: suggestions hidden after a question');
+		const forms = await pg.locator('.pnchat__email').count();
+		await ask(pg, 'ωραίο!');
+		const last = await pg.locator('.pnchat__msg--bot:not(.pnchat__typing)').last().innerText();
+		check(/Χαίρομαι/.test(last) && !/πληροφορ/.test(last), 'small talk: «ωραίο!» gets a friendly reply («' + last.trim().slice(0, 60) + '»)');
+		check(await pg.locator('.pnchat__chips').isVisible(), 'small talk: the suggestions come back');
+		check(await pg.locator('.pnchat__email').count() === forms, 'small talk: no new e-mail form');
 		await c.close();
 	}
 

@@ -139,16 +139,31 @@ final class PNChat_Rest {
 		// Conversation topic: a question that names no topic («Είναι δωρεάν;»)
 		// is read in the topic of the previous answer («…το QR ReBuilder»).
 		$context = PNChat_Topics::valid( sanitize_text_field( (string) $req->get_param( 'context' ) ) );
-		$own     = PNChat_Topics::detect( $question );
+
+		// Small talk («ωραίο tool», «οκ», «καληνύχτα»): answered naturally,
+		// unless a trained entry answers it (e.g. «Ευχαριστώ»). A complaint
+		// («δεν με βοήθησες») always gets the e-mail form, even when it is
+		// close to an entry (here «…ο βοηθός»).
+		$talk = PNChat_Smalltalk::detect( $question );
+		if ( '' !== $talk ) {
+			$plain = 'complaint' === $talk ? array( 'status' => '' ) : PNChat_Brain::matcher()->ask( $question );
+			if ( 'answered' !== $plain['status'] ) {
+				return self::smalltalk_response( $talk, $question, $context, $req );
+			}
+		}
+		// «Ωραία, τι κάνει;» is searched as «τι κάνει;» (the remark is not
+		// part of the question); the log keeps what the visitor wrote.
+		$search  = PNChat_Smalltalk::strip_lead( $question );
+		$own     = PNChat_Topics::detect( $search );
 		$follow  = '' !== $context && '' === $own;
-		$result  = self::answer_in_context( $question, $follow ? $context : '' );
-		$site    = self::site_results( $result, $follow ? rtrim( $question, " \t?;;.!" ) . ' ' . $context : $question );
+		$result  = self::answer_in_context( $search, $follow ? $context : '' );
+		$site    = self::site_results( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
 
 		// No trained answer, but pages of the site are about it: the AI may
 		// answer from those pages, and its answer waits in Ερωτήματα as a
 		// proposed entry for an administrator to approve.
 		$ai    = null;
-		$asked = $follow ? rtrim( $question, " \t?;;.!" ) . ' (' . $context . ')' : $question;
+		$asked = $follow ? rtrim( $search, " \t?;;.!" ) . ' (' . $context . ')' : $search;
 		if ( 'unanswered' === $result['status'] && $site && PNChat_AI::chat_enabled() && ! self::near_block( $asked ) && self::rate_ok( 'ai', 10, HOUR_IN_SECONDS ) && PNChat_AI::chat_take() ) {
 			if ( function_exists( 'set_time_limit' ) ) {
 				set_time_limit( 120 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- the API call may take up to a minute.
@@ -305,6 +320,49 @@ final class PNChat_Rest {
 			array(
 				'ok'      => true,
 				'message' => $thanks,
+			)
+		);
+	}
+
+	/**
+	 * The reply to small talk. Only a complaint is logged (as «Δεν βοήθησε»,
+	 * with the e-mail form): the rest is not a question for the log.
+	 *
+	 * @param string          $kind     Kind of remark.
+	 * @param string          $question Visitor's text.
+	 * @param string          $context  Conversation topic.
+	 * @param WP_REST_Request $req      Request.
+	 * @return WP_REST_Response
+	 */
+	private static function smalltalk_response( $kind, $question, $context, WP_REST_Request $req ) {
+		$id    = 0;
+		$token = '';
+		if ( 'complaint' === $kind ) {
+			$token = wp_generate_password( 32, false );
+			$id    = PNChat_Store::log_question(
+				array(
+					'question'   => $question,
+					'status'     => 'unhelpful',
+					'unmatched'  => array( '' !== $context ? $question . ' (' . $context . ')' : $question ),
+					'user_id'    => get_current_user_id(),
+					'token_hash' => hash( 'sha256', $token ),
+					'page_url'   => self::page_url( (string) $req->get_param( 'page' ) ),
+				)
+			);
+		}
+		return rest_ensure_response(
+			array(
+				'id'               => $id,
+				'token'            => $id ? $token : '',
+				'status'           => 'smalltalk',
+				'items'            => array(),
+				'intro'            => PNChat_Smalltalk::reply( $kind, $context ),
+				'topic'            => $context,
+				'message'          => '',
+				'ask_email'        => (bool) $id,
+				'feedback'         => false,
+				'user_email'       => self::user_email(),
+				'show_suggestions' => 'praise' === $kind || 'ok' === $kind,
 			)
 		);
 	}

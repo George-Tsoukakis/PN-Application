@@ -637,6 +637,11 @@
 				save(self.state);
 			}
 			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '' }, true, res, null);
+			// Small talk («ωραίο», «οκ»): offer the suggested questions again.
+			if (res.show_suggestions && (cfg.suggestions || []).length && self.chips.hidden) {
+				self.toggleChips();
+				self.scroll();
+			}
 		}).catch(function (err) {
 			self.typing(false);
 			self.addBot({ text: err.message }, false);

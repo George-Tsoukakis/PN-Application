@@ -35,7 +35,8 @@ no mail is sent (`pre_wp_mail`).
 | `test-ai-guard-1830.php` | The AI medical guard on hand-labelled questions (`fixtures/ai-medical-questions.php`, 80, used for tuning; `fixtures/ai-medical-holdout.php`, 40, written afterwards); the model's own `medical_advice` flag |
 | `test-search-admin-1800.php` | Site search prefilter gives the full scan's results; background re-index; entry topics; assets; admin messages on refused saves, deletes, synonyms and settings |
 | `test-zz-uninstall-1800.php` | Uninstall with and without "keep data" (runs last, re-creates the tables) |
-| `browser-1800.mjs` | Chromium, desktop and phone: e-mail form and feedback survive another page; Greek network errors; suggestions right under the welcome, groups open when they fit; full-screen focus |
+| `test-smalltalk-1900.php` | Small talk: praise, ok, bye and complaints detected (questions that start with praise stay questions); reply in the topic of the conversation, not logged; complaints logged with the e-mail form; texts from Ρυθμίσεις; a trained entry wins |
+| `browser-1800.mjs` | Chromium, desktop and phone: e-mail form and feedback survive another page; Greek network errors; suggestions right under the welcome, groups open when they fit; full-screen focus; small talk brings the suggestions back |
 
 To check the guard on the site's own questions: download the brain with the
 questions (Εγκέφαλος → Λήψη, «Μαζί και τα ερωτήματα»), label them like the

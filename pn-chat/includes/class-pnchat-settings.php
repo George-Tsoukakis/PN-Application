@@ -44,6 +44,11 @@ final class PNChat_Settings {
 			'ai_chat_model'    => 'claude-opus-5-5',
 			'ai_chat_label'    => 'Αυτόματη απάντηση από τις σελίδες μας. Δεν την έχει ελέγξει ακόμα άνθρωπος.',
 			'ai_chat_wait'     => 'Ψάχνω στις σελίδες μας…',
+			'smalltalk_praise'       => 'Χαίρομαι που σας αρέσει! Ρωτήστε με ό,τι άλλο θέλετε.',
+			'smalltalk_praise_topic' => 'Χαίρομαι που σας αρέσει! Θέλετε να μάθετε κάτι ακόμα για: {topic}; Δείτε και τις Συχνές ερωτήσεις.',
+			'smalltalk_ok'           => 'Τέλεια! Αν θέλετε κάτι άλλο, ρωτήστε με.',
+			'smalltalk_bye'          => 'Ευχαριστούμε! Καλή συνέχεια.',
+			'smalltalk_complaint'    => 'Λυπάμαι που δεν σας βοήθησα. Αφήστε το e-mail σας και θα σας απαντήσουμε εμείς σύντομα.',
 			'site_search'      => 1,
 			'site_types'       => 'post, page',
 			'site_exclude'     => '',
@@ -157,10 +162,10 @@ final class PNChat_Settings {
 		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types', 'ai_chat_label', 'ai_chat_wait' ) as $k ) {
 			$out[ $k ] = sanitize_text_field( (string) ( $in[ $k ] ?? '' ) );
 		}
-		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_exclude', 'site_intro', 'site_more' ) as $k ) {
+		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_exclude', 'site_intro', 'site_more', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' ) as $k ) {
 			$out[ $k ] = sanitize_textarea_field( (string) ( $in[ $k ] ?? '' ) );
 		}
-		foreach ( array( 'title', 'fallback', 'unhelpful', 'placeholder' ) as $k ) {
+		foreach ( array( 'title', 'fallback', 'unhelpful', 'placeholder', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' ) as $k ) {
 			if ( '' === $out[ $k ] ) {
 				$out[ $k ] = $d[ $k ];
 			}
