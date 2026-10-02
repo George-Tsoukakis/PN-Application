@@ -454,12 +454,85 @@
 /* ---- suggestions & input -------------------------------------------------- */
 .pnchat__chips {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
+	flex-direction: column;
+	gap: 8px;
+	max-height: 45%;
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	padding: 0 16px 10px;
 }
 
+.pnchat__chip-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.pnchat__chip-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pnchat .pnchat__group {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-height: 40px;
+	padding: 8px 12px;
+	border: 0;
+	border-radius: 10px;
+	background: var(--pnchat-bot);
+	color: var(--pnchat-fg);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	text-align: left;
+	cursor: pointer;
+}
+
+.pnchat .pnchat__group::after {
+	content: "−";
+	margin-left: 8px;
+	font-size: 18px;
+	line-height: 1;
+}
+
+.pnchat .pnchat__group[aria-expanded="false"]::after {
+	content: "+";
+}
+
+.pnchat .pnchat__chip.pnchat__chip--link {
+	display: inline-flex;
+	align-items: center;
+	background: var(--pnchat-accent);
+	color: #fff;
+	text-decoration: none;
+}
+
+.pnchat .pnchat__chip.pnchat__chip--link:hover {
+	background: var(--pnchat-accent);
+	color: #fff;
+	opacity: .9;
+}
+
+.pnchat .pnchat__topics {
+	align-self: flex-start;
+	margin: 0 16px 6px;
+	padding: 4px 0;
+	border: 0;
+	background: none;
+	color: var(--pnchat-accent);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
 .pnchat .pnchat__chip {
+	box-sizing: border-box;
 	min-height: 36px;
 	padding: 6px 12px;
 	border: 1px solid var(--pnchat-accent);

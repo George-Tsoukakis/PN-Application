@@ -28,13 +28,13 @@ final class PNChat_Settings {
 			'placement'        => 'floating', // floating | shortcode.
 			'title'            => 'PharmacyNeeds Βοηθός',
 			'subtitle'         => 'Απαντάμε σε ερωτήσεις για την PharmacyNeeds',
-			'welcome'          => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.',
+			'welcome'          => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds.',
 			'placeholder'      => 'Γράψτε την ερώτησή σας…',
 			'fallback'         => 'Δεν έχουμε πληροφορίες για το συγκεκριμένο ερώτημα. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'partial'          => 'Για το «%s» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'unhelpful'        => 'Λυπούμαστε που δεν βοήθησε. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.',
-			'suggestions'      => "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;",
+			'suggestions'      => "# Ερωτήσεις για το QR ReBuilder\nΤι είναι το QR ReBuilder;\nΠώς χρησιμοποιώ το QR ReBuilder;\nΆνοιγμα του QR ReBuilder | /qr-rebuilder/\n# Ερωτήσεις για το PlanDose\nΤι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;\nΆνοιγμα του PlanDose | /plandose/",
 			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει",
 			'ai_enabled'       => 0,
 			'ai_model'         => 'claude-opus-5-5',
@@ -156,36 +156,119 @@ final class PNChat_Settings {
 	 */
 	public static function migrate() {
 		$version = (int) get_option( 'pnchat_settings_version' );
-		if ( $version >= 3 ) {
+		if ( $version >= 4 ) {
 			return;
 		}
 		if ( $version >= 2 ) {
 			// 1.2.1: QR ReBuilder no longer answered as PlanDose's QR.
+			// 1.3.0: grouped suggestions, shorter welcome, QR ReBuilder how-to.
 			if ( get_option( 'pnchat_seeded' ) ) {
 				PNChat_Seed::upgrade_qr();
 			}
-			update_option( 'pnchat_settings_version', 3, false );
+			self::replace_old_defaults(
+				array(
+					'welcome'     => array( 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.' ),
+					'suggestions' => array( "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;" ),
+				)
+			);
+			update_option( 'pnchat_settings_version', 4, false );
 			return;
 		}
-		$saved = get_option( self::OPTION );
-		if ( is_array( $saved ) ) {
-			$old = array(
-				'subtitle'     => 'Απαντάμε σε ερωτήσεις για το PharmacyNeeds',
-				'welcome'      => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για το PharmacyNeeds και το PlanDose.',
-				'privacy_note' => 'Μη γράφετε στοιχεία ασθενών.',
-			);
-			$new = self::defaults();
-			foreach ( $old as $k => $v ) {
-				if ( isset( $saved[ $k ] ) && $saved[ $k ] === $v ) {
-					$saved[ $k ] = $new[ $k ];
-				}
-			}
-			update_option( self::OPTION, $saved, false );
-		}
+		self::replace_old_defaults(
+			array(
+				'subtitle'     => array( 'Απαντάμε σε ερωτήσεις για το PharmacyNeeds' ),
+				'welcome'      => array( 'Γεια σας! Ρωτήστε με ό,τι θέλετε για το PharmacyNeeds και το PlanDose.', 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.' ),
+				'privacy_note' => array( 'Μη γράφετε στοιχεία ασθενών.' ),
+				'suggestions'  => array( "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;" ),
+			)
+		);
 		if ( get_option( 'pnchat_seeded' ) ) {
 			PNChat_Seed::upgrade_qr();
 		}
-		update_option( 'pnchat_settings_version', 3, false );
+		update_option( 'pnchat_settings_version', 4, false );
+	}
+
+	/**
+	 * Saved settings that still hold an older default text get the current
+	 * default; texts the administrator wrote are kept.
+	 *
+	 * @param array<string,string[]> $old Key => older defaults.
+	 * @return void
+	 */
+	private static function replace_old_defaults( array $old ) {
+		$saved = get_option( self::OPTION );
+		if ( ! is_array( $saved ) ) {
+			return;
+		}
+		$new     = self::defaults();
+		$changed = false;
+		// Textareas come back from the browser with \r\n line ends.
+		$norm = function ( $v ) {
+			return trim( str_replace( "\r\n", "\n", (string) $v ) );
+		};
+		foreach ( $old as $k => $values ) {
+			if ( isset( $saved[ $k ] ) && in_array( $norm( $saved[ $k ] ), array_map( $norm, $values ), true ) ) {
+				$saved[ $k ] = $new[ $k ];
+				$changed     = true;
+			}
+		}
+		if ( $changed ) {
+			update_option( self::OPTION, $saved, false );
+		}
+	}
+
+	/**
+	 * Suggested questions as groups for the widget. One per line; a line
+	 * starting with # starts a group («# Ερωτήσεις για το QR ReBuilder»); a
+	 * line «text | address» is a link button instead of a question.
+	 *
+	 * @param string $text Setting.
+	 * @return array<int,array{title:string,items:array<int,array{text:string,url?:string}>}>
+	 */
+	public static function suggestion_groups( $text ) {
+		$groups = array();
+		$cur    = array(
+			'title' => '',
+			'items' => array(),
+		);
+		$count  = 0;
+		foreach ( PNChat_Store::lines( (string) $text ) as $line ) {
+			if ( '#' === $line[0] ) {
+				if ( $cur['items'] ) {
+					$groups[] = $cur;
+				}
+				$cur = array(
+					'title' => trim( ltrim( $line, '#' ) ),
+					'items' => array(),
+				);
+				continue;
+			}
+			if ( $count >= 40 ) {
+				continue;
+			}
+			$item = array( 'text' => $line );
+			$bar  = strrpos( $line, '|' );
+			if ( false !== $bar ) {
+				$label = trim( substr( $line, 0, $bar ) );
+				$url   = trim( substr( $line, $bar + 1 ) );
+				if ( '' !== $url && '/' === $url[0] && ( ! isset( $url[1] ) || '/' !== $url[1] ) ) {
+					$url = home_url( $url );
+				}
+				$url = esc_url_raw( $url, array( 'http', 'https' ) );
+				if ( '' !== $label && '' !== $url ) {
+					$item = array(
+						'text' => $label,
+						'url'  => $url,
+					);
+				}
+			}
+			$cur['items'][] = $item;
+			++$count;
+		}
+		if ( $cur['items'] ) {
+			$groups[] = $cur;
+		}
+		return $groups;
 	}
 
 	/**

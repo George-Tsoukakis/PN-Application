@@ -67,6 +67,7 @@ final class PNChat_Seed {
 			),
 			self::plandose_qr(),
 			self::qr_rebuilder(),
+			self::qr_howto(),
 			self::qr_which(),
 			array(
 				'kind'      => 'block',
@@ -130,6 +131,22 @@ final class PNChat_Seed {
 	}
 
 	/**
+	 * How QR ReBuilder is used, with the way to its page. Same title and
+	 * first question as in the brain file, so «Προσθήκη» never doubles it.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function qr_howto() {
+		return array(
+			'kind'      => 'answer',
+			'title'     => 'QR ReBuilder: πώς δουλεύει',
+			'phrasings' => array( 'Πώς δουλεύει το QR ReBuilder;', 'Πώς χρησιμοποιώ το QR ReBuilder;', 'Πώς σκανάρω με το QR ReBuilder;', 'Πώς φτιάχνω νέο DataMatrix;', 'Χρειάζομαι scanner;' ),
+			'keywords'  => array(),
+			'answer'    => '<ol><li>Ανοίξτε το <a href="' . esc_url( home_url( '/qr-rebuilder/' ) ) . '">QR ReBuilder</a>.</li><li>Σκανάρετε τον κωδικό με εξωτερικό barcode scanner, ή επικολλάτε τα δεδομένα με το χέρι.</li><li>Ελέγχετε και διορθώνετε τα πεδία PC, SN, LOT και EXP.</li><li>Πατάτε δημιουργία: ο server ελέγχει ξανά τα στοιχεία και φτιάχνει τον νέο GS1 DataMatrix.</li><li>Τον τυπώνετε μαζί με τα στοιχεία του, αντιγράφετε τα δεδομένα ή τον στέλνετε με e-mail.</li></ol>',
+		);
+	}
+
+	/**
 	 * «Τι είναι το QR;»: two different things carry the name.
 	 *
 	 * @return array<string,mixed>
@@ -167,7 +184,7 @@ final class PNChat_Seed {
 			},
 			PNChat_Store::entries( 'answer' )
 		);
-		foreach ( array( self::qr_rebuilder(), self::qr_which() ) as $add ) {
+		foreach ( array( self::qr_rebuilder(), self::qr_howto(), self::qr_which() ) as $add ) {
 			if ( ! in_array( PNChat_Text::fold( $add['title'] ), $titles, true ) ) {
 				$add['active'] = 1;
 				PNChat_Store::save_entry( $add );

@@ -44,13 +44,23 @@ check('panel opens', await panel.isVisible());
 const box = await panel.boundingBox();
 check('panel is full screen on a phone', box && box.width === 390 && box.x === 0, JSON.stringify(box));
 check('welcome shown', (await p.locator('.pnchat__msg--bot').first().innerText()).includes('Γεια σας'));
-check('suggestion chips', (await p.locator('.pnchat__chip').count()) === 3);
+check('welcome text', (await p.locator('.pnchat__msg--bot').first().innerText()).trim() === 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds.');
+const groups = p.locator('.pnchat__group');
+check('suggestion groups', (await groups.count()) === 2 && (await groups.first().innerText()).includes('QR ReBuilder') && (await groups.first().getAttribute('aria-expanded')) === 'true' && (await groups.nth(1).getAttribute('aria-expanded')) === 'false');
+check('link chip opens the QR ReBuilder page', (await p.locator('.pnchat__chip--link').first().getAttribute('href')) === BASE + '/qr-rebuilder/');
 check('input is 16px (no iOS zoom)', (await p.locator('.pnchat__input').evaluate((n) => getComputedStyle(n).fontSize)) === '16px');
 await shot(p, '2-phone-open');
 
-await p.locator('.pnchat__chip').first().click();
+await groups.nth(1).click();
+check('group opens on tap', (await groups.nth(1).getAttribute('aria-expanded')) === 'true');
+await shot(p, '2b-phone-groups');
+await p.getByRole('button', { name: 'Τι είναι το PlanDose;' }).click();
 await p.locator('.pnchat__answer').first().waitFor();
 check('chip asks and answers', (await p.locator('.pnchat__answer').first().innerText()).includes('πλάνα δοσολογίας'));
+check('suggestions hide after a question, «Συχνές ερωτήσεις» brings them back', (await p.locator('.pnchat__chips').isHidden()) && (await p.locator('.pnchat__topics').isVisible()));
+await p.locator('.pnchat__topics').click();
+check('suggestions shown again', await p.locator('.pnchat__chips').isVisible());
+await p.locator('.pnchat__topics').click();
 
 await p.fill('.pnchat__input', 'Τι είναι το PlanDose και ποιοι μπορούν να το χρησιμοποιήσουν;');
 await p.keyboard.press('Enter');

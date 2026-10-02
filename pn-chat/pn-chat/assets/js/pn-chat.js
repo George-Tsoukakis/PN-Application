@@ -131,9 +131,9 @@
 		var form = el('form', { className: 'pnchat__form', onsubmit: function (e) { e.preventDefault(); self.submit(); } }, [this.input, this.sendBtn]);
 
 		this.chips = el('div', { className: 'pnchat__chips', role: 'group', 'aria-label': 'Συχνές ερωτήσεις' });
-		(cfg.suggestions || []).forEach(function (s) {
-			self.chips.appendChild(el('button', { type: 'button', className: 'pnchat__chip', text: s, onclick: function () { self.send(s); } }));
-		});
+		this.buildChips(uid);
+		// Hidden while the suggestions show; after the first question it brings them back.
+		this.topicsBtn = el('button', { type: 'button', className: 'pnchat__topics', 'aria-expanded': 'false', hidden: true, text: 'Συχνές ερωτήσεις', onclick: function () { self.toggleChips(); } });
 
 		var closeBtn = null;
 		if (!this.inline) {
@@ -158,6 +158,7 @@
 			header,
 			this.log,
 			this.chips,
+			this.topicsBtn,
 			form,
 			cfg.privacy ? el('p', { className: 'pnchat__privacy', text: cfg.privacy }) : null
 		]);
@@ -235,6 +236,72 @@
 		this.root.style[left ? 'left' : 'right'] = bottom === null ? '' : Math.max(side, 8) + 'px';
 	};
 
+	/**
+	 * Suggested questions, in groups («# Ερωτήσεις για …» in the settings).
+	 * A titled group opens with one tap (the first one starts open); an item
+	 * with a url is a link to that page instead of a question.
+	 */
+	Chat.prototype.buildChips = function (uid) {
+		var self = this;
+		var groups = cfg.suggestions || [];
+		// Settings saved before groups existed arrive as plain strings.
+		if (groups.length && typeof groups[0] === 'string') {
+			groups = [{ title: '', items: groups.map(function (t) { return { text: t }; }) }];
+		}
+		var firstTitled = true;
+		groups.forEach(function (g, gi) {
+			var list = el('div', { className: 'pnchat__chip-list' });
+			(g.items || []).forEach(function (it) {
+				if (it.url) {
+					list.appendChild(el('a', { className: 'pnchat__chip pnchat__chip--link', href: it.url, text: it.text + ' →' }));
+				} else {
+					list.appendChild(el('button', { type: 'button', className: 'pnchat__chip', text: it.text, onclick: function () { self.send(it.text); } }));
+				}
+			});
+			if (!g.title) {
+				self.chips.appendChild(list);
+				return;
+			}
+			var id = uid + '-g' + gi;
+			var open = firstTitled;
+			firstTitled = false;
+			list.id = id;
+			list.hidden = !open;
+			var head = el('button', {
+				type: 'button',
+				className: 'pnchat__group',
+				'aria-expanded': open ? 'true' : 'false',
+				'aria-controls': id,
+				text: g.title,
+				onclick: function () {
+					var nowOpen = list.hidden;
+					list.hidden = !nowOpen;
+					head.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+				}
+			});
+			self.chips.appendChild(el('div', { className: 'pnchat__chip-group' }, [head, list]));
+		});
+		if (!groups.length) {
+			this.chips.hidden = true;
+		}
+	};
+
+	/** Hides the suggestions (a question was asked) and offers them again. */
+	Chat.prototype.hideChips = function () {
+		this.chips.hidden = true;
+		this.topicsBtn.hidden = !(cfg.suggestions || []).length;
+		this.topicsBtn.setAttribute('aria-expanded', 'false');
+	};
+
+	/** Shows the suggestions again after the conversation started. */
+	Chat.prototype.toggleChips = function () {
+		this.chips.hidden = !this.chips.hidden;
+		this.topicsBtn.setAttribute('aria-expanded', this.chips.hidden ? 'false' : 'true');
+		if (!this.chips.hidden) {
+			this.chips.scrollTop = 0;
+		}
+	};
+
 	Chat.prototype.autosize = function () {
 		this.input.style.height = 'auto';
 		this.input.style.height = Math.min(this.input.scrollHeight, 120) + 'px';
@@ -295,7 +362,7 @@
 			}
 		});
 		if (this.state.messages.length) {
-			this.chips.hidden = true;
+			this.hideChips();
 		}
 	};
 
@@ -376,7 +443,7 @@
 		}
 		this.busy = true;
 		this.sendBtn.disabled = true;
-		this.chips.hidden = true;
+		this.hideChips();
 		this.input.value = '';
 		this.autosize();
 		this.addUser(q, true);

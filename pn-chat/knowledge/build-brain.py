@@ -79,8 +79,8 @@ A('Τι είναι το QR ReBuilder',
   f'έτοιμο για εκτύπωση. Θα το βρείτε {link("/qr-rebuilder/", "εδώ")}.',
   ['rebuilder', 'datamatrix', 'gs1']),
 A('QR ReBuilder: πώς δουλεύει',
-  ['Πώς δουλεύει το QR ReBuilder;', 'Πώς σκανάρω με το QR ReBuilder;', 'Πώς φτιάχνω νέο DataMatrix;', 'Χρειάζομαι scanner;'],
-  '<ol><li>Σκανάρετε τον κωδικό με εξωτερικό barcode scanner, ή επικολλάτε τα δεδομένα με το χέρι.</li>'
+  ['Πώς δουλεύει το QR ReBuilder;', 'Πώς χρησιμοποιώ το QR ReBuilder;', 'Πώς σκανάρω με το QR ReBuilder;', 'Πώς φτιάχνω νέο DataMatrix;', 'Χρειάζομαι scanner;'],
+  f'<ol><li>Ανοίξτε το {link("/qr-rebuilder/", "QR ReBuilder")}.</li><li>Σκανάρετε τον κωδικό με εξωτερικό barcode scanner, ή επικολλάτε τα δεδομένα με το χέρι.</li>'
   '<li>Ελέγχετε και διορθώνετε τα πεδία PC, SN, LOT και EXP.</li>'
   '<li>Πατάτε δημιουργία: ο server ελέγχει ξανά τα στοιχεία και φτιάχνει τον νέο GS1 DataMatrix.</li>'
   '<li>Τον τυπώνετε μαζί με τα στοιχεία του, αντιγράφετε τα δεδομένα ή τον στέλνετε με e-mail.</li></ol>'),

@@ -287,11 +287,27 @@ check( 'migration: entries the admin wrote are untouched', array( 'qr' ) === PNC
 $titles = array_column( PNChat_Store::entries( 'answer' ), 'title' );
 check( 'migration: QR ReBuilder and «which QR» added once', 1 === count( array_keys( $titles, 'Τι είναι το QR ReBuilder', true ) ) && in_array( 'QR: QR ReBuilder ή QR του PlanDose;', $titles, true ) );
 PNChat_Settings::migrate();
-check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 3 === (int) get_option( 'pnchat_settings_version' ) );
+check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 4 === (int) get_option( 'pnchat_settings_version' ) );
 PNChat_Store::delete_entry( $edited );
 $r = PNChat_Brain::matcher( true )->ask( 'Τι είναι το QR-REBUILDER;' );
 check( 'after migration: QR-REBUILDER answered as QR ReBuilder', 'Τι είναι το QR ReBuilder' === ( $r['items'][0]['title'] ?? '' ), wp_json_encode( $r['items'], JSON_UNESCAPED_UNICODE ) );
 PNChat_Brain::import( $qr_before, 'replace', false, false );
+
+// ---- 1.3.0: grouped suggestions ---------------------------------------------------
+$g = PNChat_Settings::suggestion_groups( "Χωρίς ομάδα;\r\n# Ερωτήσεις για το QR ReBuilder\r\nΤι είναι το QR ReBuilder;\r\nΆνοιγμα | /qr-rebuilder/\r\nΈξω | https://example.org/x\r\nΚακό | javascript:alert(1)\r\n# Άδεια ομάδα\r\n" );
+check( 'suggestions: groups and order', 2 === count( $g ) && '' === $g[0]['title'] && 'Ερωτήσεις για το QR ReBuilder' === $g[1]['title'] && 4 === count( $g[1]['items'] ), wp_json_encode( $g, JSON_UNESCAPED_UNICODE ) );
+check( 'suggestions: relative link uses the site address', home_url( '/qr-rebuilder/' ) === ( $g[1]['items'][1]['url'] ?? '' ) && 'Άνοιγμα' === $g[1]['items'][1]['text'] );
+check( 'suggestions: full links kept, javascript: refused', 'https://example.org/x' === ( $g[1]['items'][2]['url'] ?? '' ) && ! isset( $g[1]['items'][3]['url'] ) );
+$keep = get_option( PNChat_Settings::OPTION );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'suggestions' => "Τι είναι το PlanDose;\r\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\r\nΤι διαφέρει το Free από το Pro;", 'welcome' => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.' ) ) );
+update_option( 'pnchat_settings_version', 3 );
+PNChat_Settings::migrate();
+check( 'migration: old suggestions (\\r\\n) and welcome become the new defaults', PNChat_Settings::defaults()['suggestions'] === PNChat_Settings::value( 'suggestions' ) && 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds.' === PNChat_Settings::value( 'welcome' ) );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'suggestions' => "Δική μου ερώτηση;" ) ) );
+update_option( 'pnchat_settings_version', 3 );
+PNChat_Settings::migrate();
+check( 'migration: suggestions the admin wrote are kept', 'Δική μου ερώτηση;' === PNChat_Settings::value( 'suggestions' ) );
+false === $keep ? delete_option( PNChat_Settings::OPTION ) : update_option( PNChat_Settings::OPTION, $keep );
 
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );

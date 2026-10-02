@@ -72,7 +72,7 @@ final class PNChat_Frontend {
 			'welcome'     => (string) $s['welcome'],
 			'placeholder' => (string) $s['placeholder'],
 			'privacy'     => (string) $s['privacy_note'],
-			'suggestions' => array_slice( PNChat_Store::lines( (string) $s['suggestions'] ), 0, 6 ),
+			'suggestions' => PNChat_Settings::suggestion_groups( (string) $s['suggestions'] ),
 			'position'    => (string) $s['position'],
 			'maxLength'   => PNChat_Rest::MAX_QUESTION,
 			// Fixed buttons the chat button must not cover; it sits above them.

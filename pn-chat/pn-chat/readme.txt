@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.2
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,10 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.3.0 =
+* Suggested questions in groups ("# Title" lines) that open with one tap, and link buttons ("Text | /page/"). A "Συχνές ερωτήσεις" button brings them back after the first question.
+* New defaults: a QR ReBuilder group and a PlanDose group, a shorter welcome, and a "how to use QR ReBuilder" entry with a link to its page. Existing sites get them only where the old default texts were never changed.
 
 = 1.2.2 =
 * Training form: a save with a missing question or answer keeps everything typed (and the question it came from) and says which field is missing.
