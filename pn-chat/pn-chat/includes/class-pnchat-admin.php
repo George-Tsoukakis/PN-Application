@@ -630,13 +630,9 @@ final class PNChat_Admin {
 			return 'καμία κλήση ακόμα';
 		}
 		$text = sprintf( '%d κλήσεις, %s tokens εισόδου, %s tokens εξόδου', $calls, number_format_i18n( (int) ( $u['input_tokens'] ?? 0 ) ), number_format_i18n( (int) ( $u['output_tokens'] ?? 0 ) ) );
-		if ( PNChat_AI::DEFAULT_MODEL === PNChat_AI::model() ) {
-			// Claude Opus 5.5 list prices: $4 / MTok input, $20 / MTok output,
-			// $0.20 / MTok cache reads (cache writes are counted as input here).
-			$usd   = ( (int) ( $u['input_tokens'] ?? 0 ) + (int) ( $u['cache_creation_input_tokens'] ?? 0 ) ) * 4 / 1e6
-				+ (int) ( $u['output_tokens'] ?? 0 ) * 20 / 1e6
-				+ (int) ( $u['cache_read_input_tokens'] ?? 0 ) * 0.2 / 1e6;
-			$text .= sprintf( ' (περίπου $%s)', number_format_i18n( $usd, 2 ) );
+		if ( isset( $u['micro_usd'] ) ) {
+			$text .= sprintf( ' (περίπου $%s σε τιμές καταλόγου', number_format_i18n( $u['micro_usd'] / 1e6, 2 ) );
+			$text .= ! empty( $u['unpriced'] ) ? sprintf( '· %d κλήσεις με άλλο μοντέλο δεν μετρήθηκαν)', (int) $u['unpriced'] ) : ')';
 		}
 		return $text;
 	}
@@ -1506,11 +1502,11 @@ final class PNChat_Admin {
 			echo '<p class="description">Πιο ασφαλές: στο <code>wp-config.php</code> γράψτε <code>define( \'PNCHAT_ANTHROPIC_API_KEY\', \'sk-ant-…\' );</code>. Το κλειδί δεν εμφανίζεται ποτέ ξανά εδώ και δεν μπαίνει στο «Εγκέφαλος».</p>';
 		}
 		echo '</td></tr>';
-		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5).' );
+		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5). Φθηνότερα: claude-sonnet-5-5, claude-haiku-4-5.' );
 		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
 		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση.' );
 		$number( 'ai_chat_daily', 'Όριο ανά ημέρα', 'Το πολύ τόσες απαντήσεις AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετά, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
-		$text( 'ai_chat_model', 'Μοντέλο για το chat', 'Προεπιλογή: claude-opus-5-5. Το claude-sonnet-5-5 κοστίζει περίπου το μισό.' );
+		$text( 'ai_chat_model', 'Μοντέλο για το chat', 'Προεπιλογή: claude-opus-5-5 (4 $ / 20 $ ανά εκατομμύριο tokens). Φθηνότερα: claude-sonnet-5-5 (2 $ / 10 $), claude-haiku-4-5 (1 $ / 5 $).' );
 		$text( 'ai_chat_label', 'Ετικέτα πάνω από την απάντηση AI' );
 		$text( 'ai_chat_wait', 'Κείμενο όσο περιμένει' );
 		echo '<tr><th scope="row">Κόστος έως τώρα</th><td>' . esc_html( self::ai_cost_text() ) . '</td></tr>';

@@ -3,7 +3,7 @@
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
  * Description: Our own chat assistant for PharmacyNeeds. It answers only from the knowledge we train it with, with no AI and no third-party services, and logs what it cannot answer so we can reply by e-mail and teach it.
- * Version: 1.5.0
+ * Version: 1.5.1
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.5.0' );
+define( 'PNCHAT_VERSION', '1.5.1' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );

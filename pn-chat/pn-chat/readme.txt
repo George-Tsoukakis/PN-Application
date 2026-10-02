@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.5.1 =
+* claude-haiku-4-5 works as the AI model (it rejects the effort setting and fallbacks, which are no longer sent to it). Cost counter priced per model (Opus 5.5, Sonnet 5.5, Haiku 4.5).
 
 = 1.5.0 =
 * Optional AI answers in the chat: when no trained answer fits but pages of the site are about the question, Claude answers from those pages only; the answer is labelled as automatic and waits in Questions → "Απαντήσεις AI", where "Έλεγχος και έγκριση" opens a prefilled new entry. Daily limit, per-visitor limit, separate chat model; never for trained, refused or page-less questions.

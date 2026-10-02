@@ -97,8 +97,9 @@ final class PNChat_AI {
 		if ( '' === $key ) {
 			return new WP_Error( 'pnchat_ai_key', 'Δεν έχει οριστεί API key (Ρυθμίσεις → AI βοηθός εκπαίδευσης).' );
 		}
-		$body = array(
-			'model'         => '' !== $model ? $model : self::model(),
+		$model = '' !== $model ? $model : self::model();
+		$body  = array(
+			'model'         => $model,
 			'max_tokens'    => 16000,
 			'system'        => $system,
 			'messages'      => array(
@@ -120,16 +121,22 @@ final class PNChat_AI {
 			// Anthropic recommends for that category, instead of failing.
 			'fallbacks'     => 'default',
 		);
+		$headers = array(
+			'content-type'      => 'application/json',
+			'x-api-key'         => $key,
+			'anthropic-version' => self::API_VERSION,
+			'anthropic-beta'    => 'server-side-fallback-2026-07-01',
+		);
+		// Claude Haiku 4.5 takes neither the effort setting nor server-side
+		// fallbacks (no safety classifiers to fall back from).
+		if ( 0 === strpos( $model, 'claude-haiku-' ) ) {
+			unset( $body['output_config']['effort'], $body['fallbacks'], $headers['anthropic-beta'] );
+		}
 		$res  = wp_remote_post(
 			self::ENDPOINT,
 			array(
 				'timeout' => (int) $timeout,
-				'headers' => array(
-					'content-type'      => 'application/json',
-					'x-api-key'         => $key,
-					'anthropic-version' => self::API_VERSION,
-					'anthropic-beta'    => 'server-side-fallback-2026-07-01',
-				),
+				'headers' => $headers,
 				'body'    => wp_json_encode( $body ),
 			)
 		);
@@ -148,7 +155,7 @@ final class PNChat_AI {
 			);
 			return new WP_Error( 'pnchat_ai_status', ( $map[ $code ] ?? 'Σφάλμα του Claude API.' ) . ' (' . $msg . ')' );
 		}
-		self::add_usage( is_array( $data['usage'] ?? null ) ? $data['usage'] : array() );
+		self::add_usage( is_array( $data['usage'] ?? null ) ? $data['usage'] : array(), $model );
 
 		$stop = (string) ( $data['stop_reason'] ?? '' );
 		if ( 'refusal' === $stop ) {
@@ -175,16 +182,42 @@ final class PNChat_AI {
 	 * Adds a call's tokens to the running total shown in the settings.
 	 *
 	 * @param array<string,mixed> $usage API usage object.
+	 * @param string              $model Model id.
 	 * @return void
 	 */
-	private static function add_usage( array $usage ) {
+	private static function add_usage( array $usage, $model = '' ) {
 		$u = get_option( self::USAGE_OPTION, array() );
 		$u = is_array( $u ) ? $u : array();
 		foreach ( array( 'input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens' ) as $k ) {
 			$u[ $k ] = (int) ( $u[ $k ] ?? 0 ) + (int) ( $usage[ $k ] ?? 0 );
 		}
 		$u['calls'] = (int) ( $u['calls'] ?? 0 ) + 1;
+		// Cost at list price, per call, so mixed models add up correctly.
+		$p = self::prices( (string) $model );
+		if ( $p ) {
+			$usd           = ( (int) ( $usage['input_tokens'] ?? 0 ) + (int) ( $usage['cache_creation_input_tokens'] ?? 0 ) ) * $p[0] / 1e6
+				+ (int) ( $usage['output_tokens'] ?? 0 ) * $p[1] / 1e6
+				+ (int) ( $usage['cache_read_input_tokens'] ?? 0 ) * $p[2] / 1e6;
+			$u['micro_usd'] = (int) ( $u['micro_usd'] ?? 0 ) + (int) round( $usd * 1e6 );
+		} else {
+			$u['unpriced'] = (int) ( $u['unpriced'] ?? 0 ) + 1;
+		}
 		update_option( self::USAGE_OPTION, $u, false );
+	}
+
+	/**
+	 * List prices per million tokens: input, output, cache read (USD).
+	 *
+	 * @param string $model Model id.
+	 * @return array{0:float,1:float,2:float}|null
+	 */
+	public static function prices( $model ) {
+		$table = array(
+			'claude-opus-5-5'   => array( 4.0, 20.0, 0.2 ),
+			'claude-sonnet-5-5' => array( 2.0, 10.0, 0.2 ),
+			'claude-haiku-4-5'  => array( 1.0, 5.0, 0.1 ),
+		);
+		return $table[ $model ] ?? null;
 	}
 
 	/**

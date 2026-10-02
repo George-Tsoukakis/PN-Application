@@ -266,6 +266,14 @@ check( 'AI page drafts: invalid dropped, source link added', ! is_wp_error( $d )
 check( 'AI page drafts: existing titles sent to avoid repeats', false !== strpos( json_decode( $req['args']['body'], true )['messages'][0]['content'], 'Τι είναι το PlanDose' ) );
 check( 'AI page: unpublished page refused', is_wp_error( PNChat_AI::drafts_from_page( $p2 ?? 0 ) ) );
 check( 'API key never in the brain download', false === strpos( wp_json_encode( PNChat_Brain::export( true ) ), 'sk-ant-test' ) );
+// Claude Haiku 4.5: no effort, no fallbacks (it rejects both); priced per model.
+delete_option( PNChat_AI::USAGE_OPTION );
+$reply( array( 'found' => false, 'note' => 'x', 'entry' => array( 'title' => '', 'phrasings' => array(), 'keywords' => array(), 'answer' => '', 'source_url' => '' ) ) );
+PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;', 'claude-haiku-4-5' );
+$req = end( $GLOBALS['pnchat_ai_reqs'] );
+$hb  = json_decode( $req['args']['body'], true );
+check( 'Haiku request: no effort, no fallbacks, no beta header, JSON schema kept', 'claude-haiku-4-5' === $hb['model'] && ! isset( $hb['output_config']['effort'] ) && ! isset( $hb['fallbacks'] ) && ! isset( $req['args']['headers']['anthropic-beta'] ) && 'json_schema' === $hb['output_config']['format']['type'], wp_json_encode( $hb['output_config'] ) );
+check( 'cost counted at the model price', 1000 * 1 + 200 * 5 === PNChat_AI::usage()['micro_usd'], wp_json_encode( PNChat_AI::usage() ) );
 remove_filter( 'pre_http_request', $fake, 10 );
 wp_delete_post( $page_id, true );
 delete_option( 'pnchat_ai_key' );
