@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.6.1 =
+* A long answer is shown from its start (with the visitor's question above it) instead of scrolling to the e-mail form at the bottom; the visitor scrolls down to read on.
 
 = 1.6.0 =
 * "New conversation" button (↻) next to the close button: after a confirmation it clears the conversation on the visitor's device and the conversation topic, and shows the welcome and the suggested questions again. The questions stay in the admin log. Shown only when there is a conversation.

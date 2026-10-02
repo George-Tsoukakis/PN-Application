@@ -112,6 +112,13 @@ await p.locator('.pnchat__answer--site').waitFor();
 const siteCard = p.locator('.pnchat__answer--site').first();
 check('site page shown with title and link', (await siteCard.innerText()).includes('Ωράριο φαρμακείων το καλοκαίρι') && (await siteCard.locator('a').count()) === 1);
 await shot(p, '4b-phone-site-search');
+const view = await p.locator('.pnchat__log').evaluate((log) => {
+	const msg = log.querySelector('.pnchat__msg--bot:last-child');
+	const lr = log.getBoundingClientRect();
+	const mr = msg.getBoundingClientRect();
+	return { top: mr.top - lr.top, tall: mr.height > log.clientHeight, atBottom: log.scrollTop + log.clientHeight >= log.scrollHeight - 2 };
+});
+check('new answer shown from its start, not scrolled to the bottom', view.top >= 0 && view.top < 200 && (!view.tall || !view.atBottom), JSON.stringify(view));
 
 await p.reload();
 check('conversation survives page change', (await p.locator('.pnchat__msg--user').count()) === 7);

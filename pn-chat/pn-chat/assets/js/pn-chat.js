@@ -360,6 +360,25 @@
 		this.log.scrollTop = this.log.scrollHeight;
 	};
 
+	/**
+	 * A new answer taller than the chat is shown from its start (with the
+	 * visitor's question above it when that fits), so it is read top-down;
+	 * a short one simply scrolls into view at the bottom.
+	 */
+	Chat.prototype.scrollToStart = function (wrap) {
+		var view = this.log.clientHeight;
+		if (wrap.offsetHeight <= view) {
+			this.scroll();
+			return;
+		}
+		var top = wrap.getBoundingClientRect().top - this.log.getBoundingClientRect().top + this.log.scrollTop;
+		var asked = wrap.previousElementSibling;
+		if (asked && asked.classList.contains('pnchat__msg--user') && asked.offsetHeight < view / 3) {
+			top -= wrap.getBoundingClientRect().top - asked.getBoundingClientRect().top;
+		}
+		this.log.scrollTop = Math.max(0, top - 8);
+	};
+
 	Chat.prototype.restore = function () {
 		var self = this;
 		this.state.messages.forEach(function (m) {
@@ -447,7 +466,11 @@
 		if (keep) {
 			this.remember({ role: 'bot', text: m.text || '', items: m.items || [], message: m.message || '' });
 		}
-		this.scroll();
+		if (live) {
+			this.scrollToStart(wrap);
+		} else {
+			this.scroll();
+		}
 		return wrap;
 	};
 
