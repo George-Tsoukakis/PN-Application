@@ -34,7 +34,7 @@ final class PNChat_Admin {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
-		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'ai_save' ) as $a ) {
+		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'learn_read', 'learn_site', 'learn_control', 'proposal', 'proposals_bulk' ) as $a ) {
 			add_action( 'admin_post_pnchat_' . $a, array( __CLASS__, 'handle_' . $a ) );
 		}
 	}
@@ -49,10 +49,15 @@ final class PNChat_Admin {
 		$counts = PNChat_Store::question_counts();
 		// Waiting for an administrator: e-mails to answer and AI answers to review.
 		$todo   = (int) $counts['email'] + (int) ( $counts['ai'] ?? 0 );
-		$badge  = $todo > 0 ? ' <span class="awaiting-mod count-' . $todo . '"><span class="pending-count">' . $todo . '</span></span>' : '';
+		$props  = PNChat_Learn::count_pending();
+		$bubble = function ( $n ) {
+			return $n > 0 ? ' <span class="awaiting-mod count-' . (int) $n . '"><span class="pending-count">' . (int) $n . '</span></span>' : '';
+		};
+		$badge  = $bubble( $todo );
 
-		add_menu_page( 'PN Chat', 'PN Chat' . $badge, $cap, 'pn-chat', array( __CLASS__, 'page_training' ), 'dashicons-format-chat', 58 );
+		add_menu_page( 'PN Chat', 'PN Chat' . $bubble( $todo + $props ), $cap, 'pn-chat', array( __CLASS__, 'page_training' ), 'dashicons-format-chat', 58 );
 		add_submenu_page( 'pn-chat', 'Εκπαίδευση', 'Εκπαίδευση', $cap, 'pn-chat', array( __CLASS__, 'page_training' ) );
+		add_submenu_page( 'pn-chat', 'Προτάσεις AI', 'Προτάσεις AI' . $bubble( $props ), $cap, 'pn-chat-learn', array( __CLASS__, 'page_learn' ) );
 		add_submenu_page( 'pn-chat', 'Ερωτήματα', 'Ερωτήματα' . $badge, $cap, 'pn-chat-questions', array( __CLASS__, 'page_questions' ) );
 		add_submenu_page( 'pn-chat', 'Απαγορεύσεις', 'Απαγορεύσεις', $cap, 'pn-chat-blocks', array( __CLASS__, 'page_blocks' ) );
 		add_submenu_page( 'pn-chat', 'Εγκέφαλος (αντίγραφο)', 'Εγκέφαλος', $cap, 'pn-chat-brain', array( __CLASS__, 'page_brain' ) );
@@ -177,6 +182,19 @@ final class PNChat_Admin {
 			'ai_partial'   => array( 'error', sprintf( 'Αποθηκεύτηκαν %1$d γνώσεις· %2$d ΔΕΝ αποθηκεύτηκαν (η βάση δεδομένων τις αρνήθηκε). Ζητήστε ξανά πρόταση για τη σελίδα.', $n, absint( self::get( 'failed' ) ) ) ),
 			'ai_error'     => array( 'error', 'AI: ' . sanitize_text_field( self::get( 'err' ) ) ),
 			'ai_expired'   => array( 'error', 'Η πρόταση του AI έληξε (κρατιέται 1 ώρα). Ζητήστε τη ξανά.' ),
+			'learn_queued' => array( 'success', sprintf( 'Μπήκαν %d πηγές για διάβασμα. Το AI τις διαβάζει στο παρασκήνιο, μία-μία· οι προτάσεις εμφανίζονται παρακάτω. Μπορείτε να κλείσετε τη σελίδα.', $n ) ),
+			'learn_none'   => array( 'success', sprintf( 'Δεν υπάρχει κάτι νέο να διαβαστεί: %d σελίδες δεν άλλαξαν από την τελευταία φορά.', $n ) ),
+			'learn_dupe'   => array( 'error', 'Αυτή η πηγή περιμένει ήδη να διαβαστεί.' ),
+			'learn_bad'    => array( 'error', 'Γράψτε μια διεύθυνση που ξεκινά με http:// ή https://, ή επιλέξτε ένα PDF.' ),
+			'learn_stopped' => array( 'success', sprintf( 'Το διάβασμα σταμάτησε· %d πηγές δεν διαβάστηκαν.', $n ) ),
+			'learn_step'   => array( 'success', sprintf( 'Διαβάστηκε μία πηγή: %d νέες προτάσεις.', $n ) ),
+			'learn_busy'   => array( 'error', 'Το AI διαβάζει ήδη μια πηγή στο παρασκήνιο. Περιμένετε λίγο.' ),
+			'learn_limit'  => array( 'error', 'Έφτασε το όριο του μήνα για διάβασμα με AI (Ρυθμίσεις → AI). Οι υπόλοιπες πηγές περιμένουν.' ),
+			'approved'     => array( 'success', 'Η γνώση εγκρίθηκε. Ο βοηθός την ξέρει από τώρα.' ),
+			'merged'       => array( 'success', 'Οι ερωτήσεις προστέθηκαν στην υπάρχουσα γνώση.' ),
+			'rejected'     => array( 'success', 'Η πρόταση απορρίφθηκε. Δεν θα ξαναπροταθεί.' ),
+			'p_approved'   => array( 'success', sprintf( 'Εγκρίθηκαν %d προτάσεις.', $n ) ),
+			'p_rejected'   => array( 'success', sprintf( 'Απορρίφθηκαν %d προτάσεις.', $n ) ),
 			'reindexed'    => array( 'success', sprintf( 'Η ενημέρωση του ευρετηρίου ξεκίνησε: %d σελίδες τώρα, οι υπόλοιπες στο παρασκήνιο (40 ανά λεπτό).', $n ) ),
 		);
 		if ( isset( $map[ $msg ] ) ) {
@@ -276,12 +294,6 @@ final class PNChat_Admin {
 		}
 		echo '<hr class="wp-header-end">';
 		self::notices();
-
-		if ( 'answer' === $kind && '' !== self::get( 'ai_review' ) ) {
-			self::ai_review_screen( self::get( 'ai_review' ) );
-			echo '</div>';
-			return;
-		}
 
 		if ( $edit || $isnew ) {
 			$entry = $edit ? PNChat_Store::entry( $edit ) : null;
@@ -633,7 +645,7 @@ final class PNChat_Admin {
 			echo '<option value="' . (int) $p->ID . '">' . esc_html( get_the_title( $p ) ) . '</option>';
 		}
 		echo '</select> <button class="button">✨ Φτιάξε γνώσεις</button></form>';
-		echo '<p class="description">Χρειάζεται 20–60 δευτερόλεπτα. Κόστος έως τώρα: ' . esc_html( self::ai_cost_text() ) . '.</p></div>';
+		echo '<p class="description">Οι γνώσεις από σελίδες, διευθύνσεις και PDF πηγαίνουν στις <a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-learn' ) ) . '">Προτάσεις AI</a> για έγκριση. Εκεί μπορείτε να ζητήσετε να διαβαστεί και όλο το site. Κόστος έως τώρα: ' . esc_html( self::ai_cost_text() ) . '.</p></div>';
 	}
 
 	/**
@@ -653,44 +665,6 @@ final class PNChat_Admin {
 			$text .= ! empty( $u['unpriced'] ) ? sprintf( '· %d κλήσεις με άλλο μοντέλο δεν μετρήθηκαν)', (int) $u['unpriced'] ) : ')';
 		}
 		return $text;
-	}
-
-	/**
-	 * Review screen for entries drafted from a page.
-	 *
-	 * @param string $key Draft key.
-	 * @return void
-	 */
-	private static function ai_review_screen( $key ) {
-		$d = self::ai_stash_get( $key );
-		echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=pn-chat' ) ) . '">← Εκπαίδευση</a></p>';
-		if ( ! $d || 'page' !== ( $d['type'] ?? '' ) ) {
-			echo '<div class="notice notice-error"><p>Η πρόταση του AI έληξε (κρατιέται 1 ώρα). Ζητήστε τη ξανά.</p></div>';
-			return;
-		}
-		echo '<h2>✨ Προτάσεις του AI από: <a href="' . esc_url( (string) $d['url'] ) . '" target="_blank" rel="noopener">' . esc_html( (string) $d['title'] ) . '</a></h2>';
-		if ( ! $d['entries'] ) {
-			echo '<p>Το AI δεν βρήκε στη σελίδα κάτι χρήσιμο που να μην το ξέρει ήδη ο βοηθός.</p>';
-			return;
-		}
-		echo '<p class="pnchat-intro">Διαβάστε κάθε πρόταση. Τσεκάρετε όσες είναι σωστές και πατήστε «Αποθήκευση επιλεγμένων». Μπορείτε να τις διορθώσετε μετά από την Εκπαίδευση.</p>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		self::form_fields( 'ai_save' );
-		echo '<input type="hidden" name="key" value="' . esc_attr( $key ) . '">';
-		foreach ( $d['entries'] as $i => $e ) {
-			echo '<div class="pnchat-card pnchat-ai-draft"><label><input type="checkbox" name="pick[]" value="' . (int) $i . '" checked> <strong>' . esc_html( (string) $e['title'] ) . '</strong></label>';
-			echo '<div class="pnchat-ai-cols"><div><p class="description">Ερωτήσεις</p><ul class="pnchat-list">';
-			foreach ( (array) $e['phrasings'] as $p ) {
-				echo '<li>' . esc_html( (string) $p ) . '</li>';
-			}
-			echo '</ul>';
-			if ( $e['keywords'] ) {
-				echo '<div class="pnchat-keywords">' . esc_html( implode( ' · ', (array) $e['keywords'] ) ) . '</div>';
-			}
-			echo '</div><div><p class="description">Απάντηση</p><div class="pnchat-test-item">' . wp_kses( PNChat_Brain::render_answer( (string) $e['answer'] ), PNChat_Brain::allowed_html() ) . '</div></div></div></div>';
-		}
-		submit_button( 'Αποθήκευση επιλεγμένων' );
-		echo '</form>';
 	}
 
 	/**
@@ -732,74 +706,356 @@ final class PNChat_Admin {
 	}
 
 	/**
-	 * Drafts entries from a page.
+	 * «Γνώσεις από σελίδα»: the page goes to the reading queue.
 	 *
 	 * @return void
 	 */
 	public static function handle_ai_page() {
 		self::guard( 'pnchat_ai_page' );
-		self::long_request();
 		$id = absint( self::post( 'post_id' ) );
-		$r  = PNChat_AI::drafts_from_page( $id );
-		if ( is_wp_error( $r ) ) {
-			self::back( 'pn-chat', 'ai_error', array( 'err' => $r->get_error_message() ) );
+		if ( ! PNChat_Site_Search::searchable( get_post( $id ) ) ) {
+			self::back( 'pn-chat', 'ai_error', array( 'err' => 'Η σελίδα δεν είναι δημόσια ή είναι εξαιρεμένη από την αναζήτηση.' ) );
 		}
-		$key = self::ai_stash(
+		$n = PNChat_Learn::enqueue(
 			array(
-				'type'    => 'page',
-				'title'   => get_the_title( $id ),
-				'url'     => (string) get_permalink( $id ),
-				'entries' => $r,
-			)
+				array(
+					'type' => 'post',
+					'id'   => $id,
+				),
+			),
+			(string) get_the_title( $id )
 		);
-		self::back( 'pn-chat', '', array( 'ai_review' => $key ) );
+		self::back( 'pn-chat-learn', $n ? 'learn_queued' : 'learn_dupe', array( 'n' => $n ) );
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* AI proposals («Προτάσεις AI»)                                        */
+	/* ------------------------------------------------------------------ */
+
 	/**
-	 * Saves the drafts the admin ticked.
+	 * Προτάσεις AI: what to read, progress, proposals waiting for approval.
 	 *
 	 * @return void
 	 */
-	public static function handle_ai_save() {
-		self::guard( 'pnchat_ai_save' );
-		$d = self::ai_stash_get( self::post( 'key' ) );
-		if ( ! $d || 'page' !== ( $d['type'] ?? '' ) ) {
-			self::back( 'pn-chat', 'ai_expired' );
+	public static function page_learn() {
+		if ( ! current_user_can( self::capability() ) ) {
+			wp_die( esc_html__( 'Δεν έχετε δικαίωμα πρόσβασης.', 'pn-chat' ), 403 );
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() checked it.
-		$pick = isset( $_POST['pick'] ) && is_array( $_POST['pick'] ) ? array_map( 'absint', wp_unslash( $_POST['pick'] ) ) : array();
-		$n      = 0;
-		$failed = 0;
-		$warn   = array();
-		foreach ( $pick as $i ) {
-			if ( ! isset( $d['entries'][ $i ] ) ) {
-				continue;
-			}
-			$e = PNChat_Brain::clean_entry( $d['entries'][ $i ] );
-			if ( ! $e ) {
-				continue;
-			}
-			$e['active'] = 1;
-			$id          = PNChat_Store::save_entry( $e );
-			if ( $id ) {
-				++$n;
-				$warn[ $id ] = $e['phrasings'];
+		$queue = PNChat_Learn::queue();
+		$state = PNChat_Learn::state();
+		$live  = $queue && '' === $state['paused'];
+		if ( $live ) {
+			// The reading goes on in the background; the page follows it.
+			PNChat_Learn::schedule();
+			// Reloads every 20 s to show new proposals, but never while one
+			// is being edited.
+			echo '<script>(function(){var dirty=false;document.addEventListener("input",function(){dirty=true;});setInterval(function(){var a=document.activeElement;if(!dirty&&!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))){location.reload();}},20000);})();</script>';
+		}
+		echo '<div class="wrap pnchat-admin"><h1>✨ Προτάσεις AI</h1>';
+		self::notices();
+		echo '<p class="pnchat-intro">Το AI (Claude) διαβάζει σελίδες του site σας, μια διεύθυνση ή ένα PDF (π.χ. εγχειρίδιο) και <strong>προτείνει</strong> γνώσεις. Οι προτάσεις περιμένουν εδώ: <strong>τίποτα δεν φτάνει στο chat πριν πατήσετε «Έγκριση»</strong>. Το chat συνεχίζει να απαντά χωρίς AI, μόνο από τις εγκεκριμένες γνώσεις.</p>';
+
+		if ( ! PNChat_Learn::available() ) {
+			echo '<div class="notice notice-info inline"><p>Για να διαβάζει το AI, βάλτε API key της Anthropic και ενεργοποιήστε το AI στις <a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-settings#pnchat-ai' ) ) . '">Ρυθμίσεις</a>.</p></div>';
+		} else {
+			echo '<div class="pnchat-card"><h2>Τι να διαβάσει</h2>';
+			echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="pnchat-inline-form">';
+			self::form_fields( 'learn_read' );
+			echo '<label for="pnchat-learn-url"><strong>Διεύθυνση:</strong></label> <input id="pnchat-learn-url" type="url" name="url" class="regular-text" placeholder="https://… σελίδα ή PDF"> ';
+			echo '<label for="pnchat-learn-pdf"><strong>ή PDF:</strong></label> <input id="pnchat-learn-pdf" type="file" name="pdf" accept="application/pdf,.pdf"> ';
+			echo '<button class="button button-primary">✨ Διάβασε</button></form>';
+			echo '<p class="description">PDF έως 20 MB και έως 100 σελίδες περίπου. Το AI διαβάζει και πίνακες και εικόνες του PDF.</p>';
+
+			$count = (int) PNChat_Site_Search::count();
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="pnchat-inline-form" style="margin-top:12px">';
+			self::form_fields( 'learn_site' );
+			echo '<button class="button">✨ Διάβασε όλο το site' . ( $count ? ' (' . (int) $count . ' σελίδες)' : '' ) . '</button> ';
+			echo '<label><input type="checkbox" name="changed_only" value="1" checked> μόνο όσες είναι νέες ή άλλαξαν από την τελευταία φορά</label></form>';
+			printf(
+				'<p class="description">Αυτόν τον μήνα διαβάστηκαν %1$d από %2$d πηγές (όριο στις Ρυθμίσεις). Κόστος AI έως τώρα: %3$s.</p></div>',
+				(int) PNChat_Learn::used_this_month(),
+				(int) PNChat_Learn::monthly_limit(),
+				esc_html( self::ai_cost_text() )
+			);
+		}
+
+		self::learn_progress( $queue, $state );
+		self::proposals_list();
+		echo '</div>';
+	}
+
+	/**
+	 * Progress of the reading and its errors.
+	 *
+	 * @param array<int,array<string,mixed>> $queue Waiting jobs.
+	 * @param array<string,mixed>            $state Progress.
+	 * @return void
+	 */
+	private static function learn_progress( array $queue, array $state ) {
+		if ( ! $queue && ! $state['total'] ) {
+			return;
+		}
+		echo '<div class="pnchat-card"><h2>' . ( $queue ? 'Διάβασμα σε εξέλιξη' : 'Τελευταίο διάβασμα' ) . '</h2>';
+		printf(
+			'<p><strong>%1$s</strong><br>Διαβάστηκαν %2$d από %3$d πηγές · %4$d νέες προτάσεις%5$s.</p>',
+			esc_html( (string) $state['label'] ),
+			(int) $state['done'],
+			(int) $state['total'],
+			(int) $state['proposals'],
+			$state['skipped'] ? ' · ' . (int) $state['skipped'] . ' παραλείφθηκαν (υπάρχουν ήδη ή τις είχατε απορρίψει)' : ''
+		);
+		if ( $queue ) {
+			$total = max( 1, (int) $state['total'] );
+			echo '<progress max="' . (int) $total . '" value="' . (int) $state['done'] . '" style="width:100%;max-width:600px"></progress>';
+			if ( 'limit' === $state['paused'] ) {
+				echo '<p class="pnchat-warn">Σταμάτησε: έφτασε το όριο του μήνα (Ρυθμίσεις → «Όριο διαβάσματος ανά μήνα»). Οι υπόλοιπες ' . count( $queue ) . ' πηγές περιμένουν.</p>';
+			} elseif ( 'off' === $state['paused'] ) {
+				echo '<p class="pnchat-warn">Σταμάτησε: το AI είναι απενεργοποιημένο ή δεν έχει API key.</p>';
 			} else {
-				++$failed;
+				echo '<p class="description">Το AI διαβάζει στο παρασκήνιο, μία πηγή τη φορά (μια σελίδα θέλει περίπου 20–60 δευτερόλεπτα, ένα PDF μερικά λεπτά). Η σελίδα ανανεώνεται μόνη της· μπορείτε και να την κλείσετε.</p>';
+			}
+			$next = array_map( array( 'PNChat_Learn', 'job_label' ), array_slice( $queue, 0, 5 ) );
+			echo '<p class="description">Επόμενες: ' . esc_html( implode( ' · ', $next ) ) . ( count( $queue ) > 5 ? ' …' : '' ) . '</p>';
+			echo '<p><a class="button" href="' . esc_url( self::action_url( 'learn_control', array( 'do' => 'step' ) ) ) . '">Συνέχεια τώρα</a> ';
+			echo '<a class="button" href="' . esc_url( self::action_url( 'learn_control', array( 'do' => 'stop' ) ) ) . '" onclick="return confirm(\'Να σταματήσει το διάβασμα; Οι προτάσεις που έγιναν μένουν.\')">Διακοπή</a></p>';
+			echo '<p class="description">Αν δεν προχωρά (π.χ. το WP-Cron είναι κλειστό στον server), πατήστε «Συνέχεια τώρα»: διαβάζει την επόμενη πηγή αμέσως.</p>';
+		}
+		if ( $state['errors'] ) {
+			echo '<details><summary>Πηγές που δεν διαβάστηκαν (' . count( $state['errors'] ) . ')</summary><ul class="pnchat-list">';
+			foreach ( $state['errors'] as $e ) {
+				echo '<li><strong>' . esc_html( (string) $e['source'] ) . '</strong>: ' . esc_html( (string) $e['error'] ) . '</li>';
+			}
+			echo '</ul></details>';
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * The proposals waiting for approval.
+	 *
+	 * @return void
+	 */
+	private static function proposals_list() {
+		$total = PNChat_Learn::count_pending();
+		$per   = 20;
+		$paged = max( 1, absint( self::get( 'paged' ) ) );
+		echo '<h2>Προτάσεις που περιμένουν έγκριση (' . (int) $total . ')</h2>';
+		if ( ! $total ) {
+			echo '<p>Δεν υπάρχουν προτάσεις. Ζητήστε από το AI να διαβάσει μια σελίδα, μια διεύθυνση ή ένα PDF.</p>';
+			return;
+		}
+		echo '<p class="pnchat-intro">Διαβάστε κάθε πρόταση και διορθώστε ό,τι χρειάζεται. «Έγκριση» = γίνεται γνώση και ο βοηθός την απαντά από τώρα. «Απόρριψη» = δεν θα ξαναπροταθεί.</p>';
+		echo '<form id="pnchat-bulk" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="pnchat-inline-form">';
+		self::form_fields( 'proposals_bulk' );
+		echo '<input type="hidden" name="paged" value="' . (int) $paged . '">';
+		echo '<label><input type="checkbox" onclick="document.querySelectorAll(\'.pnchat-pick\').forEach(function(c){c.checked=this.checked}.bind(this))"> Όλες σε αυτή τη σελίδα</label> ';
+		echo '<button class="button" name="do" value="approve">✔ Έγκριση επιλεγμένων</button> ';
+		echo '<button class="button" name="do" value="reject" onclick="return confirm(\'Να απορριφθούν οι επιλεγμένες;\')">✖ Απόρριψη επιλεγμένων</button></form>';
+
+		foreach ( PNChat_Learn::pending( $paged, $per ) as $p ) {
+			$id = (int) $p['id'];
+			$e  = $p['entry'];
+			echo '<div class="pnchat-card pnchat-ai-draft" id="pnchat-p-' . (int) $id . '">';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			self::form_fields( 'proposal' );
+			echo '<input type="hidden" name="id" value="' . (int) $id . '"><input type="hidden" name="paged" value="' . (int) $paged . '">';
+			echo '<p><label><input type="checkbox" class="pnchat-pick" name="ids[]" value="' . (int) $id . '" form="pnchat-bulk"> </label>';
+			echo '<input type="text" name="title" class="large-text" style="max-width:640px;font-weight:600" value="' . esc_attr( (string) ( $e['title'] ?? '' ) ) . '" aria-label="Τίτλος"></p>';
+			$from = '' !== (string) $p['source_url']
+				? '<a href="' . esc_url( (string) $p['source_url'] ) . '" target="_blank" rel="noopener">' . esc_html( (string) $p['source_title'] ) . '</a>'
+				: esc_html( (string) $p['source_title'] );
+			echo '<p class="description">Από: ' . $from . ' · ' . esc_html( self::date( (string) $p['created_at'] ) ) . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
+			$notes = PNChat_Store::lines( (string) $p['note'] );
+			if ( $notes ) {
+				echo '<ul class="pnchat-list pnchat-warn">';
+				foreach ( $notes as $n ) {
+					echo '<li>' . esc_html( $n ) . '</li>';
+				}
+				echo '</ul>';
+			}
+			echo '<div class="pnchat-ai-cols"><div>';
+			echo '<p class="description"><label for="pnchat-pq-' . (int) $id . '">Ερωτήσεις (μία ανά γραμμή)</label></p><textarea id="pnchat-pq-' . (int) $id . '" name="phrasings" rows="7" class="large-text">' . esc_textarea( implode( "\n", (array) ( $e['phrasings'] ?? array() ) ) ) . '</textarea>';
+			echo '<p class="description"><label for="pnchat-pk-' . (int) $id . '">Λέξεις-κλειδιά (προαιρετικά, μία ανά γραμμή)</label></p><textarea id="pnchat-pk-' . (int) $id . '" name="keywords" rows="2" class="large-text">' . esc_textarea( implode( "\n", (array) ( $e['keywords'] ?? array() ) ) ) . '</textarea>';
+			echo '</div><div>';
+			echo '<p class="description">Απάντηση όπως θα φαίνεται</p><div class="pnchat-test-item">' . wp_kses( PNChat_Brain::render_answer( (string) ( $e['answer'] ?? '' ) ), PNChat_Brain::allowed_html() ) . '</div>';
+			echo '<details><summary>Διόρθωση απάντησης (HTML)</summary><textarea name="answer" rows="8" class="large-text code">' . esc_textarea( (string) ( $e['answer'] ?? '' ) ) . '</textarea></details>';
+			echo '</div></div><p>';
+			echo '<button class="button button-primary" name="do" value="approve">✔ Έγκριση</button> ';
+			$similar = $p['similar_id'] ? PNChat_Store::entry( (int) $p['similar_id'] ) : null;
+			if ( $similar ) {
+				echo '<button class="button" name="do" value="merge">+ Προσθήκη των ερωτήσεων στη «' . esc_html( (string) $similar['title'] ) . '»</button> ';
+			}
+			echo '<button class="button button-link-delete" name="do" value="reject">✖ Απόρριψη</button></p>';
+			echo '</form></div>';
+		}
+		$pages = (int) ceil( $total / $per );
+		if ( $pages > 1 ) {
+			echo '<p>';
+			for ( $i = 1; $i <= $pages; $i++ ) {
+				echo $i === $paged ? '<strong>' . (int) $i . '</strong> ' : '<a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-learn&paged=' . $i ) ) . '">' . (int) $i . '</a> ';
+			}
+			echo '</p>';
+		}
+	}
+
+	/**
+	 * «Διάβασε»: a web address or an uploaded PDF goes to the queue.
+	 *
+	 * @return void
+	 */
+	public static function handle_learn_read() {
+		self::guard( 'pnchat_learn_read' );
+		$jobs  = array();
+		$label = array();
+		// The temporary path comes from PHP; the name is cleaned in store_upload().
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- guard() checked the nonce.
+		$f = isset( $_FILES['pdf'] ) && is_array( $_FILES['pdf'] ) ? $_FILES['pdf'] : null;
+		if ( $f && UPLOAD_ERR_NO_FILE !== (int) $f['error'] ) {
+			if ( UPLOAD_ERR_OK !== (int) $f['error'] ) {
+				$err = in_array( (int) $f['error'], array( UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE ), true )
+					? 'Το PDF ξεπερνά το όριο ανεβάσματος του server (' . size_format( wp_max_upload_size() ) . ').'
+					: 'Το PDF δεν ανέβηκε (σφάλμα ' . (int) $f['error'] . ').';
+				self::back( 'pn-chat-learn', 'ai_error', array( 'err' => $err ) );
+			}
+			$job = PNChat_Learn::store_upload( (string) $f['tmp_name'], (string) $f['name'] );
+			if ( is_wp_error( $job ) ) {
+				self::back( 'pn-chat-learn', 'ai_error', array( 'err' => $job->get_error_message() ) );
+			}
+			$jobs[]  = $job;
+			$label[] = $job['name'];
+		}
+		$url = esc_url_raw( trim( self::post( 'url' ) ), array( 'http', 'https' ) );
+		if ( '' !== $url ) {
+			$jobs[]  = array(
+				'type' => 'url',
+				'url'  => $url,
+			);
+			$label[] = $url;
+		}
+		if ( ! $jobs ) {
+			self::back( 'pn-chat-learn', 'learn_bad' );
+		}
+		$n = PNChat_Learn::enqueue( $jobs, implode( ' · ', $label ) );
+		self::back( 'pn-chat-learn', $n ? 'learn_queued' : 'learn_dupe', array( 'n' => $n ) );
+	}
+
+	/**
+	 * «Διάβασε όλο το site».
+	 *
+	 * @return void
+	 */
+	public static function handle_learn_site() {
+		self::guard( 'pnchat_learn_site' );
+		$changed = '1' === self::post( 'changed_only' );
+		$r       = PNChat_Learn::enqueue_site( $changed, $changed ? 'Σελίδες του site που άλλαξαν' : 'Όλο το site' );
+		if ( $r['added'] ) {
+			self::back( 'pn-chat-learn', 'learn_queued', array( 'n' => $r['added'] ) );
+		}
+		self::back( 'pn-chat-learn', 'learn_none', array( 'n' => $r['unchanged'] ) );
+	}
+
+	/**
+	 * «Συνέχεια τώρα» and «Διακοπή».
+	 *
+	 * @return void
+	 */
+	public static function handle_learn_control() {
+		self::guard( 'pnchat_learn_control' );
+		if ( 'stop' === self::get( 'do' ) ) {
+			self::back( 'pn-chat-learn', 'learn_stopped', array( 'n' => PNChat_Learn::stop() ) );
+		}
+		self::long_request();
+		$r = PNChat_Learn::process_next();
+		PNChat_Learn::schedule();
+		$map = array(
+			'done'  => array( 'learn_step', array( 'n' => $r['added'] ) ),
+			'error' => array( 'ai_error', array( 'err' => $r['error'] ) ),
+			'busy'  => array( 'learn_busy', array() ),
+			'limit' => array( 'learn_limit', array() ),
+			'off'   => array( 'ai_error', array( 'err' => 'Το AI είναι απενεργοποιημένο ή δεν έχει API key (Ρυθμίσεις).' ) ),
+		);
+		$go  = $map[ $r['status'] ] ?? array( '', array() );
+		self::back( 'pn-chat-learn', $go[0], $go[1] );
+	}
+
+	/**
+	 * Approve, merge or reject one proposal.
+	 *
+	 * @return void
+	 */
+	public static function handle_proposal() {
+		self::guard( 'pnchat_proposal' );
+		$id    = absint( self::post( 'id' ) );
+		$args  = array( 'paged' => max( 1, absint( self::post( 'paged' ) ) ) );
+		$p     = PNChat_Learn::proposal( $id );
+		if ( ! $p || 'pending' !== $p['status'] ) {
+			self::back( 'pn-chat-learn', 'not_found', $args );
+		}
+		$phrasings = PNChat_Store::lines( sanitize_textarea_field( self::post( 'phrasings' ) ) );
+		$do        = self::post( 'do' );
+		if ( 'reject' === $do ) {
+			$ok = PNChat_Learn::set_status( $id, 'rejected' );
+			self::back( 'pn-chat-learn', $ok ? 'rejected' : 'save_failed', $args );
+		}
+		if ( 'merge' === $do ) {
+			$saved = PNChat_Learn::merge( $id, $phrasings );
+			if ( ! $saved ) {
+				self::back( 'pn-chat-learn', 'save_failed', $args );
+			}
+			self::warn_conflicts( $saved, $phrasings );
+			self::back( 'pn-chat-learn', 'merged', $args );
+		}
+		$answer = wp_kses( PNChat_Brain::unescape_pasted_html( self::post( 'answer' ) ), PNChat_Brain::allowed_html() );
+		$entry  = array(
+			'kind'      => 'answer',
+			'title'     => sanitize_text_field( self::post( 'title' ) ),
+			'phrasings' => $phrasings,
+			'keywords'  => PNChat_Store::lines( sanitize_textarea_field( self::post( 'keywords' ) ) ),
+			'answer'    => $answer,
+			'active'    => 1,
+		);
+		if ( ! $phrasings || '' === trim( wp_strip_all_tags( $answer ) ) ) {
+			self::back( 'pn-chat-learn', $phrasings ? 'empty_ans' : 'empty_phr', $args );
+		}
+		$saved = PNChat_Learn::approve( $id, $entry );
+		if ( ! $saved ) {
+			self::back( 'pn-chat-learn', 'save_failed', $args );
+		}
+		self::warn_conflicts( $saved, $phrasings );
+		self::back( 'pn-chat-learn', 'approved', $args );
+	}
+
+	/**
+	 * Approve or reject the ticked proposals as they are.
+	 *
+	 * @return void
+	 */
+	public static function handle_proposals_bulk() {
+		self::guard( 'pnchat_proposals_bulk' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() checked it.
+		$ids    = isset( $_POST['ids'] ) && is_array( $_POST['ids'] ) ? array_map( 'absint', wp_unslash( $_POST['ids'] ) ) : array();
+		$reject = 'reject' === self::post( 'do' );
+		$n      = 0;
+		$warn   = array();
+		foreach ( array_unique( $ids ) as $id ) {
+			if ( $reject ) {
+				$p = PNChat_Learn::proposal( $id );
+				if ( $p && 'pending' === $p['status'] && PNChat_Learn::set_status( $id, 'rejected' ) ) {
+					++$n;
+				}
+				continue;
+			}
+			$saved = PNChat_Learn::approve( $id );
+			if ( $saved ) {
+				++$n;
+				$e             = PNChat_Store::entry( $saved );
+				$warn[ $saved ] = $e ? (array) $e['phrasings'] : array();
 			}
 		}
 		foreach ( $warn as $id => $phrasings ) {
 			self::warn_conflicts( $id, $phrasings );
 		}
-		delete_transient( 'pnchat_ai_' . get_current_user_id() . '_' . sanitize_key( self::post( 'key' ) ) );
-		self::back(
-			'pn-chat',
-			$failed ? 'ai_partial' : 'ai_saved',
-			array(
-				'n'      => $n,
-				'failed' => $failed,
-			)
-		);
+		self::back( 'pn-chat-learn', $reject ? 'p_rejected' : 'p_approved', array( 'n' => $n ) );
 	}
 
 	/**
@@ -1558,7 +1814,7 @@ final class PNChat_Admin {
 		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα. Διαβάζεται το κείμενο της σελίδας· ό,τι βγάζουν shortcodes (π.χ. φόρμες, λίστες προϊόντων) δεν διαβάζεται. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a></p>';
 
 		echo '<h2 id="pnchat-ai">✨ AI βοηθός εκπαίδευσης (Claude)</h2>';
-		echo '<p class="description">Στο wp-admin: το AI διαβάζει σελίδες του site και προτείνει γνώσεις, που εγκρίνετε εσείς. Στο δημόσιο chat απαντά μόνο αν ενεργοποιήσετε παρακάτω το «AI και μέσα στο chat». Στο Claude στέλνονται σελίδες του δημόσιου site και το κείμενο της ερώτησης· τα πεδία e-mail και ονόματος του επισκέπτη δεν στέλνονται, και e-mail, τηλέφωνα και ΑΜΚΑ γραμμένα μέσα στην ερώτηση αντικαθίστανται πριν την αποστολή. Χρεώνεται ανά χρήση στον λογαριασμό σας στο console.anthropic.com.</p>';
+		echo '<p class="description">Στο wp-admin: το AI διαβάζει σελίδες του site, διευθύνσεις και PDF και προτείνει γνώσεις (μενού «Προτάσεις AI»), που εγκρίνετε εσείς. Στο δημόσιο chat απαντά μόνο αν ενεργοποιήσετε παρακάτω το «AI και μέσα στο chat». Στο Claude στέλνονται σελίδες του δημόσιου site και το κείμενο της ερώτησης· τα πεδία e-mail και ονόματος του επισκέπτη δεν στέλνονται, και e-mail, τηλέφωνα και ΑΜΚΑ γραμμένα μέσα στην ερώτηση αντικαθίστανται πριν την αποστολή. Χρεώνεται ανά χρήση στον λογαριασμό σας στο console.anthropic.com.</p>';
 		echo '<table class="form-table" role="presentation">';
 		$check( 'ai_enabled', 'AI', 'Ενεργό (κουμπιά «✨ Πρόταση με AI» στην Εκπαίδευση και στα Ερωτήματα)' );
 		echo '<tr><th scope="row"><label for="pnchat-ai_key">API key</label></th><td>';
@@ -1573,6 +1829,8 @@ final class PNChat_Admin {
 		}
 		echo '</td></tr>';
 		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5). Φθηνότερα: claude-sonnet-5-5, claude-haiku-4-5.' );
+		$number( 'ai_learn_monthly', 'Όριο διαβάσματος ανά μήνα', 'Το πολύ τόσες πηγές (σελίδες, διευθύνσεις ή PDF) διαβάζει το AI τον μήνα για τις «Προτάσεις AI» (αυτόν τον μήνα: ' . PNChat_Learn::used_this_month() . '). Μια σελίδα κοστίζει περίπου 0,02–0,10 $, ένα PDF 40 σελίδων περίπου 0,50–1,50 $ με το προεπιλεγμένο μοντέλο.' );
+		$check( 'ai_learn_weekly', 'Κάθε εβδομάδα', 'Ξαναδιάβαζε μόνο του, μία φορά την εβδομάδα, τις σελίδες του site που άλλαξαν ή είναι καινούριες. Οι νέες γνώσεις μπαίνουν στις Προτάσεις· δεν φτάνουν στο chat χωρίς έγκριση.' );
 		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
 		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση εμφανίζεται ΑΜΕΣΩΣ, με την ετικέτα παρακάτω, χωρίς να την έχει δει άνθρωπος, και μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση. Το AI απαντά ΜΟΝΟ σε ερωτήσεις για τα εργαλεία του site (ένα από τα «Θέματα συζήτησης» ή λέξεις όπως εκτύπωση, ετικέτα, πλάνο, λογαριασμός), όχι κοντά σε κάποια Απαγόρευση και χωρίς ιατρικό σήμα (π.χ. «πόσα χάπια», «παρενέργειες», «500mg», «φάρμακο για τον πόνο»)· και το ίδιο το AI δηλώνει αν η ερώτηση ζητά ιατρική συμβουλή, οπότε δεν απαντά. Όλες οι άλλες ερωτήσεις παίρνουν τις σελίδες του site και τη φόρμα e-mail, όπως χωρίς AI.' );
 		$number( 'ai_chat_daily', 'Όριο κλήσεων ανά ημέρα', 'Το πολύ τόσες κλήσεις στο AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετράει κάθε κλήση που έφτασε στο Claude, και όταν δεν βρήκε απάντηση· όσες δεν έφτασαν (σφάλμα σύνδεσης ή κλειδιού) δεν μετράνε. Μετά το όριο, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
@@ -1649,6 +1907,7 @@ final class PNChat_Admin {
 			PNChat_Site_Search::rebuild();
 		}
 		PNChat_Store::bump();
+		PNChat_Learn::sync_weekly();
 		self::back( 'pn-chat-settings', $msg );
 	}
 }

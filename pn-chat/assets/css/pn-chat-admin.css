@@ -187,3 +187,21 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+.pnchat-admin .pnchat-warn {
+	padding: 6px 10px 6px 28px;
+	background: #fcf9e8;
+	border-left: 4px solid #dba617;
+	color: #50410a;
+}
+
+.pnchat-admin p.pnchat-warn {
+	padding-left: 10px;
+}
+
+.pnchat-admin .pnchat-ai-draft .button {
+	height: auto;
+	white-space: normal;
+	text-align: left;
+	margin-bottom: 4px;
+}

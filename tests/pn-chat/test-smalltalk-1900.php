@@ -92,7 +92,18 @@ list( , $r ) = pnt_rest( '/ask', array( 'question' => 'καληνύχτα', 'con
 pnt_same( array( 'smalltalk', false ), array( $r['status'] ?? null, $r['show_suggestions'] ?? null ), 'bye: small talk, no suggestions' );
 
 // A follow-up question after praise still uses the topic.
-list( , $r ) = pnt_rest( '/ask', array( 'question' => 'ωραία, τι κάνει;', 'context' => 'QR ReBuilder' ) );
+PNChat_Store::save_entry(
+	array(
+		'kind'      => 'answer',
+		'title'     => 'Κόστος QR ReBuilder',
+		'phrasings' => array( 'Είναι δωρεάν το QR ReBuilder;', 'Πόσο κοστίζει το QR ReBuilder;' ),
+		'keywords'  => array(),
+		'answer'    => 'Είναι δωρεάν.',
+		'active'    => 1,
+	)
+);
+PNChat_Brain::matcher( true );
+list( , $r ) = pnt_rest( '/ask', array( 'question' => 'Τέλεια! Είναι δωρεάν;', 'context' => 'QR ReBuilder' ) );
 pnt_same( 'answered', $r['status'] ?? null, 'praise + question: answered in the topic' );
 
 // ---- complaint ----------------------------------------------------------------

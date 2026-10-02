@@ -143,14 +143,15 @@ final class PNChat_AI {
 	/**
 	 * Calls the Messages API and returns the decoded JSON answer.
 	 *
-	 * @param string              $system System prompt.
-	 * @param string              $user   User message.
-	 * @param array<string,mixed> $schema  JSON schema of the answer.
-	 * @param string              $model   Model id ('' = the setting).
-	 * @param int                 $timeout Seconds.
+	 * @param string                    $system     System prompt.
+	 * @param string|array<int,mixed>   $user       User message: text, or content blocks (a PDF document and text).
+	 * @param array<string,mixed>       $schema     JSON schema of the answer.
+	 * @param string                    $model      Model id ('' = the setting).
+	 * @param int                       $timeout    Seconds.
+	 * @param int                       $max_tokens Longest answer.
 	 * @return array<string,mixed>|WP_Error
 	 */
-	public static function call( $system, $user, array $schema, $model = '', $timeout = 180 ) {
+	public static function call( $system, $user, array $schema, $model = '', $timeout = 180, $max_tokens = 16000 ) {
 		$key = self::api_key();
 		if ( '' === $key ) {
 			return new WP_Error( 'pnchat_ai_key', 'Δεν έχει οριστεί API key (Ρυθμίσεις → AI βοηθός εκπαίδευσης).' );
@@ -158,7 +159,7 @@ final class PNChat_AI {
 		$model = '' !== $model ? $model : self::model();
 		$body  = array(
 			'model'         => $model,
-			'max_tokens'    => 16000,
+			'max_tokens'    => (int) $max_tokens,
 			'system'        => $system,
 			'messages'      => array(
 				array(
@@ -230,7 +231,7 @@ final class PNChat_AI {
 			return new WP_Error( 'pnchat_ai_refusal', 'Το Claude αρνήθηκε να απαντήσει σε αυτό το αίτημα.' );
 		}
 		if ( 'max_tokens' === $stop ) {
-			return new WP_Error( 'pnchat_ai_long', 'Η απάντηση κόπηκε (πολύ μεγάλη). Δοκιμάστε με μικρότερη σελίδα.' );
+			return new WP_Error( 'pnchat_ai_long', 'Η απάντηση κόπηκε (πολύ μεγάλη). Δοκιμάστε με μικρότερη σελίδα ή μικρότερο PDF.' );
 		}
 		// Thinking blocks may come first: read the text block.
 		$text = '';
@@ -722,16 +723,15 @@ final class PNChat_AI {
 	}
 
 	/**
-	 * Drafts entries covering one page of the site.
+	 * Drafts entries from a source: a page of the site, a web page or a PDF
+	 * (sent to Claude as a document, so it also reads tables and pictures).
 	 *
-	 * @param int $post_id Page id.
-	 * @return array<int,array<string,mixed>>|WP_Error
+	 * @param array<string,mixed> $src Source from PNChat_Learn::load_source().
+	 * @return array<int,array<string,mixed>>|WP_Error Clean entries.
 	 */
-	public static function drafts_from_page( $post_id ) {
-		$post = get_post( $post_id );
-		if ( ! PNChat_Site_Search::searchable( $post ) ) {
-			return new WP_Error( 'pnchat_ai_page', 'Η σελίδα δεν είναι δημόσια ή είναι εξαιρεμένη από την αναζήτηση.' );
-		}
+	public static function drafts_from_source( array $src ) {
+		$is_pdf = '' !== (string) ( $src['pdf'] ?? '' );
+		$max    = $is_pdf ? 25 : 8;
 		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
@@ -743,20 +743,44 @@ final class PNChat_AI {
 			'required'             => array( 'entries' ),
 			'additionalProperties' => false,
 		);
-		$system = self::rules() . "\n- Γράψε έως 8 γνώσεις για τα πιο χρήσιμα θέματα της σελίδας, μία για κάθε διαφορετική ερώτηση που θα έκανε ένα φαρμακείο. Αν η σελίδα δεν έχει χρήσιμη πληροφορία, επέστρεψε κενή λίστα.";
-		$titles = array_map( fn( $e ) => $e['title'], PNChat_Store::entries( 'answer' ) );
-		$user   = "Σελίδα του site:\n" . self::pages_text( array( $post ), self::SOURCE_CHARS )
-			. "\nΓνώσεις που υπάρχουν ήδη (μην τις επαναλάβεις):\n" . ( $titles ? '- ' . implode( "\n- ", $titles ) : '(καμία)' )
-			. "\n\nΓράψε τις γνώσεις.";
-		$json   = self::call( $system, $user, $schema );
+		$system = self::rules()
+			. "\n- Γράψε έως {$max} γνώσεις για τα πιο χρήσιμα θέματα της πηγής, μία για κάθε διαφορετική ερώτηση που θα έκανε ένα φαρμακείο ή ένας επισκέπτης. Αν η πηγή δεν έχει χρήσιμη πληροφορία, επέστρεψε κενή λίστα."
+			. "\n- Κάθε ερώτηση (phrasing) να λέει και το θέμα της (π.χ. «Πώς κάνω υποβολή στο eΔΑΠΥ;», όχι σκέτο «Πώς κάνω υποβολή;»), γιατί ο βοηθός ξέρει και άλλα εργαλεία."
+			. "\n- keywords: ΠΟΤΕ το όνομα του εργαλείου, του προϊόντος ή του θέματος γενικά (π.χ. «eΔΑΠΥ», «PlanDose»): θα τραβούσε όλες τις ερωτήσεις του θέματος σε αυτή τη γνώση. Μόνο όροι που ανήκουν σε αυτή τη γνώση και σε καμία άλλη."
+			. "\n- Μη γράφεις γνώση για κάτι που υπάρχει ήδη στη λίστα με τις γνώσεις που υπάρχουν."
+			. ( $is_pdf ? "\n- Η πηγή είναι PDF. source_url: άφησέ το κενό. Σε απάντηση που εξηγεί βήματα, γράψε τα βήματα με τη σειρά (λίστα <ol>)." : '' );
+		$titles = array_slice( array_map( fn( $e ) => $e['title'], PNChat_Store::entries( 'answer' ) ), 0, 400 );
+		$known  = "Γνώσεις που υπάρχουν ήδη (μην τις επαναλάβεις):\n" . ( $titles ? '- ' . implode( "\n- ", $titles ) : '(καμία)' );
+		$about  = 'Πηγή: «' . (string) $src['title'] . '»' . ( '' !== (string) $src['url'] ? ' (' . (string) $src['url'] . ')' : '' );
+		if ( $is_pdf ) {
+			$user = array(
+				array(
+					'type'   => 'document',
+					'source' => array(
+						'type'       => 'base64',
+						'media_type' => 'application/pdf',
+						'data'       => (string) $src['pdf'],
+					),
+					'title'  => mb_substr( (string) $src['title'], 0, 200 ),
+				),
+				array(
+					'type' => 'text',
+					'text' => $about . "\n\n" . $known . "\n\nΓράψε τις γνώσεις από το PDF.",
+				),
+			);
+		} else {
+			$user = $about . "\n<page url=\"" . esc_url_raw( (string) $src['url'] ) . '" title="' . esc_attr( (string) $src['title'] ) . "\">\n"
+				. mb_substr( (string) $src['text'], 0, self::SOURCE_CHARS ) . "\n</page>\n\n" . $known . "\n\nΓράψε τις γνώσεις.";
+		}
+		$json = self::call( $system, $user, $schema, '', 300, $is_pdf ? 24000 : 16000 );
 		if ( is_wp_error( $json ) ) {
 			return $json;
 		}
 		$out = array();
-		foreach ( array_slice( (array) ( $json['entries'] ?? array() ), 0, 8 ) as $raw ) {
+		foreach ( array_slice( (array) ( $json['entries'] ?? array() ), 0, $max ) as $raw ) {
 			$e = PNChat_Brain::clean_entry( $raw );
 			if ( $e ) {
-				$out[] = self::with_source( $e, (string) get_permalink( $post ) );
+				$out[] = self::with_source( $e, (string) $src['url'], ! empty( $src['external'] ) );
 			}
 		}
 		return $out;
@@ -766,22 +790,25 @@ final class PNChat_AI {
 	 * Adds a link to the source page when the answer has none, and keeps
 	 * links pointing to this site only.
 	 *
-	 * @param array<string,mixed> $e   Clean entry.
-	 * @param string              $url Source page.
+	 * @param array<string,mixed> $e        Clean entry.
+	 * @param string              $url      Source page.
+	 * @param bool                $any_host The source is on another site (a URL or PDF the
+	 *                                      administrator chose): links to it are kept too.
 	 * @return array<string,mixed>
 	 */
-	private static function with_source( array $e, $url ) {
-		$host   = wp_parse_url( home_url(), PHP_URL_HOST );
-		$answer = (string) preg_replace_callback(
+	public static function with_source( array $e, $url, $any_host = false ) {
+		$host     = wp_parse_url( home_url(), PHP_URL_HOST );
+		$url_host = $url ? wp_parse_url( $url, PHP_URL_HOST ) : '';
+		$hosts    = array_filter( array( $host, $any_host ? $url_host : '' ) );
+		$answer   = (string) preg_replace_callback(
 			'#<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>#is',
-			function ( $m ) use ( $host ) {
+			function ( $m ) use ( $hosts ) {
 				$h = wp_parse_url( $m[1], PHP_URL_HOST );
-				return ( $h && $h !== $host ) ? $m[2] : $m[0];
+				return ( $h && ! in_array( $h, $hosts, true ) ) ? $m[2] : $m[0];
 			},
 			(string) $e['answer']
 		);
-		$url_host = wp_parse_url( $url, PHP_URL_HOST );
-		if ( $url && $url_host === $host && false === stripos( $answer, '<a ' ) ) {
+		if ( $url && in_array( $url_host, $hosts, true ) && false === stripos( $answer, '<a ' ) ) {
 			$answer .= '<p><a href="' . esc_url( $url ) . '">Περισσότερα εδώ</a></p>';
 		}
 		$e['answer'] = wp_kses( $answer, PNChat_Brain::allowed_html() );

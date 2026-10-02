@@ -118,14 +118,30 @@ function pnt_claude_reply( array $json, $code = 200 ) {
 	);
 }
 
-function pnt_done() {
-	foreach ( array_reverse( $GLOBALS['pnt_cleanup'] ) as $fn ) {
+/** Runs the clean-ups once (also after a fatal error, so the site is left as it was). */
+function pnt_cleanup() {
+	$fns                    = array_reverse( $GLOBALS['pnt_cleanup'] );
+	$GLOBALS['pnt_cleanup'] = array();
+	foreach ( $fns as $fn ) {
 		try {
 			$fn();
 		} catch ( Throwable $e ) {
 			echo 'cleanup: ' . $e->getMessage() . "\n";
 		}
 	}
+}
+register_shutdown_function(
+	function () {
+		$err = error_get_last();
+		if ( $GLOBALS['pnt_cleanup'] && $err && in_array( $err['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR ), true ) ) {
+			echo 'NOT OK fatal: ' . $err['message'] . ' (' . basename( $err['file'] ) . ':' . $err['line'] . ")\n";
+			pnt_cleanup();
+		}
+	}
+);
+
+function pnt_done() {
+	pnt_cleanup();
 	echo "\n" . $GLOBALS['pnt_passes'] . ' passed, ' . $GLOBALS['pnt_fails'] . " failed\n";
 	exit( $GLOBALS['pnt_fails'] ? 1 : 0 );
 }

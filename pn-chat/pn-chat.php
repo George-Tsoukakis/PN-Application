@@ -2,8 +2,8 @@
 /**
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
- * Description: Our own chat assistant for PharmacyNeeds. It answers from the knowledge we train it with and from the site's own pages, and logs what it cannot answer so we can reply by e-mail and teach it. Optional, off by default: Claude (Anthropic) drafts entries for administrators and may answer in the chat from the site's pages.
- * Version: 1.8.3
+ * Description: Our own chat assistant for PharmacyNeeds. It answers from the knowledge we train it with and from the site's own pages, and logs what it cannot answer so we can reply by e-mail and teach it. Optional, off by default: Claude (Anthropic) reads the site, a web address or a PDF and proposes entries that an administrator approves, and may answer in the chat from the site's pages.
+ * Version: 1.9.0
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.8.3' );
+define( 'PNCHAT_VERSION', '1.9.0' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );
@@ -37,6 +37,7 @@ require_once PNCHAT_PATH . 'includes/class-pnchat-site-search.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-rest.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-frontend.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-ai.php';
+require_once PNCHAT_PATH . 'includes/class-pnchat-learn.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-mail.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-admin.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-privacy.php';
@@ -78,6 +79,8 @@ function pnchat_deactivate() {
 	wp_clear_scheduled_hook( 'pnchat_daily' );
 	wp_clear_scheduled_hook( 'pnchat_hourly' );
 	wp_clear_scheduled_hook( PNChat_Site_Search::CRON_HOOK );
+	wp_clear_scheduled_hook( PNChat_Learn::CRON );
+	wp_clear_scheduled_hook( PNChat_Learn::WEEKLY );
 }
 register_deactivation_hook( __FILE__, 'pnchat_deactivate' );
 
@@ -93,6 +96,8 @@ function pnchat_maybe_upgrade() {
 	PNChat_Settings::migrate();
 	// 1.8.1: sites updated without re-activation get the hourly clean-up.
 	pnchat_schedule_hourly();
+	// 1.9.0: weekly reading of changed pages, when switched on.
+	PNChat_Learn::sync_weekly();
 	// 1.1.0: pages of existing sites get indexed once, in the background.
 	if ( ! get_option( 'pnchat_site_index_started' ) ) {
 		update_option( 'pnchat_site_index_started', 1, false );
@@ -109,6 +114,7 @@ add_action( 'plugins_loaded', 'pnchat_maybe_upgrade' );
 function pnchat_daily() {
 	PNChat_Store::purge_old( (int) PNChat_Settings::value( 'retention_days' ) );
 	PNChat_Counter::purge();
+	PNChat_Learn::purge_old();
 	// Pages published without save_post (imports, direct edits) get indexed.
 	PNChat_Site_Search::index_batch();
 }
@@ -116,6 +122,7 @@ add_action( 'pnchat_daily', 'pnchat_daily' );
 
 PNChat_Rest::init();
 PNChat_Site_Search::init();
+PNChat_Learn::init();
 PNChat_Frontend::init();
 PNChat_Privacy::init();
 if ( is_admin() ) {

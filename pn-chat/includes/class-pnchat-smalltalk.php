@@ -65,7 +65,14 @@ final class PNChat_Smalltalk {
 		if ( '' === $text || preg_match( '/[?;;]/u', $text ) ) {
 			return '';
 		}
-		$words = array_values( array_filter( explode( ' ', PNChat_Text::fold( $text ) ), 'strlen' ) );
+		$words = array_values(
+			array_filter(
+				explode( ' ', PNChat_Text::fold( $text ) ),
+				function ( $w ) {
+					return '' !== $w;
+				}
+			)
+		);
 		if ( ! $words || count( $words ) > self::MAX_WORDS ) {
 			return '';
 		}

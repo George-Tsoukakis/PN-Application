@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.8.3
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,8 +29,18 @@ Privacy).
 * **Searches your own site:** when it has no trained answer, it shows the most
   relevant published pages and posts of your site, with a link. Still no AI
   and no outside service.
-* **Optional AI training assistant (admin only):** Claude reads pages of your
-  own site and drafts knowledge entries that you review before they are saved.
+* **Optional AI learning (admin only):** Claude reads pages of your site, the
+  whole site, a web address or a PDF (for example a manual) and proposes
+  knowledge entries. They wait in "AI proposals"; nothing reaches the chat
+  before an administrator approves it. The chat keeps answering from the
+  approved entries, without AI. Keywords that would pull a whole topic
+  (tool names, words already in two entries) are taken off, and a proposal
+  close to an existing entry says so and can be added to it instead.
+  Reading runs in the background, one source at a time, with a monthly limit;
+  optionally once a week for the pages that changed.
+* **Small talk:** "nice tool", "ok", "good night" get a friendly reply in the
+  topic of the conversation instead of "no information"; complaints ("you did
+  not help me") get the e-mail form. Texts in Settings.
 * **Optional AI answers in the chat:** when no trained answer fits but pages
   of the site are about the question, Claude answers from those pages. The
   answer is shown at once, labelled as automatic and not yet checked by a
@@ -53,6 +63,9 @@ Privacy).
 
 * **Training:** knowledge entries, synonyms, and a test box that shows what
   the assistant would answer and why.
+* **AI proposals:** what the AI should read (address, PDF, whole site), its
+  progress, and the proposed entries to approve, edit, add to an existing
+  entry or reject.
 * **Questions:** every question visitors asked. From an open question you can
   train the assistant (new entry, or add it to an existing one), reply by
   e-mail, block it or dismiss it.
@@ -119,7 +132,10 @@ copy from the Brain screen before big changes.
 * AI training assistant (off by default): when an administrator presses a
   "✨" button, the text of the chosen question (cleaned as above) and public
   pages of the site are sent to the Claude API of Anthropic
-  (https://www.anthropic.com/legal/privacy). Nothing is sent otherwise.
+  (https://www.anthropic.com/legal/privacy). For "AI proposals", the pages,
+  web addresses and PDFs the administrator chooses are sent. A PDF uploaded
+  for reading is kept in a closed folder of wp-content/uploads until it is
+  read, then deleted. Nothing about visitors is sent.
 
 * Stored: the questions, and the e-mail address and name only if the visitor
   enters them. Questions are deleted automatically after 365 days (setting).
@@ -133,6 +149,13 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.9.0 =
+* New "AI proposals" screen: Claude reads a page, the whole site (or only the pages that changed), a web address or a PDF, and proposes entries. Nothing reaches the chat before approval; the chat answers stay without AI.
+* Proposals: edit, approve, add the questions to a similar existing entry, or reject (a rejected title is not proposed again). Tool names and keywords found in two or more entries are taken off; questions that another entry already answers are named.
+* Background reading (WP-Cron, one source at a time), "Continue now" and "Stop", monthly limit (default 200 sources), optional weekly reading of changed pages.
+* Small talk: praise, "ok", goodbyes and complaints get natural replies; a question that starts with praise («Ωραία, είναι δωρεάν;») is answered as the question.
+* Keywords of four letters or fewer (acronyms like ΠΕΔΙ, ΑΜΚΑ) now match only as written: «ΠΕΔΙ» no longer catches «παιδιά».
 
 = 1.8.3 =
 * AI in the chat answers only questions about the site's tools with no medical sign. Word lists cannot know every medicine: on 20 new medical questions the 1.8.2 guard let 12 through, this one none.

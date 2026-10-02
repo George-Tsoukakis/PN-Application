@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class PNChat_Store {
 
-	const DB_VERSION = 3;
+	const DB_VERSION = 4;
 
 	/**
 	 * Question statuses and their labels.
@@ -124,6 +124,8 @@ final class PNChat_Store {
 				KEY exp (exp)
 			) {$charset};"
 		);
+		// 1.9.0: entries proposed by the AI, waiting for approval.
+		dbDelta( PNChat_Learn::table_sql( $charset ) );
 		update_option( 'pnchat_db_version', self::DB_VERSION, false );
 		// 1.8.0: the AI usage totals move from an option to the counters.
 		// Here, so that every path that installs (activation, upgrade) does it.

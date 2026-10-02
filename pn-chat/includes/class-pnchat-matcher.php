@@ -355,7 +355,7 @@ final class PNChat_Matcher {
 			$best = max( $best, $sim );
 		}
 		foreach ( $e['keywords'] as $k ) {
-			if ( $this->contains_all( $q, $k ) ) {
+			if ( $this->contains_keyword( $q, $k ) ) {
 				// Keyword present: at least just above the default threshold,
 				// and better the more of the question it explains.
 				$known = $k;
@@ -498,6 +498,25 @@ final class PNChat_Matcher {
 	private function contains_all( array $q, array $kw, $min = 0.75 ) {
 		foreach ( $kw as $k ) {
 			if ( $this->best_match( $k, $q ) < $min ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Every keyword token is in the question. Short ones (four letters or
+	 * fewer, mostly acronyms: ΠΕΔΙ, ΑΜΚΑ, ΕΟΦ) only as they are: loosely,
+	 * «ΠΕΔΙ» would be the start of «παιδιά» and pull a question about
+	 * children to the entry.
+	 *
+	 * @param string[] $q  Question tokens.
+	 * @param string[] $kw Keyword tokens.
+	 * @return bool
+	 */
+	private function contains_keyword( array $q, array $kw ) {
+		foreach ( $kw as $k ) {
+			if ( strlen( $k ) <= 4 ? ! in_array( $k, $q, true ) : $this->best_match( $k, $q ) < 0.75 ) {
 				return false;
 			}
 		}
