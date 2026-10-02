@@ -804,7 +804,7 @@ final class PNChat_Admin {
 
 		$phrasings = PNChat_Store::lines( sanitize_textarea_field( self::post( 'phrasings' ) ) );
 		$keywords  = PNChat_Store::lines( sanitize_textarea_field( self::post( 'keywords' ) ) );
-		$answer    = 'block' === $kind ? sanitize_textarea_field( self::post( 'answer' ) ) : wp_kses( self::post( 'answer' ), PNChat_Brain::allowed_html() );
+		$answer    = 'block' === $kind ? sanitize_textarea_field( self::post( 'answer' ) ) : wp_kses( PNChat_Brain::unescape_pasted_html( self::post( 'answer' ) ), PNChat_Brain::allowed_html() );
 		if ( 'block' === $kind && '' === trim( $answer ) ) {
 			$answer = self::DEFAULT_BLOCK;
 		}

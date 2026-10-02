@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.5.2 =
+* HTML pasted into the answer editor's Visual tab (shown as tags) is turned back into HTML on save and when shown, also for answers saved that way before.
 
 = 1.5.1 =
 * claude-haiku-4-5 works as the AI model (it rejects the effort setting and fallbacks, which are no longer sent to it). Cost counter priced per model (Opus 5.5, Sonnet 5.5, Haiku 4.5).

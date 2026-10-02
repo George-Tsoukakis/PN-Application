@@ -115,13 +115,34 @@ final class PNChat_Brain {
 	}
 
 	/**
+	 * HTML code pasted into the editor's «Visual» tab arrives escaped
+	 * («&lt;p&gt;…»), wrapped in the editor's own paragraphs, and would show
+	 * its tags as text. Such an answer is turned back into the HTML that was
+	 * pasted; any other answer is returned unchanged.
+	 *
+	 * @param string $answer Answer as stored or submitted.
+	 * @return string
+	 */
+	public static function unescape_pasted_html( $answer ) {
+		$answer = (string) $answer;
+		if ( ! preg_match( '#&lt;/?(p|ul|ol|li|a|strong|b|em|i|u|br)(\s|&gt;|/)#i', $answer ) ) {
+			return $answer;
+		}
+		// Drop the editor's real tags (they only wrap the pasted lines), then
+		// decode what was pasted.
+		$text = (string) preg_replace( '#</p>|<br\s*/?>#i', "\n", $answer );
+		$text = wp_strip_all_tags( $text );
+		return trim( html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+	}
+
+	/**
 	 * Answer text as safe HTML for the chat.
 	 *
 	 * @param string $answer Stored answer.
 	 * @return string
 	 */
 	public static function render_answer( $answer ) {
-		$html = wpautop( wp_kses( (string) $answer, self::allowed_html() ) );
+		$html = wpautop( wp_kses( self::unescape_pasted_html( (string) $answer ), self::allowed_html() ) );
 		// Links in answers open in a new tab and do not leak the opener.
 		$html = (string) preg_replace( '/<a\s/i', '<a target="_blank" rel="noopener noreferrer" ', $html );
 		return wp_kses( $html, self::allowed_html() );
@@ -134,7 +155,7 @@ final class PNChat_Brain {
 	 * @return string
 	 */
 	public static function plain_answer( $answer ) {
-		$text = (string) preg_replace( '/<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/iu', '$2 ($1)', (string) $answer );
+		$text = (string) preg_replace( '/<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/iu', '$2 ($1)', self::unescape_pasted_html( (string) $answer ) );
 		$text = (string) preg_replace( '/<\/(p|li)>|<br\s*\/?>/i', "\n", $text );
 		$text = (string) preg_replace( '/<li[^>]*>/i', '• ', $text );
 		$text = wp_strip_all_tags( $text );

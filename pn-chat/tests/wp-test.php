@@ -392,6 +392,14 @@ delete_transient( 'pnchat_ai_chat_' . gmdate( 'Ymd' ) );
 update_option( PNChat_Settings::OPTION, $original_settings );
 wp_delete_post( $ai_page, true );
 
+// ---- 1.5.2: HTML pasted into the editor's Visual tab -------------------------------
+$visual = "<p>&lt;p&gt;Γεια σας!&lt;/p&gt;</p>\n<p>&lt;ul&gt;</p>\n<p>&lt;li&gt;&lt;a href=\"/plandose/\"&gt;PlanDose&lt;/a&gt;&lt;/li&gt;</p>\n<p>&lt;/ul&gt;</p>";
+$html   = PNChat_Brain::render_answer( $visual );
+check( 'pasted HTML in Visual: shown as HTML, not as tags', false === strpos( $html, '&lt;' ) && false !== strpos( $html, '<li><a ' ) && false !== strpos( $html, 'href="/plandose/"' ), $html );
+check( 'pasted HTML in Visual: e-mail text has no tags', 'Γεια σας!' === strtok( PNChat_Brain::plain_answer( $visual ), "\n" ) );
+check( 'normal text with < kept', false !== strpos( PNChat_Brain::render_answer( '<p>3 &lt; 5</p>' ), '3 &lt; 5' ) );
+check( 'pasted script never survives', false === strpos( PNChat_Brain::render_answer( '<p>&lt;p&gt;x&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;a href="javascript:alert(1)"&gt;y&lt;/a&gt;</p>' ), 'script' ) );
+
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );
 PNChat_Brain::import( $original, 'replace', true, false );
