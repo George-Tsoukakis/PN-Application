@@ -163,24 +163,25 @@ final class PNChat_Store {
 	 */
 	public static function entries( $kind = null, $active_only = false, $search = '' ) {
 		global $wpdb;
-		$t     = self::entries_table();
-		$where = array( '1=1' );
-		$args  = array();
-		if ( null !== $kind ) {
-			$where[] = 'kind = %s';
-			$args[]  = $kind;
-		}
-		if ( $active_only ) {
-			$where[] = 'active = 1';
-		}
-		if ( '' !== $search ) {
-			$like    = '%' . $wpdb->esc_like( $search ) . '%';
-			$where[] = '(title LIKE %s OR phrasings LIKE %s OR keywords LIKE %s OR answer LIKE %s)';
-			array_push( $args, $like, $like, $like, $like );
-		}
-		$sql = "SELECT * FROM {$t} WHERE " . implode( ' AND ', $where ) . ' ORDER BY title ASC, id ASC';
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- table name is ours; values are prepared.
-		$rows = $args ? $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A ) : $wpdb->get_results( $sql, ARRAY_A );
+		$like = '' !== $search ? '%' . $wpdb->esc_like( $search ) . '%' : '';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE ( %s = \'\' OR kind = %s ) AND ( %d = 0 OR active = 1 )'
+				. ' AND ( %s = \'\' OR title LIKE %s OR phrasings LIKE %s OR keywords LIKE %s OR answer LIKE %s )'
+				. ' ORDER BY title ASC, id ASC',
+				self::entries_table(),
+				(string) $kind,
+				(string) $kind,
+				$active_only ? 1 : 0,
+				$like,
+				$like,
+				$like,
+				$like,
+				$like
+			),
+			ARRAY_A
+		);
 		return array_map( array( __CLASS__, 'hydrate' ), is_array( $rows ) ? $rows : array() );
 	}
 
@@ -192,9 +193,8 @@ final class PNChat_Store {
 	 */
 	public static function entry( $id ) {
 		global $wpdb;
-		$t = self::entries_table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $id ), ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::entries_table(), $id ), ARRAY_A );
 		return is_array( $row ) ? self::hydrate( $row ) : null;
 	}
 
@@ -268,14 +268,11 @@ final class PNChat_Store {
 	 */
 	public static function count_hits( array $ids ) {
 		global $wpdb;
-		$ids = array_values( array_filter( array_map( 'absint', $ids ) ) );
-		if ( ! $ids ) {
-			return;
+		// At most a few entries per answer: one small update each.
+		foreach ( array_unique( array_filter( array_map( 'absint', $ids ) ) ) as $id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->query( $wpdb->prepare( 'UPDATE %i SET hits = hits + 1 WHERE id = %d', self::entries_table(), $id ) );
 		}
-		$t     = self::entries_table();
-		$holes = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET hits = hits + 1 WHERE id IN ({$holes})", $ids ) );
 	}
 
 	/**
@@ -285,9 +282,8 @@ final class PNChat_Store {
 	 */
 	public static function delete_all_entries() {
 		global $wpdb;
-		$t = self::entries_table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( "DELETE FROM {$t}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', self::entries_table() ) );
 		self::bump();
 	}
 
@@ -334,9 +330,8 @@ final class PNChat_Store {
 	 */
 	public static function question( $id ) {
 		global $wpdb;
-		$t = self::questions_table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $id ), ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::questions_table(), $id ), ARRAY_A );
 		return is_array( $row ) ? $row : null;
 	}
 
@@ -368,29 +363,48 @@ final class PNChat_Store {
 	 */
 	public static function questions( $filter = 'open', $search = '', $page = 1, $per_page = 30 ) {
 		global $wpdb;
-		$t     = self::questions_table();
-		$where = array( '1=1' );
-		$args  = array();
-		if ( 'open' === $filter ) {
-			$where[] = "status IN ('unanswered','partial','unhelpful')";
-		} elseif ( 'email' === $filter ) {
-			$where[] = "email <> '' AND status IN ('unanswered','partial','unhelpful','trained')";
-		} elseif ( array_key_exists( $filter, self::statuses() ) ) {
-			$where[] = 'status = %s';
-			$args[]  = $filter;
+		if ( 'open' !== $filter && 'email' !== $filter && ! array_key_exists( $filter, self::statuses() ) ) {
+			$filter = 'all';
 		}
-		if ( '' !== $search ) {
-			$like    = '%' . $wpdb->esc_like( $search ) . '%';
-			$where[] = '(question LIKE %s OR email LIKE %s)';
-			array_push( $args, $like, $like );
-		}
-		$w      = implode( ' AND ', $where );
+		$like   = '' !== $search ? '%' . $wpdb->esc_like( $search ) . '%' : '';
 		$offset = max( 0, ( $page - 1 ) * $per_page );
-		$sql    = "SELECT * FROM {$t} WHERE {$w} ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d";
-		$csql   = "SELECT COUNT(*) FROM {$t} WHERE {$w}";
-		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- table name is ours; values are prepared.
-		$rows  = $wpdb->get_results( $wpdb->prepare( $sql, array_merge( $args, array( $per_page, $offset ) ) ), ARRAY_A );
-		$total = (int) ( $args ? $wpdb->get_var( $wpdb->prepare( $csql, $args ) ) : $wpdb->get_var( $csql ) );
+		// One fixed query for every filter: 'all', 'open', 'email' or a status.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE ( %s = \'all\''
+				. ' OR ( %s = \'open\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\' ) )'
+				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\' ) )'
+				. ' OR status = %s ) AND ( %s = \'\' OR question LIKE %s OR email LIKE %s ) ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d',
+				self::questions_table(),
+				$filter,
+				$filter,
+				$filter,
+				$filter,
+				$like,
+				$like,
+				$like,
+				$per_page,
+				$offset
+			),
+			ARRAY_A
+		);
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE ( %s = \'all\''
+				. ' OR ( %s = \'open\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\' ) )'
+				. ' OR ( %s = \'email\' AND email <> \'\' AND status IN ( \'unanswered\', \'partial\', \'unhelpful\', \'trained\' ) )'
+				. ' OR status = %s ) AND ( %s = \'\' OR question LIKE %s OR email LIKE %s )',
+				self::questions_table(),
+				$filter,
+				$filter,
+				$filter,
+				$filter,
+				$like,
+				$like,
+				$like
+			)
+		);
 		// phpcs:enable
 		return array(
 			'rows'  => is_array( $rows ) ? $rows : array(),
@@ -405,9 +419,8 @@ final class PNChat_Store {
 	 */
 	public static function question_counts() {
 		global $wpdb;
-		$t = self::questions_table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$rows   = $wpdb->get_results( "SELECT status, COUNT(*) AS n, SUM(email <> '') AS e FROM {$t} GROUP BY status", ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows   = $wpdb->get_results( $wpdb->prepare( "SELECT status, COUNT(*) AS n, SUM(email <> '') AS e FROM %i GROUP BY status", self::questions_table() ), ARRAY_A );
 		$counts = array(
 			'all'   => 0,
 			'open'  => 0,
@@ -436,14 +449,10 @@ final class PNChat_Store {
 	 */
 	public static function delete_questions( array $ids ) {
 		global $wpdb;
-		$ids = array_values( array_filter( array_map( 'absint', $ids ) ) );
-		if ( ! $ids ) {
-			return;
+		foreach ( array_unique( array_filter( array_map( 'absint', $ids ) ) ) as $id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', self::questions_table(), $id ) );
 		}
-		$t     = self::questions_table();
-		$holes = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE id IN ({$holes})", $ids ) );
 	}
 
 	/**
@@ -453,9 +462,8 @@ final class PNChat_Store {
 	 */
 	public static function all_questions() {
 		global $wpdb;
-		$t = self::questions_table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results( "SELECT question, status, unmatched, email, name, reply, replied_at, created_at FROM {$t} ORDER BY id ASC", ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT question, status, unmatched, email, name, reply, replied_at, created_at FROM %i ORDER BY id ASC', self::questions_table() ), ARRAY_A );
 		return is_array( $rows ) ? $rows : array();
 	}
 
@@ -512,10 +520,9 @@ final class PNChat_Store {
 		if ( $days < 1 ) {
 			return;
 		}
-		$t      = self::questions_table();
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE created_at < %s", $cutoff ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', self::questions_table(), $cutoff ) );
 	}
 
 	/**
@@ -525,9 +532,7 @@ final class PNChat_Store {
 	 */
 	public static function drop() {
 		global $wpdb;
-		$e = self::entries_table();
-		$q = self::questions_table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuerySchemaChange
-		$wpdb->query( "DROP TABLE IF EXISTS {$e}, {$q}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuerySchemaChange
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i, %i', self::entries_table(), self::questions_table() ) );
 	}
 }

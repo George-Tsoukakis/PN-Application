@@ -180,6 +180,15 @@
 		this.root.appendChild(this.panel);
 		this.host.appendChild(this.root);
 
+		// Other floating buttons in the same corner (PlanDose): sit above them.
+		if (!this.inline) {
+			var place = function () { self.placeLauncher(); };
+			window.addEventListener('resize', place);
+			place();
+			window.setTimeout(place, 600);
+			window.setTimeout(place, 2500);
+		}
+
 		// Phones: keep the panel above the on-screen keyboard.
 		if (window.visualViewport && !this.inline) {
 			var fit = function () {
@@ -188,6 +197,41 @@
 			window.visualViewport.addEventListener('resize', fit);
 			fit();
 		}
+	};
+
+	/**
+	 * Moves the launcher above a visible fixed button of the same corner
+	 * (cfg.avoid selectors, by default PlanDose's #plandose-trigger).
+	 */
+	Chat.prototype.placeLauncher = function () {
+		var left = cfg.position === 'left';
+		var bottom = null;
+		var side = null;
+		(cfg.avoid || []).forEach(function (sel) {
+			var nodes;
+			try {
+				nodes = document.querySelectorAll(sel);
+			} catch (e) {
+				return;
+			}
+			Array.prototype.forEach.call(nodes, function (n) {
+				var r = n.getBoundingClientRect();
+				if (!r.width || !r.height || getComputedStyle(n).visibility === 'hidden') {
+					return;
+				}
+				var onLeft = r.left + r.width / 2 < window.innerWidth / 2;
+				if (onLeft !== left) {
+					return;
+				}
+				var b = window.innerHeight - r.top + 12;
+				if (bottom === null || b > bottom) {
+					bottom = b;
+					side = left ? r.left : window.innerWidth - r.right;
+				}
+			});
+		});
+		this.root.style.bottom = bottom === null ? '' : bottom + 'px';
+		this.root.style[left ? 'left' : 'right'] = bottom === null ? '' : Math.max(side, 8) + 'px';
 	};
 
 	Chat.prototype.autosize = function () {

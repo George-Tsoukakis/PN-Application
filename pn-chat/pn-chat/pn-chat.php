@@ -2,8 +2,8 @@
 /**
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
- * Description: Δικό μας chat βοηθός για το PharmacyNeeds. Απαντά μόνο από τις πληροφορίες που του μαθαίνουμε, χωρίς τεχνητή νοημοσύνη ή υπηρεσίες τρίτων. Καταγράφει ό,τι δεν ξέρει για να απαντάμε με e-mail και να τον εκπαιδεύουμε.
- * Version: 1.0.0
+ * Description: Our own chat assistant for PharmacyNeeds. It answers only from the knowledge we train it with, with no AI and no third-party services, and logs what it cannot answer so we can reply by e-mail and teach it.
+ * Version: 1.0.1
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -11,7 +11,6 @@
  * Text Domain: pn-chat
  * Requires at least: 6.3
  * Requires PHP: 8.0
- * Update URI: https://pharmacyneeds.gr/pn-chat
  *
  * @package PNChat
  */
@@ -20,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.0.0' );
+define( 'PNCHAT_VERSION', '1.0.1' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );
@@ -69,6 +68,7 @@ function pnchat_maybe_upgrade() {
 	if ( (int) get_option( 'pnchat_db_version' ) < PNChat_Store::DB_VERSION ) {
 		PNChat_Store::install();
 	}
+	PNChat_Settings::migrate();
 }
 add_action( 'plugins_loaded', 'pnchat_maybe_upgrade' );
 

@@ -28,7 +28,7 @@ final class PNChat_Seed {
 				'title'     => 'Χαιρετισμός',
 				'phrasings' => array( 'Γεια σας', 'Γεια', 'Καλημέρα', 'Καλησπέρα', 'Χαίρετε', 'Hello' ),
 				'keywords'  => array(),
-				'answer'    => 'Γεια σας! Πώς μπορώ να βοηθήσω; Ρωτήστε με για το PharmacyNeeds και το PlanDose.',
+				'answer'    => 'Γεια σας! Πώς μπορώ να βοηθήσω; Ρωτήστε με για την PharmacyNeeds και το PlanDose.',
 			),
 			array(
 				'kind'      => 'answer',

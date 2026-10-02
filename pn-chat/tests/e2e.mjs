@@ -84,6 +84,30 @@ await p.keyboard.press('Escape');
 check('Esc closes', !(await panel.isVisible()));
 await phone.close();
 
+// ---- desktop with the PlanDose button in the same corner ---------------------------
+const pc = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+const d = await pc.newPage();
+d.on('pageerror', (e) => errors.push(e.message));
+// Same size and place as PlanDose's #plandose-trigger (plandose-trigger.css).
+await d.addInitScript(() => {
+	document.addEventListener('DOMContentLoaded', () => {
+		const b = document.createElement('button');
+		b.id = 'plandose-trigger';
+		b.textContent = 'PlanDose';
+		b.style.cssText = 'position:fixed;bottom:24px;right:24px;height:56px;min-width:138px;z-index:9998';
+		document.body.appendChild(b);
+	});
+});
+await d.goto(BASE + '/');
+await d.waitForTimeout(800);
+const chatBox = await d.locator('.pnchat__launcher').boundingBox();
+const pdBox = await d.locator('#plandose-trigger').boundingBox();
+check('chat button sits above the PlanDose button', chatBox.y + chatBox.height <= pdBox.y && Math.abs((chatBox.x + chatBox.width) - (pdBox.x + pdBox.width)) <= 1, JSON.stringify({ chatBox, pdBox }));
+check('subtitle says «για την PharmacyNeeds»', (await d.locator('.pnchat__subtitle').count()) === 1 && (await d.locator('.pnchat__subtitle').textContent()).includes('για την PharmacyNeeds'));
+check('no note under the input', (await d.locator('.pnchat__privacy').count()) === 0);
+await shot(d, '0-desktop-with-plandose');
+await pc.close();
+
 // ---- admin: questions -> training -> e-mail reply ---------------------------------
 const desk = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const a = await desk.newPage();

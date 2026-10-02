@@ -15,7 +15,7 @@
  * @package PNChat
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'PNCHAT_TESTING' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 

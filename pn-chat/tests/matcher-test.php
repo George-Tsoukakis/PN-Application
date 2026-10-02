@@ -2,7 +2,7 @@
 /**
  * PN Chat matcher tests. No WordPress needed:  php pn-chat/tests/matcher-test.php
  */
-define( 'PNCHAT_TESTING', 1 );
+define( 'ABSPATH', __DIR__ . '/' ); // The classes refuse to load without it.
 $plugin = dirname( __DIR__ ) . '/pn-chat';
 require $plugin . '/includes/class-pnchat-text.php';
 require $plugin . '/includes/class-pnchat-matcher.php';

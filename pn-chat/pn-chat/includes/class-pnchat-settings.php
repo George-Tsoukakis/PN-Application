@@ -27,8 +27,8 @@ final class PNChat_Settings {
 			'visibility'       => 'all',      // all | logged_in.
 			'placement'        => 'floating', // floating | shortcode.
 			'title'            => 'PharmacyNeeds Βοηθός',
-			'subtitle'         => 'Απαντάμε σε ερωτήσεις για το PharmacyNeeds',
-			'welcome'          => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για το PharmacyNeeds και το PlanDose.',
+			'subtitle'         => 'Απαντάμε σε ερωτήσεις για την PharmacyNeeds',
+			'welcome'          => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.',
 			'placeholder'      => 'Γράψτε την ερώτησή σας…',
 			'fallback'         => 'Δεν έχουμε πληροφορίες για το συγκεκριμένο ερώτημα. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'partial'          => 'Για το «%s» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
@@ -39,7 +39,7 @@ final class PNChat_Settings {
 			'strictness'       => 'normal', // loose | normal | strict.
 			'max_answers'      => 3,
 			'feedback'         => 1,
-			'privacy_note'     => 'Μη γράφετε στοιχεία ασθενών.',
+			'privacy_note'     => '',
 			'color'            => '#0f766e',
 			'position'         => 'right', // right | left.
 			'rate_per_10min'   => 30,
@@ -135,6 +135,34 @@ final class PNChat_Settings {
 		$out['notify_email'] = is_email( $email ) ? $email : '';
 
 		return $out;
+	}
+
+	/**
+	 * Texts of 1.0.0 that 1.0.1 changed: saved settings that still hold the
+	 * old default get the new one (texts the admin changed are kept).
+	 *
+	 * @return void
+	 */
+	public static function migrate() {
+		if ( (int) get_option( 'pnchat_settings_version' ) >= 2 ) {
+			return;
+		}
+		$saved = get_option( self::OPTION );
+		if ( is_array( $saved ) ) {
+			$old = array(
+				'subtitle'     => 'Απαντάμε σε ερωτήσεις για το PharmacyNeeds',
+				'welcome'      => 'Γεια σας! Ρωτήστε με ό,τι θέλετε για το PharmacyNeeds και το PlanDose.',
+				'privacy_note' => 'Μη γράφετε στοιχεία ασθενών.',
+			);
+			$new = self::defaults();
+			foreach ( $old as $k => $v ) {
+				if ( isset( $saved[ $k ] ) && $saved[ $k ] === $v ) {
+					$saved[ $k ] = $new[ $k ];
+				}
+			}
+			update_option( self::OPTION, $saved, false );
+		}
+		update_option( 'pnchat_settings_version', 2, false );
 	}
 
 	/**

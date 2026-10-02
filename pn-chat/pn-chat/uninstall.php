@@ -19,12 +19,10 @@ if ( $pnchat_keep ) {
 }
 
 global $wpdb;
-$pnchat_e = $wpdb->prefix . 'pnchat_entries';
-$pnchat_q = $wpdb->prefix . 'pnchat_questions';
-// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuerySchemaChange
-$wpdb->query( "DROP TABLE IF EXISTS {$pnchat_e}, {$pnchat_q}" );
-foreach ( array( 'pnchat_settings', 'pnchat_db_version', 'pnchat_brain_version', 'pnchat_snapshots', 'pnchat_seeded' ) as $pnchat_opt ) {
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuerySchemaChange
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i, %i', $wpdb->prefix . 'pnchat_entries', $wpdb->prefix . 'pnchat_questions' ) );
+foreach ( array( 'pnchat_settings', 'pnchat_db_version', 'pnchat_brain_version', 'pnchat_snapshots', 'pnchat_seeded', 'pnchat_settings_version' ) as $pnchat_opt ) {
 	delete_option( $pnchat_opt );
 }
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s", $wpdb->esc_like( '_transient_pnchat_' ) . '%', $wpdb->esc_like( '_transient_timeout_pnchat_' ) . '%' ) );
+$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s', $wpdb->options, $wpdb->esc_like( '_transient_pnchat_' ) . '%', $wpdb->esc_like( '_transient_timeout_pnchat_' ) . '%' ) );

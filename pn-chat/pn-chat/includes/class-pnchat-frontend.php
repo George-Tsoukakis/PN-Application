@@ -75,6 +75,8 @@ final class PNChat_Frontend {
 			'suggestions' => array_slice( PNChat_Store::lines( (string) $s['suggestions'] ), 0, 6 ),
 			'position'    => (string) $s['position'],
 			'maxLength'   => PNChat_Rest::MAX_QUESTION,
+			// Fixed buttons the chat button must not cover; it sits above them.
+			'avoid'       => array_values( array_filter( (array) apply_filters( 'pnchat_avoid_selectors', array( '#plandose-trigger' ) ), 'is_string' ) ),
 		);
 		wp_add_inline_script( 'pn-chat', 'window.PNChatConfig = ' . wp_json_encode( $config ) . ';', 'before' );
 	}

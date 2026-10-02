@@ -1,6 +1,6 @@
 <?php
 /**
- * Text folding for the matcher. Pure PHP, no WordPress calls (tests load it alone).
+ * Text folding for the matcher. Pure PHP, no WordPress calls (tests load it alone, defining ABSPATH).
  *
  * Greek and Greeklish are folded to the same phonetic Latin form, so that
  * «Τι είναι το PlanDose;», «τι ειναι το plandose» and «ti einai to plandose»
@@ -11,7 +11,7 @@
  * @package PNChat
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'PNCHAT_TESTING' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 

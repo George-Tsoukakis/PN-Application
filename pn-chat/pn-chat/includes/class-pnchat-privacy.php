@@ -62,11 +62,10 @@ final class PNChat_Privacy {
 	 */
 	private static function rows( $email ) {
 		global $wpdb;
-		$t    = PNChat_Store::questions_table();
 		$user = get_user_by( 'email', $email );
 		$uid  = $user ? (int) $user->ID : -1;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$t} WHERE email = %s OR user_id = %d ORDER BY id ASC LIMIT 500", $email, $uid ), ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE email = %s OR user_id = %d ORDER BY id ASC LIMIT 500', PNChat_Store::questions_table(), $email, $uid ), ARRAY_A );
 		return is_array( $rows ) ? $rows : array();
 	}
 
