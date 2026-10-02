@@ -301,6 +301,12 @@
 	border: 1px solid #f5d7a8;
 }
 
+.pnchat__answer--site {
+	background: #fff;
+	border: 1px solid var(--pnchat-border);
+	border-left: 4px solid var(--pnchat-accent);
+}
+
 .pnchat__bubble--notice {
 	background: #eef6ff;
 	border: 1px solid #cfe2fb;

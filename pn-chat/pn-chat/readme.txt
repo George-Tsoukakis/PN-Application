@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.3
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ send anything to any outside service.
 * **Combined answers:** a question about two topics gets both answers.
 * **When it does not know,** it says so (the text is editable) and offers a
   form for the visitor's e-mail, so you can reply later.
+* **Searches your own site:** when it has no trained answer, it shows the most
+  relevant published pages and posts of your site, with a link. Still no AI
+  and no outside service.
 * **Blocked questions:** questions it must not answer (for example medical
   advice) get your own message instead. You train them like answers.
 * **Mobile friendly:** full screen on phones, stays above the on-screen
@@ -90,6 +93,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.1.0 =
+* Site search: when no trained answer fits, the chat shows the most relevant published pages and posts of the site (title, matching sentence, link), still offering the e-mail form. Greek and Greeklish folding as for trained answers; indexed on save, in the background for existing pages; settings for post types, excluded pages and texts; "Update now" button.
 
 = 1.0.3 =
 * Matcher: a question that shares only one common word with a trained question (and also says other things) is no longer answered by it.

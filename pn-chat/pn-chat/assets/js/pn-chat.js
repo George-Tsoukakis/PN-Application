@@ -322,8 +322,9 @@
 			wrap.appendChild(el('div', { className: 'pnchat__bubble', text: m.text }));
 		}
 		(m.items || []).forEach(function (it) {
-			var card = el('div', { className: 'pnchat__bubble pnchat__answer' + (it.kind === 'block' ? ' pnchat__answer--block' : '') });
-			if (it.title && (m.items.length > 1)) {
+			var card = el('div', { className: 'pnchat__bubble pnchat__answer' + (it.kind === 'block' ? ' pnchat__answer--block' : '') + (it.kind === 'site' ? ' pnchat__answer--site' : '') });
+			// Site pages always show their title; trained answers only when combined.
+			if (it.title && (it.kind === 'site' || m.items.length > 1)) {
 				card.appendChild(el('p', { className: 'pnchat__answer-title', text: it.title }));
 			}
 			var body = el('div', { className: 'pnchat__answer-body' });
@@ -382,7 +383,7 @@
 		this.typing(true);
 		api('/ask', { question: q, page: window.location.href.split('#')[0] }).then(function (res) {
 			self.typing(false);
-			self.addBot({ items: res.items || [], message: res.message || '' }, true, res);
+			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '' }, true, res);
 		}).catch(function (err) {
 			self.typing(false);
 			self.addBot({ text: err.message }, false);

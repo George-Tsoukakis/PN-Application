@@ -26,7 +26,7 @@ final class PNChat_Brain {
 	 *
 	 * @var string[]
 	 */
-	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'strictness', 'max_answers', 'privacy_note' );
+	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note' );
 
 	/**
 	 * Matcher of this request.

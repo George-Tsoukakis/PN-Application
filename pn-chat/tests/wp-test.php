@@ -141,6 +141,47 @@ check( 'retention deletes old questions', null === PNChat_Store::question( $old 
 $e = PNChat_Store::entries( 'answer', true, 'PlanDose' );
 check( 'hits counted', $e && max( array_column( $e, 'hits' ) ) > 0 );
 
+// ---- Site search ---------------------------------------------------------------
+wp_set_current_user( $admin->ID );
+$mk = function ( $title, $content, $extra = array() ) {
+	return wp_insert_post( array_merge( array( 'post_title' => $title, 'post_content' => $content, 'post_status' => 'publish', 'post_type' => 'post' ), $extra ) );
+};
+$p1 = $mk( 'Οδηγός ψυγείου εμβολίων', '<p>Τα εμβόλια φυλάσσονται στο ψυγείο σε θερμοκρασία 2 έως 8 βαθμούς. Καταγράφετε τη θερμοκρασία του ψυγείου δύο φορές την ημέρα.</p><script>secretScript()</script>' );
+$p2 = $mk( 'Πρόχειρο ψυγείου εμβολίων', '<p>Θερμοκρασία ψυγείου εμβολίων πρόχειρο.</p>', array( 'post_status' => 'draft' ) );
+$p3 = $mk( 'Κλειδωμένο ψυγείο εμβολίων', '<p>Θερμοκρασία ψυγείου εμβολίων με κωδικό.</p>', array( 'post_password' => 'x' ) );
+check( 'published page indexed on save', '' !== (string) get_post_meta( $p1, PNChat_Site_Search::META, true ) );
+check( 'draft and password pages not indexed', '' === (string) get_post_meta( $p2, PNChat_Site_Search::META, true ) && '' === (string) get_post_meta( $p3, PNChat_Site_Search::META, true ) );
+$res = PNChat_Site_Search::search( 'Σε τι θερμοκρασία φυλάσσονται τα εμβόλια;' );
+check( 'site search finds the page', $res && $p1 === $res[0]['id'] && 1 === count( $res ), wp_json_encode( $res, JSON_UNESCAPED_UNICODE ) );
+check( 'snippet is the matching sentence, no script', $res && false !== strpos( $res[0]['snippet'], '2 έως 8' ) && false === strpos( $res[0]['snippet'], 'secret' ), $res ? $res[0]['snippet'] : '' );
+check( 'greeklish site search', (bool) PNChat_Site_Search::search( 'thermokrasia psygeiou emvolion' ) );
+check( 'off-topic finds nothing', ! PNChat_Site_Search::search( 'ποια ειναι η πρωτευουσα της ιταλιας' ) );
+wp_update_post( array( 'ID' => $p1, 'post_content' => '<p>Νέο κείμενο για τις μάσκες προσώπου.</p>' ) );
+$meta = (string) get_post_meta( $p1, PNChat_Site_Search::META, true );
+check( 'index follows edits', false !== strpos( $meta, ' maskes ' ) && false === strpos( $meta, '8ermokrasia' ) && (bool) PNChat_Site_Search::search( 'μάσκες προσώπου' ), $meta );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'site_exclude' => (string) $p1 ) ) );
+check( 'excluded page never shown', ! PNChat_Site_Search::search( 'μάσκες προσώπου' ) );
+update_option( PNChat_Settings::OPTION, $original_settings );
+
+wp_set_current_user( 0 );
+$_SERVER['REMOTE_ADDR'] = '127.0.0.' . wp_rand( 20, 250 );
+$d = rest( 'ask', array( 'question' => 'Έχετε μάσκες προσώπου;' ) )->get_data();
+check( 'REST: unknown question answered from the site', 'site' === $d['status'] && 'site' === $d['items'][0]['kind'] && false !== strpos( $d['items'][0]['html'], get_permalink( $p1 ) ) && $d['ask_email'] && '' !== $d['intro'], wp_json_encode( $d, JSON_UNESCAPED_UNICODE ) );
+check( 'REST: site answer logged as «site»', 'site' === PNChat_Store::question( $d['id'] )['status'] );
+rest( 'feedback', array( 'id' => $d['id'], 'token' => $d['token'], 'helpful' => false ) );
+check( 'REST: 👎 on a site answer opens the question', 'unhelpful' === PNChat_Store::question( $d['id'] )['status'] );
+$d = rest( 'ask', array( 'question' => 'Τι δόση να πάρω για τις μάσκες προσώπου;' ) )->get_data();
+check( 'REST: refused question never searches the site', 'blocked' === $d['status'] && 1 === count( $d['items'] ), wp_json_encode( $d, JSON_UNESCAPED_UNICODE ) );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'site_search' => 0 ) ) );
+$d = rest( 'ask', array( 'question' => 'Έχετε μάσκες προσώπου;' ) )->get_data();
+check( 'REST: site search can be switched off', 'unanswered' === $d['status'] );
+update_option( PNChat_Settings::OPTION, $original_settings );
+wp_set_current_user( $admin->ID );
+check( 'rebuild indexes published pages only', PNChat_Site_Search::rebuild() >= 1 && '' === (string) get_post_meta( $p2, PNChat_Site_Search::META, true ) );
+foreach ( array( $p1, $p2, $p3 ) as $p ) {
+	wp_delete_post( $p, true );
+}
+
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );
 PNChat_Brain::import( $original, 'replace', true, false );

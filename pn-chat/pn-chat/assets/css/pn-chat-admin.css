@@ -84,6 +84,11 @@
 	color: #8a4b0b;
 }
 
+.pnchat-admin .pnchat-pill--site {
+	background: #e5f0fa;
+	color: #135e96;
+}
+
 .pnchat-admin .pnchat-pill--partial {
 	background: #fff8e1;
 	color: #7a5a00;
@@ -117,6 +122,10 @@
 	padding: 8px 12px;
 	background: #fff;
 	border-left: 4px solid #2271b1;
+}
+
+.pnchat-admin .pnchat-test-item.is-site {
+	border-left-color: #00a32a;
 }
 
 .pnchat-admin .pnchat-test-item.is-block {

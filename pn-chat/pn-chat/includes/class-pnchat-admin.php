@@ -34,7 +34,7 @@ final class PNChat_Admin {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
-		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings' ) as $a ) {
+		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex' ) as $a ) {
 			add_action( 'admin_post_pnchat_' . $a, array( __CLASS__, 'handle_' . $a ) );
 		}
 	}
@@ -151,6 +151,7 @@ final class PNChat_Admin {
 			'restored'     => array( 'success', 'Ο εγκέφαλος επανήλθε από το αντίγραφο.' ),
 			'settings'     => array( 'success', 'Οι ρυθμίσεις αποθηκεύτηκαν.' ),
 			'not_found'    => array( 'error', 'Δεν βρέθηκε.' ),
+			'reindexed'    => array( 'success', sprintf( 'Το ευρετήριο του site ενημερώθηκε: %d σελίδες.', $n ) ),
 		);
 		if ( isset( $map[ $msg ] ) ) {
 			printf( '<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>', esc_attr( $map[ $msg ][0] ), esc_html( $map[ $msg ][1] ) );
@@ -438,6 +439,15 @@ final class PNChat_Admin {
 			if ( $r['unmatched'] ) {
 				echo '<p>Χωρίς απάντηση: «' . esc_html( implode( '», «', $r['unmatched'] ) ) . '»</p>';
 			}
+			$site = PNChat_Rest::site_results( $r, $q );
+			if ( $site ) {
+				echo '<p><strong>Από το site:</strong></p>';
+				foreach ( $site as $sr ) {
+					echo '<div class="pnchat-test-item is-site"><strong>' . esc_html( $sr['title'] ) . '</strong> <span class="description">(' . esc_html( number_format_i18n( $sr['score'] * 100 ) ) . '%)</span><div>' . wp_kses_post( PNChat_Site_Search::render( $sr ) ) . '</div></div>';
+				}
+			} elseif ( in_array( $r['status'], array( 'unanswered', 'partial' ), true ) && PNChat_Settings::value( 'site_search' ) ) {
+				echo '<p class="description">Δεν βρέθηκε ούτε σελίδα του site.</p>';
+			}
 			echo '<details><summary>Πώς αποφάσισε</summary>';
 			foreach ( $r['parts'] as $p ) {
 				echo '<p><em>«' . esc_html( $p['text'] ) . '»</em></p><ol>';
@@ -637,6 +647,7 @@ final class PNChat_Admin {
 			'open'       => 'Ανοιχτές',
 			'email'      => 'Περιμένουν e-mail',
 			'answered'   => 'Απαντήθηκαν',
+			'site'       => 'Από το site',
 			'blocked'    => 'Απαγορευμένες',
 			'trained'    => 'Εκπαιδεύτηκαν',
 			'replied'    => 'Στάλθηκε e-mail',
@@ -1126,6 +1137,16 @@ final class PNChat_Admin {
 		$number( 'rate_per_10min', 'Όριο ερωτήσεων', 'Ερωτήσεις ανά επισκέπτη ανά 10 λεπτά (προστασία από κατάχρηση).' );
 		echo '</table>';
 
+		echo '<h2>Αναζήτηση στο site</h2><table class="form-table" role="presentation">';
+		$check( 'site_search', 'Όταν δεν ξέρει', 'Ψάξε στις σελίδες και τα άρθρα του site και δείξε τα πιο σχετικά (τίτλο, σχετική πρόταση και link)' );
+		$text( 'site_types', 'Τι να ψάχνει', 'Τύποι περιεχομένου χωρισμένοι με κόμμα: post = άρθρα, page = σελίδες (π.χ. «post, page» ή και «product»).' );
+		$area( 'site_exclude', 'Να μην ψάχνει σε', 'Σελίδες που δεν πρέπει να εμφανίζονται: μία ανά γραμμή, ID ή διεύθυνση (π.χ. /my-account/). Καλάθι, ταμείο και λογαριασμός WooCommerce εξαιρούνται αυτόματα, όπως και οι σελίδες με κωδικό.' );
+		$number( 'site_max', 'Πόσες σελίδες', 'Το πολύ πόσες σελίδες δείχνει (1–5).' );
+		$area( 'site_intro', 'Κείμενο πριν τις σελίδες' );
+		$area( 'site_more', 'Κείμενο μετά τις σελίδες', 'Ακολουθεί φόρμα για το e-mail του επισκέπτη.' );
+		echo '</table>';
+		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a></p>';
+
 		echo '<h2>E-mail</h2><table class="form-table" role="presentation">';
 		$check( 'notify_on_email', 'Ειδοποίηση', 'Στείλε μου e-mail όταν ένας επισκέπτης αφήσει e-mail για απάντηση' );
 		echo '<tr><th scope="row"><label for="pnchat-notify_email">E-mail ειδοποιήσεων</label></th><td><input id="pnchat-notify_email" name="notify_email" type="email" class="regular-text" value="' . esc_attr( (string) $s['notify_email'] ) . '"></td></tr>';
@@ -1142,6 +1163,17 @@ final class PNChat_Admin {
 	}
 
 	/**
+	 * Rebuilds the site index now.
+	 *
+	 * @return void
+	 */
+	public static function handle_site_reindex() {
+		self::guard( 'pnchat_site_reindex' );
+		$n = PNChat_Site_Search::rebuild();
+		self::back( 'pn-chat-settings', 'reindexed', array( 'n' => $n ) );
+	}
+
+	/**
 	 * Saves settings.
 	 *
 	 * @return void
@@ -1155,7 +1187,12 @@ final class PNChat_Admin {
 		}
 		// The synonyms are edited on the training screen.
 		$in['synonyms'] = (string) $current['synonyms'];
-		PNChat_Settings::save( PNChat_Settings::sanitize( $in ) );
+		$clean          = PNChat_Settings::sanitize( $in );
+		PNChat_Settings::save( $clean );
+		if ( $clean['site_types'] !== $current['site_types'] || $clean['site_exclude'] !== $current['site_exclude'] ) {
+			delete_post_meta_by_key( PNChat_Site_Search::META );
+			PNChat_Site_Search::schedule();
+		}
 		PNChat_Store::bump();
 		self::back( 'pn-chat-settings', 'settings' );
 	}

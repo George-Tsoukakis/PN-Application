@@ -78,6 +78,12 @@ PHP
 ln -sfn "$PLUGIN_DIR" wp-content/plugins/pn-chat
 ./wp plugin activate pn-chat
 
+# A page the chat can find when it has no trained answer (e2e.mjs).
+if [ -z "$(./wp post list --post_type=post --title='Ωράριο φαρμακείων το καλοκαίρι' --format=ids)" ]; then
+	./wp post create --post_type=post --post_status=publish --post_title='Ωράριο φαρμακείων το καλοκαίρι' \
+		--post_content='<p>Τον Ιούλιο και τον Αύγουστο τα φαρμακεία μπορούν να λειτουργούν με θερινό ωράριο. Το ωράριο ορίζεται από τον τοπικό φαρμακευτικό σύλλογο.</p>' >/dev/null
+fi
+
 if ! curl -s -o /dev/null -m 5 "$BASE/wp-login.php"; then
 	PHP_CLI_SERVER_WORKERS=4 nohup php -d display_errors=0 -S "127.0.0.1:$PORT" -t "$WP_PATH" >"$WP_PATH/php-server.log" 2>&1 &
 	for _ in $(seq 1 40); do

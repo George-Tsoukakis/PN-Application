@@ -78,8 +78,16 @@ await p.locator('.pnchat__bubble--ok').waitFor();
 check('email accepted', (await p.locator('.pnchat__bubble--ok').innerText()).includes('farmakeio@example.gr'));
 check('admin notified', mails().length === before + 1);
 
+// No trained answer, but a page of the site has it (setup-wp.sh creates it).
+await p.fill('.pnchat__input', 'Ποιο είναι το ωράριο των φαρμακείων τον Αύγουστο;');
+await p.keyboard.press('Enter');
+await p.locator('.pnchat__answer--site').waitFor();
+const siteCard = p.locator('.pnchat__answer--site').first();
+check('site page shown with title and link', (await siteCard.innerText()).includes('Ωράριο φαρμακείων το καλοκαίρι') && (await siteCard.locator('a').count()) === 1);
+await shot(p, '4b-phone-site-search');
+
 await p.reload();
-check('conversation survives page change', (await p.locator('.pnchat__msg--user').count()) === 4);
+check('conversation survives page change', (await p.locator('.pnchat__msg--user').count()) === 5);
 await p.keyboard.press('Escape');
 check('Esc closes', !(await panel.isVisible()));
 await phone.close();

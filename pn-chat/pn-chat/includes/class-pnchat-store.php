@@ -28,6 +28,7 @@ final class PNChat_Store {
 			'unhelpful'  => 'Δεν βοήθησε',
 			'answered'   => 'Απαντήθηκε',
 			'blocked'    => 'Απαγορευμένη',
+			'site'       => 'Βρέθηκε στο site',
 			'trained'    => 'Εκπαιδεύτηκε',
 			'replied'    => 'Στάλθηκε e-mail',
 			'dismissed'  => 'Αγνοήθηκε',

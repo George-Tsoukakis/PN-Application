@@ -134,6 +134,10 @@ final class PNChat_Rest {
 		}
 
 		$result = PNChat_Brain::matcher()->ask( $question );
+		$site   = self::site_results( $result, $question );
+		if ( $site && 'unanswered' === $result['status'] ) {
+			$result['status'] = 'site';
+		}
 
 		$items   = array();
 		$matched = array();
@@ -146,6 +150,13 @@ final class PNChat_Rest {
 			);
 		}
 		PNChat_Store::count_hits( $matched );
+		foreach ( $site as $r ) {
+			$items[] = array(
+				'kind'  => 'site',
+				'title' => $r['title'],
+				'html'  => PNChat_Site_Search::render( $r ),
+			);
+		}
 
 		$token = wp_generate_password( 32, false );
 		$page  = esc_url_raw( (string) $req->get_param( 'page' ) );
@@ -162,10 +173,14 @@ final class PNChat_Rest {
 		);
 
 		$message = '';
+		$intro   = '';
 		if ( 'unanswered' === $result['status'] ) {
 			$message = (string) $s['fallback'];
+		} elseif ( 'site' === $result['status'] ) {
+			$intro   = (string) $s['site_intro'];
+			$message = (string) $s['site_more'];
 		} elseif ( 'partial' === $result['status'] ) {
-			$message = sprintf( (string) $s['partial'], implode( '», «', $result['unmatched'] ) );
+			$message = $site ? (string) $s['site_more'] : sprintf( (string) $s['partial'], implode( '», «', $result['unmatched'] ) );
 		}
 
 		return rest_ensure_response(
@@ -174,9 +189,10 @@ final class PNChat_Rest {
 				'token'      => $id ? $token : '',
 				'status'     => $result['status'],
 				'items'      => $items,
+				'intro'      => $intro,
 				'message'    => $message,
-				'ask_email'  => $id && in_array( $result['status'], array( 'unanswered', 'partial' ), true ),
-				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial' ), true ),
+				'ask_email'  => $id && in_array( $result['status'], array( 'unanswered', 'partial', 'site' ), true ),
+				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial', 'site' ), true ),
 				'user_email' => self::user_email(),
 			)
 		);
@@ -237,7 +253,7 @@ final class PNChat_Rest {
 			return $q;
 		}
 		$helpful = rest_sanitize_boolean( $req->get_param( 'helpful' ) );
-		if ( ! $helpful && in_array( $q['status'], array( 'answered', 'partial' ), true ) ) {
+		if ( ! $helpful && in_array( $q['status'], array( 'answered', 'partial', 'site' ), true ) ) {
 			PNChat_Store::update_question( (int) $q['id'], array( 'status' => 'unhelpful' ) );
 		}
 		$s = PNChat_Settings::get();
@@ -248,6 +264,23 @@ final class PNChat_Rest {
 				'message'   => $helpful ? 'Ευχαριστούμε!' : (string) $s['unhelpful'],
 			)
 		);
+	}
+
+	/**
+	 * Pages of the site for what the brain could not answer (the whole
+	 * question, or its unanswered parts). Never for a refused question.
+	 *
+	 * @param array<string,mixed> $result   Matcher result.
+	 * @param string              $question Question.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function site_results( array $result, $question ) {
+		$s = PNChat_Settings::get();
+		if ( empty( $s['site_search'] ) || ! in_array( $result['status'], array( 'unanswered', 'partial' ), true ) ) {
+			return array();
+		}
+		$text = 'partial' === $result['status'] ? implode( ' ', $result['unmatched'] ) : $question;
+		return PNChat_Site_Search::search( $text, (int) $s['site_max'] );
 	}
 
 	/**

@@ -36,6 +36,12 @@ final class PNChat_Settings {
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.',
 			'suggestions'      => "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;",
 			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ",
+			'site_search'      => 1,
+			'site_types'       => 'post, page',
+			'site_exclude'     => '',
+			'site_max'         => 3,
+			'site_intro'       => 'Δεν έχω έτοιμη απάντηση, αλλά βρήκα σχετικές πληροφορίες στο site:',
+			'site_more'        => 'Αν δεν βρήκατε αυτό που ψάχνατε, αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'strictness'       => 'normal', // loose | normal | strict.
 			'max_answers'      => 3,
 			'feedback'         => 1,
@@ -104,7 +110,7 @@ final class PNChat_Settings {
 		$d   = self::defaults();
 		$out = array();
 
-		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall' ) as $k ) {
+		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search' ) as $k ) {
 			$out[ $k ] = empty( $in[ $k ] ) ? 0 : 1;
 		}
 		$out['visibility'] = in_array( $in['visibility'] ?? '', array( 'all', 'logged_in' ), true ) ? $in['visibility'] : $d['visibility'];
@@ -112,10 +118,10 @@ final class PNChat_Settings {
 		$out['strictness'] = in_array( $in['strictness'] ?? '', array( 'loose', 'normal', 'strict' ), true ) ? $in['strictness'] : $d['strictness'];
 		$out['position']   = in_array( $in['position'] ?? '', array( 'right', 'left' ), true ) ? $in['position'] : $d['position'];
 
-		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject' ) as $k ) {
+		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types' ) as $k ) {
 			$out[ $k ] = sanitize_text_field( (string) ( $in[ $k ] ?? '' ) );
 		}
-		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms' ) as $k ) {
+		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'site_exclude', 'site_intro', 'site_more' ) as $k ) {
 			$out[ $k ] = sanitize_textarea_field( (string) ( $in[ $k ] ?? '' ) );
 		}
 		foreach ( array( 'title', 'fallback', 'unhelpful', 'placeholder' ) as $k ) {
@@ -127,6 +133,7 @@ final class PNChat_Settings {
 		$color        = sanitize_hex_color( (string) ( $in['color'] ?? '' ) );
 		$out['color'] = $color ? $color : $d['color'];
 
+		$out['site_max']       = max( 1, min( 5, absint( $in['site_max'] ?? $d['site_max'] ) ) );
 		$out['max_answers']    = max( 1, min( 5, absint( $in['max_answers'] ?? $d['max_answers'] ) ) );
 		$out['rate_per_10min'] = max( 1, min( 500, absint( $in['rate_per_10min'] ?? $d['rate_per_10min'] ) ) );
 		$out['retention_days'] = min( 3650, absint( $in['retention_days'] ?? $d['retention_days'] ) );
