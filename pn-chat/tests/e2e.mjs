@@ -195,8 +195,53 @@ const [dl] = await Promise.all([a.waitForEvent('download'), a.click('input[value
 const brain = JSON.parse(readFileSync(await dl.path(), 'utf8'));
 check('brain download', brain.format === 'pn-chat-brain' && brain.entries.some((e) => e.title === 'Πληρωμή με κάρτα') && !brain.questions, dl.suggestedFilename());
 
+// AI training assistant (the test site fakes the Claude API, see setup-wp.sh).
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
+await a.check('input[name=ai_enabled]');
+await a.fill('#pnchat-ai_key', 'sk-ant-e2e-test-key-0000000000');
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=settings/);
+check('API key not shown again', !(await a.content()).includes('sk-ant-e2e-test-key') && (await a.locator('#pnchat-ai_key').getAttribute('placeholder')).includes('…0000'));
+const unk = await (await a.request.post(`${BASE}/?rest_route=/pn-chat/v1/ask`, { data: { question: 'Τι ώρες ανοίγουν τα φαρμακεία το καλοκαίρι;' } })).json();
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&new=1&from_question=${unk.id}`);
+await a.click('.pnchat-ai-button');
+await a.waitForURL(/[?&]ai=/);
+check('AI draft prefills the form', (await a.inputValue('#pnchat-title')) === 'Θερινό ωράριο (AI)' && (await a.inputValue('#pnchat-phr')).includes('Τι ώρες ανοίγουν τα φαρμακεία το καλοκαίρι;') && (await a.locator('.pnchat-ai-notice').innerText()).includes('Ωράριο φαρμακείων το καλοκαίρι'));
+await shot(a, '8-admin-ai-draft');
+await a.click('form.pnchat-form #submit');
+await a.waitForURL(/pnchat_msg=saved/);
+const learned = await (await a.request.post(`${BASE}/?rest_route=/pn-chat/v1/ask`, { data: { question: 'Ποιο είναι το θερινό ωράριο;' } })).json();
+check('approved AI draft answers in the chat', learned.status === 'answered' && learned.items[0].title === 'Θερινό ωράριο (AI)', JSON.stringify(learned));
+
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat`);
+await a.selectOption('#pnchat-ai-page', { label: 'Ωράριο φαρμακείων το καλοκαίρι' });
+await a.click('form:has(#pnchat-ai-page) button');
+await a.waitForURL(/ai_review=/);
+check('page review lists the drafts', (await a.locator('.pnchat-ai-draft').count()) === 2);
+await shot(a, '9-admin-ai-review');
+await a.locator('.pnchat-ai-draft input[type=checkbox]').first().uncheck();
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=ai_saved&n=1/);
+check('only the ticked draft saved', (await a.locator('tr', { hasText: 'Ποιος ορίζει το ωράριο (AI)' }).count()) === 1);
+
+// Clean up: AI entries, key.
+for (const t of ['Θερινό ωράριο (AI)', 'Ποιος ορίζει το ωράριο (AI)']) {
+	await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&s=` + encodeURIComponent(t));
+	while ((await a.locator('tr', { hasText: t }).count()) > 0) {
+		a.once('dialog', (dg) => dg.accept());
+		await a.locator('tr', { hasText: t }).locator('a.pnchat-danger').first().click();
+		await a.waitForURL(/pnchat_msg=deleted/);
+		await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&s=` + encodeURIComponent(t));
+	}
+}
+await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
+await a.uncheck('input[name=ai_enabled]');
+await a.check('input[name=ai_key_delete]');
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=settings/);
+
 // Clean up what this run trained (also tests deleting), so the next run starts the same.
-a.on('dialog', (d) => d.accept());
+a.on('dialog', (d) => d.accept().catch(() => {}));
 for (const [slug, text] of [['pn-chat', 'Πληρωμή με κάρτα'], ['pn-chat-blocks', 'Ποια είναι η τιμή του Depon']]) {
 	await a.goto(`${BASE}/wp-admin/admin.php?page=${slug}&s=` + encodeURIComponent(text));
 	const del = a.locator('tr', { hasText: text }).locator('a.pnchat-danger');

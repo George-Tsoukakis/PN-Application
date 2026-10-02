@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,6 +27,9 @@ send anything to any outside service.
 * **Searches your own site:** when it has no trained answer, it shows the most
   relevant published pages and posts of your site, with a link. Still no AI
   and no outside service.
+* **Optional AI training assistant (admin only):** Claude reads pages of your
+  own site and drafts knowledge entries that you review before they are saved.
+  The public chat never uses AI.
 * **Blocked questions:** questions it must not answer (for example medical
   advice) get your own message instead. You train them like answers.
 * **Mobile friendly:** full screen on phones, stays above the on-screen
@@ -83,6 +86,11 @@ copy from the Brain screen before big changes.
 
 == Privacy ==
 
+* AI training assistant (off by default): when an administrator presses a
+  "✨" button, the chosen question (never the visitor's e-mail or name) and
+  public pages of the site are sent to the Claude API of Anthropic
+  (https://www.anthropic.com/legal/privacy). Nothing is sent otherwise.
+
 * Stored: the questions, and the e-mail address and name only if the visitor
   enters them. Questions are deleted automatically after 365 days (setting).
 * IP addresses are not stored; a hash is kept briefly (up to one hour) for
@@ -93,6 +101,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.2.0 =
+* AI training assistant (optional, admin only): Claude reads pages of your own site and drafts knowledge entries - for an unanswered question, or several from one page - that an administrator reviews before saving. The public chat never calls the API. API key in wp-config.php (PNCHAT_ANTHROPIC_API_KEY) or the settings, never shown again; running token and cost total; safety-classifier declines retried server-side.
 
 = 1.1.0 =
 * Site search: when no trained answer fits, the chat shows the most relevant published pages and posts of the site (title, matching sentence, link), still offering the e-mail form. Greek and Greeklish folding as for trained answers; indexed on save, in the background for existing pages; settings for post types, excluded pages and texts; "Update now" button.

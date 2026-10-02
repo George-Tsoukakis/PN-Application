@@ -182,6 +182,96 @@ foreach ( array( $p1, $p2, $p3 ) as $p ) {
 	wp_delete_post( $p, true );
 }
 
+// ---- AI training assistant (Claude API mocked, no network) ------------------------
+wp_set_current_user( $admin->ID );
+delete_option( 'pnchat_ai_key' );
+delete_option( PNChat_AI::USAGE_OPTION );
+check( 'AI off without a key', ! PNChat_AI::enabled() && is_wp_error( PNChat_AI::call( 's', 'u', array( 'type' => 'object' ) ) ) );
+update_option( 'pnchat_ai_key', 'sk-ant-test-0123456789abcdef', false );
+update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'ai_enabled' => 1 ) ) );
+check( 'AI on with key and setting', PNChat_AI::enabled() && '…cdef' === PNChat_AI::key_hint() );
+
+$page_id = $mk( 'Κοινότητα Viber φαρμακείων', '<p>Για να γίνετε μέλος στην κοινότητα Viber συμπληρώνετε τη φόρμα με επωνυμία φαρμακείου, ΑΦΜ, email και κινητό Viber.</p>' );
+$GLOBALS['pnchat_ai_reqs'] = array();
+$GLOBALS['pnchat_ai_next'] = null;
+$fake = function ( $pre, $args, $url ) {
+	if ( 0 !== strpos( $url, 'https://api.anthropic.com/' ) ) {
+		return $pre;
+	}
+	$GLOBALS['pnchat_ai_reqs'][] = array( 'url' => $url, 'args' => $args );
+	return $GLOBALS['pnchat_ai_next'];
+};
+add_filter( 'pre_http_request', $fake, 10, 3 );
+$reply = function ( $json, $code = 200, $stop = 'end_turn' ) {
+	$GLOBALS['pnchat_ai_next'] = array(
+		'headers'  => array(),
+		'response' => array( 'code' => $code, 'message' => '' ),
+		'cookies'  => array(),
+		'body'     => wp_json_encode(
+			200 === $code ? array(
+				'stop_reason' => $stop,
+				'content'     => array( array( 'type' => 'thinking', 'thinking' => '' ), array( 'type' => 'text', 'text' => is_string( $json ) ? $json : wp_json_encode( $json ) ) ),
+				'usage'       => array( 'input_tokens' => 1000, 'output_tokens' => 200 ),
+			) : array( 'type' => 'error', 'error' => array( 'type' => 'x', 'message' => 'bad key' ) )
+		),
+	);
+};
+$reply(
+	array(
+		'found' => true,
+		'note'  => 'Από τη σελίδα της κοινότητας.',
+		'entry' => array(
+			'title'      => 'Μέλος στο Viber',
+			'phrasings'  => array( 'Πώς γίνομαι μέλος στο Viber;', 'Πώς μπαίνω στην ομάδα Viber;' ),
+			'keywords'   => array(),
+			'answer'     => '<p>Συμπληρώνετε τη φόρμα. <a href="https://evil.example/x">εδώ</a> και <a href="' . get_permalink( $page_id ) . '">σελίδα</a></p><script>x()</script>',
+			'source_url' => get_permalink( $page_id ),
+		),
+	)
+);
+$r   = PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' );
+$req = end( $GLOBALS['pnchat_ai_reqs'] );
+$b   = $req ? json_decode( $req['args']['body'], true ) : array();
+check( 'AI request: endpoint and headers', $req && 'https://api.anthropic.com/v1/messages' === $req['url'] && 'sk-ant-test-0123456789abcdef' === $req['args']['headers']['x-api-key'] && '2023-06-01' === $req['args']['headers']['anthropic-version'] && 'server-side-fallback-2026-07-01' === $req['args']['headers']['anthropic-beta'] );
+check( 'AI request: model, fallbacks, structured output', 'claude-opus-5-5' === $b['model'] && 'default' === $b['fallbacks'] && 'json_schema' === $b['output_config']['format']['type'] && 'medium' === $b['output_config']['effort'] && 16000 === $b['max_tokens'] && ! isset( $b['thinking'] ), wp_json_encode( $b ) );
+check( 'AI request: sends the site page and the question only', false !== strpos( $b['messages'][0]['content'], 'κινητό Viber' ) && false !== strpos( $b['messages'][0]['content'], 'κοινότητα Viber;' ) && false === strpos( $req['args']['body'], 'visitor@' ) );
+check( 'AI draft: found, cleaned, external link dropped', ! is_wp_error( $r ) && $r['found'] && 'Μέλος στο Viber' === $r['entry']['title'] && false === strpos( $r['entry']['answer'], 'evil.example' ) && false === strpos( $r['entry']['answer'], '<script' ) && false !== strpos( $r['entry']['answer'], get_permalink( $page_id ) ), is_wp_error( $r ) ? $r->get_error_message() : $r['entry']['answer'] );
+check( 'AI usage counted', 1 === PNChat_AI::usage()['calls'] && 1000 === PNChat_AI::usage()['input_tokens'] );
+
+$n = count( $GLOBALS['pnchat_ai_reqs'] );
+$r = PNChat_AI::draft_for_question( 'ποια ειναι η πρωτευουσα της ιταλιας' );
+check( 'AI: no matching page, nothing sent to Claude', ! is_wp_error( $r ) && ! $r['found'] && count( $GLOBALS['pnchat_ai_reqs'] ) === $n );
+
+$reply( array(), 401 );
+$e = PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' );
+check( 'AI: wrong key explained', is_wp_error( $e ) && false !== strpos( $e->get_error_message(), 'API key' ) );
+$reply( '', 200, 'refusal' );
+check( 'AI: refusal handled', is_wp_error( PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' ) ) );
+$reply( '{"found": true, "note": "', 200, 'max_tokens' );
+check( 'AI: cut answer handled', is_wp_error( PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' ) ) );
+$reply( 'not json' );
+check( 'AI: invalid JSON handled', is_wp_error( PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' ) ) );
+
+$reply(
+	array(
+		'entries' => array(
+			array( 'title' => 'Συμμετοχή', 'phrasings' => array( 'Τι χρειάζεται για τη συμμετοχή;' ), 'keywords' => array(), 'answer' => '<p>Επωνυμία, ΑΦΜ, email, κινητό.</p>', 'source_url' => '' ),
+			array( 'title' => 'κενή', 'phrasings' => array(), 'keywords' => array(), 'answer' => '', 'source_url' => '' ),
+		),
+	)
+);
+$d   = PNChat_AI::drafts_from_page( $page_id );
+$req = end( $GLOBALS['pnchat_ai_reqs'] );
+check( 'AI page drafts: invalid dropped, source link added', ! is_wp_error( $d ) && 1 === count( $d ) && false !== strpos( $d[0]['answer'], get_permalink( $page_id ) ), wp_json_encode( $d, JSON_UNESCAPED_UNICODE ) );
+check( 'AI page drafts: existing titles sent to avoid repeats', false !== strpos( json_decode( $req['args']['body'], true )['messages'][0]['content'], 'Τι είναι το PlanDose' ) );
+check( 'AI page: unpublished page refused', is_wp_error( PNChat_AI::drafts_from_page( $p2 ?? 0 ) ) );
+check( 'API key never in the brain download', false === strpos( wp_json_encode( PNChat_Brain::export( true ) ), 'sk-ant-test' ) );
+remove_filter( 'pre_http_request', $fake, 10 );
+wp_delete_post( $page_id, true );
+delete_option( 'pnchat_ai_key' );
+delete_option( PNChat_AI::USAGE_OPTION );
+update_option( PNChat_Settings::OPTION, $original_settings );
+
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );
 PNChat_Brain::import( $original, 'replace', true, false );

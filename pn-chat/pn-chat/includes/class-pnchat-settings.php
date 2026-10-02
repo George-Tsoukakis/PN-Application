@@ -36,6 +36,8 @@ final class PNChat_Settings {
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.',
 			'suggestions'      => "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;",
 			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ",
+			'ai_enabled'       => 0,
+			'ai_model'         => 'claude-opus-5-5',
 			'site_search'      => 1,
 			'site_types'       => 'post, page',
 			'site_exclude'     => '',
@@ -110,7 +112,7 @@ final class PNChat_Settings {
 		$d   = self::defaults();
 		$out = array();
 
-		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search' ) as $k ) {
+		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled' ) as $k ) {
 			$out[ $k ] = empty( $in[ $k ] ) ? 0 : 1;
 		}
 		$out['visibility'] = in_array( $in['visibility'] ?? '', array( 'all', 'logged_in' ), true ) ? $in['visibility'] : $d['visibility'];
@@ -133,6 +135,8 @@ final class PNChat_Settings {
 		$color        = sanitize_hex_color( (string) ( $in['color'] ?? '' ) );
 		$out['color'] = $color ? $color : $d['color'];
 
+		$model           = trim( sanitize_text_field( (string) ( $in['ai_model'] ?? '' ) ) );
+		$out['ai_model'] = preg_match( '/^claude-[a-z0-9.-]+$/', $model ) ? $model : $d['ai_model'];
 		$out['site_max']       = max( 1, min( 5, absint( $in['site_max'] ?? $d['site_max'] ) ) );
 		$out['max_answers']    = max( 1, min( 5, absint( $in['max_answers'] ?? $d['max_answers'] ) ) );
 		$out['rate_per_10min'] = max( 1, min( 500, absint( $in['rate_per_10min'] ?? $d['rate_per_10min'] ) ) );

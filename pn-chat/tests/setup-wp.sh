@@ -75,6 +75,29 @@ add_filter( 'pre_wp_mail', function ( $null, $atts ) {
 }, 10, 2 );
 PHP
 
+# Fake Claude API for e2e.mjs: answers from the page it was sent, no network.
+cat > wp-content/mu-plugins/pnchat-test-fake-ai.php <<'PHP'
+<?php
+add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
+	if ( 0 !== strpos( $url, 'https://api.anthropic.com/' ) ) {
+		return $pre;
+	}
+	$b    = json_decode( $args['body'], true );
+	$page = (string) $b['messages'][0]['content'];
+	preg_match( '/url="([^"]+)"/', $page, $m );
+	$url  = $m[1] ?? home_url( '/' );
+	$one  = array( 'title' => 'Θερινό ωράριο (AI)', 'phrasings' => array( 'Ποιο είναι το θερινό ωράριο;', 'Τι ώρες ανοίγουν τα φαρμακεία το καλοκαίρι;' ), 'keywords' => array(), 'answer' => '<p>Τον Ιούλιο και τον Αύγουστο τα φαρμακεία μπορούν να λειτουργούν με θερινό ωράριο, που ορίζει ο τοπικός σύλλογος.</p>', 'source_url' => $url );
+	$two  = array( 'title' => 'Ποιος ορίζει το ωράριο (AI)', 'phrasings' => array( 'Ποιος ορίζει το ωράριο των φαρμακείων;' ), 'keywords' => array(), 'answer' => '<p>Ο τοπικός φαρμακευτικός σύλλογος.</p>', 'source_url' => $url );
+	$out  = isset( $b['output_config']['format']['schema']['properties']['entries'] ) ? array( 'entries' => array( $one, $two ) ) : array( 'found' => true, 'note' => 'Από τη σελίδα για το ωράριο.', 'entry' => $one );
+	return array(
+		'headers'  => array(),
+		'response' => array( 'code' => 200, 'message' => 'OK' ),
+		'cookies'  => array(),
+		'body'     => wp_json_encode( array( 'stop_reason' => 'end_turn', 'content' => array( array( 'type' => 'text', 'text' => wp_json_encode( $out ) ) ), 'usage' => array( 'input_tokens' => 1200, 'output_tokens' => 300 ) ) ),
+	);
+}, 10, 3 );
+PHP
+
 ln -sfn "$PLUGIN_DIR" wp-content/plugins/pn-chat
 ./wp plugin activate pn-chat
 

@@ -157,3 +157,28 @@
 		content: "Χρήσεις: ";
 	}
 }
+
+.pnchat-admin .pnchat-ai-card {
+	border-left: 4px solid #8c5cf6;
+}
+
+.pnchat-admin .pnchat-ai-form {
+	margin: 12px 0;
+}
+
+.pnchat-admin .pnchat-ai-notice ul,
+.pnchat-admin .pnchat-ai-notice p {
+	max-width: 900px;
+}
+
+.pnchat-admin .pnchat-ai-draft .pnchat-ai-cols {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
+@media (max-width: 782px) {
+	.pnchat-admin .pnchat-ai-draft .pnchat-ai-cols {
+		grid-template-columns: 1fr;
+	}
+}
