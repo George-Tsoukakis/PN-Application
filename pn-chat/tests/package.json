@@ -1,0 +1,18 @@
+{
+  "name": "pn-chat-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser tests for the PN Chat WordPress plugin (not shipped with the plugin).",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test:matcher": "php matcher-test.php",
+    "test:e2e": "node e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

@@ -1,0 +1,18 @@
+# PHPStan for PN Chat, with the tools of tests/tools/php-qa. From that folder:
+#   vendor/bin/phpstan analyse -c ../../../pn-chat/tests/phpstan.neon
+includes:
+	- ../../tests/tools/php-qa/vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 5
+	phpVersion:
+		min: 80000
+		max: 80499
+	paths:
+		- ../pn-chat
+	bootstrapFiles:
+		- phpstan-bootstrap.php
+	tmpDir: ../../tests/tools/php-qa/.phpstan-cache/pn-chat
+	treatPhpDocTypesAsCertain: false
+	dynamicConstantNames:
+		- PNCHAT_VERSION

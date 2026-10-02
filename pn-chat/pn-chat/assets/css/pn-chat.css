@@ -1,0 +1,489 @@
+/* PN Chat widget. Mobile first: full screen on phones, a panel on larger screens. */
+.pnchat {
+	--pnchat-accent: #0f766e;
+	--pnchat-bg: #ffffff;
+	--pnchat-fg: #1f2933;
+	--pnchat-muted: #5f6b76;
+	--pnchat-bot: #f1f4f6;
+	--pnchat-border: #dde3e8;
+	--pnchat-radius: 16px;
+	--pnchat-vh: 100vh;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+	font-size: 15px;
+	line-height: 1.45;
+	color: var(--pnchat-fg);
+	box-sizing: border-box;
+}
+
+.pnchat *,
+.pnchat *::before,
+.pnchat *::after {
+	box-sizing: inherit;
+}
+
+.pnchat [hidden] {
+	display: none !important;
+}
+
+/* ---- floating button ---------------------------------------------------- */
+.pnchat--floating {
+	position: fixed;
+	right: max(16px, env(safe-area-inset-right));
+	bottom: max(16px, env(safe-area-inset-bottom));
+	z-index: 99990;
+}
+
+.pnchat--floating.pnchat--left {
+	right: auto;
+	left: max(16px, env(safe-area-inset-left));
+}
+
+.pnchat__launcher {
+	width: 60px;
+	height: 60px;
+	border: 0;
+	border-radius: 50%;
+	background: var(--pnchat-accent);
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, .22);
+	transition: transform .15s ease;
+}
+
+.pnchat__launcher:hover {
+	transform: scale(1.05);
+}
+
+.pnchat__launcher:focus-visible,
+.pnchat button:focus-visible,
+.pnchat__input:focus-visible,
+.pnchat__field:focus-visible {
+	outline: 3px solid var(--pnchat-accent);
+	outline-offset: 2px;
+}
+
+.pnchat--floating.is-open .pnchat__launcher {
+	display: none;
+}
+
+/* ---- panel ---------------------------------------------------------------- */
+.pnchat__panel {
+	display: flex;
+	flex-direction: column;
+	background: var(--pnchat-bg);
+	overflow: hidden;
+}
+
+.pnchat--floating .pnchat__panel {
+	position: fixed;
+	inset: 0;
+	height: var(--pnchat-vh);
+	height: min(var(--pnchat-vh), 100dvh);
+	border-radius: 0;
+}
+
+.pnchat--inline .pnchat__panel {
+	height: 560px;
+	max-height: 80vh;
+	border: 1px solid var(--pnchat-border);
+	border-radius: var(--pnchat-radius);
+}
+
+@media (min-width: 600px) {
+	.pnchat--floating .pnchat__panel {
+		inset: auto;
+		right: 24px;
+		bottom: 24px;
+		width: 380px;
+		height: min(620px, calc(var(--pnchat-vh) - 48px));
+		border-radius: var(--pnchat-radius);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, .25);
+	}
+
+	.pnchat--floating.pnchat--left .pnchat__panel {
+		right: auto;
+		left: 24px;
+	}
+}
+
+/* Phones: the page behind a full-screen chat must not scroll. */
+@media (max-width: 599px) {
+	html.pnchat-open,
+	html.pnchat-open body {
+		overflow: hidden;
+	}
+}
+
+.pnchat__header {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 14px 16px;
+	padding-top: max(14px, env(safe-area-inset-top));
+	background: var(--pnchat-accent);
+	color: #fff;
+}
+
+.pnchat--inline .pnchat__header {
+	padding-top: 14px;
+}
+
+.pnchat__heading {
+	flex: 1;
+	min-width: 0;
+}
+
+.pnchat .pnchat__title {
+	margin: 0;
+	padding: 0;
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: #fff;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+.pnchat .pnchat__subtitle {
+	margin: 2px 0 0;
+	font-size: 13px;
+	opacity: .9;
+}
+
+.pnchat__close {
+	flex: none;
+	width: 40px;
+	height: 40px;
+	margin: -6px -6px 0 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pnchat__close:hover {
+	background: rgba(255, 255, 255, .15);
+}
+
+/* ---- messages --------------------------------------------------------------- */
+.pnchat__log {
+	flex: 1;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pnchat__msg {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-width: 88%;
+}
+
+.pnchat__msg--user {
+	align-self: flex-end;
+	align-items: flex-end;
+}
+
+.pnchat__msg--bot {
+	align-self: flex-start;
+}
+
+.pnchat__bubble {
+	padding: 10px 14px;
+	border-radius: 14px;
+	background: var(--pnchat-bot);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.pnchat__msg--user .pnchat__bubble {
+	background: var(--pnchat-accent);
+	color: #fff;
+	border-bottom-right-radius: 4px;
+}
+
+.pnchat__msg--bot .pnchat__bubble {
+	border-bottom-left-radius: 4px;
+}
+
+.pnchat__answer {
+	white-space: normal;
+}
+
+.pnchat__answer-title {
+	margin: 0 0 4px;
+	font-weight: 700;
+}
+
+.pnchat__answer-body > :first-child {
+	margin-top: 0;
+}
+
+.pnchat__answer-body > :last-child {
+	margin-bottom: 0;
+}
+
+.pnchat__answer-body p,
+.pnchat__answer-body ul,
+.pnchat__answer-body ol {
+	margin: 0 0 8px;
+}
+
+.pnchat__answer-body ul,
+.pnchat__answer-body ol {
+	padding-left: 20px;
+}
+
+.pnchat__answer-body a {
+	color: var(--pnchat-accent);
+	text-decoration: underline;
+}
+
+.pnchat__answer--block {
+	background: #fff4e5;
+	border: 1px solid #f5d7a8;
+}
+
+.pnchat__bubble--notice {
+	background: #eef6ff;
+	border: 1px solid #cfe2fb;
+}
+
+.pnchat__bubble--ok {
+	background: #e9f8ef;
+	border: 1px solid #bfe7cd;
+}
+
+/* typing dots */
+.pnchat__typing .pnchat__bubble {
+	display: flex;
+	gap: 4px;
+	padding: 14px;
+}
+
+.pnchat__typing span {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--pnchat-muted);
+	animation: pnchat-dot 1.2s infinite ease-in-out;
+}
+
+.pnchat__typing span:nth-child(2) {
+	animation-delay: .15s;
+}
+
+.pnchat__typing span:nth-child(3) {
+	animation-delay: .3s;
+}
+
+@keyframes pnchat-dot {
+	0%, 80%, 100% { opacity: .3; transform: translateY(0); }
+	40% { opacity: 1; transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pnchat__typing span,
+	.pnchat__launcher {
+		animation: none;
+		transition: none;
+	}
+}
+
+/* ---- e-mail form & feedback ---------------------------------------------- */
+.pnchat__email {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px;
+	border: 1px solid var(--pnchat-border);
+	border-radius: 12px;
+	background: #fff;
+}
+
+.pnchat__label {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.pnchat .pnchat__field {
+	width: 100%;
+	min-height: 44px;
+	padding: 8px 10px;
+	border: 1px solid var(--pnchat-border);
+	border-radius: 10px;
+	font: inherit;
+	font-size: 16px; /* 16px stops iOS from zooming in */
+	color: var(--pnchat-fg);
+	background: #fff;
+}
+
+.pnchat__trap {
+	position: absolute !important;
+	left: -9999px !important;
+	width: 1px !important;
+	height: 1px !important;
+	opacity: 0 !important;
+}
+
+.pnchat .pnchat__btn {
+	min-height: 44px;
+	border: 0;
+	border-radius: 10px;
+	background: var(--pnchat-accent);
+	color: #fff;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.pnchat__btn:disabled {
+	opacity: .6;
+	cursor: default;
+}
+
+.pnchat__form-status {
+	margin: 0;
+	font-size: 13px;
+	color: var(--pnchat-muted);
+}
+
+.pnchat__form-status:empty {
+	display: none;
+}
+
+.pnchat__feedback {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--pnchat-muted);
+}
+
+.pnchat .pnchat__vote {
+	min-width: 40px;
+	min-height: 36px;
+	border: 1px solid var(--pnchat-border);
+	border-radius: 18px;
+	background: #fff;
+	color: var(--pnchat-muted);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pnchat .pnchat__vote:hover {
+	color: var(--pnchat-accent);
+	border-color: var(--pnchat-accent);
+}
+
+.pnchat__feedback-done {
+	margin: 0;
+	font-size: 13px;
+	color: var(--pnchat-muted);
+}
+
+.pnchat__feedback-done:empty {
+	display: none;
+}
+
+/* ---- suggestions & input -------------------------------------------------- */
+.pnchat__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 0 16px 10px;
+}
+
+.pnchat .pnchat__chip {
+	min-height: 36px;
+	padding: 6px 12px;
+	border: 1px solid var(--pnchat-accent);
+	border-radius: 18px;
+	background: #fff;
+	color: var(--pnchat-accent);
+	font: inherit;
+	font-size: 14px;
+	cursor: pointer;
+	text-align: left;
+}
+
+.pnchat__chip:hover {
+	background: var(--pnchat-bot);
+}
+
+.pnchat__form {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	padding: 10px 12px;
+	border-top: 1px solid var(--pnchat-border);
+	background: var(--pnchat-bg);
+}
+
+/* Without a privacy note the form is last and sits on the phone's home bar. */
+.pnchat--floating .pnchat__form:last-child {
+	padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+.pnchat .pnchat__input {
+	flex: 1;
+	min-height: 44px;
+	max-height: 120px;
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--pnchat-border);
+	border-radius: 22px;
+	font: inherit;
+	font-size: 16px;
+	line-height: 1.4;
+	color: var(--pnchat-fg);
+	background: #fff;
+	resize: none;
+	box-shadow: none;
+}
+
+.pnchat .pnchat__send {
+	flex: none;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--pnchat-accent);
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pnchat__send:disabled {
+	opacity: .5;
+	cursor: default;
+}
+
+.pnchat__privacy {
+	margin: 0;
+	padding: 0 16px 8px;
+	font-size: 12px;
+	color: var(--pnchat-muted);
+	background: var(--pnchat-bg);
+}
+
+.pnchat--floating .pnchat__privacy {
+	padding-bottom: max(8px, env(safe-area-inset-bottom));
+}

@@ -1,0 +1,150 @@
+.pnchat-admin .pnchat-intro {
+	max-width: 900px;
+	font-size: 14px;
+}
+
+.pnchat-admin .pnchat-card {
+	max-width: 900px;
+	margin: 16px 0;
+	padding: 12px 20px 16px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.pnchat-admin .pnchat-card h2 {
+	margin-top: 8px;
+}
+
+.pnchat-admin .pnchat-search {
+	clear: both;
+	margin: 12px 0;
+	padding-top: 4px;
+}
+
+.pnchat-admin .pnchat-inline-form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.pnchat-admin .pnchat-table td {
+	vertical-align: top;
+}
+
+.pnchat-admin .pnchat-table .num {
+	width: 70px;
+	text-align: right;
+}
+
+.pnchat-admin .pnchat-preview,
+.pnchat-admin .pnchat-keywords {
+	margin-top: 4px;
+	color: #646970;
+	font-size: 12px;
+}
+
+.pnchat-admin .pnchat-keywords::before {
+	content: "🔑 ";
+}
+
+.pnchat-admin .pnchat-inactive td {
+	opacity: .6;
+}
+
+.pnchat-admin .pnchat-actions {
+	white-space: nowrap;
+}
+
+.pnchat-admin .pnchat-danger {
+	color: #b32d2e;
+}
+
+.pnchat-admin .pnchat-pill {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: #f0f0f1;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.pnchat-admin .pnchat-pill--on,
+.pnchat-admin .pnchat-pill--answered,
+.pnchat-admin .pnchat-pill--replied,
+.pnchat-admin .pnchat-pill--trained {
+	background: #e7f6ec;
+	color: #1a6b35;
+}
+
+.pnchat-admin .pnchat-pill--unanswered,
+.pnchat-admin .pnchat-pill--unhelpful {
+	background: #fcf0e3;
+	color: #8a4b0b;
+}
+
+.pnchat-admin .pnchat-pill--partial {
+	background: #fff8e1;
+	color: #7a5a00;
+}
+
+.pnchat-admin .pnchat-pill--blocked {
+	background: #fbeaea;
+	color: #8a1f1f;
+}
+
+.pnchat-admin .pnchat-question {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.pnchat-admin .pnchat-reply-text {
+	margin-top: 6px;
+	padding: 8px;
+	background: #f6f7f7;
+}
+
+.pnchat-admin .pnchat-test-result {
+	margin-top: 12px;
+	padding: 10px 14px;
+	background: #f6f7f7;
+	border-radius: 4px;
+}
+
+.pnchat-admin .pnchat-test-item {
+	margin: 8px 0;
+	padding: 8px 12px;
+	background: #fff;
+	border-left: 4px solid #2271b1;
+}
+
+.pnchat-admin .pnchat-test-item.is-block {
+	border-left-color: #b32d2e;
+}
+
+.pnchat-admin .pnchat-list {
+	margin-left: 18px;
+	list-style: disc;
+}
+
+@media (max-width: 782px) {
+	.pnchat-admin .pnchat-actions {
+		white-space: normal;
+	}
+
+	.pnchat-admin .pnchat-table thead {
+		display: none;
+	}
+
+	.pnchat-admin .pnchat-table td,
+	.pnchat-admin .pnchat-table th.check-column {
+		display: block;
+		width: auto;
+		text-align: left;
+	}
+
+	.pnchat-admin .pnchat-table .num::before {
+		content: "Χρήσεις: ";
+	}
+}

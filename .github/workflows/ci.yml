@@ -61,6 +61,10 @@ jobs:
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G --error-format=github
       - name: PHP_CodeSniffer (WordPress security/DB/i18n sniffs)
         run: vendor/bin/phpcs --report-full --report-checkstyle=phpcs-checkstyle.xml
+      - name: PN Chat (PHPStan, PHPCS)
+        run: |
+          vendor/bin/phpstan analyse -c ../../../pn-chat/tests/phpstan.neon --no-progress --memory-limit=2G --error-format=github
+          vendor/bin/phpcs --standard=../../../pn-chat/tests/phpcs.xml --report-full
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -183,6 +187,75 @@ jobs:
       - if: always()
         name: WordPress debug.log
         run: cat "$PD_WP_PATH/debug.log" 2>/dev/null || true
+
+  # PN Chat (pn-chat/): its own plugin, tested on its own; the PlanDose jobs above ignore it.
+  pn-chat:
+    name: PN Chat (matcher, WordPress, browser, zip)
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      PNCHAT_WP_PATH: ${{ github.workspace }}/pnchat-wp
+      PNCHAT_BASE: http://127.0.0.1:8898
+      DB_HOST: 127.0.0.1
+      DB_ROOT_USER: root
+      DB_ROOT_PASS: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, intl, zip
+          coverage: none
+      - name: php -l (PHP 8.3)
+        run: find pn-chat -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+      - name: Matcher tests (no WordPress)
+        run: php pn-chat/tests/matcher-test.php
+      - run: sudo apt-get update && sudo apt-get install -y mariadb-client
+      - name: Install WordPress with PN Chat
+        run: pn-chat/tests/setup-wp.sh
+      - name: WordPress tests
+        run: php pn-chat/tests/wp-test.php "$PNCHAT_WP_PATH/wp-load.php"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: pn-chat/tests/package-lock.json
+      - working-directory: pn-chat/tests
+        run: npm ci
+      - working-directory: pn-chat/tests
+        run: npx playwright-core install --with-deps chromium
+      - name: Browser tests (phone + admin)
+        working-directory: pn-chat/tests
+        env:
+          PNCHAT_SHOTS: ${{ github.workspace }}/pnchat-shots
+        run: node e2e.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pn-chat-screenshots
+          path: pnchat-shots/
+          if-no-files-found: ignore
+      - if: always()
+        name: WordPress debug.log
+        run: cat "$PNCHAT_WP_PATH/debug.log" 2>/dev/null || true
+      - name: Build pn-chat.zip
+        run: pn-chat/build-zip.sh
+      - id: version
+        run: echo "version=$(sed -n 's/^[[:space:]/*#@]*Version:[[:space:]]*\([^[:space:]]*\).*/\1/p' pn-chat/pn-chat/pn-chat.php | head -n1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pn-chat-${{ steps.version.outputs.version }}
+          path: pn-chat/build/pn-chat-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
 
   build:
     name: Build plandose.zip

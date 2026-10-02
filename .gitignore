@@ -1,1 +1,3 @@
 build/*.zip
+pn-chat/build/
+node_modules/

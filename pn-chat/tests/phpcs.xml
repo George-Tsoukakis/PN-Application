@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ruleset name="PN Chat QA">
+	<description>Security, database, i18n and PHP-compatibility sniffs for the PN Chat plugin (WPCS 3); same sniffs as tests/tools/php-qa/phpcs.xml. Dev only, never shipped.</description>
+
+	<!--
+	Why no formatting sniffs (WordPress-Core whitespace/alignment, PEAR/Squiz
+	layout, WordPress-Docs): they only check layout, not behaviour. On the
+	current code they report ~1000 alignment/indent differences that
+	phpcbf would "fix" by rewriting hundreds of unrelated lines, which would
+	collide with every parallel branch while finding no bug. Every sniff
+	that can reveal a real defect is listed explicitly below instead.
+	-->
+
+	<file>../pn-chat</file>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="basepath" value="../.."/>
+	<arg name="colors"/>
+	<arg name="parallel" value="4"/>
+	<arg value="sp"/>
+
+	<!-- Standards registered here, not by the Composer installer plugin
+	     (plugins are disabled, see composer.json). Paths are relative to
+	     vendor/squizlabs/php_codesniffer. -->
+	<config name="installed_paths" value="../../wp-coding-standards/wpcs,../../phpcsstandards/phpcsutils,../../phpcsstandards/phpcsextra,../../phpcompatibility/php-compatibility,../../phpcompatibility/phpcompatibility-paragonie,../../phpcompatibility/phpcompatibility-wp"/>
+	<config name="minimum_wp_version" value="6.3"/>
+	<config name="testVersion" value="8.0-"/>
+
+	<!-- Security. -->
+	<rule ref="WordPress.Security.EscapeOutput"/>
+	<rule ref="WordPress.Security.NonceVerification"/>
+	<rule ref="WordPress.Security.ValidatedSanitizedInput"/>
+	<rule ref="WordPress.Security.SafeRedirect"/>
+
+	<!-- Database. -->
+	<rule ref="WordPress.DB.PreparedSQL"/>
+	<rule ref="WordPress.DB.PreparedSQLPlaceholders"/>
+	<rule ref="WordPress.DB.RestrictedFunctions"/>
+	<rule ref="WordPress.DB.RestrictedClasses"/>
+	<rule ref="WordPress.DB.DirectDatabaseQuery"/>
+	<rule ref="WordPress.DB.SlowDBQuery"/>
+
+	<!-- Translations: one text domain everywhere. -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="pn-chat"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Deprecated WordPress API for the minimum supported version. -->
+	<rule ref="WordPress.WP.DeprecatedFunctions"/>
+	<rule ref="WordPress.WP.DeprecatedClasses"/>
+	<rule ref="WordPress.WP.DeprecatedParameters"/>
+	<rule ref="WordPress.WP.DeprecatedParameterValues"/>
+
+	<!-- No core global overwritten. (PrefixAllGlobals is not enabled: the only
+	     non-prefixed names are core's own hooks/constants the plugin must use,
+	     script_loader_src, style_loader_src and DONOTCACHEPAGE.) -->
+	<rule ref="WordPress.WP.GlobalVariablesOverride"/>
+
+	<!-- Filesystem/debug calls: each deliberate use carries a phpcs:ignore with its reason. -->
+	<rule ref="WordPress.WP.AlternativeFunctions"/>
+	<rule ref="WordPress.PHP.DevelopmentFunctions"/>
+	<rule ref="WordPress.DateTime.RestrictedFunctions"/>
+	<rule ref="WordPress.WP.CronInterval"/>
+	<rule ref="WordPress.Security.PluginMenuSlug"/>
+
+	<!-- PHP correctness. -->
+	<rule ref="WordPress.PHP.DontExtract"/>
+	<rule ref="WordPress.PHP.StrictInArray"/>
+	<rule ref="WordPress.PHP.RestrictedPHPFunctions"/>
+	<rule ref="WordPress.PHP.DiscouragedPHPFunctions"/>
+	<rule ref="WordPress.PHP.NoSilencedErrors"/>
+	<rule ref="WordPress.PHP.IniSet"/>
+	<rule ref="WordPress.CodeAnalysis.AssignmentInTernaryCondition"/>
+	<rule ref="WordPress.CodeAnalysis.EscapedNotTranslated"/>
+	<rule ref="Generic.PHP.Syntax"/>
+	<rule ref="Generic.CodeAnalysis.EmptyStatement"/>
+	<rule ref="Generic.PHP.BacktickOperator"/>
+	<rule ref="Squiz.PHP.Eval"/>
+
+	<!-- PHP version compatibility (PHP 8.0+, WordPress polyfills known). -->
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>
