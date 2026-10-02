@@ -1,0 +1,80 @@
+<?php
+/**
+ * Checks pharmacyneeds-brain.json together with the starter brain:
+ * every phrasing must be answered by its own entry, and sample questions
+ * written differently must reach the expected entry.
+ *   php check-brain.php
+ */
+define( 'ABSPATH', __DIR__ . '/' );
+$p = dirname( __DIR__ ) . '/pn-chat/includes/';
+require $p . 'class-pnchat-text.php';
+require $p . 'class-pnchat-matcher.php';
+function esc_html( $s ) { return $s; }
+function wp_kses_post( $s ) { return $s; }
+function __( $s ) { return $s; }
+class PNChat_Store { public static function save_entry() {} public static function entries() { return array(); } }
+require $p . 'class-pnchat-seed.php';
+
+$brain   = json_decode( file_get_contents( __DIR__ . '/pharmacyneeds-brain.json' ), true );
+$entries = array();
+$id      = 0;
+foreach ( array_merge( PNChat_Seed::entries(), $brain['entries'] ) as $e ) {
+	$e['id']   = ++$id;
+	$entries[] = $e;
+}
+$titles = array_column( $entries, 'title', 'id' );
+$syn    = PNChat_Matcher::parse_synonyms( "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ" );
+$m      = new PNChat_Matcher( $entries, $syn, 0.5, 3 );
+$fails  = 0;
+
+foreach ( $entries as $e ) {
+	foreach ( $e['phrasings'] as $q ) {
+		$r   = $m->ask( $q );
+		$got = array_map( fn( $i ) => $i['id'], $r['items'] );
+		if ( ! in_array( $e['id'], $got, true ) ) {
+			++$fails;
+			echo "CONFLICT «{$q}» ({$e['title']}) -> " . implode( ', ', array_map( fn( $i ) => $titles[ $i ], $got ) ) . " [{$r['status']}]\n";
+		}
+	}
+}
+
+$samples = array(
+	'ti einai i pharmacyneeds'                          => 'Τι είναι η PharmacyNeeds',
+	'τι εργαλεια εχετε για φαρμακεια'                   => 'Ποια εργαλεία έχετε',
+	'πως κανω εγγραφη στο plandose'                      => 'PlanDose: πώς ξεκινάω',
+	'τελειωσαν οι εκτυπωσεις του μηνα'                   => 'PlanDose: όριο εκτυπώσεων Free',
+	'μπορω να ξανατυπωσω το ιδιο πλανο;'                 => 'PlanDose: εκτύπωση ξανά',
+	'μπορω να βαλω τη συνταγη με επικολληση;'             => 'PlanDose: επικόλληση συνταγής',
+	'pws ananewnw ti syndromi'                           => 'PlanDose: Pro (ενεργοποίηση και ανανέωση)',
+	'τι κανει το qr rebuilder'                           => 'Τι είναι το QR ReBuilder',
+	'ο κωδικος datamatrix ειναι σκισμενος δεν σκαναρεται' => 'QR ReBuilder: χαλασμένος κωδικός',
+	'γιατι δεν μπορω να στειλω email απο το qr'           => 'QR ReBuilder: αποστολή με e-mail',
+	'το depon ειναι σε ελλειψη;'                         => 'Φάρμακα σε έλλειψη (ΕΟΦ)',
+	'αποκατασταθηκε σημαινει οτι το εχει το φαρμακειο;'   => 'Ελλείψεις: τι σημαίνει «Αποκαταστάθηκε»',
+	'ποσους μηνες με καλυπτει το αποθεμα μου'            => 'Υπολογισμός αποθέματος',
+	'τι ειναι το υψηλο ρισκο ληξης'                      => 'Υπολογισμός αποθέματος: ρίσκο λήξης',
+	'πως μπαινω στην ομαδα viber'                        => 'Κοινότητα Viber: πώς γίνομαι μέλος',
+	'ποσα μελη εχει η κοινοτητα viber'                   => 'Κοινότητα Viber φαρμακείων',
+	'θελω να επικοινωνησω μαζι σας'                      => 'Επικοινωνία',
+	'απαγορευση εξαγωγων αυγουστος'                      => 'Απαγόρευση εξαγωγών φαρμάκων (Αύγουστος 2026)',
+	'ψαχνω ενα φαρμακο που λειπει για ασθενη'            => 'Ψάχνω φάρμακο που λείπει',
+	'τι δοση να παρει ο ασθενης απο το depon'            => 'Ιατρικές συμβουλές για ασθενείς',
+);
+foreach ( $samples as $q => $want ) {
+	$r   = $m->ask( $q );
+	$got = array_map( fn( $i ) => $i['title'], $r['items'] );
+	$ok  = in_array( $want, $got, true );
+	if ( ! $ok ) {
+		++$fails;
+	}
+	echo ( $ok ? 'PASS ' : 'FAIL ' ) . "«{$q}» -> " . ( $got ? implode( ' + ', $got ) : '(' . $r['status'] . ')' ) . "\n";
+}
+foreach ( array( 'τι καιρο θα κανει αυριο', 'ποια ειναι η πρωτευουσα της ιταλιας', 'ποσο κανει ενα αυτοκινητο' ) as $q ) {
+	$r = $m->ask( $q );
+	if ( 'unanswered' !== $r['status'] ) {
+		++$fails;
+	}
+	echo ( 'unanswered' === $r['status'] ? 'PASS ' : 'FAIL ' ) . "off-topic «{$q}» -> {$r['status']}\n";
+}
+echo $fails ? "\n$fails problems\n" : "\nall good\n";
+exit( $fails ? 1 : 0 );

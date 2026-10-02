@@ -219,6 +219,8 @@ jobs:
         run: find pn-chat -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
       - name: Matcher tests (no WordPress)
         run: php pn-chat/tests/matcher-test.php
+      - name: PharmacyNeeds brain (no conflicts, sample questions)
+        run: php pn-chat/knowledge/check-brain.php
       - run: sudo apt-get update && sudo apt-get install -y mariadb-client
       - name: Install WordPress with PN Chat
         run: pn-chat/tests/setup-wp.sh

@@ -369,7 +369,15 @@ final class PNChat_Matcher {
 		if ( $precision <= 0.0 ) {
 			return 0.0;
 		}
-		return 2 * $recall * $precision / ( $recall + $precision );
+		$f1 = 2 * $recall * $precision / ( $recall + $precision );
+		// Less than half of the trained question is there (one common word
+		// such as «κόστος» out of «κόστος + QR ReBuilder») and the question
+		// also says other things («πόσο κάνει ένα αυτοκίνητο»): not this one.
+		// A short question fully explained by the entry («πόσο κάνει;») stays.
+		if ( $recall < 0.5 && $precision < 0.9 ) {
+			$f1 *= $recall / 0.5;
+		}
+		return $f1;
 	}
 
 	/**
