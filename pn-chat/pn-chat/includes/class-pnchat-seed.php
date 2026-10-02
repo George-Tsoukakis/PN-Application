@@ -54,7 +54,7 @@ final class PNChat_Seed {
 			array(
 				'kind'      => 'answer',
 				'title'     => 'Free και Pro',
-				'phrasings' => array( 'Τι διαφέρει το Free από το Pro;', 'Τι έχει το Pro;', 'Τι περιλαμβάνει η δωρεάν έκδοση;', 'Πόσες εκτυπώσεις έχω τον μήνα;', 'Πώς ενεργοποιώ το Pro;' ),
+				'phrasings' => array( 'Τι διαφέρει το Free από το Pro;', 'Είναι δωρεάν το PlanDose;', 'Πόσο κοστίζει το PlanDose;', 'Τι έχει το Pro;', 'Τι περιλαμβάνει η δωρεάν έκδοση;', 'Πόσες εκτυπώσεις έχω τον μήνα;', 'Πώς ενεργοποιώ το Pro;' ),
 				'keywords'  => array( 'pro', 'free' ),
 				'answer'    => "<ul><li><strong>Free:</strong> δωρεάν, με μηνιαίο όριο εκτυπώσεων.</li><li><strong>Pro:</strong> χωρίς όριο εκτυπώσεων, ετικέτες φαρμάκων για ετικετογράφο και αγγλικό περιβάλλον.</li></ul>Το Pro το ενεργοποιεί το PharmacyNeeds για τον λογαριασμό σας· επικοινωνήστε μαζί μας.",
 			),
@@ -68,6 +68,7 @@ final class PNChat_Seed {
 			self::plandose_qr(),
 			self::qr_rebuilder(),
 			self::qr_howto(),
+			self::qr_cost(),
 			self::qr_which(),
 			array(
 				'kind'      => 'block',
@@ -147,6 +148,21 @@ final class PNChat_Seed {
 	}
 
 	/**
+	 * Cost of QR ReBuilder (same title and first question as in the brain file).
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function qr_cost() {
+		return array(
+			'kind'      => 'answer',
+			'title'     => 'QR ReBuilder: κόστος και εκτύπωση',
+			'phrasings' => array( 'Κοστίζει το QR ReBuilder;', 'Είναι δωρεάν το QR ReBuilder;', 'Πόσο κοστίζει το QR ReBuilder;', 'Έχει όριο χρήσης το QR ReBuilder;', 'Τυπώνει το QR ReBuilder σε εκτυπωτή ετικετών;' ),
+			'keywords'  => array(),
+			'answer'    => 'Το QR ReBuilder <strong>δεν έχει σύστημα συνδρομών ούτε όρια χρήσης</strong>. Ο κωδικός βγαίνει ως εικόνα PNG με λευκό φόντο, κατάλληλη για εκτυπωτές ετικετών, και τυπώνεται μαζί με τα στοιχεία του. <a href="' . esc_url( home_url( '/qr-rebuilder/' ) ) . '">Ανοίξτε το QR ReBuilder</a>.',
+		);
+	}
+
+	/**
 	 * «Τι είναι το QR;»: two different things carry the name.
 	 *
 	 * @return array<string,mixed>
@@ -178,13 +194,23 @@ final class PNChat_Seed {
 				PNChat_Store::save_entry( $e, $e['id'] );
 			}
 		}
+		// 1.4.0: the PlanDose Free/Pro entry answers «Είναι δωρεάν το PlanDose;».
+		foreach ( PNChat_Store::entries( 'answer' ) as $e ) {
+			if ( 'Free και Pro' === $e['title'] ) {
+				$more = array_diff( array( 'Είναι δωρεάν το PlanDose;', 'Πόσο κοστίζει το PlanDose;' ), $e['phrasings'] );
+				if ( $more ) {
+					$e['phrasings'] = array_merge( $e['phrasings'], $more );
+					PNChat_Store::save_entry( $e, $e['id'] );
+				}
+			}
+		}
 		$titles = array_map(
 			function ( $e ) {
 				return PNChat_Text::fold( $e['title'] );
 			},
 			PNChat_Store::entries( 'answer' )
 		);
-		foreach ( array( self::qr_rebuilder(), self::qr_howto(), self::qr_which() ) as $add ) {
+		foreach ( array( self::qr_rebuilder(), self::qr_howto(), self::qr_cost(), self::qr_which() ) as $add ) {
 			if ( ! in_array( PNChat_Text::fold( $add['title'] ), $titles, true ) ) {
 				$add['active'] = 1;
 				PNChat_Store::save_entry( $add );

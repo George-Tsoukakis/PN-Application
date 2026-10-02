@@ -69,6 +69,23 @@ const titles = await p.locator('.pnchat__answer-title').allInnerTexts();
 check('combined answer shows both titles', titles.includes('Τι είναι το PlanDose') && titles.includes('Ποιοι έχουν πρόσβαση'), JSON.stringify(titles));
 await shot(p, '3-phone-combined');
 
+// Follow-up: «Είναι δωρεάν;» right after QR ReBuilder is about QR ReBuilder.
+const ready = () => p.waitForFunction(() => !document.querySelector('.pnchat__send').disabled && !document.querySelector('.pnchat__typing'));
+await ready();
+const botsBefore = await p.locator('.pnchat__msg--bot').count();
+await p.fill('.pnchat__input', 'Τι είναι το QR ReBuilder;');
+await p.keyboard.press('Enter');
+await p.waitForFunction((n) => document.querySelectorAll('.pnchat__msg--bot').length > n, botsBefore);
+await ready();
+await p.fill('.pnchat__input', 'Είναι δωρεάν;');
+await p.keyboard.press('Enter');
+await p.waitForFunction((n) => document.querySelectorAll('.pnchat__msg--bot').length > n + 1, botsBefore);
+await ready();
+const followUp = await p.locator('.pnchat__msg--bot').last().innerText();
+check('follow-up stays on QR ReBuilder', followUp.includes('δεν έχει σύστημα συνδρομών') && !followUp.includes('Pro:'), followUp);
+await shot(p, '3c-phone-follow-up');
+await ready();
+
 await p.fill('.pnchat__input', 'Τι δόση depon να πάρω;');
 await p.keyboard.press('Enter');
 await p.locator('.pnchat__answer--block').waitFor();
@@ -97,7 +114,7 @@ check('site page shown with title and link', (await siteCard.innerText()).includ
 await shot(p, '4b-phone-site-search');
 
 await p.reload();
-check('conversation survives page change', (await p.locator('.pnchat__msg--user').count()) === 5);
+check('conversation survives page change', (await p.locator('.pnchat__msg--user').count()) === 7);
 await p.keyboard.press('Escape');
 check('Esc closes', !(await panel.isVisible()));
 await phone.close();

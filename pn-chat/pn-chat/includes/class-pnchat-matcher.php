@@ -71,6 +71,13 @@ final class PNChat_Matcher {
 	private $weights = array();
 
 	/**
+	 * Subject terms (topic names: «PlanDose», «QR ReBuilder»), folded.
+	 *
+	 * @var array<int,string[]>
+	 */
+	private $subjects = array();
+
+	/**
 	 * Lowest score that counts as an answer.
 	 *
 	 * @var float
@@ -91,8 +98,10 @@ final class PNChat_Matcher {
 	 * @param array<int,string[]>            $synonyms  Groups of words that mean the same.
 	 * @param float                          $threshold 0..1.
 	 * @param int                            $max_items 1..5.
+	 * @param array<int,string[]>            $subjects  Folded subject terms (topic names and their words).
 	 */
-	public function __construct( array $entries, array $synonyms = array(), $threshold = 0.5, $max_items = 3 ) {
+	public function __construct( array $entries, array $synonyms = array(), $threshold = 0.5, $max_items = 3, array $subjects = array() ) {
+		$this->subjects  = array_values( array_filter( $subjects ) );
 		$this->threshold = max( 0.2, min( 0.95, (float) $threshold ) );
 		$this->max_items = max( 1, min( 5, (int) $max_items ) );
 		$this->load_synonyms( $synonyms );
@@ -331,7 +340,19 @@ final class PNChat_Matcher {
 	private function score( array $q, array $e ) {
 		$best = 0.0;
 		foreach ( $e['phrasings'] as $p ) {
-			$best = max( $best, $this->similarity( $q, $p ) );
+			$sim = $this->similarity( $q, $p );
+			// The phrasing names a subject («…το PlanDose;») the question does
+			// not: subject names are common across entries, so their weight is
+			// low, yet they are what the question is about.
+			if ( $sim > 0.0 && $this->subjects ) {
+				foreach ( $this->subjects as $term ) {
+					if ( $this->contains_all( $p, $term, 0.85 ) && ! $this->contains_all( $q, $term, 0.85 ) ) {
+						$sim *= 0.7;
+						break;
+					}
+				}
+			}
+			$best = max( $best, $sim );
 		}
 		foreach ( $e['keywords'] as $k ) {
 			if ( $this->contains_all( $q, $k ) ) {
@@ -470,12 +491,13 @@ final class PNChat_Matcher {
 	 * Every keyword token is (loosely) in the question.
 	 *
 	 * @param string[] $q  Question tokens.
-	 * @param string[] $kw Keyword tokens.
+	 * @param string[] $kw  Keyword tokens.
+	 * @param float    $min Lowest similarity per word.
 	 * @return bool
 	 */
-	private function contains_all( array $q, array $kw ) {
+	private function contains_all( array $q, array $kw, $min = 0.75 ) {
 		foreach ( $kw as $k ) {
-			if ( $this->best_match( $k, $q ) < 0.75 ) {
+			if ( $this->best_match( $k, $q ) < $min ) {
 				return false;
 			}
 		}

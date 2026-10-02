@@ -35,7 +35,8 @@ final class PNChat_Settings {
 			'unhelpful'        => 'Λυπούμαστε που δεν βοήθησε. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.',
 			'suggestions'      => "# Ερωτήσεις για το QR ReBuilder\nΤι είναι το QR ReBuilder;\nΠώς χρησιμοποιώ το QR ReBuilder;\nΆνοιγμα του QR ReBuilder | /qr-rebuilder/\n# Ερωτήσεις για το PlanDose\nΤι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;\nΆνοιγμα του PlanDose | /plandose/",
-			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει",
+			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει, δωρεάν\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει",
+			'topics'           => "QR ReBuilder, rebuilder, datamatrix, gs1\nPlanDose, πλάνο δοσολογίας, πλάνα δοσολογίας, pro\nΚοινότητα Viber, viber\nΕλλείψεις ΕΟΦ, ελλείψεις, έλλειψη, εοφ\nΥπολογισμός αποθέματος, απόθεμα",
 			'ai_enabled'       => 0,
 			'ai_model'         => 'claude-opus-5-5',
 			'site_search'      => 1,
@@ -123,7 +124,7 @@ final class PNChat_Settings {
 		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types' ) as $k ) {
 			$out[ $k ] = sanitize_text_field( (string) ( $in[ $k ] ?? '' ) );
 		}
-		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'site_exclude', 'site_intro', 'site_more' ) as $k ) {
+		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_exclude', 'site_intro', 'site_more' ) as $k ) {
 			$out[ $k ] = sanitize_textarea_field( (string) ( $in[ $k ] ?? '' ) );
 		}
 		foreach ( array( 'title', 'fallback', 'unhelpful', 'placeholder' ) as $k ) {
@@ -156,7 +157,7 @@ final class PNChat_Settings {
 	 */
 	public static function migrate() {
 		$version = (int) get_option( 'pnchat_settings_version' );
-		if ( $version >= 4 ) {
+		if ( $version >= 5 ) {
 			return;
 		}
 		if ( $version >= 2 ) {
@@ -169,9 +170,11 @@ final class PNChat_Settings {
 				array(
 					'welcome'     => array( 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.' ),
 					'suggestions' => array( "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;" ),
+					// 1.4.0: «δωρεάν» asks about cost.
+					'synonyms'    => array( "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ", "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει" ),
 				)
 			);
-			update_option( 'pnchat_settings_version', 4, false );
+			update_option( 'pnchat_settings_version', 5, false );
 			return;
 		}
 		self::replace_old_defaults(
@@ -180,12 +183,13 @@ final class PNChat_Settings {
 				'welcome'      => array( 'Γεια σας! Ρωτήστε με ό,τι θέλετε για το PharmacyNeeds και το PlanDose.', 'Γεια σας! Ρωτήστε με ό,τι θέλετε για την PharmacyNeeds και το PlanDose.' ),
 				'privacy_note' => array( 'Μη γράφετε στοιχεία ασθενών.' ),
 				'suggestions'  => array( "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;" ),
+				'synonyms'     => array( "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ", "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει" ),
 			)
 		);
 		if ( get_option( 'pnchat_seeded' ) ) {
 			PNChat_Seed::upgrade_qr();
 		}
-		update_option( 'pnchat_settings_version', 4, false );
+		update_option( 'pnchat_settings_version', 5, false );
 	}
 
 	/**

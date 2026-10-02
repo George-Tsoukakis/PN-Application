@@ -47,6 +47,9 @@ final class PNChat_Rest {
 					'page'     => array(
 						'type' => 'string',
 					),
+					'context'  => array(
+						'type' => 'string',
+					),
 				),
 			)
 		);
@@ -133,8 +136,13 @@ final class PNChat_Rest {
 			return new WP_Error( 'pnchat_rate', 'Πολλές ερωτήσεις σε λίγο χρόνο. Δοκιμάστε ξανά σε λίγα λεπτά.', array( 'status' => 429 ) );
 		}
 
-		$result = PNChat_Brain::matcher()->ask( $question );
-		$site   = self::site_results( $result, $question );
+		// Conversation topic: a question that names no topic («Είναι δωρεάν;»)
+		// is read in the topic of the previous answer («…το QR ReBuilder»).
+		$context = PNChat_Topics::valid( sanitize_text_field( (string) $req->get_param( 'context' ) ) );
+		$own     = PNChat_Topics::detect( $question );
+		$follow  = '' !== $context && '' === $own;
+		$result  = self::answer_in_context( $question, $follow ? $context : '' );
+		$site    = self::site_results( $result, $follow ? rtrim( $question, " \t?;;.!" ) . ' ' . $context : $question );
 		if ( $site && 'unanswered' === $result['status'] ) {
 			$result['status'] = 'site';
 		}
@@ -165,7 +173,14 @@ final class PNChat_Rest {
 				'question'   => $question,
 				'status'     => $result['status'],
 				'matched'    => $matched,
-				'unmatched'  => $result['unmatched'],
+				// Follow-up questions are logged with their topic, so the
+				// training form starts from «Είναι δωρεάν; (QR ReBuilder)».
+				'unmatched'  => $follow ? array_map(
+					function ( $u ) use ( $context ) {
+						return $u . ' (' . $context . ')';
+					},
+					$result['unmatched']
+				) : $result['unmatched'],
 				'user_id'    => get_current_user_id(),
 				'token_hash' => hash( 'sha256', $token ),
 				'page_url'   => wp_http_validate_url( $page ) ? $page : '',
@@ -190,6 +205,7 @@ final class PNChat_Rest {
 				'status'     => $result['status'],
 				'items'      => $items,
 				'intro'      => $intro,
+				'topic'      => self::topic_of( $result, $own, $follow ? $context : '' ),
 				'message'    => $message,
 				'ask_email'  => $id && in_array( $result['status'], array( 'unanswered', 'partial', 'site' ), true ),
 				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial', 'site' ), true ),
@@ -264,6 +280,90 @@ final class PNChat_Rest {
 				'message'   => $helpful ? 'Ευχαριστούμε!' : (string) $s['unhelpful'],
 			)
 		);
+	}
+
+	/**
+	 * Answers a question, in a conversation topic when it names none.
+	 *
+	 * The plain answer stays when it is a refusal, or a general entry with no
+	 * topic (greetings, thanks). Otherwise the question is asked again with
+	 * the topic added, and that answer wins when it is about the topic.
+	 *
+	 * @param string $question Question.
+	 * @param string $context  Topic of the conversation ('' for none).
+	 * @return array<string,mixed> Matcher result.
+	 */
+	public static function answer_in_context( $question, $context ) {
+		$m     = PNChat_Brain::matcher();
+		$plain = $m->ask( $question );
+		if ( '' === $context || 'blocked' === $plain['status'] ) {
+			return $plain;
+		}
+		if ( 'answered' === $plain['status'] && '' === PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) ) {
+			return $plain;
+		}
+		// The topic goes inside the question («Είναι δωρεάν QR ReBuilder»),
+		// not after its question mark, which would split it in two.
+		$ctx = $m->ask( rtrim( $question, " \t?;;.!" ) . ' ' . $context );
+		// The entry must also relate to the question's own words: the added
+		// topic words alone would pull the topic's general entry («Τι είναι
+		// το QR ReBuilder») for any vague question («Έχει εφαρμογή για iPhone;»).
+		$own_score = 0.0;
+		if ( 'answered' === $ctx['status'] ) {
+			foreach ( $m->rank( $question ) as $r ) {
+				if ( (int) $r['id'] === (int) $ctx['items'][0]['id'] ) {
+					$own_score = (float) $r['score'];
+					break;
+				}
+			}
+		}
+		if ( 'answered' === $ctx['status'] && 'answer' === $ctx['items'][0]['kind'] && $own_score >= 0.25 && PNChat_Topics::of_entry( (int) $ctx['items'][0]['id'] ) === $context ) {
+			// One answer: the added topic words would also bring its general
+			// entry («Τι είναι το …») as a second one.
+			$ctx['items'] = array_slice( $ctx['items'], 0, 1 );
+			return $ctx;
+		}
+		if ( 'answered' === $plain['status'] && PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) === $context ) {
+			return $plain;
+		}
+		// A clear match elsewhere means the visitor changed topic.
+		if ( 'answered' === $plain['status'] && (float) $plain['items'][0]['score'] >= 0.85 ) {
+			return $plain;
+		}
+		// A vague question with nothing about this topic: an answer about
+		// another topic would be wrong here, so it is reported as unanswered.
+		if ( in_array( $plain['status'], array( 'answered', 'partial' ), true ) ) {
+			return array(
+				'status'    => 'unanswered',
+				'items'     => array(),
+				'unmatched' => array( $question ),
+				'parts'     => $plain['parts'],
+			);
+		}
+		return $plain;
+	}
+
+	/**
+	 * The conversation topic after this answer.
+	 *
+	 * @param array<string,mixed> $result  Matcher result.
+	 * @param string              $own     Topic the question named.
+	 * @param string              $context Topic carried over ('' for none).
+	 * @return string
+	 */
+	private static function topic_of( array $result, $own, $context ) {
+		if ( '' !== $own ) {
+			return $own;
+		}
+		foreach ( $result['items'] as $i ) {
+			if ( 'answer' === $i['kind'] ) {
+				$t = PNChat_Topics::of_entry( (int) $i['id'] );
+				if ( '' !== $t ) {
+					return $t;
+				}
+			}
+		}
+		return $context;
 	}
 
 	/**

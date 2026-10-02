@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,10 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.4.0 =
+* Conversation topics: a follow-up question that names no topic ("Είναι δωρεάν;") is answered for the topic of the previous answer ("…το QR ReBuilder"); naming another topic switches. Topics are edited on the Training screen.
+* Matcher: a trained question that names a topic the visitor did not name scores lower. "δωρεάν" is a cost synonym. QR ReBuilder cost entry added to the starter brain.
 
 = 1.3.0 =
 * Suggested questions in groups ("# Title" lines) that open with one tap, and link buttons ("Text | /page/"). A "Συχνές ερωτήσεις" button brings them back after the first question.

@@ -136,7 +136,7 @@ final class PNChat_Admin {
 			'block_saved'  => array( 'success', 'Η απαγόρευση αποθηκεύτηκε.' ),
 			'deleted'      => array( 'success', 'Διαγράφηκε.' ),
 			'toggled'      => array( 'success', 'Η κατάσταση άλλαξε.' ),
-			'synonyms'     => array( 'success', 'Τα συνώνυμα αποθηκεύτηκαν.' ),
+			'synonyms'     => array( 'success', 'Τα συνώνυμα και τα θέματα αποθηκεύτηκαν.' ),
 			'phrasing'     => array( 'success', 'Η ερώτηση προστέθηκε στη γνώση. Ο βοηθός θα την απαντά από τώρα.' ),
 			'dismissed'    => array( 'success', 'Η ερώτηση αγνοήθηκε.' ),
 			'q_deleted'    => array( 'success', sprintf( 'Διαγράφηκαν %d ερωτήσεις.', $n ) ),
@@ -770,7 +770,10 @@ final class PNChat_Admin {
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		self::form_fields( 'save_synonyms' );
 		echo '<textarea name="synonyms" rows="6" class="large-text code">' . esc_textarea( (string) PNChat_Settings::value( 'synonyms' ) ) . '</textarea>';
-		submit_button( 'Αποθήκευση συνωνύμων', 'secondary' );
+		echo '<h2>Θέματα συζήτησης</h2>';
+		echo '<p class="description">Ένα θέμα ανά γραμμή: πρώτα το όνομα, μετά άλλες λέξεις που το δηλώνουν, με κόμμα. π.χ. <code>QR ReBuilder, rebuilder, datamatrix</code>. Όταν ο επισκέπτης ρωτά κάτι χωρίς θέμα («Είναι δωρεάν;»), ο βοηθός το καταλαβαίνει για το θέμα της προηγούμενης απάντησης («…το QR ReBuilder;»). Αν ρωτήσει για άλλο θέμα, αλλάζει θέμα.</p>';
+		echo '<textarea name="topics" rows="6" class="large-text code">' . esc_textarea( (string) PNChat_Settings::value( 'topics' ) ) . '</textarea>';
+		submit_button( 'Αποθήκευση συνωνύμων και θεμάτων', 'secondary' );
 		echo '</form></div>';
 	}
 
@@ -923,6 +926,7 @@ final class PNChat_Admin {
 		self::guard( 'pnchat_save_synonyms' );
 		$s             = PNChat_Settings::get();
 		$s['synonyms'] = self::post( 'synonyms' );
+		$s['topics']   = self::post( 'topics' );
 		PNChat_Settings::save( PNChat_Settings::sanitize( $s ) );
 		PNChat_Store::bump();
 		self::back( 'pn-chat', 'synonyms' );
@@ -1519,8 +1523,9 @@ final class PNChat_Admin {
 		foreach ( array_keys( PNChat_Settings::defaults() ) as $k ) {
 			$in[ $k ] = self::post( $k );
 		}
-		// The synonyms are edited on the training screen.
+		// The synonyms and topics are edited on the training screen.
 		$in['synonyms'] = (string) $current['synonyms'];
+		$in['topics']   = (string) $current['topics'];
 		$clean          = PNChat_Settings::sanitize( $in );
 		PNChat_Settings::save( $clean );
 		$key = trim( self::post( 'ai_key' ) );

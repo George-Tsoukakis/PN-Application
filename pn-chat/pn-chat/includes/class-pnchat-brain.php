@@ -26,7 +26,7 @@ final class PNChat_Brain {
 	 *
 	 * @var string[]
 	 */
-	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note' );
+	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note' );
 
 	/**
 	 * Matcher of this request.
@@ -48,10 +48,45 @@ final class PNChat_Brain {
 				PNChat_Store::entries( null, true ),
 				PNChat_Matcher::parse_synonyms( (string) $s['synonyms'] ),
 				PNChat_Settings::threshold(),
-				(int) $s['max_answers']
+				(int) $s['max_answers'],
+				self::subject_terms()
 			);
 		}
 		return self::$matcher;
+	}
+
+	/**
+	 * Topic words as matcher subjects, with synonyms applied the way the
+	 * matcher reads text (single words only; a synonym's canonical form).
+	 *
+	 * @return array<int,string[]>
+	 */
+	private static function subject_terms() {
+		$canon = array();
+		foreach ( PNChat_Matcher::parse_synonyms( (string) PNChat_Settings::value( 'synonyms' ) ) as $g ) {
+			$first = null;
+			foreach ( $g as $w ) {
+				$f = PNChat_Text::fold( $w );
+				if ( null === $first ) {
+					$first = str_replace( ' ', '_', $f );
+				}
+				if ( false === strpos( $f, ' ' ) ) {
+					$canon[ $f ] = $first;
+				}
+			}
+		}
+		$out = array();
+		foreach ( PNChat_Topics::all() as $t ) {
+			foreach ( $t['terms'] as $term ) {
+				$out[] = array_map(
+					function ( $w ) use ( $canon ) {
+						return $canon[ $w ] ?? $w;
+					},
+					$term
+				);
+			}
+		}
+		return $out;
 	}
 
 	/**

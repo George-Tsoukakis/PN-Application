@@ -2,7 +2,7 @@
   "format": "pn-chat-brain",
   "format_version": 1,
   "plugin_version": "1.0.2",
-  "exported_at": "2026-10-02T09:41:19+00:00",
+  "exported_at": "2026-10-02T09:48:12+00:00",
   "site": "https://pharmacyneeds.gr",
   "counts": {
     "answers": 29,
@@ -299,12 +299,14 @@
       "title": "QR ReBuilder: κόστος και εκτύπωση",
       "phrasings": [
         "Κοστίζει το QR ReBuilder;",
+        "Είναι δωρεάν το QR ReBuilder;",
+        "Πόσο κοστίζει το QR ReBuilder;",
         "Έχει όριο χρήσης το QR ReBuilder;",
-        "Τυπώνει σε εκτυπωτή ετικετών;",
-        "Σε τι μορφή βγαίνει ο κωδικός;"
+        "Τυπώνει το QR ReBuilder σε εκτυπωτή ετικετών;",
+        "Σε τι μορφή βγαίνει ο κωδικός του QR ReBuilder;"
       ],
       "keywords": [],
-      "answer": "Το QR ReBuilder δεν έχει σύστημα συνδρομών ούτε όρια χρήσης. Ο κωδικός βγαίνει ως εικόνα PNG με λευκό φόντο, κατάλληλη για εκτυπωτές ετικετών, και τυπώνεται μαζί με τα στοιχεία του.",
+      "answer": "Το QR ReBuilder <strong>δεν έχει σύστημα συνδρομών ούτε όρια χρήσης</strong>. Ο κωδικός βγαίνει ως εικόνα PNG με λευκό φόντο, κατάλληλη για εκτυπωτές ετικετών, και τυπώνεται μαζί με τα στοιχεία του. <a href=\"https://pharmacyneeds.gr/qr-rebuilder/\">Ανοίξτε το QR ReBuilder</a>.",
       "active": 1
     },
     {

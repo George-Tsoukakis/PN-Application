@@ -14,8 +14,13 @@ function wp_kses_post( $s ) { return $s; }
 function __( $s ) { return $s; }
 function esc_url( $s ) { return $s; }
 function home_url( $p = '' ) { return 'https://pharmacyneeds.gr' . $p; }
-class PNChat_Store { public static function save_entry() {} public static function entries() { return array(); } }
+class PNChat_Store {
+	public static function save_entry() {}
+	public static function entries() { return array(); }
+	public static function lines( $t ) { return array_values( array_filter( array_map( 'trim', preg_split( '/\R/u', (string) $t ) ) ) ); }
+}
 require $p . 'class-pnchat-seed.php';
+require $p . 'class-pnchat-topics.php';
 
 $brain   = json_decode( file_get_contents( __DIR__ . '/pharmacyneeds-brain.json' ), true );
 $entries = array();
@@ -33,8 +38,25 @@ foreach ( array_merge( PNChat_Seed::entries(), $brain['entries'] ) as $e ) {
 	$entries[]          = $e;
 }
 $titles = array_column( $entries, 'title', 'id' );
-$syn    = PNChat_Matcher::parse_synonyms( "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει" );
-$m      = new PNChat_Matcher( $entries, $syn, 0.5, 3 );
+$syn    = PNChat_Matcher::parse_synonyms( "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει, δωρεάν\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει" );
+// Subjects as in PNChat_Brain::subject_terms(): the default topics, synonyms applied.
+$canon = array();
+foreach ( $syn as $g ) {
+	$first = str_replace( ' ', '_', PNChat_Text::fold( $g[0] ) );
+	foreach ( $g as $w ) {
+		$f = PNChat_Text::fold( $w );
+		if ( false === strpos( $f, ' ' ) ) {
+			$canon[ $f ] = $first;
+		}
+	}
+}
+$subjects = array();
+foreach ( PNChat_Topics::parse( "QR ReBuilder, rebuilder, datamatrix, gs1\nPlanDose, πλάνο δοσολογίας, πλάνα δοσολογίας, pro\nΚοινότητα Viber, viber\nΕλλείψεις ΕΟΦ, ελλείψεις, έλλειψη, εοφ\nΥπολογισμός αποθέματος, απόθεμα" ) as $t ) {
+	foreach ( $t['terms'] as $term ) {
+		$subjects[] = array_map( fn( $w ) => $canon[ $w ] ?? $w, $term );
+	}
+}
+$m      = new PNChat_Matcher( $entries, $syn, 0.5, 3, $subjects );
 $fails  = 0;
 
 foreach ( $entries as $e ) {

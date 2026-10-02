@@ -47,6 +47,7 @@
 		try {
 			window.sessionStorage.setItem(STORE_KEY, JSON.stringify({
 				open: state.open,
+				topic: state.topic || '',
 				messages: state.messages.slice(-MAX_KEPT)
 			}));
 		} catch (e) { /* ignore */ }
@@ -448,8 +449,13 @@
 		this.autosize();
 		this.addUser(q, true);
 		this.typing(true);
-		api('/ask', { question: q, page: window.location.href.split('#')[0] }).then(function (res) {
+		api('/ask', { question: q, page: window.location.href.split('#')[0], context: this.state.topic || '' }).then(function (res) {
 			self.typing(false);
+			// The topic of this answer is the context of the next question.
+			if (res.topic) {
+				self.state.topic = res.topic;
+				save(self.state);
+			}
 			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '' }, true, res);
 		}).catch(function (err) {
 			self.typing(false);

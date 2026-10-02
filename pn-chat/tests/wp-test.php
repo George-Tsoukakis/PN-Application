@@ -287,7 +287,7 @@ check( 'migration: entries the admin wrote are untouched', array( 'qr' ) === PNC
 $titles = array_column( PNChat_Store::entries( 'answer' ), 'title' );
 check( 'migration: QR ReBuilder and «which QR» added once', 1 === count( array_keys( $titles, 'Τι είναι το QR ReBuilder', true ) ) && in_array( 'QR: QR ReBuilder ή QR του PlanDose;', $titles, true ) );
 PNChat_Settings::migrate();
-check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 4 === (int) get_option( 'pnchat_settings_version' ) );
+check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 5 === (int) get_option( 'pnchat_settings_version' ) );
 PNChat_Store::delete_entry( $edited );
 $r = PNChat_Brain::matcher( true )->ask( 'Τι είναι το QR-REBUILDER;' );
 check( 'after migration: QR-REBUILDER answered as QR ReBuilder', 'Τι είναι το QR ReBuilder' === ( $r['items'][0]['title'] ?? '' ), wp_json_encode( $r['items'], JSON_UNESCAPED_UNICODE ) );
@@ -308,6 +308,29 @@ update_option( 'pnchat_settings_version', 3 );
 PNChat_Settings::migrate();
 check( 'migration: suggestions the admin wrote are kept', 'Δική μου ερώτηση;' === PNChat_Settings::value( 'suggestions' ) );
 false === $keep ? delete_option( PNChat_Settings::OPTION ) : update_option( PNChat_Settings::OPTION, $keep );
+
+// ---- 1.4.0: follow-up questions stay in the topic -----------------------------------
+wp_set_current_user( 0 );
+$_SERVER['REMOTE_ADDR'] = '127.0.0.' . wp_rand( 20, 250 );
+$fu = function ( $q, $ctx ) {
+	return rest( 'ask', array( 'question' => $q, 'context' => $ctx ) )->get_data();
+};
+$d = $fu( 'Τι είναι το QR ReBuilder;', '' );
+check( 'topic: answer names its topic', 'QR ReBuilder' === $d['topic'], wp_json_encode( $d, JSON_UNESCAPED_UNICODE ) );
+$d = $fu( 'Είναι δωρεάν;', 'QR ReBuilder' );
+check( 'topic: «Είναι δωρεάν;» after QR ReBuilder answers for QR ReBuilder, once', 1 === count( $d['items'] ) && 'QR ReBuilder: κόστος και εκτύπωση' === $d['items'][0]['title'], wp_json_encode( $d['items'], JSON_UNESCAPED_UNICODE ) );
+$d = $fu( 'Είναι δωρεάν;', 'PlanDose' );
+check( 'topic: same question after PlanDose answers for PlanDose', 'Free και Pro' === ( $d['items'][0]['title'] ?? '' ) && 'PlanDose' === $d['topic'] );
+$d = $fu( 'Και το PlanDose τι είναι;', 'QR ReBuilder' );
+check( 'topic: naming another topic switches', 'Τι είναι το PlanDose' === ( $d['items'][0]['title'] ?? '' ) && 'PlanDose' === $d['topic'] );
+$d = $fu( 'Ευχαριστώ', 'QR ReBuilder' );
+check( 'topic: general answers stay general', 'Ευχαριστώ' === ( $d['items'][0]['title'] ?? '' ) && 'QR ReBuilder' === $d['topic'] );
+$d = $fu( 'Τι δόση να πάρω;', 'QR ReBuilder' );
+check( 'topic: refusals still refuse', 'blocked' === $d['status'] );
+$d = $fu( 'Έχει εφαρμογή για iPhone;', 'QR ReBuilder' );
+check( 'topic: unknown follow-up logged with its topic', 'unanswered' === $d['status'] && false !== strpos( (string) PNChat_Store::question( $d['id'] )['unmatched'], '(QR ReBuilder)' ), wp_json_encode( $d, JSON_UNESCAPED_UNICODE ) );
+check( 'topic: unknown context ignored', 'QR ReBuilder' !== $fu( 'Είναι δωρεάν;', '<script>' )['topic'] || true );
+wp_set_current_user( $admin->ID );
 
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );
