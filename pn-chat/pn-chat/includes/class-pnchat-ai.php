@@ -24,6 +24,8 @@ final class PNChat_AI {
 	// server-side refusal fallbacks, which a generic provider does not expose.
 	// phpcs:ignore PluginCheck.CodeAnalysis.AIProvider.DirectIntegration -- see above.
 	const ENDPOINT      = 'https://api.anthropic.com/v1/messages';
+	// phpcs:ignore PluginCheck.CodeAnalysis.AIProvider.DirectIntegration -- see above; key check only.
+	const MODELS_URL    = 'https://api.anthropic.com/v1/models?limit=1';
 	const API_VERSION   = '2023-06-01';
 	const DEFAULT_MODEL = 'claude-opus-5-5';
 	const USAGE_OPTION  = 'pnchat_ai_usage';
@@ -80,6 +82,59 @@ final class PNChat_AI {
 	public static function key_hint() {
 		$k = self::api_key();
 		return '' === $k ? '' : '…' . substr( $k, -4 );
+	}
+
+	/**
+	 * The key out of whatever was pasted: the bare key, or a line such as
+	 * `x-api-key: sk-ant-…` or `'sk-ant-…'`. '' when there is none.
+	 *
+	 * @param string $raw Pasted text.
+	 * @return string
+	 */
+	public static function extract_key( $raw ) {
+		$raw = trim( (string) $raw );
+		if ( preg_match( '/sk-ant-[A-Za-z0-9_\-]{20,300}/', $raw, $m ) ) {
+			return $m[0];
+		}
+		return preg_match( '/^[A-Za-z0-9_\-]{20,300}$/', $raw ) ? $raw : '';
+	}
+
+	/**
+	 * Asks Anthropic whether a key works (listing models costs nothing).
+	 *
+	 * @param string $key API key.
+	 * @return bool|null True: works; false: rejected (401/403); null: unknown (no connection, other error).
+	 */
+	public static function check_key( $key ) {
+		$res = wp_remote_get(
+			self::MODELS_URL,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'x-api-key'         => $key,
+					'anthropic-version' => self::API_VERSION,
+				),
+			)
+		);
+		if ( is_wp_error( $res ) ) {
+			return null;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $res );
+		if ( 200 === $code ) {
+			return true;
+		}
+		return in_array( $code, array( 401, 403 ), true ) ? false : null;
+	}
+
+	/**
+	 * Where the key in use comes from, for error messages.
+	 *
+	 * @return string
+	 */
+	public static function key_source() {
+		return self::key_from_constant()
+			? 'το κλειδί ' . self::key_hint() . ' του wp-config.php (PNCHAT_ANTHROPIC_API_KEY· υπερισχύει των Ρυθμίσεων)'
+			: 'το κλειδί ' . self::key_hint() . ' των Ρυθμίσεων';
 	}
 
 	/**
@@ -153,6 +208,9 @@ final class PNChat_AI {
 				429 => 'Πολλές κλήσεις ή τελείωσε το υπόλοιπο του λογαριασμού. Δοκιμάστε σε λίγο.',
 				529 => 'Το Claude API είναι προσωρινά υπερφορτωμένο. Δοκιμάστε σε λίγο.',
 			);
+			if ( 401 === $code ) {
+				return new WP_Error( 'pnchat_ai_status', 'Η Anthropic απέρριψε ' . self::key_source() . ': είναι λάθος ή ακυρώθηκε. Φτιάξτε νέο κλειδί στο console.anthropic.com → API keys και βάλτε το στο PN Chat → Ρυθμίσεις → API key. (' . $msg . ')' );
+			}
 			return new WP_Error( 'pnchat_ai_status', ( $map[ $code ] ?? 'Σφάλμα του Claude API.' ) . ' (' . $msg . ')' );
 		}
 		self::add_usage( is_array( $data['usage'] ?? null ) ? $data['usage'] : array(), $model );

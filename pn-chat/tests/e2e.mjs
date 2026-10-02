@@ -255,9 +255,19 @@ check('refusal form comes with a ready message', (await a.inputValue('#pnchat-an
 // AI training assistant (the test site fakes the Claude API, see setup-wp.sh).
 await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat-settings`);
 await a.check('input[name=ai_enabled]');
-await a.fill('#pnchat-ai_key', 'sk-ant-e2e-test-key-0000000000');
+await a.fill('#pnchat-ai_key', 'sk-ant-e2e-revoked-key-1111111111');
 await a.click('#submit');
-await a.waitForURL(/pnchat_msg=settings/);
+await a.waitForURL(/pnchat_msg=key_rejected/);
+check('rejected API key: says so and is not saved', (await a.locator('.notice-error').innerText()).includes('απέρριψε') && !(await a.locator('#pnchat-ai_key').getAttribute('placeholder')).includes('…1111'));
+await a.fill('#pnchat-ai_key', 'not a key');
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=key_bad/);
+check('pasted text that is not a key: says so', (await a.locator('.notice-error').innerText()).includes('sk-ant-'));
+// A whole pasted header line still gives the key.
+await a.fill('#pnchat-ai_key', 'x-api-key: sk-ant-e2e-test-key-0000000000');
+await a.click('#submit');
+await a.waitForURL(/pnchat_msg=key_ok/);
+check('working API key: tested and saved', (await a.locator('.notice-success').innerText()).includes('δουλεύει'));
 check('API key not shown again', !(await a.content()).includes('sk-ant-e2e-test-key') && (await a.locator('#pnchat-ai_key').getAttribute('placeholder')).includes('…0000'));
 const unk = await (await a.request.post(`${BASE}/?rest_route=/pn-chat/v1/ask`, { data: { question: 'Τι ώρες ανοίγουν τα φαρμακεία το καλοκαίρι;' } })).json();
 await a.goto(`${BASE}/wp-admin/admin.php?page=pn-chat&new=1&from_question=${unk.id}`);

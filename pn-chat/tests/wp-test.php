@@ -186,6 +186,7 @@ foreach ( array( $p1, $p2, $p3 ) as $p ) {
 wp_set_current_user( $admin->ID );
 delete_option( 'pnchat_ai_key' );
 delete_option( PNChat_AI::USAGE_OPTION );
+check( 'key from a pasted line', 'sk-ant-api03-abcdefghijklmnopqrstuv' === PNChat_AI::extract_key( "x-api-key: 'sk-ant-api03-abcdefghijklmnopqrstuv'" ) && '' === PNChat_AI::extract_key( 'not a key' ) && '' === PNChat_AI::extract_key( '' ) );
 check( 'AI off without a key', ! PNChat_AI::enabled() && is_wp_error( PNChat_AI::call( 's', 'u', array( 'type' => 'object' ) ) ) );
 update_option( 'pnchat_ai_key', 'sk-ant-test-0123456789abcdef', false );
 update_option( PNChat_Settings::OPTION, array_merge( PNChat_Settings::get(), array( 'ai_enabled' => 1 ) ) );
@@ -244,7 +245,7 @@ check( 'AI: no matching page, nothing sent to Claude', ! is_wp_error( $r ) && ! 
 
 $reply( array(), 401 );
 $e = PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' );
-check( 'AI: wrong key explained', is_wp_error( $e ) && false !== strpos( $e->get_error_message(), 'API key' ) );
+check( 'AI: wrong key explained (which key, how to fix)', is_wp_error( $e ) && false !== strpos( $e->get_error_message(), '…cdef των Ρυθμίσεων' ) && false !== strpos( $e->get_error_message(), 'console.anthropic.com' ) );
 $reply( '', 200, 'refusal' );
 check( 'AI: refusal handled', is_wp_error( PNChat_AI::draft_for_question( 'Πώς γίνομαι μέλος στην κοινότητα Viber;' ) ) );
 $reply( '{"found": true, "note": "', 200, 'max_tokens' );

@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.6.1
+Stable tag: 1.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,10 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.6.2 =
+* API key: a new key is tested with Anthropic when the settings are saved (listing models, free); a rejected key is not saved and the screen says so. A pasted header line (`x-api-key: sk-ant-...`) is reduced to the key; text that is not a key is reported instead of silently ignored. With AI on, a saved key that Anthropic rejects is reported on every settings save.
+* The "invalid x-api-key" error now names the key in use (its last characters, and whether it comes from wp-config.php, which overrides the settings) and how to replace it.
 
 = 1.6.1 =
 * A long answer is shown from its start (with the visitor's question above it) instead of scrolling to the e-mail form at the bottom; the visitor scrolls down to read on.

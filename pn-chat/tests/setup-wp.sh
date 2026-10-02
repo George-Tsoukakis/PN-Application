@@ -84,6 +84,15 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 	if ( 0 !== strpos( $url, 'https://api.anthropic.com/' ) ) {
 		return $pre;
 	}
+	if ( 0 === strpos( $url, 'https://api.anthropic.com/v1/models' ) ) {
+		$bad = false !== strpos( (string) $args['headers']['x-api-key'], 'revoked' );
+		return array(
+			'headers'  => array(),
+			'response' => array( 'code' => $bad ? 401 : 200, 'message' => $bad ? 'Unauthorized' : 'OK' ),
+			'cookies'  => array(),
+			'body'     => $bad ? '{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}' : '{"data":[]}',
+		);
+	}
 	$b    = json_decode( $args['body'], true );
 	$page = (string) $b['messages'][0]['content'];
 	preg_match( '/url="([^"]+)"/', $page, $m );

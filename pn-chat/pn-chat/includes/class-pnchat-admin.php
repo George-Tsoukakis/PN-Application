@@ -155,6 +155,10 @@ final class PNChat_Admin {
 			'import_error' => array( 'error', 'Το αρχείο δεν φορτώθηκε: ' . sanitize_text_field( self::get( 'err' ) ) ),
 			'restored'     => array( 'success', 'Ο εγκέφαλος επανήλθε από το αντίγραφο.' ),
 			'settings'     => array( 'success', 'Οι ρυθμίσεις αποθηκεύτηκαν.' ),
+			'key_ok'       => array( 'success', 'Οι ρυθμίσεις αποθηκεύτηκαν. Το νέο API key δοκιμάστηκε και δουλεύει.' ),
+			'key_bad'      => array( 'error', 'Οι ρυθμίσεις αποθηκεύτηκαν, αλλά το API key ΔΕΝ άλλαξε: αυτό που επικολλήθηκε δεν μοιάζει με κλειδί (ξεκινά με sk-ant-). Αντιγράψτε μόνο το κλειδί.' ),
+			'key_rejected' => array( 'error', 'Οι ρυθμίσεις αποθηκεύτηκαν, αλλά το API key ΔΕΝ αποθηκεύτηκε: η Anthropic το απέρριψε (λάθος ή ακυρωμένο). Φτιάξτε νέο στο console.anthropic.com → API keys.' ),
+			'key_dead'     => array( 'error', 'Οι ρυθμίσεις αποθηκεύτηκαν, αλλά η Anthropic απορρίπτει ' . PNChat_AI::key_source() . ' (λάθος ή ακυρωμένο). Βάλτε νέο κλειδί από το console.anthropic.com → API keys.' ),
 			'not_found'    => array( 'error', 'Δεν βρέθηκε.' ),
 			'ai_saved'     => array( 'success', sprintf( 'Αποθηκεύτηκαν %d γνώσεις από την πρόταση του AI.', $n ) ),
 			'ai_error'     => array( 'error', 'AI: ' . sanitize_text_field( self::get( 'err' ) ) ),
@@ -1555,17 +1559,28 @@ final class PNChat_Admin {
 		$in['topics']   = (string) $current['topics'];
 		$clean          = PNChat_Settings::sanitize( $in );
 		PNChat_Settings::save( $clean );
-		$key = trim( self::post( 'ai_key' ) );
+		$raw = trim( self::post( 'ai_key' ) );
+		$key = PNChat_AI::extract_key( $raw );
+		$msg = 'settings';
 		if ( '1' === self::post( 'ai_key_delete' ) ) {
 			delete_option( 'pnchat_ai_key' );
-		} elseif ( '' !== $key && preg_match( '/^[A-Za-z0-9_\-]{20,300}$/', $key ) ) {
-			update_option( 'pnchat_ai_key', $key, false );
+		} elseif ( '' !== $raw && '' === $key ) {
+			$msg = 'key_bad';
+		} elseif ( '' !== $key ) {
+			// A key Anthropic rejects is not saved; the previous one stays.
+			$ok  = PNChat_AI::check_key( $key );
+			$msg = false === $ok ? 'key_rejected' : ( true === $ok ? 'key_ok' : 'settings' );
+			if ( false !== $ok ) {
+				update_option( 'pnchat_ai_key', $key, false );
+			}
+		} elseif ( $clean['ai_enabled'] && '' !== PNChat_AI::api_key() && false === PNChat_AI::check_key( PNChat_AI::api_key() ) ) {
+			$msg = 'key_dead';
 		}
 		if ( $clean['site_types'] !== $current['site_types'] || $clean['site_exclude'] !== $current['site_exclude'] ) {
 			delete_post_meta_by_key( PNChat_Site_Search::META );
 			PNChat_Site_Search::schedule();
 		}
 		PNChat_Store::bump();
-		self::back( 'pn-chat-settings', 'settings' );
+		self::back( 'pn-chat-settings', $msg );
 	}
 }
