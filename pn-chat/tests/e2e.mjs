@@ -115,6 +115,17 @@ await shot(p, '4b-phone-site-search');
 
 await p.reload();
 check('conversation survives page change', (await p.locator('.pnchat__msg--user').count()) === 7);
+// «Νέα συζήτηση»: asks first; cancel keeps everything, OK clears this device.
+check('new-conversation button shown when there is a conversation', await p.locator('.pnchat__new').isVisible());
+p.once('dialog', (d) => d.dismiss());
+await p.click('.pnchat__new');
+check('cancel keeps the conversation', (await p.locator('.pnchat__msg--user').count()) === 7);
+p.once('dialog', (d) => d.accept());
+await p.click('.pnchat__new');
+check('new conversation: messages cleared, welcome and suggestions back', (await p.locator('.pnchat__msg--user').count()) === 0 && (await p.locator('.pnchat__msg--bot').count()) === 1 && (await p.locator('.pnchat__chips').isVisible()) && !(await p.locator('.pnchat__new').isVisible()));
+await shot(p, '4d-phone-new-conversation');
+await p.reload();
+check('new conversation survives a reload', (await p.locator('.pnchat__msg--user').count()) === 0);
 await p.keyboard.press('Escape');
 check('Esc closes', !(await panel.isVisible()));
 await phone.close();

@@ -1,8 +1,8 @@
 {
   "format": "pn-chat-brain",
   "format_version": 1,
-  "plugin_version": "1.5.2",
-  "exported_at": "2026-10-02T10:19:29+00:00",
+  "plugin_version": "1.6.0",
+  "exported_at": "2026-10-02T10:22:30+00:00",
   "site": "https://pharmacyneeds.gr",
   "counts": {
     "answers": 29,

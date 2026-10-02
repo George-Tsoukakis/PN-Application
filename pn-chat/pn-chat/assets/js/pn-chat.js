@@ -82,6 +82,7 @@
 	var ICON_CHAT = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 2.2 1.1 4.2 3 5.6V21l4.1-2.3c.9.2 1.9.3 2.9.3 5.5 0 10-3.6 10-8s-4.5-8-10-8zm-4 9.3a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zm4 0a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zm4 0a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6z"/></svg>';
 	// Two stroked lines with their own colour: theme CSS for svg/path fills cannot hide it.
 	var ICON_CLOSE = '<svg class="pnchat__close-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/></svg>';
+	var ICON_NEW = '<svg class="pnchat__new-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 	var ICON_UP = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M2 21h4V9H2v12zm20-11a2 2 0 0 0-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L13.2 1 6.6 7.6C6.2 8 6 8.5 6 9v10a2 2 0 0 0 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-2z"/></svg>';
 	var ICON_DOWN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 3h-4v12h4V3zM2 14a2 2 0 0 0 2 2h6.3l-1 4.6v.3c0 .4.2.8.4 1.1l1.1 1L17.4 16.4c.4-.4.6-.9.6-1.4V5a2 2 0 0 0-2-2H7c-.8 0-1.5.5-1.8 1.2l-3 7.1c-.1.2-.2.5-.2.7v2z"/></svg>';
 	var ICON_SEND = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z"/></svg>';
@@ -142,11 +143,17 @@
 			closeBtn.innerHTML = ICON_CLOSE;
 		}
 
+		// «Νέα συζήτηση»: clears this device's conversation (the questions
+		// stay in the admin's log). Hidden until there is something to clear.
+		this.newBtn = el('button', { type: 'button', className: 'pnchat__new', 'aria-label': 'Νέα συζήτηση', title: 'Νέα συζήτηση', hidden: true, onclick: function () { self.reset(); } });
+		this.newBtn.innerHTML = ICON_NEW;
+
 		var header = el('div', { className: 'pnchat__header' }, [
 			el('div', { className: 'pnchat__heading' }, [
 				el('h2', { className: 'pnchat__title', id: uid + '-t', text: cfg.title || 'Chat' }),
 				cfg.subtitle ? el('p', { className: 'pnchat__subtitle', text: cfg.subtitle }) : null
 			]),
+			this.newBtn,
 			closeBtn
 		]);
 
@@ -364,12 +371,36 @@
 		});
 		if (this.state.messages.length) {
 			this.hideChips();
+			this.newBtn.hidden = false;
 		}
 	};
 
 	Chat.prototype.remember = function (m) {
 		this.state.messages.push(m);
 		save(this.state);
+		this.newBtn.hidden = false;
+	};
+
+	/** Starts over: empty conversation, no topic, welcome and suggestions. */
+	Chat.prototype.reset = function () {
+		if (this.busy || !window.confirm('Να ξεκινήσει νέα συζήτηση; Τα μηνύματα θα σβηστούν από αυτή τη συσκευή.')) {
+			return;
+		}
+		this.state.messages = [];
+		this.state.topic = '';
+		save(this.state);
+		while (this.log.firstChild) {
+			this.log.removeChild(this.log.firstChild);
+		}
+		if (cfg.welcome) {
+			this.addBot({ text: cfg.welcome }, false);
+		}
+		this.chips.hidden = !(cfg.suggestions || []).length;
+		this.topicsBtn.hidden = true;
+		this.newBtn.hidden = true;
+		this.input.value = '';
+		this.autosize();
+		this.input.focus();
 	};
 
 	Chat.prototype.addUser = function (text, keep) {

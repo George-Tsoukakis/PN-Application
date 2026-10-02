@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.2
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.6.0 =
+* "New conversation" button (↻) next to the close button: after a confirmation it clears the conversation on the visitor's device and the conversation topic, and shows the welcome and the suggested questions again. The questions stay in the admin log. Shown only when there is a conversation.
 
 = 1.5.2 =
 * HTML pasted into the answer editor's Visual tab (shown as tags) is turned back into HTML on save and when shown, also for answers saved that way before.

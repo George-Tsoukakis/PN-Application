@@ -200,6 +200,50 @@
 	fill: currentColor !important;
 }
 
+.pnchat .pnchat__new {
+	/* Same theme-proofing as the close button. */
+	flex: none !important;
+	box-sizing: border-box !important;
+	width: 36px !important;
+	height: 36px !important;
+	min-width: 36px !important;
+	min-height: 36px !important;
+	margin: -4px 6px 0 0 !important;
+	padding: 0 !important;
+	border: 2px solid rgba(255, 255, 255, .85) !important;
+	border-radius: 50% !important;
+	background: transparent !important;
+	cursor: pointer;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	line-height: 0 !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+}
+
+.pnchat .pnchat__new[hidden] {
+	display: none !important;
+}
+
+.pnchat .pnchat__new:hover,
+.pnchat .pnchat__new:focus-visible {
+	background: rgba(255, 255, 255, .18) !important;
+}
+
+.pnchat .pnchat__new-icon {
+	display: block !important;
+	width: 18px !important;
+	height: 18px !important;
+	max-width: none !important;
+	fill: none !important;
+}
+
+.pnchat .pnchat__new-icon path {
+	fill: none !important;
+	stroke: #ffffff !important;
+}
+
 .pnchat .pnchat__close-icon {
 	display: block !important;
 	width: 18px !important;
