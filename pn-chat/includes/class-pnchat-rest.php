@@ -545,6 +545,8 @@ final class PNChat_Rest {
 		if ( current_user_can( PNChat_Admin::capability() ) ) {
 			return true;
 		}
+		// Ended limits go first: their IP hashes are not kept any longer.
+		PNChat_Counter::purge();
 		$who = get_current_user_id() ? 'u' . get_current_user_id() : 'ip' . self::client_ip();
 		return PNChat_Counter::take( 'rl:' . $bucket . ':' . substr( hash_hmac( 'sha256', $who, wp_salt( 'nonce' ) ), 0, 24 ), $limit, $window );
 	}

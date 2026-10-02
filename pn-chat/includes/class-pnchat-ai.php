@@ -199,7 +199,14 @@ final class PNChat_AI {
 			)
 		);
 		if ( is_wp_error( $res ) ) {
-			return new WP_Error( 'pnchat_ai_http', 'Δεν έγινε σύνδεση με το Claude API: ' . $res->get_error_message() );
+			// Only errors before the request left the site prove that Claude
+			// did no work. A time-out or a lost answer may have been charged.
+			$not_sent = self::never_sent( $res );
+			return new WP_Error(
+				'pnchat_ai_http',
+				( $not_sent ? 'Δεν έγινε σύνδεση με το Claude API: ' : 'Δεν ήρθε απάντηση από το Claude API (η κλήση μπορεί να χρεώθηκε): ' ) . $res->get_error_message(),
+				array( 'not_sent' => $not_sent )
+			);
 		}
 		$code = (int) wp_remote_retrieve_response_code( $res );
 		$data = json_decode( (string) wp_remote_retrieve_body( $res ), true );
@@ -237,6 +244,23 @@ final class PNChat_AI {
 			return new WP_Error( 'pnchat_ai_json', 'Το Claude δεν επέστρεψε έγκυρη απάντηση. Δοκιμάστε ξανά.' );
 		}
 		return $json;
+	}
+
+	/**
+	 * The HTTP error happened before the request reached Anthropic: blocked
+	 * by WordPress, or the name, the proxy, the connection or TLS failed.
+	 *
+	 * @param WP_Error $error Error of wp_remote_post().
+	 * @return bool
+	 */
+	public static function never_sent( WP_Error $error ) {
+		if ( 'http_request_not_executed' === $error->get_error_code() ) {
+			return true;
+		}
+		// cURL 5/6: proxy or host name not resolved, 7: no connection,
+		// 35/60/77: TLS handshake or certificate. Anything else (28 time-out,
+		// 52 empty reply, 56 lost connection…) may come after the request.
+		return 1 === preg_match( '/cURL error (5|6|7|35|60|77):/', $error->get_error_message() );
 	}
 
 	/**
@@ -476,13 +500,20 @@ final class PNChat_AI {
 	}
 
 	/**
-	 * The error came before Claude did any work (nothing was charged).
+	 * Claude certainly did no work, so nothing was charged: no key, an
+	 * error status from the API, or a request that never left the site.
+	 * A time-out is uncertain and keeps counting.
 	 *
 	 * @param WP_Error $error Error of call().
 	 * @return bool
 	 */
 	public static function not_charged( WP_Error $error ) {
-		return in_array( $error->get_error_code(), array( 'pnchat_ai_key', 'pnchat_ai_http', 'pnchat_ai_status' ), true );
+		$code = $error->get_error_code();
+		if ( 'pnchat_ai_http' === $code ) {
+			$data = $error->get_error_data();
+			return is_array( $data ) && ! empty( $data['not_sent'] );
+		}
+		return in_array( $code, array( 'pnchat_ai_key', 'pnchat_ai_status' ), true );
 	}
 
 	/**
@@ -495,40 +526,120 @@ final class PNChat_AI {
 	}
 
 	/**
-	 * Words that make a question medical: such a question never goes to the
-	 * AI, whatever pages the site has. Greek as typed (accents and Greeklish
-	 * are folded); a word matches itself and the words it begins
-	 * («δοσολογ» → δοσολογία, δοσολογίες). Extend with the
-	 * «pnchat_ai_medical_terms» filter.
+	 * Words and phrases that ask for medical advice: such a question never
+	 * goes to the AI. Greek as typed (accents and Greeklish are folded); a
+	 * word matches itself and the longer words it begins («παρενέργει» →
+	 * παρενέργεια, παρενέργειες); a phrase matches word by word.
+	 * Filter «pnchat_ai_medical_terms».
 	 *
 	 * @return string[]
 	 */
 	public static function medical_terms() {
 		return (array) apply_filters(
 			'pnchat_ai_medical_terms',
-			array( 'δοσολογ', 'δόση', 'δόσεις', 'παρενέργει', 'αλληλεπίδρ', 'αντένδειξ', 'χάπι', 'χάπια', 'αντιβίωσ', 'παυσίπον', 'πυρετ', 'πόνο', 'πονάει', 'σύμπτωμ', 'διάγνωσ', 'θεραπεί', 'εγκυμοσύν', 'έγκυος', 'θηλασμ', 'mg', 'ml', 'σιρόπι', 'σταγόνες', 'αλλεργί', 'φαρμάκου', 'φάρμακο', 'φάρμακα', 'φαρμάκων' )
+			array(
+				// Asking how much to take.
+				'πόση δόση', 'τι δόση', 'ποια δόση', 'πόση δοσολογία', 'τι δοσολογία', 'ποια δοσολογία', 'πόσα χάπια', 'πόσες σταγόνες', 'πόσο σιρόπι',
+				// Effects, conditions, symptoms.
+				'παρενέργει', 'αλληλεπίδρ', 'αντένδειξ', 'πυρετ', 'πόνο', 'πονάει', 'πονάω', 'σύμπτωμ', 'διάγνωσ', 'εγκυμοσύν', 'έγκυος', 'θηλασμ', 'αλλεργί', 'βήχα', 'ζάχαρο', 'λοίμωξ',
+			)
 		);
 	}
 
 	/**
-	 * The question uses a medical word (see medical_terms()).
+	 * Medicine words that are about the site's tools as often as about
+	 * advice («ετικέτες φαρμάκων», «πλάνο δοσολογίας»): medical only when
+	 * the question is not about a tool of the site (see tool_context()).
+	 * Filter «pnchat_ai_medicine_words».
+	 *
+	 * @return string[]
+	 */
+	public static function medicine_words() {
+		return (array) apply_filters(
+			'pnchat_ai_medicine_words',
+			array( 'δοσολογ', 'δόση', 'δόσεις', 'φάρμακο', 'φάρμακα', 'φαρμάκου', 'φαρμάκων', 'χάπι', 'χάπια', 'σιρόπι', 'σταγόνες', 'αντιβίωσ', 'παυσίπον', 'αμπούλ', 'ένεση', 'ενέσεις' )
+		);
+	}
+
+	/**
+	 * Words of using the site's tools. With a topic of the chat (PlanDose,
+	 * QR ReBuilder…) they make a medicine word a tool question.
+	 * Filter «pnchat_ai_tool_words».
+	 *
+	 * @return string[]
+	 */
+	public static function tool_words() {
+		return (array) apply_filters(
+			'pnchat_ai_tool_words',
+			array( 'εκτυπ', 'τυπών', 'ετικέτ', 'πλάνο', 'πλάνα', 'ημερολόγ', 'εφαρμογ', 'εργαλεί', 'λογαριασμ', 'εγγραφ', 'συνδρομ', 'κουμπί', 'σελίδα', 'ρύθμισ', 'καταχωρ', 'προσθέτ', 'προσθήκ', 'σβήν', 'διαγραφ', 'αλλάζ', 'αλλαγ', 'qr', 'pdf', 'print', 'barcode', 'σάρωσ', 'σκαν' )
+		);
+	}
+
+	/**
+	 * The question asks for medical advice (see medical_terms()), or uses a
+	 * medicine word without being about a tool of the site, or names an
+	 * amount with a unit («500mg», «5 ml»).
+	 *
+	 * Examples: «Πόσα χάπια ντεπόν την ημέρα;», «παρενέργειες ibuprofen»,
+	 * «δοσολογία παρακεταμόλης για παιδιά» are medical; «Πώς εκτυπώνω
+	 * ετικέτες φαρμάκων στο PlanDose;», «Πώς φτιάχνω πλάνο δοσολογίας;» are not.
 	 *
 	 * @param string $question Question.
 	 * @return bool
 	 */
 	public static function is_medical( $question ) {
-		// An amount with a unit («500mg», «5 ml»).
 		if ( preg_match( '/\d\s*(?:mg|mcg|μg|ml|iu)(?![\p{L}])/iu', (string) $question ) ) {
 			return true;
 		}
 		$words = explode( ' ', PNChat_Text::fold( $question ) );
-		foreach ( self::medical_terms() as $term ) {
-			$stem = PNChat_Text::fold( str_replace( '/', ' ', (string) $term ) );
-			if ( '' === $stem || false !== strpos( $stem, ' ' ) ) {
-				continue;
-			}
-			foreach ( $words as $w ) {
-				if ( $w === $stem || ( strlen( $stem ) >= 4 && 0 === strpos( $w, $stem ) ) ) {
+		if ( self::has_any( $words, self::medical_terms() ) ) {
+			return true;
+		}
+		return self::has_any( $words, self::medicine_words() ) && ! self::tool_context( $question, $words );
+	}
+
+	/**
+	 * The question is about a tool of the site: it names a topic of the chat
+	 * or uses a tool word.
+	 *
+	 * @param string   $question Question.
+	 * @param string[] $words    Its folded words.
+	 * @return bool
+	 */
+	private static function tool_context( $question, array $words ) {
+		return '' !== PNChat_Topics::detect( $question ) || self::has_any( $words, self::tool_words() );
+	}
+
+	/**
+	 * One of the terms is in the folded words (a word matches itself and,
+	 * from four letters, the longer words it begins; a phrase word by word).
+	 *
+	 * @param string[] $words Folded words of the question.
+	 * @param string[] $terms Terms as typed.
+	 * @return bool
+	 */
+	private static function has_any( array $words, array $terms ) {
+		$n = count( $words );
+		foreach ( $terms as $term ) {
+			$parts = array_values(
+				array_filter(
+					explode( ' ', PNChat_Text::fold( (string) $term ) ),
+					function ( $p ) {
+						return '' !== $p;
+					}
+				)
+			);
+			$k     = count( $parts );
+			for ( $i = 0; $k && $i + $k <= $n; $i++ ) {
+				$all = true;
+				foreach ( $parts as $j => $p ) {
+					$w = $words[ $i + $j ];
+					if ( $w !== $p && ( strlen( $p ) < 4 || 0 !== strpos( $w, $p ) ) ) {
+						$all = false;
+						break;
+					}
+				}
+				if ( $all ) {
 					return true;
 				}
 			}

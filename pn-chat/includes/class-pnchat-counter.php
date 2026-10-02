@@ -135,13 +135,15 @@ final class PNChat_Counter {
 	}
 
 	/**
-	 * Deletes counters whose window ended (daily clean-up).
+	 * Deletes counters whose window ended. Runs with every rate-limited
+	 * request and every hour, so a visitor's IP hash does not outlive its
+	 * limit (10 minutes or one hour) for long.
 	 *
 	 * @return void
 	 */
 	public static function purge() {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE exp > 0 AND exp < %d', self::table(), time() - HOUR_IN_SECONDS ) );
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE exp > 0 AND exp <= %d', self::table(), time() ) );
 	}
 }

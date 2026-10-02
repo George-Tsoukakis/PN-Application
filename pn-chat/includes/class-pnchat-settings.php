@@ -339,9 +339,12 @@ final class PNChat_Settings {
 	 * Saves cleaned settings.
 	 *
 	 * @param array<string,mixed> $clean From sanitize().
-	 * @return void
+	 * @return bool The option now holds them (false: the database refused).
 	 */
 	public static function save( array $clean ) {
 		update_option( self::OPTION, $clean, false );
+		// update_option() is also false when nothing changed; the cache
+		// keeps the old value only when the write failed.
+		return get_option( self::OPTION ) === $clean;
 	}
 }

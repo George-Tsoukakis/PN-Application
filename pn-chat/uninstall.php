@@ -20,6 +20,7 @@ if ( ! function_exists( 'pnchat_uninstall_site' ) ) {
 	function pnchat_uninstall_site() {
 		global $wpdb;
 		wp_clear_scheduled_hook( 'pnchat_daily' );
+		wp_clear_scheduled_hook( 'pnchat_hourly' );
 		wp_clear_scheduled_hook( 'pnchat_site_index' );
 		// The API key is a secret, not data: it never outlives the plugin.
 		delete_option( 'pnchat_ai_key' );

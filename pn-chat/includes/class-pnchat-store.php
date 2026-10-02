@@ -125,6 +125,9 @@ final class PNChat_Store {
 			) {$charset};"
 		);
 		update_option( 'pnchat_db_version', self::DB_VERSION, false );
+		// 1.8.0: the AI usage totals move from an option to the counters.
+		// Here, so that every path that installs (activation, upgrade) does it.
+		PNChat_AI::migrate_usage();
 	}
 
 	/**
@@ -256,14 +259,18 @@ final class PNChat_Store {
 
 	/**
 	 * Replaces every entry with the given ones, all or nothing: when one of
-	 * them cannot be written, the entries that were there come back.
+	 * them cannot be written, or the COMMIT fails, the entries that were
+	 * there come back. Whether they did is checked on their content, not
+	 * their number; a table without transactions (MyISAM) gets them back
+	 * by hand, with their ids.
 	 *
 	 * @param array<int,array<string,mixed>> $entries Clean entries.
 	 * @return int|WP_Error Entries written.
 	 */
 	public static function replace_entries( array $entries ) {
 		global $wpdb;
-		$previous = self::entries();
+		$previous = self::raw_entries();
+		$before   = self::fingerprint( $previous );
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
 		$wpdb->query( 'START TRANSACTION' );
 		$ok    = false !== $wpdb->query( $wpdb->prepare( 'DELETE FROM %i', self::entries_table() ) );
@@ -277,36 +284,73 @@ final class PNChat_Store {
 				++$added;
 			}
 		}
-		if ( $ok ) {
-			$wpdb->query( 'COMMIT' );
+		if ( $ok && false !== $wpdb->query( 'COMMIT' ) ) {
 			self::bump();
 			return $added;
 		}
 		$wpdb->query( 'ROLLBACK' );
-		// A table without transactions (MyISAM) kept the partial write: put
-		// the previous entries back by hand.
-		if ( count( self::entries() ) !== count( $previous ) ) {
+		$restored = self::fingerprint( self::raw_entries() ) === $before;
+		if ( ! $restored ) {
 			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', self::entries_table() ) );
-			foreach ( $previous as $e ) {
-				self::write_entry( $e );
+			foreach ( $previous as $row ) {
+				$wpdb->insert( self::entries_table(), $row );
 			}
+			$restored = self::fingerprint( self::raw_entries() ) === $before;
 		}
 		// phpcs:enable
 		self::bump();
-		return new WP_Error( 'pnchat_replace', 'μια γνώση δεν γράφτηκε στη βάση, οπότε ο εγκέφαλος έμεινε όπως ήταν' );
+		return new WP_Error(
+			'pnchat_replace',
+			$restored
+				? 'μια γνώση δεν γράφτηκε στη βάση, οπότε ο εγκέφαλος έμεινε όπως ήταν'
+				: 'μια γνώση δεν γράφτηκε στη βάση και οι προηγούμενες γνώσεις δεν επανήλθαν όλες· επαναφέρετε το αυτόματο αντίγραφο από το «Εγκέφαλος»'
+		);
+	}
+
+	/**
+	 * Every entry row as stored, by id.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function raw_entries() {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY id ASC', self::entries_table() ), ARRAY_A );
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * What the entries say (not their use counts, which visitors change).
+	 *
+	 * @param array<int,array<string,mixed>> $rows From raw_entries().
+	 * @return string
+	 */
+	private static function fingerprint( array $rows ) {
+		$keep = array_flip( array( 'id', 'kind', 'title', 'phrasings', 'keywords', 'answer', 'active' ) );
+		return md5(
+			(string) wp_json_encode(
+				array_map(
+					function ( $r ) use ( $keep ) {
+						return array_map( 'strval', array_intersect_key( $r, $keep ) );
+					},
+					$rows
+				)
+			)
+		);
 	}
 
 	/**
 	 * Deletes an entry.
 	 *
 	 * @param int $id Id.
-	 * @return void
+	 * @return bool False when the database refused.
 	 */
 	public static function delete_entry( $id ) {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->delete( self::entries_table(), array( 'id' => (int) $id ) );
+		$ok = $wpdb->delete( self::entries_table(), array( 'id' => (int) $id ) );
 		self::bump();
+		return false !== $ok;
 	}
 
 	/**
@@ -522,14 +566,16 @@ final class PNChat_Store {
 	 * Deletes questions.
 	 *
 	 * @param int[] $ids Ids.
-	 * @return void
+	 * @return bool False when the database refused one.
 	 */
 	public static function delete_questions( array $ids ) {
 		global $wpdb;
+		$ok = true;
 		foreach ( array_unique( array_filter( array_map( 'absint', $ids ) ) ) as $id ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', self::questions_table(), $id ) );
+			$ok = false !== $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', self::questions_table(), $id ) ) && $ok;
 		}
+		return $ok;
 	}
 
 	/**

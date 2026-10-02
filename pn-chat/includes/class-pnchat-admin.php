@@ -174,6 +174,7 @@ final class PNChat_Admin {
 			'save_failed'  => array( 'error', 'Η αλλαγή ΔΕΝ αποθηκεύτηκε: η βάση δεδομένων δεν τη δέχτηκε. Δοκιμάστε ξανά· αν επαναληφθεί, δείτε το αρχείο σφαλμάτων του server.' ),
 			'replied_unsaved' => array( 'error', 'Το e-mail στάλθηκε, αλλά η ερώτηση δεν σημειώθηκε ως απαντημένη (σφάλμα βάσης δεδομένων).' ),
 			'ai_saved'     => array( 'success', sprintf( 'Αποθηκεύτηκαν %d γνώσεις από την πρόταση του AI.', $n ) ),
+			'ai_partial'   => array( 'error', sprintf( 'Αποθηκεύτηκαν %1$d γνώσεις· %2$d ΔΕΝ αποθηκεύτηκαν (η βάση δεδομένων τις αρνήθηκε). Ζητήστε ξανά πρόταση για τη σελίδα.', $n, absint( self::get( 'failed' ) ) ) ),
 			'ai_error'     => array( 'error', 'AI: ' . sanitize_text_field( self::get( 'err' ) ) ),
 			'ai_expired'   => array( 'error', 'Η πρόταση του AI έληξε (κρατιέται 1 ώρα). Ζητήστε τη ξανά.' ),
 			'reindexed'    => array( 'success', sprintf( 'Η ενημέρωση του ευρετηρίου ξεκίνησε: %d σελίδες τώρα, οι υπόλοιπες στο παρασκήνιο (40 ανά λεπτό).', $n ) ),
@@ -767,8 +768,9 @@ final class PNChat_Admin {
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() checked it.
 		$pick = isset( $_POST['pick'] ) && is_array( $_POST['pick'] ) ? array_map( 'absint', wp_unslash( $_POST['pick'] ) ) : array();
-		$n    = 0;
-		$warn = array();
+		$n      = 0;
+		$failed = 0;
+		$warn   = array();
 		foreach ( $pick as $i ) {
 			if ( ! isset( $d['entries'][ $i ] ) ) {
 				continue;
@@ -782,13 +784,22 @@ final class PNChat_Admin {
 			if ( $id ) {
 				++$n;
 				$warn[ $id ] = $e['phrasings'];
+			} else {
+				++$failed;
 			}
 		}
 		foreach ( $warn as $id => $phrasings ) {
 			self::warn_conflicts( $id, $phrasings );
 		}
 		delete_transient( 'pnchat_ai_' . get_current_user_id() . '_' . sanitize_key( self::post( 'key' ) ) );
-		self::back( 'pn-chat', 'ai_saved', array( 'n' => $n ) );
+		self::back(
+			'pn-chat',
+			$failed ? 'ai_partial' : 'ai_saved',
+			array(
+				'n'      => $n,
+				'failed' => $failed,
+			)
+		);
 	}
 
 	/**
@@ -949,8 +960,8 @@ final class PNChat_Admin {
 		if ( ! $e ) {
 			self::back( 'pn-chat', 'not_found' );
 		}
-		PNChat_Store::delete_entry( $id );
-		self::back( 'block' === $e['kind'] ? 'pn-chat-blocks' : 'pn-chat', 'deleted' );
+		$ok = PNChat_Store::delete_entry( $id );
+		self::back( 'block' === $e['kind'] ? 'pn-chat-blocks' : 'pn-chat', $ok ? 'deleted' : 'save_failed' );
 	}
 
 	/**
@@ -981,9 +992,9 @@ final class PNChat_Admin {
 		$s             = PNChat_Settings::get();
 		$s['synonyms'] = self::post( 'synonyms' );
 		$s['topics']   = self::post( 'topics' );
-		PNChat_Settings::save( PNChat_Settings::sanitize( $s ) );
+		$ok = PNChat_Settings::save( PNChat_Settings::sanitize( $s ) );
 		PNChat_Store::bump();
-		self::back( 'pn-chat', 'synonyms' );
+		self::back( 'pn-chat', $ok ? 'synonyms' : 'save_failed' );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -1241,8 +1252,8 @@ final class PNChat_Admin {
 			self::back( 'pn-chat-questions', $ok ? 'dismissed' : 'save_failed', array( 'filter' => $filter ) );
 		}
 		if ( 'delete' === $do ) {
-			PNChat_Store::delete_questions( array( $id ) );
-			self::back( 'pn-chat-questions', 'q_deleted', array( 'n' => 1, 'filter' => $filter ) );
+			$ok = PNChat_Store::delete_questions( array( $id ) );
+			self::back( 'pn-chat-questions', $ok ? 'q_deleted' : 'save_failed', array( 'n' => 1, 'filter' => $filter ) );
 		}
 		if ( 'add_to' === $do ) {
 			$entry_id = absint( self::post( 'entry_id' ) );
@@ -1276,8 +1287,8 @@ final class PNChat_Admin {
 		$bulk   = self::post( 'bulk' );
 		$filter = sanitize_key( self::post( 'filter' ) );
 		if ( 'delete' === $bulk ) {
-			PNChat_Store::delete_questions( $ids );
-			self::back( 'pn-chat-questions', 'q_deleted', array( 'n' => count( $ids ), 'filter' => $filter ) );
+			$ok = PNChat_Store::delete_questions( $ids );
+			self::back( 'pn-chat-questions', $ok ? 'q_deleted' : 'save_failed', array( 'n' => count( $ids ), 'filter' => $filter ) );
 		}
 		if ( 'dismiss' === $bulk ) {
 			$n = 0;
@@ -1555,7 +1566,7 @@ final class PNChat_Admin {
 		echo '</td></tr>';
 		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5). Φθηνότερα: claude-sonnet-5-5, claude-haiku-4-5.' );
 		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
-		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση εμφανίζεται ΑΜΕΣΩΣ, με την ετικέτα παρακάτω, χωρίς να την έχει δει άνθρωπος, και μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση. Δεν πηγαίνουν ποτέ στο AI ερωτήσεις κοντά σε κάποια Απαγόρευση ή με ιατρικές λέξεις (δοσολογία, δόση, χάπια, παρενέργειες, mg κ.λπ.).' );
+		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση εμφανίζεται ΑΜΕΣΩΣ, με την ετικέτα παρακάτω, χωρίς να την έχει δει άνθρωπος, και μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση. Δεν πηγαίνουν ποτέ στο AI ερωτήσεις κοντά σε κάποια Απαγόρευση ή που ζητούν ιατρική συμβουλή (π.χ. «πόσα χάπια», «παρενέργειες», «500mg», ή «φάρμακο για τον πόνο»). Ερωτήσεις για τα εργαλεία του site περνούν, ακόμη κι αν αναφέρουν φάρμακα (π.χ. «ετικέτες φαρμάκων στο PlanDose», «πλάνο δοσολογίας»).' );
 		$number( 'ai_chat_daily', 'Όριο κλήσεων ανά ημέρα', 'Το πολύ τόσες κλήσεις στο AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετράει κάθε κλήση που έφτασε στο Claude, και όταν δεν βρήκε απάντηση· όσες δεν έφτασαν (σφάλμα σύνδεσης ή κλειδιού) δεν μετράνε. Μετά το όριο, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
 		$text( 'ai_chat_model', 'Μοντέλο για το chat', 'Προεπιλογή: claude-opus-5-5 (4 $ / 20 $ ανά εκατομμύριο tokens). Φθηνότερα: claude-sonnet-5-5 (2 $ / 10 $), claude-haiku-4-5 (1 $ / 5 $).' );
 		$text( 'ai_chat_label', 'Ετικέτα πάνω από την απάντηση AI' );
@@ -1605,7 +1616,9 @@ final class PNChat_Admin {
 		$in['synonyms'] = (string) $current['synonyms'];
 		$in['topics']   = (string) $current['topics'];
 		$clean          = PNChat_Settings::sanitize( $in );
-		PNChat_Settings::save( $clean );
+		if ( ! PNChat_Settings::save( $clean ) ) {
+			self::back( 'pn-chat-settings', 'save_failed' );
+		}
 		$raw = trim( self::post( 'ai_key' ) );
 		$key = PNChat_AI::extract_key( $raw );
 		$msg = 'settings';

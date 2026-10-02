@@ -180,13 +180,15 @@ pnt_same( 1, PNChat_AI::chat_used_today(), 'AI: one call used today' );
 $logged = PNChat_Store::question( (int) $r['id'] );
 pnt_check( false !== strpos( $logged['question'], 'maria.k@gmail.com' ), 'AI: the site\'s own log keeps the question as typed' );
 
-// Medical words, or close to a refusal: never sent to the AI.
-foreach ( array( 'παρακεταμόλη για παιδιά πόση δοσολογία ανά κιλό', 'Πόσα χάπια ντεπόν την ημέρα;', 'posa xapia depon', 'παρενεργειες ibuprofen', '500mg ή 1000mg;' ) as $mq ) {
+// Medical advice, or close to a refusal: never sent to the AI. Questions
+// about the site's tools that mention medicines still go (1.8.1).
+foreach ( array( 'παρακεταμόλη για παιδιά πόση δοσολογία ανά κιλό', 'Πόσα χάπια ντεπόν την ημέρα;', 'posa xapia depon', 'παρενεργειες ibuprofen', '500mg ή 1000mg;', 'Το παιδί έχει πυρετό', 'Τι δόση παίρνω από το depon;', 'Ποια δόση παρακεταμόλης βάζω στο PlanDose;', 'Ποιο φάρμακο για τον πόνο;', 'δοσολογία αντιβίωσης', 'Μπορώ να πάρω αντιβίωση με αλκοόλ;', 'Φάρμακο για τον βήχα' ) as $mq ) {
 	pnt_check( PNChat_AI::is_medical( $mq ), "medical: «{$mq}»" );
 }
-foreach ( array( 'Τι είναι το PlanDose;', 'Πώς βρίσκω φαρμακείο;', 'Είναι δωρεάν για φαρμακεία;', 'Πότε γίνεται η παράδοση στη Θεσσαλονίκη;' ) as $mq ) {
-	pnt_check( ! PNChat_AI::is_medical( $mq ), "not medical: «{$mq}»" );
+foreach ( array( 'Τι είναι το PlanDose;', 'Πώς βρίσκω φαρμακείο;', 'Είναι δωρεάν για φαρμακεία;', 'Πότε γίνεται η παράδοση στη Θεσσαλονίκη;', 'Πώς εκτυπώνω ετικέτες φαρμάκων στο PlanDose;', 'Πώς φτιάχνω πλάνο δοσολογίας;', 'ftiaxno plano dosologias', 'Μπορώ να βάλω σιρόπι στο PlanDose;', 'Πώς προσθέτω φάρμακο στο πλάνο;', 'Πόσα φάρμακα χωράνε σε ένα πλάνο;', 'QR για φάρμακα', 'Πού μπορώ να πάρω το Pro;', 'Είμαι ο Ιωσήφ από το φαρμακείο' ) as $mq ) {
+	pnt_check( ! PNChat_AI::is_medical( $mq ), "not medical (tool or other): «{$mq}»" );
 }
+pnt_check( ! pnt_call( 'PNChat_Rest', 'near_block', 'Πώς εκτυπώνω ετικέτες φαρμάκων στο PlanDose;' ), 'AI guard: the PlanDose label question may reach the AI (was refused in 1.8.0)' );
 $sent           = array();
 list( $st, $r ) = pnt_rest( '/ask', array( 'question' => 'παρακεταμόλη για παιδιά πόση δοσολογία ανά κιλό' ), '198.51.100.13' );
 pnt_same( 0, count( $sent ), 'AI: a medical question is never sent (status ' . ( $r['status'] ?? '?' ) . ', the page about it is shown instead)' );
@@ -210,16 +212,29 @@ pnt_defer(
 PNChat_Brain::matcher( true );
 // No medical word, but close to the refusal «Μπορώ να πάρω μαζί αυτά τα φάρμακα;».
 add_filter( 'pnchat_ai_medical_terms', '__return_empty_array' );
+add_filter( 'pnchat_ai_medicine_words', '__return_empty_array' );
 $sent           = array();
 list( $st, $r ) = pnt_rest( '/ask', array( 'question' => 'Παράδοση στη Θεσσαλονίκη: ποια δόση να δώσω;' ), '198.51.100.10' );
 remove_filter( 'pnchat_ai_medical_terms', '__return_empty_array' );
+remove_filter( 'pnchat_ai_medicine_words', '__return_empty_array' );
 pnt_same( 0, count( $sent ), 'AI: a question close to a refusal is never sent (status ' . ( $r['status'] ?? '?' ) . ')' );
 
-// Claude unreachable: the day's call is given back.
-$answer = new WP_Error( 'http_request_failed', 'timeout' );
+// Claude certainly not reached: the day's call is given back.
+$answer = new WP_Error( 'http_request_failed', 'cURL error 7: Failed to connect to api.anthropic.com port 443' );
 $before = PNChat_AI::chat_used_today();
 pnt_rest( '/ask', array( 'question' => 'Πότε γίνεται η παράδοση στη Θεσσαλονίκη για παραγγελίες;' ), '198.51.100.11' );
-pnt_same( $before, PNChat_AI::chat_used_today(), 'AI: a call that never reached Claude does not use the daily limit' );
+pnt_same( $before, PNChat_AI::chat_used_today(), 'AI: no connection (cURL 7) does not use the daily limit' );
+$answer = new WP_Error( 'http_request_not_executed', 'User has blocked requests through HTTP.' );
+pnt_rest( '/ask', array( 'question' => 'Πότε γίνεται η παράδοση παραγγελιών στη Θεσσαλονίκη;' ), '198.51.100.14' );
+pnt_same( $before, PNChat_AI::chat_used_today(), 'AI: a request WordPress blocked does not use the daily limit' );
+// A time-out may come after Anthropic did the work: it keeps counting (1.8.1).
+$answer = new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out after 90001 milliseconds with 0 bytes received' );
+pnt_rest( '/ask', array( 'question' => 'Θεσσαλονίκη παράδοση παραγγελιών πότε;' ), '198.51.100.15' );
+pnt_same( $before + 1, PNChat_AI::chat_used_today(), 'AI: a time-out uses the daily limit (it may have been charged)' );
+$answer = new WP_Error( 'http_request_failed', 'cURL error 56: Recv failure: Connection reset by peer' );
+pnt_rest( '/ask', array( 'question' => 'Παράδοση Θεσσαλονίκη παραγγελίες;' ), '198.51.100.16' );
+pnt_same( $before + 2, PNChat_AI::chat_used_today(), 'AI: a lost answer uses the daily limit' );
+$before = PNChat_AI::chat_used_today();
 $answer = pnt_claude_reply( array(), 500 );
 pnt_rest( '/ask', array( 'question' => 'Η παράδοση παραγγελιών Θεσσαλονίκη πόσο κοστίζει;' ), '198.51.100.12' );
 pnt_same( $before, PNChat_AI::chat_used_today(), 'AI: an HTTP 500 does not use the daily limit either' );

@@ -3,7 +3,7 @@
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
  * Description: Our own chat assistant for PharmacyNeeds. It answers from the knowledge we train it with and from the site's own pages, and logs what it cannot answer so we can reply by e-mail and teach it. Optional, off by default: Claude (Anthropic) drafts entries for administrators and may answer in the chat from the site's pages.
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.8.0' );
+define( 'PNCHAT_VERSION', '1.8.1' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );
@@ -52,8 +52,21 @@ function pnchat_activate() {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'pnchat_daily' );
 	}
 	PNChat_Site_Search::schedule();
+	pnchat_schedule_hourly();
 }
 register_activation_hook( __FILE__, 'pnchat_activate' );
+
+/**
+ * Hourly clean-up of ended rate limits (and their IP hashes).
+ *
+ * @return void
+ */
+function pnchat_schedule_hourly() {
+	if ( ! wp_next_scheduled( 'pnchat_hourly' ) ) {
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'pnchat_hourly' );
+	}
+}
+add_action( 'pnchat_hourly', array( 'PNChat_Counter', 'purge' ) );
 
 /**
  * Deactivation: only the scheduled event goes; no data is touched.
@@ -62,6 +75,7 @@ register_activation_hook( __FILE__, 'pnchat_activate' );
  */
 function pnchat_deactivate() {
 	wp_clear_scheduled_hook( 'pnchat_daily' );
+	wp_clear_scheduled_hook( 'pnchat_hourly' );
 	wp_clear_scheduled_hook( PNChat_Site_Search::CRON_HOOK );
 }
 register_deactivation_hook( __FILE__, 'pnchat_deactivate' );
@@ -74,10 +88,10 @@ register_deactivation_hook( __FILE__, 'pnchat_deactivate' );
 function pnchat_maybe_upgrade() {
 	if ( (int) get_option( 'pnchat_db_version' ) < PNChat_Store::DB_VERSION ) {
 		PNChat_Store::install();
-		// 1.8.0: the AI usage totals move from an option to atomic counters.
-		PNChat_AI::migrate_usage();
 	}
 	PNChat_Settings::migrate();
+	// 1.8.1: sites updated without re-activation get the hourly clean-up.
+	pnchat_schedule_hourly();
 	// 1.1.0: pages of existing sites get indexed once, in the background.
 	if ( ! get_option( 'pnchat_site_index_started' ) ) {
 		update_option( 'pnchat_site_index_started', 1, false );

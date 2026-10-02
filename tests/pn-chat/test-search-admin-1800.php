@@ -141,6 +141,31 @@ delete_transient( 'pnchat_form_' . $admin->ID );
 
 pnt_admin_post( 'save_entry', $entry_post );
 pnt_check( false !== strpos( (string) $redirect, 'pnchat_msg=saved' ), 'admin: a good save says saved' );
+
+// 1.8.1: deletes, synonyms and settings report refused writes too.
+$saved_entry = PNChat_Store::entries( 'answer', false, 'Δοκιμή αποτυχίας' )[0];
+$no_write    = function ( $sql ) {
+	return preg_match( '/^\s*(DELETE|UPDATE|INSERT)/i', $sql ) && preg_match( '/pnchat_entries|pnchat_questions|wp_options/', $sql ) && false === strpos( $sql, '_transient' ) ? 'DELETE FROM no_such_table_pnchat' : $sql;
+};
+$_GET['id'] = $saved_entry['id'];
+add_filter( 'query', $no_write );
+$suppress = $wpdb->suppress_errors( true );
+pnt_admin_post( 'delete_entry', array( 'id' => (string) $saved_entry['id'] ) );
+$after_delete = $redirect;
+wp_cache_delete( 'alloptions', 'options' );
+pnt_admin_post( 'save_synonyms', array( 'synonyms' => "α, β\nγ, δ, " . wp_rand(), 'topics' => '' ) );
+$after_synonyms = $redirect;
+$settings_post  = PNChat_Settings::get();
+$settings_post['title'] = 'Αλλαγμένος τίτλος ' . wp_rand();
+pnt_admin_post( 'save_settings', array_map( 'strval', $settings_post ) );
+$after_settings = $redirect;
+$wpdb->suppress_errors( $suppress );
+remove_filter( 'query', $no_write );
+unset( $_GET['id'] );
+pnt_check( false !== strpos( (string) $after_delete, 'pnchat_msg=save_failed' ) && PNChat_Store::entry( $saved_entry['id'] ), 'admin: a refused delete says so (the entry is still there)' );
+pnt_check( false !== strpos( (string) $after_synonyms, 'pnchat_msg=save_failed' ), 'admin: a refused synonyms save says so' );
+pnt_check( false !== strpos( (string) $after_settings, 'pnchat_msg=save_failed' ), 'admin: a refused settings save says so' );
+pnt_check( 0 !== strpos( (string) PNChat_Settings::value( 'title' ), 'Αλλαγμένος' ), 'admin: the settings did not change' );
 foreach ( PNChat_Store::entries( 'answer', false, 'Δοκιμή αποτυχίας' ) as $e ) {
 	PNChat_Store::delete_entry( $e['id'] );
 }

@@ -90,7 +90,39 @@ $wpdb->suppress_errors( $suppress );
 remove_filter( 'query', $breaker );
 pnt_check( is_wp_error( $r ), 'MyISAM, failing insert: error' );
 pnt_same( $titles_before, wp_list_pluck( PNChat_Store::entries(), 'title' ), 'MyISAM, failing insert: the previous entries are all back' );
+
+// 1.8.1: as many new entries written as there were old ones before the
+// failure: the same number, different entries. Checked by content now.
+$ids_before = wp_list_pluck( PNChat_Store::entries(), 'id' );
+sort( $ids_before );
+$same_count = array( 'format' => 'pn-chat-brain', 'format_version' => 1, 'entries' => array() );
+foreach ( $titles_before as $i => $unused ) {
+	$same_count['entries'][] = array( 'phrasings' => array( "Νέα ερώτηση $i" ), 'answer' => "Νέα $i" );
+}
+$same_count['entries'][] = array( 'phrasings' => array( 'Τελευταία' ), 'answer' => 'FAILME' );
+add_filter( 'query', $breaker );
+$suppress = $wpdb->suppress_errors( true );
+$r        = PNChat_Brain::import( $same_count, 'replace' );
+$wpdb->suppress_errors( $suppress );
+remove_filter( 'query', $breaker );
+$ids_after = wp_list_pluck( PNChat_Store::entries(), 'id' );
+sort( $ids_after );
+pnt_check( is_wp_error( $r ) && false === strpos( $r->get_error_message(), 'δεν επανήλθαν' ), 'MyISAM, same number of entries: error, previous entries restored' );
+pnt_same( $titles_before, wp_list_pluck( PNChat_Store::entries(), 'title' ), 'MyISAM, same number of entries: the previous entries, not the new ones (1.8.0 kept the new ones)' );
+pnt_same( $ids_before, $ids_after, 'MyISAM: restored entries keep their ids' );
 $wpdb->query( $wpdb->prepare( 'ALTER TABLE %i ENGINE=InnoDB', $e_table ) );
+
+// 1.8.1: a COMMIT the database refuses is a failure too.
+$no_commit = function ( $q ) {
+	return 'COMMIT' === trim( $q ) ? 'COMMIT_REFUSED_PNCHAT' : $q;
+};
+add_filter( 'query', $no_commit );
+$suppress = $wpdb->suppress_errors( true );
+$r        = PNChat_Brain::import( $file, 'replace' );
+$wpdb->suppress_errors( $suppress );
+remove_filter( 'query', $no_commit );
+pnt_check( is_wp_error( $r ), 'failed COMMIT: error, not «added»' );
+pnt_same( $titles_before, wp_list_pluck( PNChat_Store::entries(), 'title' ), 'failed COMMIT: the previous entries stay' );
 
 $r = PNChat_Brain::import( $file, 'replace' );
 pnt_check( is_array( $r ) && 3 === $r['added'], 'replace with a good file: 3 entries' );

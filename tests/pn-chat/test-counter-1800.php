@@ -71,7 +71,28 @@ pnt_check( ! PNChat_AI::chat_take(), 'AI day: the third is refused' );
 pnt_same( 2, PNChat_AI::chat_used_today(), 'AI day: used today 2' );
 PNChat_AI::chat_give_back();
 pnt_same( 1, PNChat_AI::chat_used_today(), 'AI day: a call that never reached Claude is given back' );
-pnt_check( PNChat_AI::not_charged( new WP_Error( 'pnchat_ai_http', 'x' ) ) && ! PNChat_AI::not_charged( new WP_Error( 'pnchat_ai_json', 'x' ) ), 'not_charged: connection errors yes, answered-but-bad no' );
+pnt_check( PNChat_AI::not_charged( new WP_Error( 'pnchat_ai_http', 'x', array( 'not_sent' => true ) ) ) && ! PNChat_AI::not_charged( new WP_Error( 'pnchat_ai_json', 'x' ) ), 'not_charged: request never sent yes, answered-but-bad no' );
+pnt_check( ! PNChat_AI::not_charged( new WP_Error( 'pnchat_ai_http', 'x', array( 'not_sent' => false ) ) ) && ! PNChat_AI::not_charged( new WP_Error( 'pnchat_ai_http', 'x' ) ), 'not_charged: an uncertain HTTP error (time-out) is not given back' );
+foreach ( array( 'cURL error 6: Could not resolve host' => true, 'cURL error 7: Failed to connect' => true, 'cURL error 35: SSL connect error' => true, 'cURL error 28: Operation timed out' => false, 'cURL error 52: Empty reply from server' => false, 'Something else' => false ) as $msg => $want ) {
+	pnt_same( $want, PNChat_AI::never_sent( new WP_Error( 'http_request_failed', $msg ) ), "never_sent: «{$msg}»" );
+}
+
+// Ended limits are deleted at the next rate-limited request (1.8.1).
+$wpdb->query( $wpdb->prepare( 'INSERT INTO %i ( k, n, exp ) VALUES ( %s, 3, %d )', $ct, 'test:rl-old', time() - 5 ) );
+wp_set_current_user( 0 );
+$_SERVER['REMOTE_ADDR'] = '203.0.113.200';
+pnt_call( 'PNChat_Rest', 'rate_ok', 'test', 5, 60 );
+pnt_same( null, $wpdb->get_var( $wpdb->prepare( 'SELECT n FROM %i WHERE k = %s', $ct, 'test:rl-old' ) ), 'purge: an ended limit (its IP hash) is gone at the next question' );
+pnt_check( (bool) wp_next_scheduled( 'pnchat_hourly' ), 'purge: the hourly clean-up is scheduled' );
+$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE k LIKE %s', $ct, 'rl:test:%' ) );
+
+// Upgrading by deactivate + activate also moves the old AI totals (1.8.1).
+$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE k LIKE %s', $ct, 'usage:%' ) );
+update_option( 'pnchat_ai_usage', array( 'calls' => 4 ), false );
+update_option( 'pnchat_db_version', 2, false );
+pnchat_activate();
+pnt_same( 4, PNChat_AI::usage()['calls'] ?? null, 'activation: old AI totals moved to the counters' );
+pnt_same( false, get_option( 'pnchat_ai_usage' ), 'activation: old option removed' );
 
 // Old option totals move into the counters.
 $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE k LIKE %s', $ct, 'usage:%' ) );

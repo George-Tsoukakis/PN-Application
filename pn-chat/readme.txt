@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,8 +35,11 @@ Privacy).
   of the site are about the question, Claude answers from those pages. The
   answer is shown at once, labelled as automatic and not yet checked by a
   person, and waits in Questions for review. Questions close to a blocked
-  topic, or with medical words (dosage, side effects, pills, mg…; filter
-  `pnchat_ai_medical_terms`), never go to the AI.
+  topic, or asking for medical advice ("how many pills", side effects,
+  symptoms, "500mg", or a medicine word without a tool of the site), never
+  go to the AI; questions about the tools ("print medicine labels in
+  PlanDose", "dosage plan") still do. Filters `pnchat_ai_medical_terms`,
+  `pnchat_ai_medicine_words`, `pnchat_ai_tool_words`.
 * **Blocked questions:** questions it must not answer (for example medical
   advice) get your own message instead. You train them like answers.
 * **Mobile friendly:** full screen on phones, stays above the on-screen
@@ -117,8 +120,9 @@ copy from the Brain screen before big changes.
 
 * Stored: the questions, and the e-mail address and name only if the visitor
   enters them. Questions are deleted automatically after 365 days (setting).
-* IP addresses are not stored; a hash is kept briefly (up to one hour) for
-  the rate limit. The page a question was asked on is stored without its
+* IP addresses are not stored. For the rate limit a hash is kept while the
+  limit lasts (10 minutes to one hour) and deleted at the next chat question
+  or by the hourly clean-up (WP-Cron, which runs when the site has visits). The page a question was asked on is stored without its
   query string.
 * The conversation stays in the browser's sessionStorage until the tab is
   closed.
@@ -126,6 +130,14 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.8.1 =
+* Brain "replace": after a failure the previous entries are checked by content (not by number) and written back with their ids when needed; a failed COMMIT counts as a failure.
+* AI daily limit: only calls that certainly never reached Anthropic are given back; a time-out or lost answer keeps counting.
+* AI medical guard: tool questions that mention medicines ("print medicine labels in PlanDose", "dosage plan") reach the AI again; advice questions are still kept from it.
+* Rate-limit IP hashes are deleted as soon as the limit ends (next question, hourly clean-up); privacy texts say so.
+* Upgrading through deactivate/activate also moves the old AI usage totals.
+* Failed deletes, synonym and settings saves, and AI draft saves are reported.
 
 = 1.8.0 =
 * Privacy export: every question of a person is exported (it stopped at 500 and said it was done).
