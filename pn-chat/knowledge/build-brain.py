@@ -161,8 +161,13 @@ A('Κοινότητα Viber: πώς γίνομαι μέλος',
 
 ]
 
+# The plugin version this brain was written for, read from pn-chat.php.
+import re
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'pn-chat', 'pn-chat.php'), encoding='utf-8') as f:
+    PLUGIN_VERSION = re.search(r"define\( 'PNCHAT_VERSION', '([^']+)' \)", f.read()).group(1)
+
 out = {
-    'format': 'pn-chat-brain', 'format_version': 1, 'plugin_version': '1.0.2',
+    'format': 'pn-chat-brain', 'format_version': 1, 'plugin_version': PLUGIN_VERSION,
     'exported_at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
     'site': S,
     'counts': {'answers': sum(e['kind'] == 'answer' for e in E), 'blocks': sum(e['kind'] == 'block' for e in E)},
