@@ -40,7 +40,7 @@ final class PNChat_Seed {
 			array(
 				'kind'      => 'answer',
 				'title'     => 'Τι είναι το PlanDose',
-				'phrasings' => array( 'Τι είναι το PlanDose;', 'Τι κάνει το PlanDose;', 'Πες μου για το PlanDose', 'Πώς λειτουργεί το PlanDose;', 'Τι είναι το πλάνο δοσολογίας;' ),
+				'phrasings' => array( 'Τι είναι το PlanDose;', 'Τι κάνει το PlanDose;', 'Πες μου για το PlanDose', 'Πώς λειτουργεί το PlanDose;', 'Πώς δουλεύει το PlanDose;', 'Τι είναι το πλάνο δοσολογίας;' ),
 				'keywords'  => array(),
 				'answer'    => "Το <strong>PlanDose</strong> είναι εργαλείο του PharmacyNeeds για φαρμακεία. Φτιάχνει γρήγορα <strong>εκτυπώσιμα πλάνα δοσολογίας</strong> ανά ασθενή, με ημερολόγιο ημέρα προς ημέρα, όπου ο ασθενής τσεκάρει κάθε δόση στο σπίτι.\n\nΣκοπός του είναι να βοηθά τους ασθενείς να ακολουθούν σωστά τη δοσολογία τους.",
 			),
@@ -65,13 +65,9 @@ final class PNChat_Seed {
 				'keywords'  => array( 'gdpr' ),
 				'answer'    => 'Κανένα στοιχείο του πλάνου (όνομα ασθενή, φάρμακα, δοσολογία, ημέρες, σημειώσεις) <strong>δεν αποθηκεύεται ούτε στέλνεται</strong> στον server. Το πλάνο φτιάχνεται και τυπώνεται εξ ολοκλήρου στον browser του φαρμακοποιού.',
 			),
-			array(
-				'kind'      => 'answer',
-				'title'     => 'Υπενθυμίσεις στο κινητό (QR)',
-				'phrasings' => array( 'Τι είναι το QR στο φύλλο;', 'Πώς βάζει ο ασθενής υπενθυμίσεις στο κινητό;', 'Υπάρχει ειδοποίηση για τις δόσεις;', 'Χρειάζεται εφαρμογή ο ασθενής;' ),
-				'keywords'  => array( 'qr', 'υπενθύμιση' ),
-				'answer'    => 'Το τυπωμένο φύλλο έχει QR «Υπενθυμίσεις στο κινητό». Ο ασθενής το σκανάρει με την κάμερα, βλέπει τα φάρμακά του και πατά «Προσθήκη στο ημερολόγιο»: οι δόσεις μπαίνουν στο ημερολόγιο του κινητού του με ειδοποίηση την ώρα κάθε δόσης. <strong>Χωρίς εφαρμογή και χωρίς λογαριασμό.</strong> Το όνομα του ασθενή δεν μπαίνει ποτέ στο QR.',
-			),
+			self::plandose_qr(),
+			self::qr_rebuilder(),
+			self::qr_which(),
 			array(
 				'kind'      => 'block',
 				'title'     => 'Ιατρικές συμβουλές',
@@ -98,6 +94,84 @@ final class PNChat_Seed {
 		foreach ( self::entries() as $e ) {
 			$e['active'] = 1;
 			PNChat_Store::save_entry( $e );
+		}
+	}
+
+	/**
+	 * The QR printed on PlanDose sheets (patient reminders). 1.0.x had the
+	 * bare keyword «qr» here, which sent every QR question (QR ReBuilder too)
+	 * to this answer.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function plandose_qr() {
+		return array(
+			'kind'      => 'answer',
+			'title'     => 'PlanDose: QR υπενθυμίσεις στο κινητό',
+			'phrasings' => array( 'Τι είναι το QR στο φύλλο του PlanDose;', 'Τι είναι το QR στο φύλλο;', 'Πώς βάζει ο ασθενής υπενθυμίσεις στο κινητό;', 'Υπάρχει ειδοποίηση για τις δόσεις;', 'Χρειάζεται εφαρμογή ο ασθενής;' ),
+			'keywords'  => array( 'υπενθύμιση' ),
+			'answer'    => 'Το τυπωμένο φύλλο του <strong>PlanDose</strong> έχει QR «Υπενθυμίσεις στο κινητό». Ο ασθενής το σκανάρει με την κάμερα, βλέπει τα φάρμακά του και πατά «Προσθήκη στο ημερολόγιο»: οι δόσεις μπαίνουν στο ημερολόγιο του κινητού του με ειδοποίηση την ώρα κάθε δόσης. <strong>Χωρίς εφαρμογή και χωρίς λογαριασμό.</strong> Το όνομα του ασθενή δεν μπαίνει ποτέ στο QR.',
+		);
+	}
+
+	/**
+	 * QR ReBuilder, a separate tool (GS1 DataMatrix of medicine packs).
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function qr_rebuilder() {
+		return array(
+			'kind'      => 'answer',
+			'title'     => 'Τι είναι το QR ReBuilder',
+			'phrasings' => array( 'Τι είναι το QR ReBuilder;', 'Τι είναι το QR-REBUILDER;', 'Τι κάνει το QR ReBuilder;', 'Πες μου για το QR ReBuilder', 'Τι είναι το GS1 DataMatrix;', 'Εργαλείο για τον κωδικό DataMatrix της συσκευασίας' ),
+			'keywords'  => array( 'rebuilder', 'datamatrix' ),
+			'answer'    => 'Το <strong>QR ReBuilder</strong> είναι ξεχωριστό εργαλείο της PharmacyNeeds (δεν είναι μέρος του PlanDose). Διαβάζει τον κωδικό <strong>GS1 DataMatrix</strong> των συσκευασιών φαρμάκων, βγάζει τα στοιχεία του (<strong>PC/GTIN</strong>, <strong>SN</strong> σειριακός αριθμός, <strong>LOT</strong> παρτίδα, <strong>EXP</strong> λήξη), τα ελέγχει και φτιάχνει <strong>νέο έγκυρο κωδικό</strong>, έτοιμο για εκτύπωση. Θα το βρείτε <a href="' . esc_url( home_url( '/qr-rebuilder/' ) ) . '">εδώ</a>.',
+		);
+	}
+
+	/**
+	 * «Τι είναι το QR;»: two different things carry the name.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function qr_which() {
+		return array(
+			'kind'      => 'answer',
+			'title'     => 'QR: QR ReBuilder ή QR του PlanDose;',
+			'phrasings' => array( 'Τι είναι το QR;', 'Πώς δουλεύει το QR;', 'Ποια η διαφορά QR ReBuilder και QR του PlanDose;', 'Έχω ερώτηση για το QR' ),
+			'keywords'  => array(),
+			'answer'    => 'Ποιο από τα δύο εννοείτε;<ul><li><strong>QR ReBuilder</strong>: εργαλείο που διαβάζει και ξαναφτιάχνει τον κωδικό GS1 DataMatrix των συσκευασιών φαρμάκων. Ρωτήστε «Τι είναι το QR ReBuilder;».</li><li><strong>QR του PlanDose</strong>: ο κωδικός στο τυπωμένο φύλλο δοσολογίας, με τον οποίο ο ασθενής βάζει υπενθυμίσεις στο κινητό. Ρωτήστε «Τι είναι το QR στο φύλλο του PlanDose;».</li></ul>',
+		);
+	}
+
+	/**
+	 * 1.2.1: fixes the 1.0.x starter QR entry, unless an administrator has
+	 * changed it, and adds QR ReBuilder and the «which QR?» entries if no
+	 * entry with the same title exists.
+	 *
+	 * @return void
+	 */
+	public static function upgrade_qr() {
+		foreach ( PNChat_Store::entries( 'answer' ) as $e ) {
+			if ( 'Υπενθυμίσεις στο κινητό (QR)' === $e['title'] && array( 'qr', 'υπενθύμιση' ) === $e['keywords'] ) {
+				$new           = self::plandose_qr();
+				$e['title']    = $new['title'];
+				$e['keywords'] = $new['keywords'];
+				$e['phrasings'] = array_values( array_unique( array_merge( array( 'Τι είναι το QR στο φύλλο του PlanDose;' ), $e['phrasings'] ) ) );
+				PNChat_Store::save_entry( $e, $e['id'] );
+			}
+		}
+		$titles = array_map(
+			function ( $e ) {
+				return PNChat_Text::fold( $e['title'] );
+			},
+			PNChat_Store::entries( 'answer' )
+		);
+		foreach ( array( self::qr_rebuilder(), self::qr_which() ) as $add ) {
+			if ( ! in_array( PNChat_Text::fold( $add['title'] ), $titles, true ) ) {
+				$add['active'] = 1;
+				PNChat_Store::save_entry( $add );
+			}
 		}
 	}
 }

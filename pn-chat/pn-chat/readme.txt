@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,10 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.2.1 =
+* QR ReBuilder questions were answered with the PlanDose QR-reminders entry (its bare "qr" keyword). The starter entry is fixed on existing sites unless edited; QR ReBuilder and a "which QR?" entry are added.
+* Matcher: weak matches on both sides, and weak second answers, no longer pass.
 
 = 1.2.0 =
 * AI training assistant (optional, admin only): Claude reads pages of your own site and drafts knowledge entries - for an unanswered question, or several from one page - that an administrator reviews before saving. The public chat never calls the API. API key in wp-config.php (PNCHAT_ANTHROPIC_API_KEY) or the settings, never shown again; running token and cost total; safety-classifier declines retried server-side.

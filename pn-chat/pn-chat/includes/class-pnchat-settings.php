@@ -35,7 +35,7 @@ final class PNChat_Settings {
 			'unhelpful'        => 'Λυπούμαστε που δεν βοήθησε. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο %s.',
 			'suggestions'      => "Τι είναι το PlanDose;\nΠοιοι μπορούν να χρησιμοποιήσουν το PlanDose;\nΤι διαφέρει το Free από το Pro;",
-			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ",
+			'synonyms'         => "κοστίζει, τιμή, κόστος, χρέωση, πόσο κάνει\nεκτυπώνω, τυπώνω, εκτύπωση, print\nφαρμακείο, φαρμακοποιός\nπρόβλημα, σφάλμα, λάθος, error\nλογαριασμός, εγγραφή, προφίλ\nλειτουργεί, δουλεύει",
 			'ai_enabled'       => 0,
 			'ai_model'         => 'claude-opus-5-5',
 			'site_search'      => 1,
@@ -155,7 +155,16 @@ final class PNChat_Settings {
 	 * @return void
 	 */
 	public static function migrate() {
-		if ( (int) get_option( 'pnchat_settings_version' ) >= 2 ) {
+		$version = (int) get_option( 'pnchat_settings_version' );
+		if ( $version >= 3 ) {
+			return;
+		}
+		if ( $version >= 2 ) {
+			// 1.2.1: QR ReBuilder no longer answered as PlanDose's QR.
+			if ( get_option( 'pnchat_seeded' ) ) {
+				PNChat_Seed::upgrade_qr();
+			}
+			update_option( 'pnchat_settings_version', 3, false );
 			return;
 		}
 		$saved = get_option( self::OPTION );
@@ -173,7 +182,10 @@ final class PNChat_Settings {
 			}
 			update_option( self::OPTION, $saved, false );
 		}
-		update_option( 'pnchat_settings_version', 2, false );
+		if ( get_option( 'pnchat_seeded' ) ) {
+			PNChat_Seed::upgrade_qr();
+		}
+		update_option( 'pnchat_settings_version', 3, false );
 	}
 
 	/**

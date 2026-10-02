@@ -204,9 +204,10 @@ final class PNChat_Matcher {
 			$hit = $this->choose( $whole );
 			if ( $hit ) {
 				$picked[] = $hit;
-				// Close runners-up: a question that touches two trained topics.
+				// Close, and confident on their own: a question that touches two
+				// trained topics.
 				foreach ( array_slice( $whole, 1 ) as $c ) {
-					if ( $c['score'] >= $this->threshold && $c['score'] >= 0.85 * $hit['score'] && $c['kind'] === $hit['kind'] ) {
+					if ( $c['score'] >= $this->threshold + 0.1 && $c['score'] >= 0.85 * $hit['score'] && $c['kind'] === $hit['kind'] ) {
 						$picked[] = $c;
 					}
 				}
@@ -376,6 +377,11 @@ final class PNChat_Matcher {
 		// A short question fully explained by the entry («πόσο κάνει;») stays.
 		if ( $recall < 0.5 && $precision < 0.9 ) {
 			$f1 *= $recall / 0.5;
+		}
+		// Both sides only partly matched («Δουλεύετε Σάββατο απόγευμα στην
+		// Πάτρα;» against «Πώς δουλεύει το QR;»: one shared word): weak.
+		if ( $recall < 0.67 && $precision < 0.67 ) {
+			$f1 *= min( $recall, $precision ) / 0.67;
 		}
 		return $f1;
 	}

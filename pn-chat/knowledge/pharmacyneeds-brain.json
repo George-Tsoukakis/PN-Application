@@ -2,7 +2,7 @@
   "format": "pn-chat-brain",
   "format_version": 1,
   "plugin_version": "1.0.2",
-  "exported_at": "2026-10-02T08:48:52+00:00",
+  "exported_at": "2026-10-02T09:20:46+00:00",
   "site": "https://pharmacyneeds.gr",
   "counts": {
     "answers": 29,
@@ -211,17 +211,18 @@
       "title": "Τι είναι το QR ReBuilder",
       "phrasings": [
         "Τι είναι το QR ReBuilder;",
+        "Τι είναι το QR-REBUILDER;",
         "Τι κάνει το QR ReBuilder;",
         "Πες μου για το QR ReBuilder",
         "Τι είναι το GS1 DataMatrix;",
         "Εργαλείο για τον κωδικό DataMatrix της συσκευασίας"
       ],
       "keywords": [
-        "qr rebuilder",
+        "rebuilder",
         "datamatrix",
         "gs1"
       ],
-      "answer": "Το <strong>QR ReBuilder</strong> διαβάζει τον κωδικό <strong>GS1 DataMatrix</strong> των συσκευασιών φαρμάκων, βγάζει τα στοιχεία του (<strong>PC/GTIN</strong>, <strong>SN</strong> σειριακός αριθμός, <strong>LOT</strong> παρτίδα, <strong>EXP</strong> λήξη), τα ελέγχει και φτιάχνει <strong>νέο έγκυρο κωδικό</strong>, έτοιμο για εκτύπωση. Θα το βρείτε <a href=\"https://pharmacyneeds.gr/qr-rebuilder/\">εδώ</a>.",
+      "answer": "Το <strong>QR ReBuilder</strong> είναι ξεχωριστό εργαλείο της PharmacyNeeds (δεν είναι μέρος του PlanDose). Διαβάζει τον κωδικό <strong>GS1 DataMatrix</strong> των συσκευασιών φαρμάκων, βγάζει τα στοιχεία του (<strong>PC/GTIN</strong>, <strong>SN</strong> σειριακός αριθμός, <strong>LOT</strong> παρτίδα, <strong>EXP</strong> λήξη), τα ελέγχει και φτιάχνει <strong>νέο έγκυρο κωδικό</strong>, έτοιμο για εκτύπωση. Θα το βρείτε <a href=\"https://pharmacyneeds.gr/qr-rebuilder/\">εδώ</a>.",
       "active": 1
     },
     {

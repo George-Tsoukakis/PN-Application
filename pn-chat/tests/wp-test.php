@@ -272,6 +272,27 @@ delete_option( 'pnchat_ai_key' );
 delete_option( PNChat_AI::USAGE_OPTION );
 update_option( PNChat_Settings::OPTION, $original_settings );
 
+// ---- 1.2.1: QR ReBuilder no longer answered as PlanDose's QR ------------------------
+wp_set_current_user( $admin->ID );
+$qr_before = PNChat_Brain::export( false );
+PNChat_Store::delete_all_entries();
+$old_qr = PNChat_Store::save_entry( array( 'kind' => 'answer', 'title' => 'Υπενθυμίσεις στο κινητό (QR)', 'phrasings' => array( 'Τι είναι το QR στο φύλλο;' ), 'keywords' => array( 'qr', 'υπενθύμιση' ), 'answer' => 'Το φύλλο έχει QR.', 'active' => 1 ) );
+$edited = PNChat_Store::save_entry( array( 'kind' => 'answer', 'title' => 'Δικό μου QR', 'phrasings' => array( 'Τι είναι το δικό μου QR;' ), 'keywords' => array( 'qr' ), 'answer' => 'x', 'active' => 1 ) );
+update_option( 'pnchat_seeded', 1 );
+update_option( 'pnchat_settings_version', 2 );
+PNChat_Settings::migrate();
+$fixed = PNChat_Store::entry( $old_qr );
+check( 'migration: starter QR entry loses the bare «qr» keyword', 'PlanDose: QR υπενθυμίσεις στο κινητό' === $fixed['title'] && array( 'υπενθύμιση' ) === $fixed['keywords'] && 'Το φύλλο έχει QR.' === $fixed['answer'] );
+check( 'migration: entries the admin wrote are untouched', array( 'qr' ) === PNChat_Store::entry( $edited )['keywords'] );
+$titles = array_column( PNChat_Store::entries( 'answer' ), 'title' );
+check( 'migration: QR ReBuilder and «which QR» added once', 1 === count( array_keys( $titles, 'Τι είναι το QR ReBuilder', true ) ) && in_array( 'QR: QR ReBuilder ή QR του PlanDose;', $titles, true ) );
+PNChat_Settings::migrate();
+check( 'migration runs once', count( PNChat_Store::entries( 'answer' ) ) === count( $titles ) && 3 === (int) get_option( 'pnchat_settings_version' ) );
+PNChat_Store::delete_entry( $edited );
+$r = PNChat_Brain::matcher( true )->ask( 'Τι είναι το QR-REBUILDER;' );
+check( 'after migration: QR-REBUILDER answered as QR ReBuilder', 'Τι είναι το QR ReBuilder' === ( $r['items'][0]['title'] ?? '' ), wp_json_encode( $r['items'], JSON_UNESCAPED_UNICODE ) );
+PNChat_Brain::import( $qr_before, 'replace', false, false );
+
 // Leave the brain as it was.
 wp_set_current_user( $admin->ID );
 PNChat_Brain::import( $original, 'replace', true, false );

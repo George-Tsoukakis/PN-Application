@@ -73,11 +73,11 @@ A('PlanDose: εταιρείες και μη φαρμακεία',
 
 # ---- QR ReBuilder ------------------------------------------------------------
 A('Τι είναι το QR ReBuilder',
-  ['Τι είναι το QR ReBuilder;', 'Τι κάνει το QR ReBuilder;', 'Πες μου για το QR ReBuilder', 'Τι είναι το GS1 DataMatrix;', 'Εργαλείο για τον κωδικό DataMatrix της συσκευασίας'],
-  'Το <strong>QR ReBuilder</strong> διαβάζει τον κωδικό <strong>GS1 DataMatrix</strong> των συσκευασιών φαρμάκων, βγάζει τα στοιχεία του '
+  ['Τι είναι το QR ReBuilder;', 'Τι είναι το QR-REBUILDER;', 'Τι κάνει το QR ReBuilder;', 'Πες μου για το QR ReBuilder', 'Τι είναι το GS1 DataMatrix;', 'Εργαλείο για τον κωδικό DataMatrix της συσκευασίας'],
+  'Το <strong>QR ReBuilder</strong> είναι ξεχωριστό εργαλείο της PharmacyNeeds (δεν είναι μέρος του PlanDose). Διαβάζει τον κωδικό <strong>GS1 DataMatrix</strong> των συσκευασιών φαρμάκων, βγάζει τα στοιχεία του '
   '(<strong>PC/GTIN</strong>, <strong>SN</strong> σειριακός αριθμός, <strong>LOT</strong> παρτίδα, <strong>EXP</strong> λήξη), τα ελέγχει και φτιάχνει <strong>νέο έγκυρο κωδικό</strong>, '
   f'έτοιμο για εκτύπωση. Θα το βρείτε {link("/qr-rebuilder/", "εδώ")}.',
-  ['qr rebuilder', 'datamatrix', 'gs1']),
+  ['rebuilder', 'datamatrix', 'gs1']),
 A('QR ReBuilder: πώς δουλεύει',
   ['Πώς δουλεύει το QR ReBuilder;', 'Πώς σκανάρω με το QR ReBuilder;', 'Πώς φτιάχνω νέο DataMatrix;', 'Χρειάζομαι scanner;'],
   '<ol><li>Σκανάρετε τον κωδικό με εξωτερικό barcode scanner, ή επικολλάτε τα δεδομένα με το χέρι.</li>'

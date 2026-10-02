@@ -63,6 +63,8 @@ fi
 ./wp core is-installed 2>/dev/null || ./wp core install --url="$BASE" --title="PN Chat Test" --admin_user=admin --admin_password=admin --admin_email=admin@example.test --skip-email
 ./wp option update siteurl "$BASE" >/dev/null
 ./wp option update home "$BASE" >/dev/null
+# No "verify the admin e-mail" screen after login (it breaks e2e.mjs).
+./wp option update admin_email_lifespan 4102444800 >/dev/null
 ./wp user get pharm1 >/dev/null 2>&1 || ./wp user create pharm1 pharm1@example.test --user_pass=pharmpass --role=subscriber >/dev/null
 
 # Mail goes to a file instead of a mail server.
