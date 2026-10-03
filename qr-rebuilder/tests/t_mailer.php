@@ -38,7 +38,8 @@ $r=QRRP_Mailer::send(...array_merge($args,array(array('provenance'=>'manual_reco
 $left=glob(__DIR__.'/tmpmail/GS1-DataMatrix-*.png');
 echo ($r===true && count($left)===1 && count($GLOBALS['sched'])===1 ? 'PASS':'FAIL')," deferred (queue) mailer: attachment kept + sweep scheduled\n";
 unset($GLOBALS['__filters']['qrrp_mail_attachment_deferred']); $GLOBALS['sched']=array();
-echo (strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή: SN')!==false ? 'PASS':'FAIL')," email shows manual-change note\n";
+/* 2.16.0: καμία σήμανση προέλευσης στο email. */
+echo (strpos($GLOBALS['last_body'],'Χειροκίνητη αλλαγή')===false ? 'PASS':'FAIL')," 2.16.0: email carries no manual-change note\n";
 // failure
 array_map('unlink', glob(__DIR__.'/tmpmail/*')); $GLOBALS['mail_ok']=false;
 $r=QRRP_Mailer::send(...$args);
@@ -82,7 +83,7 @@ QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array(),arra
 $logged_link = strpos($GLOBALS['last_body'],'qrrp_token=')!==false;
 $GLOBALS['__logged_in']=false;
 QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array(),array('provenance'=>'user_declared','source_method'=>'scan'));
-echo (strpos($GLOBALS['last_body'],'Δηλωμένο από τον χρήστη')!==false ? 'PASS':'FAIL')," guest email shows user_declared note\n";
+echo (strpos($GLOBALS['last_body'],'Δηλωμένο από τον χρήστη')===false ? 'PASS':'FAIL')," 2.16.0: guest email carries no user_declared note\n";
 $GLOBALS['__logged_in']=true;
 $f0=array('PC'=>'05012345678900','SN'=>'SN1','LOT'=>'LOT','EXP'=>'2028-02-00');
 $b0=QRRP_GS1_Parser::validate_and_build($f0);

@@ -55,7 +55,7 @@ for t in t_rebuild t_race t_mailer t_greek_sigma t_expiry_dd00 t_hri_split t_sig
 	fi
 done
 $PHP golden.php 2>/dev/null > golden-out.json
-if cmp -s golden-out.json golden-2.15.7.json; then echo "golden               identical to golden-2.15.7.json"; else echo "golden               DIFFERS"; fail=1; fi
+if cmp -s golden-out.json golden-2.16.0.json; then echo "golden               identical to golden-2.16.0.json"; else echo "golden               DIFFERS"; fail=1; fi
 rm -f golden-out.json
 $PHP bench.php
 [ -n "${tmp:-}" ] && rm -rf "$tmp"
