@@ -164,6 +164,36 @@ list( , $d ) = pnt_rest( '/ask', array( 'question' => 'Θέλω να δω τη �
 $html        = implode( ' ', array_column( $d['items'], 'html' ) );
 pnt_check( false === strpos( $html, 'Όχι — ' ), 'chat: no «Όχι» when the question is not about a page with a table' );
 
+// 1.12.1: a conversation about the list. «Το Fortimel είναι;» on its own
+// names no list: it is looked up in the page the conversation is about.
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'το fortimel ειναι;' ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false === strpos( $html, 'Όχι — ' ), 'conversation: without context, no «Όχι» for a bare «το fortimel είναι;»' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'ποια ειναι η λιστα απαγορευσης εξαγωγων ζζπντ' ) );
+pnt_same( $ban, $d['sctx'] ?? 0, 'conversation: an answer about the list gives its page as context (sctx)' );
+$list_entry  = (int) ( $d['entry'] ?? 0 );
+list( , $d ) = pnt_rest(
+	'/ask',
+	array(
+		'question' => 'το fortimel ειναι;',
+		'sctx'     => $ban,
+		'prev'     => $list_entry,
+	)
+);
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Όχι — το «Fortimel» δεν υπάρχει στη σελίδα' ) && false !== strpos( $html, 'ζζπντ Αύγουστος' ), 'conversation: «το fortimel είναι;» after the list → «Όχι», in that list' );
+pnt_same( $ban, $d['sctx'] ?? 0, 'conversation: the list stays the context' );
+pnt_same( '', $d['intro'] ?? null, 'conversation: no «Δεν έχω έτοιμη απάντηση» before a table answer' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'και το xalatan;', 'sctx' => $ban ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Ναι — το «Xalatan» υπάρχει' ) && false !== strpos( $html, 'Xalatan · Latanoprost' ), 'conversation: «και το xalatan;» → «Ναι» and its row' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'το fortimel ειναι;', 'prev' => $list_entry ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Όχι — το «Fortimel»' ), 'conversation: the previous trained answer alone also gives the list (its page by title)' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'το fortimel ειναι;', 'sctx' => $smile ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false === strpos( $html, 'Όχι — ' ), 'conversation: a context page without a table gives no «Όχι»' );
+
 // Subject pages: the home page gives way, the opening is shown.
 $r = PNChat_Site_Search::search( 'τι είναι το χαμόγελο του ζζπντ', 3 );
 pnt_same( $smile, $r ? $r[0]['id'] : 0, 'search: the page about the subject comes before the home page' );

@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.12.0
+Stable tag: 1.12.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,9 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.12.1 =
+* The chat remembers the page with a table the conversation is about (the list whose rows it showed, the page of the site results, or the page of the trained answer): «Το Fortimel είναι;» after «Ποια είναι η λίστα απαγόρευσης;» is looked up in that list («Όχι — …» / «Ναι — …»), also after small talk or a page reload. No «Δεν έχω έτοιμη απάντηση» before an answer from a table.
 
 = 1.12.0 =
 * New «Έλεγχος ευρετηρίου» screen: every published page and post of the searched types with its state (read, missing, very little text, waiting to be read again, excluded with the reason), characters and when it was read; «Διάβασε τώρα όσες λείπουν» and «Διάβασέ τα όλα ξανά» (in the background, the search keeps working).

@@ -835,9 +835,11 @@ final class PNChat_Site_Search {
 	 *
 	 * @param string $question Question.
 	 * @param string $covered  Text already in the answer (a word in it is not looked up).
+	 * @param int[]  $context  Pages with a table the conversation is about
+	 *                         («Το Fortimel είναι;» after the export list).
 	 * @return array{found:array<int,array{term:string,id:int,title:string,url:string,rows:string[]}>,missing:array<int,array{term:string,id:int,title:string,url:string,rows:int}>,yes:bool}
 	 */
-	public static function lookup( $question, $covered = '' ) {
+	public static function lookup( $question, $covered = '', array $context = array() ) {
 		$out = array(
 			'found'   => array(),
 			'missing' => array(),
@@ -865,7 +867,9 @@ final class PNChat_Site_Search {
 			return $out;
 		}
 		$folded     = ' ' . PNChat_Text::fold( $question ) . ' ';
-		$out['yes'] = (bool) preg_match( '/ (ine|iparx\w*|periex\w*|perilam\w*|anik\w*|exi|exoun|lista\w*|mesa|kalipt\w*) /', $folded );
+		// «Είναι / περιέχει / υπάρχει…;», or any name while the
+		// conversation is about a list («Και το Aerolin;»).
+		$out['yes'] = (bool) $context || (bool) preg_match( '/ (ine|iparx\w*|periex\w*|perilam\w*|anik\w*|exi|exoun|lista\w*|mesa|kalipt\w*) /', $folded );
 		$rare       = max( 3, (int) ceil( 0.05 * self::count() ) );
 
 		foreach ( $terms as $f => $orig ) {
@@ -895,16 +899,21 @@ final class PNChat_Site_Search {
 				// it is not in that table.
 				if ( $greek && preg_match( '/^[a-z][a-z0-9-]*$/i', $orig ) ) {
 					$rest = trim( (string) preg_replace( '/\b' . preg_quote( $orig, '/' ) . '\b/iu', ' ', $question ) );
-					foreach ( self::search( $rest, 1 ) as $r ) {
-						$rows = self::rows_of( get_post( $r['id'] ) );
+					// The page the question names, else the one the
+					// conversation is about.
+					$cands = array_column( self::search( $rest, 1 ), 'id' );
+					foreach ( array_merge( $cands, $context ) as $pid ) {
+						$post = get_post( (int) $pid );
+						$rows = self::searchable( $post ) ? self::rows_of( $post ) : array();
 						if ( count( $rows ) >= 10 ) {
 							$out['missing'][] = array(
 								'term'  => $orig,
-								'id'    => (int) $r['id'],
-								'title' => $r['title'],
-								'url'   => $r['url'],
+								'id'    => (int) $pid,
+								'title' => html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' ),
+								'url'   => (string) get_permalink( $post ),
 								'rows'  => count( $rows ),
 							);
+							break;
 						}
 					}
 				}
@@ -949,7 +958,8 @@ final class PNChat_Site_Search {
 				}
 				$title = html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
 				$tf    = ' ' . PNChat_Text::fold( $title ) . ' ';
-				$fit   = 0.0;
+				// The page the conversation is about comes first.
+				$fit = in_array( (int) $id, $context, true ) ? 3.0 : 0.0;
 				foreach ( self::query_words( $question ) as $alts ) {
 					$fit += self::best_in( $alts, $tf );
 				}
@@ -998,6 +1008,35 @@ final class PNChat_Site_Search {
 			}
 		}
 		return $best;
+	}
+
+	/**
+	 * The page with a table that a trained answer is about: a page of the
+	 * site it links to, else the page that best matches its title. 0 when
+	 * there is none (fewer than ten table rows).
+	 *
+	 * @param string $title  Entry title.
+	 * @param string $answer Entry answer (HTML).
+	 * @return int
+	 */
+	public static function table_page_for( $title, $answer ) {
+		$ids = array();
+		if ( preg_match_all( '#href=["\']([^"\']+)["\']#i', (string) $answer, $m ) ) {
+			foreach ( $m[1] as $url ) {
+				$id = url_to_postid( html_entity_decode( $url, ENT_QUOTES, 'UTF-8' ) );
+				if ( $id ) {
+					$ids[] = $id;
+				}
+			}
+		}
+		$ids = array_merge( $ids, array_column( self::search( (string) $title, 1 ), 'id' ) );
+		foreach ( array_unique( $ids ) as $id ) {
+			$post = get_post( (int) $id );
+			if ( self::searchable( $post ) && count( self::rows_of( $post ) ) >= 10 ) {
+				return (int) $id;
+			}
+		}
+		return 0;
 	}
 
 	/**

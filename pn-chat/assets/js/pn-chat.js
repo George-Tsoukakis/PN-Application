@@ -62,6 +62,7 @@
 				open: state.open,
 				topic: state.topic || '',
 				prev: state.prev || 0,
+				sctx: state.sctx || 0,
 				seen: (state.seen || []).slice(-30),
 				conv: state.conv || '',
 				messages: state.messages.slice(-MAX_KEPT)
@@ -523,6 +524,7 @@
 		this.state.messages = [];
 		this.state.topic = '';
 		this.state.prev = 0;
+		this.state.sctx = 0;
 		this.state.seen = [];
 		this.state.conv = newConv();
 		save(this.state);
@@ -663,6 +665,7 @@
 			page: window.location.href.split('#')[0],
 			context: this.state.topic || '',
 			prev: this.state.prev || 0,
+			sctx: this.state.sctx || 0,
 			seen: this.state.seen || [],
 			conv: this.state.conv || '',
 			via: via || '',
@@ -675,6 +678,11 @@
 			// and the answer itself the subject of «και πώς το…;».
 			if (res.topic) {
 				self.state.topic = res.topic;
+			}
+			// The page with a table this answer is about, for
+			// «Το Fortimel είναι;» right after (small talk keeps it).
+			if (typeof res.sctx !== 'undefined') {
+				self.state.sctx = res.sctx || 0;
 			}
 			if (res.entry) {
 				self.state.prev = res.entry;

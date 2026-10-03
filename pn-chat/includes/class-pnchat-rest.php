@@ -56,6 +56,10 @@ final class PNChat_Rest {
 					'prev'     => array(
 						'type' => 'integer',
 					),
+					// 1.12.1: the page with a table the conversation is about.
+					'sctx'     => array(
+						'type' => 'integer',
+					),
 					'seen'     => array(
 						'type'  => 'array',
 						'items' => array( 'type' => 'integer' ),
@@ -197,7 +201,8 @@ final class PNChat_Rest {
 		$site    = self::site_results( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
 		// «Είναι το Aerolin στη λίστα;»: the row of the site's table that
 		// names it, even next to a trained answer that does not.
-		$rows = self::table_rows( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
+		$tables = self::table_context( $req );
+		$rows   = self::table_rows( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search, $tables );
 		if ( $rows ) {
 			$shown = array_column( $rows, 'id' );
 			$site  = array_values(
@@ -321,7 +326,9 @@ final class PNChat_Rest {
 		} elseif ( 'ai' === $result['status'] ) {
 			$message = (string) $s['site_more'];
 		} elseif ( 'site' === $result['status'] ) {
-			$intro   = (string) $s['site_intro'];
+			// A row of a table answers by itself («Ναι — …»): no «Δεν έχω
+			// έτοιμη απάντηση» before it.
+			$intro   = $rows && ! $site ? '' : (string) $s['site_intro'];
 			$message = (string) $s['site_more'];
 		} elseif ( 'partial' === $result['status'] ) {
 			$message = $site ? (string) $s['site_more'] : PNChat_Settings::fill( (string) $s['partial'], 'question', implode( '», «', $result['unmatched'] ) );
@@ -336,6 +343,7 @@ final class PNChat_Rest {
 				'intro'      => $intro,
 				'topic'      => self::topic_of( $result, $own, $follow ? $context : '' ),
 				'entry'      => $first,
+				'sctx'       => self::next_table( $rows, $result, $site ),
 				'related'    => 'answered' === $result['status'] ? self::related( $first, (array) $req->get_param( 'seen' ), (int) $s['related_max'] ) : array(),
 				'message'    => $message,
 				'ask_email'  => $id && ! $button && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
@@ -822,9 +830,10 @@ final class PNChat_Rest {
 	 *
 	 * @param array<string,mixed> $result   Brain result.
 	 * @param string              $question Question.
+	 * @param int[]               $context  Pages with a table the conversation is about.
 	 * @return array<int,array{kind:string,title:string,html:string,id:int}>
 	 */
-	public static function table_rows( array $result, $question ) {
+	public static function table_rows( array $result, $question, array $context = array() ) {
 		if ( empty( PNChat_Settings::value( 'site_search' ) ) || 'ai' === $result['status'] ) {
 			return array();
 		}
@@ -832,7 +841,59 @@ final class PNChat_Rest {
 		foreach ( $result['items'] as $i ) {
 			$covered .= ' ' . ( $i['title'] ?? '' ) . ' ' . wp_strip_all_tags( (string) ( $i['answer'] ?? '' ) );
 		}
-		return PNChat_Site_Search::render_lookup( PNChat_Site_Search::lookup( $question, $covered ) );
+		return PNChat_Site_Search::render_lookup( PNChat_Site_Search::lookup( $question, $covered, $context ) );
+	}
+
+	/**
+	 * Pages with a table the conversation is about: the one the last answer
+	 * showed rows of (sctx), and the one the previous trained answer is
+	 * about. So «Το Fortimel είναι;» after «Ποια είναι η λίστα
+	 * απαγόρευσης;» is looked up in that list.
+	 *
+	 * @param WP_REST_Request $req Request.
+	 * @return int[]
+	 */
+	private static function table_context( WP_REST_Request $req ) {
+		$ids = array();
+		$id  = absint( $req->get_param( 'sctx' ) );
+		if ( $id && PNChat_Site_Search::searchable( get_post( $id ) ) ) {
+			$ids[] = $id;
+		}
+		$prev = absint( $req->get_param( 'prev' ) );
+		$e    = $prev ? PNChat_Store::entry( $prev ) : null;
+		if ( $e && 'answer' === $e['kind'] ) {
+			$page = PNChat_Site_Search::table_page_for( (string) $e['title'], (string) $e['answer'] );
+			if ( $page ) {
+				$ids[] = $page;
+			}
+		}
+		return array_values( array_unique( $ids ) );
+	}
+
+	/**
+	 * The page with a table the next question may be about: the one whose
+	 * rows this answer showed, else the one the trained answer is about.
+	 *
+	 * @param array<int,array<string,mixed>> $rows   Table rows shown.
+	 * @param array<string,mixed>            $result Brain result.
+	 * @param array<int,array<string,mixed>> $site   Pages of the site shown.
+	 * @return int
+	 */
+	private static function next_table( array $rows, array $result, array $site ) {
+		if ( $rows ) {
+			return (int) $rows[0]['id'];
+		}
+		foreach ( $site as $r ) {
+			if ( count( PNChat_Site_Search::rows_of( get_post( (int) $r['id'] ) ) ) >= 10 ) {
+				return (int) $r['id'];
+			}
+		}
+		foreach ( $result['items'] as $i ) {
+			if ( 'answer' === $i['kind'] ) {
+				return PNChat_Site_Search::table_page_for( (string) $i['title'], (string) $i['answer'] );
+			}
+		}
+		return 0;
 	}
 
 	/**
