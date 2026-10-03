@@ -8,7 +8,33 @@
  * (INSERT IGNORE) και compare-and-swap πάνω στην ακριβή προηγούμενη τιμή.
  * Γι' αυτό ο μετρητής είναι πάντα DB-authoritative, ακόμη και με Redis.
  *
+ * 2.16.1: η τιμή είναι 16 ψηφία, `start` (10) + `count` (6, με μηδενικά),
+ * π.χ. 1790000000000042. Η αύξηση είναι ένα UPDATE υπό συνθήκη (ζωντανό
+ * παράθυρο και count < όριο) χωρίς προηγούμενο SELECT, άρα ταυτόχρονοι
+ * επισκέπτες δεν «χάνουν» πια CAS στη ζεστή γραμμή του συνολικού μετρητή.
+ * Οι συγκρίσεις στο WHERE είναι συγκρίσεις strings ίδιου μήκους (όχι CAST),
+ * ώστε μια παλιά/αλλοιωμένη τιμή να μη δίνει σφάλμα 1292 σε strict mode.
+ * Το CAS μένει μόνο για γέννηση/reset παραθύρου και για τις παλιές τιμές
+ * (serialized {count, start}) που μετατρέπονται στο πρώτο hit.
+ *
+ * 2.16.1: ο ωριαίος καθαρισμός τρέχει στο WP-Cron (CRON_HOOK)· inline μόνο
+ * ως εφεδρεία, όταν έχει καθυστερήσει πολύ (βλ. maybe_inline_sweep()).
+ *
  * Τα ονόματα `qrrp_rl_*` και `qrrp_rl_last_sweep` τα καθαρίζει το uninstall.php.
+ *
+ * 2.16.1: πίσω από CDN/reverse proxy. Προεπιλογή είναι το REMOTE_ADDR· αν
+ * είναι πάντα η IP του proxy, όλοι οι επισκέπτες μοιράζονται έναν κουβά.
+ * Το X-Forwarded-For πλαστογραφείται από τον πελάτη, γι' αυτό διαβάζεται
+ * μόνο όταν το REMOTE_ADDR ανήκει σε δηλωμένο αξιόπιστο proxy, και κρατιέται
+ * η δεξιότερη διεύθυνση που ΔΕΝ είναι αξιόπιστος proxy (οι αριστερότερες
+ * είναι ό,τι έστειλε ο πελάτης). Έτοιμη υλοποίηση, ανενεργή από προεπιλογή:
+ *
+ *     add_filter( 'qrrp_rate_limit_trusted_proxies', function () {
+ *         return array( '10.0.0.0/8', '2400:cb00::/32' ); // Τα CIDR του CDN/LB σας.
+ *     } );
+ *     add_filter( 'qrrp_rate_limit_remote_addr', array( 'QRRP_Rate_Limiter', 'trusted_proxy_remote_addr' ) );
+ *
+ * Βλ. trusted_proxy_remote_addr(). Με κενή λίστα επιστρέφει το REMOTE_ADDR.
  *
  * @package QR_ReBuilder_Pro
  */
@@ -19,14 +45,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class QRRP_Rate_Limiter {
 
-	/** Προσπάθειες compare-and-swap πριν το αίτημα μπλοκαριστεί. */
+	/**
+	 * Προσπάθειες πριν το αίτημα μπλοκαριστεί. 2.16.1: κάθε γύρος ξεκινά με
+	 * την ατομική αύξηση· retry χρειάζεται μόνο σε κούρσα γέννησης/reset.
+	 */
 	public const CAS_ATTEMPTS = 5;
+
+	/** 2.16.1: ψηφία του count στην τιμή· το όριο κόβεται στο COUNT_MAX. */
+	public const COUNT_DIGITS = 6;
+
+	/** 2.16.1: μέγιστο count (και όριο) ανά παράθυρο. */
+	public const COUNT_MAX = 999999;
 
 	/** Πότε δεσμεύτηκε τελευταία φορά πέρασμα καθαρισμού. */
 	public const SWEEP_OPTION = 'qrrp_rl_last_sweep';
 
 	/** Το πολύ ένα πέρασμα καθαρισμού ανά ώρα. */
 	public const SWEEP_INTERVAL = HOUR_IN_SECONDS;
+
+	/** 2.16.1: ωριαίο WP-Cron event του καθαρισμού (το σβήνουν deactivation/uninstall). */
+	public const CRON_HOOK = 'qrrp_rl_sweep';
+
+	/** 2.16.1: inline εφεδρεία όταν ο cron λείπει/έχει κολλήσει: πέρασμα μόνο αν η καθυστέρηση ξεπερνά αυτό. */
+	public const SWEEP_OVERDUE = 6 * HOUR_IN_SECONDS;
+
+	/** 2.16.1: το ίδιο με DISABLE_WP_CRON — μικρότερο, αλλά αφήνει περιθώριο σε system cron. */
+	public const SWEEP_OVERDUE_NO_CRON = 2 * HOUR_IN_SECONDS;
 
 	/** Παράθυρα ανά batch καθαρισμού. */
 	public const SWEEP_BATCH = 200;
@@ -43,6 +87,35 @@ final class QRRP_Rate_Limiter {
 	 * παραλήπτη, 2.15.4), ώστε να μη σβήνεται ποτέ ζωντανός μετρητής.
 	 */
 	public const SWEEP_ORPHAN_AGE = 2 * DAY_IN_SECONDS;
+
+	/** 2.16.1: hooks του cron καθαρισμού. */
+	public static function init() {
+		if ( ! function_exists( 'add_action' ) ) {
+			return;
+		}
+
+		add_action( self::CRON_HOOK, array( __CLASS__, 'run_scheduled_sweep' ) );
+		add_action( 'init', array( __CLASS__, 'schedule_sweep' ) );
+	}
+
+	/** 2.16.1: προγραμματίζει το ωριαίο event αν λείπει (το wp_next_scheduled() διαβάζει το autoloaded cron option). */
+	public static function schedule_sweep() {
+		if ( ! function_exists( 'wp_next_scheduled' ) || ! function_exists( 'wp_schedule_event' ) ) {
+			return;
+		}
+
+		if ( false === wp_next_scheduled( self::CRON_HOOK ) ) {
+			wp_schedule_event( time() + MINUTE_IN_SECONDS, 'hourly', self::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * 2.16.1: handler του CRON_HOOK. Μισό SWEEP_INTERVAL ως κατώφλι, ώστε ένα
+	 * event που τρέχει λίγο νωρίτερα από την ώρα να μη χάνει τη σειρά του.
+	 */
+	public static function run_scheduled_sweep() {
+		self::maybe_sweep( time(), (int) ( self::SWEEP_INTERVAL / 2 ) );
+	}
 
 	/**
 	 * Μετρά ένα αίτημα και λέει αν επιτρέπεται.
@@ -91,20 +164,13 @@ final class QRRP_Rate_Limiter {
 			return true;
 		}
 
-		$stored = maybe_unserialize( $stored_raw );
-		$now    = time();
+		$stored = self::decode_window( $stored_raw );
 
-		if ( ! is_array( $stored ) || ! isset( $stored['count'], $stored['start'] ) ) {
+		if ( null === $stored || ! self::is_live( $stored['start'], (int) $window, time() ) ) {
 			return true;
 		}
 
-		$start = (int) $stored['start'];
-
-		if ( $start > $now || ( $now - $start ) >= (int) $window ) {
-			return true;
-		}
-
-		return (int) $stored['count'] < (int) $limit;
+		return $stored['count'] < min( (int) $limit, self::COUNT_MAX );
 	}
 
 	/**
@@ -201,9 +267,121 @@ final class QRRP_Rate_Limiter {
 	}
 
 	/**
-	 * Ο ατομικός μετρητής: INSERT IGNORE για τη γέννηση του παραθύρου, CAS για
-	 * κάθε αύξηση και για το reset ληγμένου παραθύρου. Κανένα αίτημα δεν
-	 * επιστρέφει «επιτρέπεται» πριν μετρηθεί.
+	 * 2.16.1: υλοποίηση αναφοράς για το φίλτρο `qrrp_rate_limit_remote_addr`
+	 * πίσω από CDN/reverse proxy (opt-in, βλ. docblock της κλάσης).
+	 *
+	 * Το X-Forwarded-For διαβάζεται μόνο αν το REMOTE_ADDR ανήκει στη λίστα
+	 * `qrrp_rate_limit_trusted_proxies` (CIDR ή σκέτες IP). Από δεξιά προς τα
+	 * αριστερά παραλείπονται οι αξιόπιστοι proxies· επιστρέφεται η πρώτη
+	 * διεύθυνση που δεν είναι. Μη έγκυρη εγγραφή ή αλυσίδα μόνο από proxies
+	 * σημαίνει το REMOTE_ADDR (αυστηρότερο: κοινός κουβάς, ποτέ πλαστή IP).
+	 *
+	 * @param string $remote_addr Η τιμή που δίνει το φίλτρο (REMOTE_ADDR).
+	 * @return string
+	 */
+	public static function trusted_proxy_remote_addr( $remote_addr ) {
+		$remote_addr = trim( (string) $remote_addr );
+		$trusted     = apply_filters( 'qrrp_rate_limit_trusted_proxies', array() );
+		$trusted     = is_array( $trusted ) ? array_filter( array_map( 'strval', $trusted ), 'strlen' ) : array();
+
+		if ( empty( $trusted ) || ! self::ip_in_ranges( $remote_addr, $trusted ) ) {
+			return $remote_addr;
+		}
+
+		$header = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && is_scalar( $_SERVER['HTTP_X_FORWARDED_FOR'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) )
+			: '';
+
+		if ( '' === $header ) {
+			return $remote_addr;
+		}
+
+		$hops = array_reverse( array_map( 'trim', explode( ',', substr( $header, 0, 2048 ) ) ) );
+
+		foreach ( $hops as $hop ) {
+			$ip = self::strip_port( $hop );
+
+			if ( false === filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+				return $remote_addr;
+			}
+
+			if ( ! self::ip_in_ranges( $ip, $trusted ) ) {
+				return $ip;
+			}
+		}
+
+		return $remote_addr;
+	}
+
+	/** 2.16.1: "1.2.3.4:80" → "1.2.3.4", "[2001:db8::1]:80" → "2001:db8::1". */
+	private static function strip_port( $addr ) {
+		if ( 1 === preg_match( '/^\[([^\]]+)\](?::\d+)?$/', $addr, $m ) ) {
+			return $m[1];
+		}
+
+		if ( 1 === preg_match( '/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/', $addr, $m ) ) {
+			return $m[1];
+		}
+
+		return $addr;
+	}
+
+	/**
+	 * 2.16.1: αν η IP ανήκει σε κάποιο από τα CIDR (IPv4 ή IPv6, χωρίς ανάμειξη).
+	 *
+	 * @param string   $ip     Διεύθυνση.
+	 * @param string[] $ranges CIDR ή σκέτες IP.
+	 * @return bool
+	 */
+	public static function ip_in_ranges( $ip, $ranges ) {
+		$packed = ( '' !== (string) $ip ) ? @inet_pton( (string) $ip ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Μη έγκυρη IP = false.
+
+		if ( ! is_string( $packed ) ) {
+			return false;
+		}
+
+		foreach ( (array) $ranges as $range ) {
+			$parts = explode( '/', trim( (string) $range ), 2 );
+			$net   = @inet_pton( $parts[0] ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Μη έγκυρο CIDR αγνοείται.
+
+			if ( ! is_string( $net ) || strlen( $net ) !== strlen( $packed ) ) {
+				continue;
+			}
+
+			$max  = 8 * strlen( $net );
+			$bits = ( isset( $parts[1] ) && ctype_digit( $parts[1] ) ) ? (int) $parts[1] : $max;
+
+			if ( $bits > $max || ( isset( $parts[1] ) && ! ctype_digit( $parts[1] ) ) ) {
+				continue;
+			}
+
+			$bytes = intdiv( $bits, 8 );
+			$rest  = $bits % 8;
+
+			if ( substr( $packed, 0, $bytes ) !== substr( $net, 0, $bytes ) ) {
+				continue;
+			}
+
+			if ( 0 === $rest ) {
+				return true;
+			}
+
+			$mask = ( 0xff << ( 8 - $rest ) ) & 0xff;
+
+			if ( ( ord( $packed[ $bytes ] ) & $mask ) === ( ord( $net[ $bytes ] ) & $mask ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Ο ατομικός μετρητής. 2.16.1: πρώτα η αύξηση υπό συνθήκη (ένα query στη
+	 * συνήθη περίπτωση)· μόνο αν δεν ταίριαξε διαβάζεται η γραμμή: λείπει →
+	 * INSERT IGNORE, ληγμένη/αλλοιωμένη → reset με CAS, γεμάτη → άρνηση, παλιά
+	 * serialized τιμή → μετατροπή με CAS. Κανένα αίτημα δεν επιστρέφει
+	 * «επιτρέπεται» πριν μετρηθεί.
 	 *
 	 * @return bool
 	 */
@@ -218,8 +396,24 @@ final class QRRP_Rate_Limiter {
 
 		$now    = time();
 		$option = '_transient_' . $key;
+		$limit  = min( (int) $limit, self::COUNT_MAX );
 
 		for ( $attempt = 0; $attempt < self::CAS_ATTEMPTS; $attempt++ ) {
+			$incremented = self::increment( $option, $limit, $window, $now );
+
+			if ( false === $incremented ) {
+				/* 2.16.1: πραγματικό σφάλμα βάσης: fail-closed αμέσως, χωρίς retries. */
+				self::log( 'db_error', $action, $scope, $key );
+
+				return false;
+			}
+
+			if ( 1 === $incremented ) {
+				wp_cache_delete( $option, 'options' );
+
+				return true;
+			}
+
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Το CAS χρειάζεται την ακριβή τιμή της βάσης, όχι cached.
 			$stored_raw = $wpdb->get_var(
 				$wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", $option )
@@ -228,8 +422,8 @@ final class QRRP_Rate_Limiter {
 			if ( null === $stored_raw ) {
 				/*
 				 * Η γέννηση του παραθύρου είναι κι αυτή κούρσα: μόνο το INSERT
-				 * IGNORE ξέρει ποιος κέρδισε. Ο χαμένος ξαναδιαβάζει και
-				 * μετριέται με CAS. (Το add_option() είναι upsert, όχι create.)
+				 * IGNORE ξέρει ποιος κέρδισε. Ο χαμένος ξαναδοκιμάζει την αύξηση.
+				 * (Το add_option() είναι upsert, όχι create.)
 				 */
 				if ( self::create_window( $option, $key, $window, $now ) ) {
 					return true;
@@ -238,21 +432,9 @@ final class QRRP_Rate_Limiter {
 				continue;
 			}
 
-			$stored = maybe_unserialize( $stored_raw );
-			$start  = null;
-			$count  = 0;
+			$stored = self::decode_window( $stored_raw );
 
-			if ( is_array( $stored ) && isset( $stored['count'], $stored['start'] ) ) {
-				$stored_start = (int) $stored['start'];
-
-				/* Έγκυρη αρχή = μέσα στο παράθυρο και όχι στο μέλλον (αλλαγή ώρας). */
-				if ( $stored_start <= $now && ( $now - $stored_start ) < $window ) {
-					$count = (int) $stored['count'];
-					$start = $stored_start;
-				}
-			}
-
-			if ( null === $start ) {
+			if ( null === $stored || ! self::is_live( $stored['start'], $window, $now ) ) {
 				/* Ληγμένο ή αλλοιωμένο παράθυρο: reset με CAS, ποτέ με set_transient(). */
 				if ( self::reset_window( $option, $key, $stored_raw, $window, $now ) ) {
 					return true;
@@ -261,22 +443,21 @@ final class QRRP_Rate_Limiter {
 				continue;
 			}
 
-			if ( $count >= $limit ) {
+			if ( $stored['count'] >= $limit ) {
 				return false;
 			}
 
-			$next = maybe_serialize(
-				array(
-					'count' => $count + 1,
-					'start' => $start,
-				)
-			);
+			if ( ! $stored['legacy'] ) {
+				/* Ζωντανό με περιθώριο: κάποιος μόλις το δημιούργησε/έκανε reset. Ξανά η αύξηση. */
+				continue;
+			}
 
+			/* 2.16.1: παλιά τιμή (≤ 2.16.0): μετράμε και μετατρέπουμε με CAS στην ακριβή τιμή. */
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Compare-and-swap στην ακριβή προηγούμενη τιμή.
 			$updated = $wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s",
-					$next,
+					self::encode_window( $stored['start'], $stored['count'] + 1 ),
 					$option,
 					$stored_raw
 				)
@@ -289,10 +470,90 @@ final class QRRP_Rate_Limiter {
 			}
 		}
 
-		/* Ακραίο contention στο ίδιο κλειδί ή πρόβλημα βάσης: fail-closed, αλλά ορατό. */
+		/* Επαναλαμβανόμενη κούρσα γέννησης/reset ή πρόβλημα βάσης: fail-closed, αλλά ορατό. */
 		self::log( 'cas_exhausted', $action, $scope, $key );
 
 		return false;
+	}
+
+	/**
+	 * 2.16.1: ατομική αύξηση σε ένα statement, μόνο αν το παράθυρο είναι
+	 * ζωντανό (now − window < start ≤ now) και count < όριο. Η τιμή έχει
+	 * σταθερό μήκος 16 ψηφίων, άρα η λεξικογραφική σύγκριση = αριθμητική· το
+	 * CAST τρέχει μόνο στη γραμμή που ήδη ταίριαξε (BIGINT, ακριβές).
+	 *
+	 * @return int|false 1 μετρήθηκε, 0 δεν ταίριαξε, false σφάλμα βάσης.
+	 */
+	private static function increment( $option, $limit, $window, $now ) {
+		global $wpdb;
+
+		if ( $limit <= 0 ) {
+			return 0;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Ατομική αύξηση υπό συνθήκη· το options API δεν έχει increment.
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$wpdb->options} SET option_value = CAST(option_value AS UNSIGNED) + 1 WHERE option_name = %s AND option_value >= %s AND option_value < %s AND SUBSTRING(option_value, 11) < %s",
+				$option,
+				self::encode_window( (int) $now - (int) $window + 1, 0 ),
+				self::encode_window( (int) $now + 1, 0 ),
+				sprintf( '%0' . self::COUNT_DIGITS . 'd', (int) $limit )
+			)
+		);
+
+		if ( false === $updated ) {
+			return false;
+		}
+
+		return 1 === (int) $updated ? 1 : 0;
+	}
+
+	/**
+	 * 2.16.1: η τιμή ενός παραθύρου: start (10 ψηφία) + count (6 ψηφία).
+	 *
+	 * @param int $start Αρχή του παραθύρου (unix time).
+	 * @param int $count Αιτήματα που μετρήθηκαν.
+	 * @return string
+	 */
+	public static function encode_window( $start, $count ) {
+		return sprintf( '%010d%0' . self::COUNT_DIGITS . 'd', max( 0, (int) $start ), max( 0, min( (int) $count, self::COUNT_MAX ) ) );
+	}
+
+	/**
+	 * 2.16.1: αποκωδικοποίηση της τιμής· δέχεται και την παλιά serialized
+	 * μορφή {count, start} (≤ 2.16.0).
+	 *
+	 * @param string $raw Ακριβής τιμή της βάσης.
+	 * @return array{start:int, count:int, legacy:bool}|null null αν είναι αλλοιωμένη.
+	 */
+	private static function decode_window( $raw ) {
+		$raw = (string) $raw;
+
+		if ( 1 === preg_match( '/^\d{16}$/', $raw ) ) {
+			return array(
+				'start'  => (int) substr( $raw, 0, 10 ),
+				'count'  => (int) substr( $raw, 10 ),
+				'legacy' => false,
+			);
+		}
+
+		$stored = maybe_unserialize( $raw );
+
+		if ( is_array( $stored ) && isset( $stored['count'], $stored['start'] ) ) {
+			return array(
+				'start'  => (int) $stored['start'],
+				'count'  => (int) $stored['count'],
+				'legacy' => true,
+			);
+		}
+
+		return null;
+	}
+
+	/** 2.16.1: έγκυρη αρχή = μέσα στο παράθυρο και όχι στο μέλλον (αλλαγή ώρας). */
+	private static function is_live( $start, $window, $now ) {
+		return $start <= $now && ( $now - $start ) < $window;
 	}
 
 	/** @return bool Αν το $wpdb έχει όσα χρειάζεται ο limiter. */
@@ -306,14 +567,9 @@ final class QRRP_Rate_Limiter {
 			&& is_callable( array( $wpdb, 'prepare' ) );
 	}
 
-	/** Η τιμή ενός φρέσκου παραθύρου, serialized όπως τη γράφει το transients API. */
+	/** Η τιμή ενός φρέσκου παραθύρου. 2.16.1: start + count, όχι serialized. */
 	private static function fresh_window( $now ) {
-		return maybe_serialize(
-			array(
-				'count' => 1,
-				'start' => (int) $now,
-			)
-		);
+		return self::encode_window( $now, 1 );
 	}
 
 	/**
@@ -343,7 +599,7 @@ final class QRRP_Rate_Limiter {
 
 		self::write_timeout( $key, $window, $now );
 		self::forget_option_cache( $option, $key );
-		self::maybe_sweep( $now );
+		self::maybe_inline_sweep( $now );
 
 		return true;
 	}
@@ -351,8 +607,8 @@ final class QRRP_Rate_Limiter {
 	/**
 	 * Ατομικό reset ληγμένου/αλλοιωμένου παραθύρου με CAS.
 	 *
-	 * Εδώ κρέμεται επίσης ο καθαρισμός: ένας μόνιμος μετρητής δημιουργείται
-	 * μία φορά, αλλά κάνει reset σε κάθε λήξη παραθύρου.
+	 * Εδώ κρέμεται επίσης η inline εφεδρεία του καθαρισμού: ένας μόνιμος
+	 * μετρητής δημιουργείται μία φορά, αλλά κάνει reset σε κάθε λήξη παραθύρου.
 	 *
 	 * @return bool true αν το reset ήταν δικό μας (μετρηθήκαμε ως το 1ο αίτημα).
 	 */
@@ -375,7 +631,7 @@ final class QRRP_Rate_Limiter {
 
 		self::write_timeout( $key, $window, $now );
 		self::forget_option_cache( $option, $key );
-		self::maybe_sweep( $now );
+		self::maybe_inline_sweep( $now );
 
 		return true;
 	}
@@ -411,16 +667,33 @@ final class QRRP_Rate_Limiter {
 	}
 
 	/**
-	 * Τρέχει τον καθαρισμό αν πέρασε το SWEEP_INTERVAL και το πέρασμα είναι δικό μας.
-	 *
-	 * Ο core δεν σκουπίζει DB transients όταν υπάρχει external object cache,
-	 * ενώ εμείς γράφουμε τους μετρητές στη βάση, άρα χρειάζεται δικός μας reaper.
-	 * Καλείται μόνο σε γέννηση/reset παραθύρου, όχι σε κάθε αίτημα.
+	 * 2.16.1: inline εφεδρεία (σε γέννηση/reset παραθύρου). Με λειτουργικό cron
+	 * το πέρασμα είναι πάντα φρέσκο και εδώ γίνεται μόνο ένα SELECT· αν ο cron
+	 * έχει κολλήσει (ή DISABLE_WP_CRON χωρίς system cron), καθαρίζει ο επισκέπτης.
 	 *
 	 * @param int $now Τρέχον timestamp.
 	 * @return bool true αν έτρεξε πέρασμα.
 	 */
-	public static function maybe_sweep( $now ) {
+	private static function maybe_inline_sweep( $now ) {
+		$overdue = ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) || ! function_exists( 'wp_next_scheduled' )
+			? self::SWEEP_OVERDUE_NO_CRON
+			: self::SWEEP_OVERDUE;
+
+		return self::maybe_sweep( $now, $overdue );
+	}
+
+	/**
+	 * Τρέχει τον καθαρισμό αν πέρασε το $interval και το πέρασμα είναι δικό μας.
+	 *
+	 * Ο core δεν σκουπίζει DB transients όταν υπάρχει external object cache,
+	 * ενώ εμείς γράφουμε τους μετρητές στη βάση, άρα χρειάζεται δικός μας reaper.
+	 * 2.16.1: καλείται από το CRON_HOOK και, ως εφεδρεία, από maybe_inline_sweep().
+	 *
+	 * @param int      $now      Τρέχον timestamp.
+	 * @param int|null $interval 2.16.1: ελάχιστη απόσταση από το προηγούμενο πέρασμα (προεπιλογή SWEEP_INTERVAL).
+	 * @return bool true αν έτρεξε πέρασμα.
+	 */
+	public static function maybe_sweep( $now, $interval = null ) {
 		global $wpdb;
 
 		if ( ! self::db_available() ) {
@@ -434,7 +707,9 @@ final class QRRP_Rate_Limiter {
 
 		$last = ( null === $previous ) ? 0 : (int) $previous;
 
-		if ( $last > 0 && ( $now - $last ) < self::SWEEP_INTERVAL ) {
+		$interval = ( null === $interval ) ? self::SWEEP_INTERVAL : max( 1, (int) $interval );
+
+		if ( $last > 0 && ( $now - $last ) < $interval ) {
 			return false;
 		}
 
@@ -682,14 +957,13 @@ final class QRRP_Rate_Limiter {
 			}
 
 			$value_raw = $current_values[ $value_name ];
-			$stored    = maybe_unserialize( $value_raw );
+			$stored    = self::decode_window( $value_raw );
 
 			/*
 			 * Φρέσκο παράθυρο με παλιά λήξη = είμαστε ανάμεσα στο reset και το
 			 * upsert της λήξης. Δεν το αγγίζουμε. Αλλοιωμένη τιμή σβήνεται.
 			 */
-			if ( is_array( $stored ) && isset( $stored['start'] )
-				&& (int) $stored['start'] >= (int) $timeout_data['expiry'] ) {
+			if ( null !== $stored && $stored['start'] >= (int) $timeout_data['expiry'] ) {
 				continue;
 			}
 
@@ -794,13 +1068,13 @@ final class QRRP_Rate_Limiter {
 				continue;
 			}
 
-			$stored = maybe_unserialize( $raw );
+			$stored = self::decode_window( $raw );
 
-			if ( ! is_array( $stored ) || ! isset( $stored['start'] ) ) {
+			if ( null === $stored ) {
 				continue;
 			}
 
-			if ( ( $now - (int) $stored['start'] ) < self::SWEEP_ORPHAN_AGE ) {
+			if ( ( $now - $stored['start'] ) < self::SWEEP_ORPHAN_AGE ) {
 				continue;
 			}
 
@@ -907,3 +1181,5 @@ final class QRRP_Rate_Limiter {
 		}
 	}
 }
+
+QRRP_Rate_Limiter::init();

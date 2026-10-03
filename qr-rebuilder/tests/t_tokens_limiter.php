@@ -28,6 +28,13 @@ final class Fake_WPDB {
 			$this->rows[ $a[0] ] = $a[1];
 			return 1;
 		}
+		if ( false !== strpos( $q, 'CAST(option_value AS UNSIGNED) + 1' ) ) {
+			/* 2.16.1: ατομική αύξηση υπό συνθήκη — args: name, lower, upper, cap (strings ίδιου μήκους). */
+			$v = $this->rows[ $a[0] ] ?? null;
+			if ( null === $v || ! preg_match( '/^\d{16}$/', $v ) || $v < $a[1] || $v >= $a[2] || substr( $v, 10 ) >= $a[3] ) { return 0; }
+			$this->rows[ $a[0] ] = (string) ( (int) $v + 1 );
+			return 1;
+		}
 		if ( 0 === strpos( $q, 'UPDATE' ) ) {
 			if ( ( $this->rows[ $a[1] ] ?? null ) !== $a[2] ) { return 0; }
 			$this->rows[ $a[1] ] = $a[0];

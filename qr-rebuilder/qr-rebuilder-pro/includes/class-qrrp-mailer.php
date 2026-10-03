@@ -152,15 +152,28 @@ final class QRRP_Mailer {
 			return $tmp_file;
 		}
 
+		$rebuild_token    = '';
+		$handed_to_mailer = false;
+
+		/*
+		 * 2.16.1: αν το SMTP ξεπεράσει το max_execution_time, η PHP τερματίζει
+		 * χωρίς finally· το PNG (SN/LOT/EXP) έμενε στον δίσκο ως την επόμενη
+		 * αποστολή. Οι shutdown functions τρέχουν και τότε.
+		 */
+		register_shutdown_function(
+			static function () use ( $tmp_file, &$handed_to_mailer ) {
+				if ( ! $handed_to_mailer ) {
+					self::delete_temp_file( $tmp_file );
+				}
+			}
+		);
+
 		/*
 		 * Από εδώ κάθε έξοδος περνά από το finally, που σβήνει το temp PNG. Εξαίρεση
 		 * (2.15.7: μόνο με το φίλτρο qrrp_mail_attachment_deferred): mailer με ουρά
 		 * που θα διαβάσει το συνημμένο αργότερα — τότε το σβήνει ο sweep μετά το
 		 * TEMP_FILE_MAX_AGE (αρχείο 0600, τυχαίο όνομα).
 		 */
-		$rebuild_token    = '';
-		$handed_to_mailer = false;
-
 		try {
 			$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 			$from_name = sanitize_text_field( (string) get_option( 'qrrp_email_from_name', $site_name ) );
@@ -197,17 +210,25 @@ final class QRRP_Mailer {
 				? array( $attachment_name => $tmp_file )
 				: array( $tmp_file );
 
-			$body = self::build_html(
-				$site_name,
-				$fields,
-				$customer_name,
-				$print_date,
-				$raw_data,
-				$attachment_name,
-				self::resolve_tool_page_url( $tool_page_url ),
-				$rebuild_token,
-				$proven_extras
-			);
+			/*
+			 * 2.15.3: σύνδεσμος (και token) μόνο για συνδεδεμένους· ένα token 7
+			 * ημερών ανά αποστολή επισκέπτη γέμιζε το ευρετήριο. 2.16.1: η
+			 * σελίδα δεν αναζητείται καν για επισκέπτες, και το token
+			 * δημιουργείται εδώ, όχι μέσα στον renderer. Ο σύνδεσμος κουβαλά
+			 * μόνο opaque token· αν δεν αποθηκευτεί, το email βγαίνει χωρίς.
+			 */
+			$tool_url      = $is_guest ? '' : self::resolve_tool_page_url( $tool_page_url );
+			$rebuild_token = '' !== $tool_url ? self::create_rebuild_token( $fields, $proven_extras ) : '';
+
+			$body = self::build_html( $site_name, $fields, $customer_name, $print_date, $raw_data, $attachment_name, $tool_url, $rebuild_token );
+
+			/* 2.16.1: εναλλακτικό text/plain (καλύτερη παράδοση, απλοί clients). */
+			$alt_body   = self::build_text( $site_name, $fields, $customer_name, $print_date, $raw_data, $tool_url, $rebuild_token );
+			$alt_filter = static function ( $phpmailer ) use ( $alt_body ) {
+				if ( is_object( $phpmailer ) && property_exists( $phpmailer, 'AltBody' ) ) {
+					$phpmailer->AltBody = $alt_body;
+				}
+			};
 
 			$from_filter = static function () use ( $from_mail ) {
 				return $from_mail;
@@ -219,6 +240,7 @@ final class QRRP_Mailer {
 
 			add_filter( 'wp_mail_from', $from_filter );
 			add_filter( 'wp_mail_from_name', $name_filter );
+			add_action( 'phpmailer_init', $alt_filter );
 
 			$sent       = false;
 			$mail_error = false;
@@ -236,6 +258,7 @@ final class QRRP_Mailer {
 			} finally {
 				remove_filter( 'wp_mail_from', $from_filter );
 				remove_filter( 'wp_mail_from_name', $name_filter );
+				remove_action( 'phpmailer_init', $alt_filter );
 			}
 
 			if ( $mail_error || ! $sent ) {
@@ -545,6 +568,8 @@ final class QRRP_Mailer {
 		/* Αρχεία με tag άλλου site (ή παλιού salt): μόνο όταν είναι σίγουρα εγκαταλελειμμένα. */
 		$foreign_cutoff = time() - DAY_IN_SECONDS;
 		$deleted        = 0;
+		/* 2.16.1: ένα HMAC ανά sweep, όχι ανά αρχείο. */
+		$site_tag = self::temp_site_tag();
 
 		/*
 		 * 2.15.2: εξετάζονται όλα τα αρχεία και το όριο μετρά διαγραφές. Αφού τα
@@ -558,7 +583,7 @@ final class QRRP_Mailer {
 
 			$name = basename( $file );
 
-			if ( self::is_own_temp_file( $name ) ) {
+			if ( self::is_own_temp_file( $name, $site_tag ) ) {
 				$file_cutoff = $cutoff;
 			} elseif ( 1 === preg_match( self::TEMP_FILE_LEGACY_PATTERN, $name ) ) {
 				$file_cutoff = $legacy_cutoff;
@@ -591,8 +616,10 @@ final class QRRP_Mailer {
 		return substr( hash_hmac( 'sha256', 'qrrp-temp-file|' . $blog_id, wp_salt( 'auth' ) ), 0, 8 );
 	}
 
-	private static function is_own_temp_file( $name ) {
-		return 1 === preg_match( self::TEMP_FILE_PATTERN, (string) $name, $m ) && hash_equals( self::temp_site_tag(), $m[1] );
+	private static function is_own_temp_file( $name, $site_tag = null ) {
+		$site_tag = is_string( $site_tag ) ? $site_tag : self::temp_site_tag();
+
+		return 1 === preg_match( self::TEMP_FILE_PATTERN, (string) $name, $m ) && hash_equals( $site_tag, $m[1] );
 	}
 
 	private static function delete_temp_file( $file ) {
@@ -850,7 +877,7 @@ final class QRRP_Mailer {
 		return QRRP_Tokens::purge_all();
 	}
 
-	private static function build_html( $site_name, $fields, $customer_name, $print_date, $raw_data, $attachment_name, $tool_url = '', &$created_token = null, $proven_extras = array() ) {
+	private static function build_html( $site_name, $fields, $customer_name, $print_date, $raw_data, $attachment_name, $tool_url = '', $rebuild_token = '' ) {
 		$rows = '';
 
 		if ( '' !== $customer_name ) {
@@ -883,22 +910,10 @@ final class QRRP_Mailer {
 		 * ASCII 29) και σύνδεσμο prefill. Και τα δύο είναι για αναδημιουργία μέσα
 		 * από το plugin· το λογισμικό συνταγών χρειάζεται πραγματική σάρωση.
 		 */
-		$tool_url = is_string( $tool_url ) ? $tool_url : '';
+		$tool_url      = is_string( $tool_url ) ? $tool_url : '';
+		$rebuild_token = is_string( $rebuild_token ) ? $rebuild_token : '';
 
-		/*
-		 * Ο σύνδεσμος κουβαλά μόνο opaque token, ποτέ PC/SN/LOT/EXP (θα
-		 * κατέληγαν σε history, logs, referrers). Αν το token δεν αποθηκευτεί,
-		 * το email βγαίνει χωρίς σύνδεσμο.
-		 */
-		/*
-		 * 2.15.3: όχι για επισκέπτες. Ένα token 7 ημερών ανά αποστολή επισκέπτη
-		 * γέμιζε το ευρετήριο· ο παραλήπτης έχει ήδη την εικόνα και τα στοιχεία.
-		 */
-		$rebuild_token = ( '' !== $tool_url && is_user_logged_in() ) ? self::create_rebuild_token( $fields, $proven_extras ) : '';
-
-		/* Επιστρέφεται στον καλούντα ώστε να αποσυρθεί αν αποτύχει η αποστολή. */
-		$created_token = $rebuild_token;
-
+		/* Ο σύνδεσμος κουβαλά μόνο opaque token, ποτέ PC/SN/LOT/EXP (history, logs, referrers). */
 		if ( '' !== $tool_url && '' !== $rebuild_token ) {
 			$rebuild_url = add_query_arg( array( 'qrrp_token' => $rebuild_token ), $tool_url );
 
@@ -949,7 +964,7 @@ final class QRRP_Mailer {
 
 		return '
 <!doctype html>
-<html lang="el">
+<html lang="' . esc_attr( self::html_lang() ) . '">
 <body style="margin:0;padding:24px;background:#f3f6f9;font-family:Arial,sans-serif;color:#1d2327">
 	<div style="max-width:620px;margin:auto;background:#fff;border:1px solid #e2e4e7;border-radius:12px;overflow:hidden">
 		<div style="padding:24px 28px;background:#2271b1;color:#fff">
@@ -980,6 +995,57 @@ final class QRRP_Mailer {
 	</div>
 </body>
 </html>';
+	}
+
+	/** 2.16.1: η γλώσσα του site (ήταν πάντα «el»). */
+	private static function html_lang() {
+		$lang = function_exists( 'get_bloginfo' ) ? (string) get_bloginfo( 'language' ) : '';
+
+		return 1 === preg_match( '/\A[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*\z/', $lang ) ? $lang : 'el';
+	}
+
+	/**
+	 * 2.16.1: το ίδιο περιεχόμενο ως text/plain (AltBody).
+	 *
+	 * @return string
+	 */
+	private static function build_text( $site_name, $fields, $customer_name, $print_date, $raw_data, $tool_url = '', $rebuild_token = '' ) {
+		$lines = array( $site_name, __( 'Νέο GS1 DataMatrix', 'qr-rebuilder-pro' ), '' );
+
+		$lines[] = __( 'Το αναδημιουργημένο GS1 DataMatrix είναι έτοιμο. Η εικόνα βρίσκεται επισυναπτόμενη στο email.', 'qr-rebuilder-pro' );
+		$lines[] = '';
+
+		if ( '' !== $customer_name ) {
+			$lines[] = __( 'Πελάτης', 'qr-rebuilder-pro' ) . ': ' . $customer_name;
+		}
+
+		if ( '' !== $print_date ) {
+			$lines[] = __( 'Ημερομηνία', 'qr-rebuilder-pro' ) . ': ' . $print_date;
+		}
+
+		foreach ( array( 'PC', 'SN', 'LOT', 'EXP' ) as $key ) {
+			if ( isset( $fields[ $key ] ) && '' !== $fields[ $key ] ) {
+				$shown = (string) $fields[ $key ];
+
+				if ( 'EXP' === $key && preg_match( '/^00-(\d{2})-(\d{4})$/', $shown, $m ) ) {
+					$shown = $m[1] . '/' . $m[2] . ' ' . __( '(χωρίς ημέρα – έως το τέλος του μήνα)', 'qr-rebuilder-pro' );
+				}
+
+				$lines[] = $key . ': ' . $shown;
+			}
+		}
+
+		if ( is_string( $tool_url ) && '' !== $tool_url && is_string( $rebuild_token ) && '' !== $rebuild_token ) {
+			$lines[] = '';
+			$lines[] = __( 'Άνοιγμα στο QR ReBuilder Pro', 'qr-rebuilder-pro' ) . ': ' . add_query_arg( array( 'qrrp_token' => $rebuild_token ), $tool_url );
+		}
+
+		if ( '' !== $raw_data ) {
+			$lines[] = '';
+			$lines[] = __( 'GS1 για Χειροκίνητη εισαγωγή', 'qr-rebuilder-pro' ) . ': ' . str_replace( "\x1D", '[GS]', $raw_data );
+		}
+
+		return implode( "\n", $lines ) . "\n";
 	}
 
 	private static function row( $label, $value ) {

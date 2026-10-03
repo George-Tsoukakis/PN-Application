@@ -84,7 +84,11 @@
 	font-weight: 600;
 	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.35);
 }
-.qrrp-btn {
+/*
+ * 2.16.1: κουμπιά με πρόθεμα .qrrp-wrapper (0,2,0), ώστε να μην τα πατούν κανόνες
+ * του theme όπως .entry-content button / .entry-content a (0,1,1).
+ */
+.qrrp-wrapper .qrrp-btn {
 	appearance: none;
 	display: inline-flex;
 	align-items: center;
@@ -107,13 +111,13 @@
 		background 0.15s ease,
 		border-color 0.15s ease;
 }
-.qrrp-btn:not(:disabled):hover {
+.qrrp-wrapper .qrrp-btn:not(:disabled):hover {
 	border-color: #b4b9be;
 	background: #eceef0;
 	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 	transform: translateY(-1px);
 }
-.qrrp-btn:not(:disabled):active {
+.qrrp-wrapper .qrrp-btn:not(:disabled):active {
 	transform: translateY(0);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -125,7 +129,7 @@
 	outline: 2px solid var(--qrrp-primary);
 	outline-offset: 2px;
 }
-.qrrp-btn:disabled {
+.qrrp-wrapper .qrrp-btn:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 	transform: none;
@@ -135,18 +139,18 @@
  * 2.15.2: λευκό κείμενο ≥ 4.5:1 σε όλο το gradient (WCAG 1.4.3). Κανονικό:
  * #2271b1 5.17:1 → #1c6aa6 5.74:1. Hover: #1f75b3 4.94:1 → #135e96 6.84:1.
  */
-.qrrp-btn-primary {
+.qrrp-wrapper .qrrp-btn-primary {
 	background: linear-gradient(135deg, #2271b1, #1c6aa6);
 	border-color: #1c6aa6;
 	color: #fff;
 }
-.qrrp-btn-primary:not(:disabled):hover {
+.qrrp-wrapper .qrrp-btn-primary:not(:disabled):hover {
 	background: linear-gradient(135deg, #1f75b3, #135e96);
 	border-color: #135e96;
 	box-shadow: 0 4px 14px rgba(28, 106, 166, 0.35);
 	color: #fff;
 }
-.qrrp-link-btn {
+.qrrp-wrapper .qrrp-link-btn {
 	appearance: none;
 	-webkit-appearance: none;
 	padding: 4px 0;
@@ -159,9 +163,9 @@
 	cursor: pointer;
 	transition: color 0.15s ease;
 }
-.qrrp-link-btn:hover,
-.qrrp-link-btn:focus,
-.qrrp-link-btn:active {
+.qrrp-wrapper .qrrp-link-btn:hover,
+.qrrp-wrapper .qrrp-link-btn:focus,
+.qrrp-wrapper .qrrp-link-btn:active {
 	background: transparent;
 	color: var(--qrrp-primary-dark);
 	text-decoration: underline;
@@ -543,10 +547,6 @@
 	font-weight: 600;
 	line-height: 1.45;
 	overflow-wrap: anywhere;
-}
-
-.qrrp-wrapper .qrrp-email-feedback[hidden] {
-	display: none;
 }
 
 .qrrp-wrapper .qrrp-email-feedback::before {
@@ -945,7 +945,7 @@
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
-	.qrrp-btn:not(:disabled):hover {
+	.qrrp-wrapper .qrrp-btn:not(:disabled):hover {
 		transform: none;
 	}
 }

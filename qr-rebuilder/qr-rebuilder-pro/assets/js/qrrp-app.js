@@ -685,6 +685,14 @@
 			els.printDate.value = todayISO();
 		}
 
+		/*
+		 * 2.16.1: εδώ και όχι δίπλα στην onSendEmail(), γιατί η setOutputActionsEnabled()
+		 * τρέχει νωρίτερα. Το emailSendSeq μετρά αποστολές: μόνο η τελευταία
+		 * επαναφέρει ετικέτα/aria-busy του κουμπιού.
+		 */
+		var sendEmailLabel = els.sendEmail ? els.sendEmail.textContent : '';
+		var emailSendSeq = 0;
+
 		var hwIdleTimer = null;
 		var hwBuffer = '';
 
@@ -750,8 +758,11 @@
 		var manualEntryMode = false;
 		var CAN_MANUAL_ENTRY = !! QRRP.canManualEntry && '0' !== String( QRRP.canManualEntry );
 
-		/* noScroll (2.15.7): το μήνυμα φαίνεται ήδη αλλού (π.χ. δίπλα στο κουμπί email). */
-		function setStatus( message, isError, noScroll ) {
+		/*
+		 * noScroll (2.15.7): το μήνυμα φαίνεται ήδη αλλού (π.χ. δίπλα στο κουμπί email).
+		 * speech (2.16.1): επιπλέον κείμενο μόνο για τις live regions (προειδοποιήσεις).
+		 */
+		function setStatus( message, isError, noScroll, speech ) {
 			if ( ! els.status ) {
 				return;
 			}
@@ -759,13 +770,23 @@
 			els.status.textContent = message || '';
 			els.status.classList.toggle( 'qrrp-status-error', !! isError );
 
-			announce( message, isError );
+			announce( message && speech ? message + ' ' + speech : message, isError );
 
 			// Το μήνυμα είναι στην κορυφή του εργαλείου· ένα σφάλμα πρέπει να φαίνεται
 			// ακόμη κι αν ο χρήστης έχει κυλήσει πιο κάτω.
 			if ( message && isError && ! noScroll && els.status.scrollIntoView ) {
 				els.status.scrollIntoView( { behavior: scrollBehavior(), block: 'nearest' } );
 			}
+		}
+
+		/*
+		 * 2.16.1: το #qrrp-warnings δεν είναι πια live region· οι προειδοποιήσεις
+		 * ανακοινώνονται μία φορά, μαζί με το status που τις συνοδεύει.
+		 */
+		function warningsSpeech( warnings ) {
+			return ( warnings && warnings.length )
+				? t( 'warningsLabel', 'Προειδοποιήσεις:' ) + ' ' + warnings.join( ' ' )
+				: '';
 		}
 
 		/*
@@ -1315,13 +1336,45 @@
 			return ! ( active.closest && active.closest( '[hidden]' ) );
 		}
 
-		function focusHwInput( force ) {
+		/* noScroll (2.16.1): χωρίς κύλιση, π.χ. όταν μόλις εμφανίστηκε το αποτέλεσμα πιο κάτω. */
+		function focusHwInput( force, noScroll ) {
 			if ( ! els.hwInput || document.activeElement === els.hwInput ) {
 				return;
 			}
 
 			if ( force || ! focusIsOnOtherControl() ) {
-				els.hwInput.focus();
+				els.hwInput.focus( noScroll ? { preventScroll: true } : undefined );
+			}
+		}
+
+		/* 2.16.1: πεδίο όπου ο χρήστης γράφει (όχι κουμπί, checkbox, readonly). */
+		var NON_TEXT_INPUT_TYPES = /^(button|submit|reset|checkbox|radio|file|image|range|color|hidden)$/i;
+
+		function isEditableField( node ) {
+			if ( ! node || node.disabled || ( node.closest && node.closest( '[hidden]' ) ) ) {
+				return false;
+			}
+
+			if ( node.isContentEditable || 'SELECT' === node.tagName ) {
+				return true;
+			}
+
+			if ( 'TEXTAREA' === node.tagName ) {
+				return ! node.readOnly;
+			}
+
+			return 'INPUT' === node.tagName && ! node.readOnly &&
+				! NON_TEXT_INPUT_TYPES.test( node.type || '' );
+		}
+
+		/*
+		 * 2.16.1: μετά από δημιουργία, εκτύπωση, αντιγραφή ή λήψη η εστίαση γυρίζει στον
+		 * σαρωτή· αλλιώς η επόμενη σάρωση πέφτει στο κουμπί και το Enter του σαρωτή το
+		 * ξαναπατά (π.χ. επανεκτύπωση της προηγούμενης ετικέτας). Όχι αν ο χρήστης γράφει αλλού.
+		 */
+		function returnFocusToScanner() {
+			if ( ! isEditableField( document.activeElement ) ) {
+				focusHwInput( true, true );
 			}
 		}
 
@@ -1404,6 +1457,66 @@
 
 		if ( els.hwInput ) {
 			focusHwInput();
+
+			/*
+			 * 2.16.1: σάρωση με την εστίαση σε κουμπί ή στο κενό (π.χ. «Εκτύπωση» μετά τον
+			 * διάλογο): οι χαρακτήρες πάνε στο πεδίο του σαρωτή ως νέα σάρωση (ίδια ροή με
+			 * το handleScannedRaw) και το Enter του σαρωτή δεν πατά το κουμπί. Σε πεδία
+			 * κειμένου δεν επεμβαίνει. Το Space δεν ξεκινά σάρωση: είναι πάτημα κουμπιού.
+			 */
+			document.addEventListener( 'keydown', function ( event ) {
+				var active = document.activeElement;
+
+				if ( event.defaultPrevented || active === els.hwInput || isEditableField( active ) ) {
+					return;
+				}
+
+				/* Εκτός εργαλείου (π.χ. μενού του theme) δεν αγγίζουμε τίποτα. */
+				if ( active && active !== document.body && active !== document.documentElement && ! root.contains( active ) ) {
+					return;
+				}
+
+				var inBurst = Date.now() - lastScannerKeyAt < SCANNER_SUFFIX_GUARD_MS;
+
+				/* Suffix σαρωτή ενώ η εστίαση έφυγε από το πεδίο: ποτέ κλικ σε κουμπί. */
+				if ( 'Enter' === event.key || 'Tab' === event.key ) {
+					if ( inBurst ) {
+						event.preventDefault();
+
+						if ( '' !== hwBuffer.trim() ) {
+							submitHwScan( false );
+						}
+					}
+
+					return;
+				}
+
+				if ( ! inBurst && ( event.ctrlKey || event.altKey || event.metaKey ) ) {
+					return;
+				}
+
+				var character = scannerChar( event, inBurst );
+
+				if ( null === character || ( ' ' === character && ! inBurst ) ) {
+					return;
+				}
+
+				event.preventDefault();
+				focusHwInput( true, true );
+
+				if ( document.activeElement !== els.hwInput ) {
+					return;
+				}
+
+				/* Νέα σάρωση: ένα ξεχασμένο μισό buffer δεν κολλά μπροστά της. */
+				if ( ! inBurst && '' !== hwBuffer ) {
+					clearTimeout( hwIdleTimer );
+					setHwBuffer( '' );
+					hwBufferIsMergedTail = false;
+				}
+
+				acceptScannerChars( character );
+			}, true );
 
 			els.hwInput.addEventListener( 'keydown', function ( event ) {
 				/*
@@ -1742,6 +1855,16 @@
 			);
 
 			if ( els.sendEmail ) {
+				/*
+				 * 2.16.1: νέος κωδικός ή reset όσο εκκρεμεί αποστολή: το κουμπί δεν μένει
+				 * «Αποστολή…»/aria-busy, και η παλιά αποστολή δεν το αγγίζει πια.
+				 */
+				if ( els.sendEmail.hasAttribute( 'aria-busy' ) ) {
+					emailSendSeq++;
+					els.sendEmail.textContent = sendEmailLabel;
+					els.sendEmail.removeAttribute( 'aria-busy' );
+				}
+
 				els.sendEmail.disabled = ! enabled || ! canSendEmail ||
 					! lastRegeneratedPngBase64 || ! lastValidatedRaw ||
 					! lastValidatedFields || ! lastValidatedOutput;
@@ -1771,7 +1894,7 @@
 
 			if ( notify && hadOutput ) {
 				setStatus(
-					t( 'fieldsChanged', 'Αλλάξατε τα στοιχεία — πατήστε «Αναδημιουργία» για να ενημερωθεί το GS1 DataMatrix.' ),
+					t( 'fieldsChanged', 'Αλλάξατε τα στοιχεία — πατήστε «Δημιουργία νέου GS1 DataMatrix» για να ενημερωθεί ο κωδικός.' ),
 					true
 				);
 			}
@@ -2121,7 +2244,8 @@
 			 */
 			setStatus( lastParseNeedsConfirmation
 				? t( 'parseDoneConfirm', 'Η ανάλυση ολοκληρώθηκε, αλλά χρειάζεται επιβεβαίωση: ελέγξτε τα πεδία και τις προειδοποιήσεις πριν δημιουργήσετε τον κωδικό.' )
-				: t( 'parseDone', 'Η ανάλυση ολοκληρώθηκε. Ελέγξτε τα πεδία PC, SN, LOT και EXP με τη συσκευασία.' ) );
+				: t( 'parseDone', 'Η ανάλυση ολοκληρώθηκε. Ελέγξτε τα πεδία PC, SN, LOT και EXP με τη συσκευασία.' ),
+				false, false, warningsSpeech( sourceWarnings ) );
 
 			els.resultsPanel.scrollIntoView( {
 				behavior: scrollBehavior(),
@@ -2130,9 +2254,9 @@
 		}
 
 		/*
-		 * Το #qrrp-warnings είναι role="alert": κάθε αλλαγή περιεχομένου
-		 * ανακοινώνεται. Καλείται και σε κάθε πληκτρολόγηση πεδίου, οπότε το DOM
-		 * αγγίζεται μόνο όταν αλλάζει πράγματι το περιεχόμενο.
+		 * Καλείται και σε κάθε πληκτρολόγηση πεδίου, οπότε το DOM αγγίζεται μόνο όταν
+		 * αλλάζει πράγματι το περιεχόμενο. 2.16.1: χωρίς role="alert"· την ανακοίνωση
+		 * την κάνει το setStatus() (warningsSpeech).
 		 */
 		function renderWarnings( warnings ) {
 			if ( ! els.warnings ) {
@@ -2480,7 +2604,9 @@
 							t( 'gs1CheckFailed', 'Τα δεδομένα δεν πέρασαν τον έλεγχο GS1.' );
 
 						applyServerExpiryVerdict( json );
-						applyServerAmbiguityVerdict( json );
+
+						/* 2.16.1: οι προειδοποιήσεις της ασάφειας ανακοινώνονται μαζί με το μήνυμα. */
+						var ambiguitySpeech = applyServerAmbiguityVerdict( json ) ? warningsSpeech( sourceWarnings ) : '';
 
 						/* Ένα 409 με challenge φέρνει και τη διαδρομή επιβεβαίωσης. */
 						var challengeNote = applyProvenanceVerdict( json );
@@ -2494,7 +2620,7 @@
 							return;
 						}
 
-						setStatus( challengeNote ? message + ' ' + challengeNote : message, true );
+						setStatus( challengeNote ? message + ' ' + challengeNote : message, true, false, ambiguitySpeech );
 						return;
 					}
 
@@ -2503,6 +2629,12 @@
 
 					/* Το challenge καταναλώθηκε server-side. */
 					clearPendingChallenge();
+
+					/*
+					 * 2.16.1: το proof του προηγούμενου κωδικού (δεύτερο «Δημιουργία» χωρίς
+					 * αλλαγή πεδίων) δεν συνοδεύει τον νέο, ούτε για μια στιγμή.
+					 */
+					lastValidatedOutput = '';
 
 					/* Χωρίς passthrough_raw στην απάντηση, η normalizePassthroughRaw() δίνει ''. */
 					renderQrFromServer( json.data.raw, json.data.png, fields, json.data.passthrough_raw );
@@ -2522,6 +2654,15 @@
 					) {
 						lastValidatedOutput = json.data.validated_output;
 						setOutputActionsEnabled( true );
+					}
+
+					if ( lastValidatedRaw ) {
+						/* 2.16.1: το print warning ανακοινώνεται μία φορά, μαζί με την επιτυχία. */
+						if ( printWarnings.length ) {
+							setStatus( t( 'datamatrixCreated', 'Το νέο GS1 DataMatrix δημιουργήθηκε με επιτυχία.' ), false, false, warningsSpeech( printWarnings ) );
+						}
+
+						returnFocusToScanner();
 					}
 				} )
 				.catch( function ( error ) {
@@ -2866,6 +3007,7 @@
 					document.body.appendChild( link );
 					link.click();
 					removeNode( link );
+					returnFocusToScanner();
 				} )
 				.catch( function () {
 					setStatus( t( 'imageSaveFailed', 'Η αποθήκευση της εικόνας απέτυχε.' ), true );
@@ -3062,7 +3204,13 @@
 			printWindow.focus();
 
 			printWhenBarcodeReady( printWindow );
+
+			/* 2.16.1: στο εργαλείο, όταν κλείσει το παράθυρο, η εστίαση είναι ήδη στον σαρωτή. */
+			returnFocusToScanner();
 		}
+
+		/* 2.16.1: print() που κράτησε τόσο μπλόκαρε μέχρι να κλείσει ο διάλογος. */
+		var PRINT_BLOCKED_MS = 500;
 
 		function printWhenBarcodeReady( printWindow ) {
 			/*
@@ -3078,13 +3226,56 @@
 				return !! printImage && printImage.complete && printImage.naturalWidth > 0;
 			}
 
+			/*
+			 * 2.16.1: το παράθυρο κλείνει μετά τον διάλογο (afterprint) και η εστίαση
+			 * γυρίζει στον σαρωτή. Χωρίς afterprint: αν το print() μπλόκαρε, ο διάλογος
+			 * έχει ήδη κλείσει· αλλιώς κλείνει όταν ο χρήστης γυρίσει στο εργαλείο.
+			 * Ποτέ πριν τελειώσει ο διάλογος.
+			 */
+			var windowClosed = false;
+
+			function closePrintWindow() {
+				if ( windowClosed ) {
+					return;
+				}
+
+				windowClosed = true;
+				window.removeEventListener( 'focus', closePrintWindow );
+
+				try {
+					printWindow.close();
+				} catch ( error ) {
+					/* Ο browser μπορεί να αρνηθεί το close. */
+				}
+
+				returnFocusToScanner();
+			}
+
 			function runPrint() {
 				if ( settled ) {
 					return;
 				}
 
 				settled = true;
+
+				printWindow.addEventListener( 'afterprint', function () {
+					setTimeout( closePrintWindow, 0 );
+				} );
+
+				var startedAt = Date.now();
+
 				printWindow.print();
+
+				if ( windowClosed ) {
+					return;
+				}
+
+				if ( Date.now() - startedAt >= PRINT_BLOCKED_MS ) {
+					closePrintWindow();
+					return;
+				}
+
+				window.addEventListener( 'focus', closePrintWindow );
 			}
 
 			/* Fail-closed: κλείνει το παράθυρο και ενημερώνει τον χρήστη. */
@@ -3158,6 +3349,7 @@
 				navigator.clipboard.writeText( value )
 					.then( function () {
 						setStatus( successMessage );
+						returnFocusToScanner();
 					} )
 					.catch( function () {
 						copyFallback( value, successMessage );
@@ -3194,6 +3386,9 @@
 			}
 
 			removeNode( textarea );
+
+			/* 2.16.1: το select() πήρε την εστίαση από το κουμπί· πάει στον σαρωτή. */
+			returnFocusToScanner();
 		}
 
 		/*
@@ -3216,8 +3411,6 @@
 			setEmailFeedback( message, isError ? 'error' : 'success' );
 			setStatus( message, isError, true );
 		}
-
-		var sendEmailLabel = els.sendEmail ? els.sendEmail.textContent : '';
 
 		function onSendEmail() {
 			if ( ! canSendEmail || ! els.emailInput || ! els.sendEmail ) {
@@ -3285,6 +3478,8 @@
 				emailPayload.expiry_confirmed = '1';
 			}
 
+			var thisSend = ++emailSendSeq;
+
 			els.sendEmail.disabled = true;
 			els.sendEmail.textContent = t( 'sendingEmailButton', 'Αποστολή…' );
 			els.sendEmail.setAttribute( 'aria-busy', 'true' );
@@ -3351,8 +3546,20 @@
 				} );
 
 			promiseFinally( request, function () {
-				els.sendEmail.textContent = sendEmailLabel;
-				els.sendEmail.removeAttribute( 'aria-busy' );
+				/* 2.16.1: μόνο η τελευταία αποστολή επαναφέρει το κουμπί. */
+				var latestSend = thisSend === emailSendSeq;
+
+				if ( latestSend ) {
+					els.sendEmail.textContent = sendEmailLabel;
+					els.sendEmail.removeAttribute( 'aria-busy' );
+				}
+
+				/* 2.16.1: εστίαση στον σαρωτή μόνο αν δεν μετακινήθηκε στο μεταξύ (π.χ. στο email). */
+				var active = document.activeElement;
+
+				if ( ! active || active === els.sendEmail || active === document.body || active === document.documentElement ) {
+					focusHwInput( true, true );
+				}
 
 				/* 2.15.7: ο loader ανήκει πλέον σε νεότερη ενέργεια (ή τον έκλεισε το reset). */
 				if ( emailGeneration !== rebuildGeneration ) {
@@ -3362,6 +3569,7 @@
 				hideLoader();
 
 				if (
+					latestSend &&
 					canSendEmail &&
 					emailGeneration === rebuildGeneration &&
 					lastRegeneratedPngBase64 &&

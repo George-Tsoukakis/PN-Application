@@ -582,6 +582,26 @@ final class QRRP_GS1_Parser {
 			&& ! $checks['exp_day_needs_review']
 			&& ! $needs_review;
 
+		/*
+		 * 2.16.1: η ίδια σάρωση διαβάζεται ολόκληρη και ως κωδικός χωρίς κάποιο
+		 * πεδίο (21ABCD10EFGH = SN «ABCD» + LOT «EFGH» ή μόνο SN «ABCD10EFGH»).
+		 * Από το string δεν ξεχωρίζουν, και το κοντό μήκος δεν πιάνει το
+		 * 21ABCD10EFGH. Μια συσκευασία χωρίς LOT δεν παίρνει ποτέ αυτόματα
+		 * επινοημένο LOT.
+		 */
+		$absent_readings = $inferred_boundaries > 0
+			? self::field_absent_readings( $solutions, $fields )
+			: array();
+
+		if ( $safe_inference && array() !== $absent_readings ) {
+			$safe_inference = false;
+			$warnings[]     = sprintf(
+				/* translators: %s: the competing reading(s), e.g. 'SN «ABCD10EFGH» χωρίς LOT'. */
+				__( 'Ο κωδικός δεν περιείχε Group Separator και διαβάζεται και ως κωδικός χωρίς κάποιο πεδίο: %s. Αν η συσκευασία δεν έχει αυτό το πεδίο, ο parser το δημιούργησε κόβοντας άλλη τιμή. Ελέγξτε όλα τα πεδία με τη συσκευασία πριν συνεχίσετε.', 'qr-rebuilder-pro' ),
+				implode( ' / ', $absent_readings )
+			);
+		}
+
 		/* Το μήνυμα μόνο όταν αυτό ήταν ο λόγος· αλλιώς ζητείται ήδη έλεγχος. */
 		if ( $safe_inference && array() !== $short_inferred ) {
 			$safe_inference = false;
@@ -1307,7 +1327,7 @@ final class QRRP_GS1_Parser {
 			return $plan;
 		}
 
-		$key = md5( $source ) . ':' . (int) apply_filters( 'qrrp_century_reference_year', (int) wp_date( 'Y' ) );
+		$key = md5( $source ) . ':' . self::century_reference_year();
 
 		if ( isset( $plans[ $key ] ) ) {
 			return $plans[ $key ];
@@ -2459,7 +2479,7 @@ final class QRRP_GS1_Parser {
 		static $cache = array();
 
 		$key = md5( $raw ) . ':' . md5( serialize( $ai_table ) ) . ':'
-			. (int) apply_filters( 'qrrp_century_reference_year', (int) wp_date( 'Y' ) );
+			. self::century_reference_year();
 
 		if ( isset( $cache[ $key ] ) ) {
 			return $cache[ $key ];
@@ -3840,14 +3860,20 @@ final class QRRP_GS1_Parser {
 	}
 
 	private static function century_reference_year() {
-		$current_year = (int) wp_date( 'Y' );
-		$current_year = (int) apply_filters( 'qrrp_century_reference_year', $current_year );
+		$real_year = (int) wp_date( 'Y' );
 
-		if ( $current_year < 1000 || $current_year > 9999 ) {
-			$current_year = (int) gmdate( 'Y' );
+		if ( $real_year < 1000 || $real_year > 9999 ) {
+			$real_year = (int) gmdate( 'Y' );
 		}
 
-		return $current_year;
+		$current_year = (int) apply_filters( 'qrrp_century_reference_year', $real_year );
+
+		/*
+		 * 2.16.1: το φίλτρο μετακινεί το παράθυρο το πολύ ±1 έτος (π.χ. για
+		 * ζώνη ώρας ή tests). Πριν δεχόταν 1000–9999, και ένα plugin μπορούσε
+		 * σιωπηλά να διαβάζει το «28» ως 1928.
+		 */
+		return max( $real_year - 1, min( $real_year + 1, $current_year ) );
 	}
 
 	private static function yy_to_year( $yy ) {
@@ -3873,9 +3899,70 @@ final class QRRP_GS1_Parser {
 	}
 
 	/**
-	 * Explain exactly which variable field boundary had to be inferred because
-	 * the scanner payload did not contain the required Group Separator.
+	 * 2.16.1: πλήρεις αναγνώσεις της σάρωσης στις οποίες λείπει κάποιο από τα
+	 * τέσσερα πεδία, ως «SN «ABCD10EFGH» χωρίς LOT» για το μήνυμα. Η αναζήτηση
+	 * τις βρίσκει ήδη (καταναλώνουν όλο το string)· η assess_solutions() τις
+	 * θεωρεί αποτυχίες, άρα χωρίς αυτόν τον έλεγχο δεν μετρούσαν ως ασάφεια.
+	 *
+	 * @param array $solutions Λύσεις της αναζήτησης.
+	 * @param array $chosen    Η επιλεγμένη (πλήρης) ανάγνωση.
+	 * @return string[]
 	 */
+	private static function field_absent_readings( array $solutions, array $chosen ) {
+		$out = array();
+
+		foreach ( $solutions as $solution ) {
+			if ( ! is_array( $solution ) || ! self::has_field_value( $solution, 'PC' ) ) {
+				continue;
+			}
+
+			$missing = array();
+			$changed = array();
+
+			foreach ( self::REQUIRED_FIELDS as $label ) {
+				if ( ! self::has_field_value( $solution, $label ) ) {
+					$missing[] = $label;
+					continue;
+				}
+
+				/* Το EXP της επιλεγμένης είναι ήδη ISO, της λύσης YYMMDD. */
+				$value = 'EXP' === $label ? self::format_yymmdd_quiet( $solution[ $label ] ) : (string) $solution[ $label ];
+
+				if ( ! isset( $chosen[ $label ] ) || (string) $chosen[ $label ] !== $value ) {
+					$changed[] = sprintf( '%s «%s»', $label, $value );
+				}
+			}
+
+			if ( array() === $missing ) {
+				continue;
+			}
+
+			$text = sprintf(
+				/* translators: 1: the changed field values, 2: the missing field labels. */
+				__( '%1$s χωρίς %2$s', 'qr-rebuilder-pro' ),
+				array() === $changed ? __( 'ίδια πεδία', 'qr-rebuilder-pro' ) : implode( ', ', $changed ),
+				implode( ', ', $missing )
+			);
+
+			if ( ! in_array( $text, $out, true ) ) {
+				$out[] = $text;
+			}
+
+			if ( count( $out ) >= 3 ) {
+				break;
+			}
+		}
+
+		return $out;
+	}
+
+	/** 2.16.1: YYMMDD → YYYY-MM-DD για μήνυμα, χωρίς προειδοποιήσεις. */
+	private static function format_yymmdd_quiet( $value ) {
+		$ignored = array();
+
+		return (string) self::format_yymmdd( $value, $ignored );
+	}
+
 	/**
 	 * 2.16.0: SN / LOT κάτω από το ελάχιστο μήκος αυτόματης αποδοχής, ως
 	 * «SN «AB»» για το μήνυμα. Φίλτρο qrrp_auto_inference_min_length (1–20,
@@ -3898,6 +3985,10 @@ final class QRRP_GS1_Parser {
 		return $out;
 	}
 
+	/**
+	 * Explain exactly which variable field boundary had to be inferred because
+	 * the scanner payload did not contain the required Group Separator.
+	 */
 	private static function add_inferred_boundary_warning( $fields, $inferred_fields, $count, &$warnings ) {
 		$labels = array_values( array_unique( array_filter( (array) $inferred_fields, 'is_string' ) ) );
 

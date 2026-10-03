@@ -55,7 +55,77 @@ final class QRRP_Site_Health {
 			'test'  => array( __CLASS__, 'run_token_capacity_test' ),
 		);
 
+		$tests['direct']['qrrp_safety_overrides'] = array(
+			'label' => __( 'Έλεγχοι ασφαλείας της ανάγνωσης GS1', 'qr-rebuilder-pro' ),
+			'test'  => array( __CLASS__, 'run_safety_overrides_test' ),
+		);
+
 		return $tests;
+	}
+
+	/**
+	 * 2.16.1: φίλτρα (άλλου plugin ή του θέματος) που χαλαρώνουν τους ελέγχους
+	 * του parser ή του DataMatrix. Θεμιτά, αλλά όχι αόρατα: μια χαλάρωση εδώ
+	 * σημαίνει περισσότερες αναγνώσεις χωρίς επιβεβαίωση.
+	 *
+	 * @return string[] Περιγραφές των ενεργών χαλαρώσεων.
+	 */
+	public static function active_safety_overrides() {
+		$out = array();
+
+		if ( ! (bool) apply_filters( 'qrrp_strict_ambiguity', true ) ) {
+			$out[] = __( 'qrrp_strict_ambiguity = false: οι ασαφείς αναγνώσεις χωρίς separators κρίνονται με ευρετικό κανόνα αντί να ζητούν πάντα επιβεβαίωση.', 'qr-rebuilder-pro' );
+		}
+
+		$min = (int) apply_filters( 'qrrp_auto_inference_min_length', 4 );
+
+		if ( $min < 4 ) {
+			$out[] = sprintf(
+				/* translators: %d: the configured minimum length. */
+				__( 'qrrp_auto_inference_min_length = %d: πιο κοντά SN/LOT γίνονται δεκτά αυτόματα (προεπιλογή 4).', 'qr-rebuilder-pro' ),
+				$min
+			);
+		}
+
+		if ( ! (bool) apply_filters( 'qrrp_preserve_expiry_day_zero', true ) ) {
+			$out[] = __( 'qrrp_preserve_expiry_day_zero = false: η λήξη με ημέρα 00 αλλάζει σε συγκεκριμένη ημέρα στον νέο κωδικό.', 'qr-rebuilder-pro' );
+		}
+
+		if ( ! (bool) apply_filters( 'qrrp_datamatrix_require_fnc1', true ) ) {
+			$out[] = __( 'qrrp_datamatrix_require_fnc1 = false: γίνεται δεκτό σύμβολο με literal GS αντί για FNC1.', 'qr-rebuilder-pro' );
+		}
+
+		if ( defined( 'QRRP_ALLOW_UNVERIFIED_GS1' ) && QRRP_ALLOW_UNVERIFIED_GS1 && ! (bool) apply_filters( 'qrrp_datamatrix_verify_gs1', true ) ) {
+			$out[] = __( 'QRRP_ALLOW_UNVERIFIED_GS1 + qrrp_datamatrix_verify_gs1 = false: το παραγόμενο σύμβολο δεν επαληθεύεται πριν παραδοθεί.', 'qr-rebuilder-pro' );
+		}
+
+		return $out;
+	}
+
+	public static function run_safety_overrides_test() {
+		$overrides = self::active_safety_overrides();
+
+		if ( array() === $overrides ) {
+			$verdict = array(
+				'status'      => 'good',
+				'label'       => __( 'Οι έλεγχοι ασφαλείας της ανάγνωσης GS1 είναι στις προεπιλογές', 'qr-rebuilder-pro' ),
+				'description' => '<p>' . esc_html__( 'Κανένα φίλτρο δεν χαλαρώνει την ανάγνωση ή την επαλήθευση των κωδικών.', 'qr-rebuilder-pro' ) . '</p>',
+			);
+		} else {
+			$items = '';
+
+			foreach ( $overrides as $text ) {
+				$items .= '<li>' . esc_html( $text ) . '</li>';
+			}
+
+			$verdict = array(
+				'status'      => 'recommended',
+				'label'       => __( 'Κάποιοι έλεγχοι ασφαλείας της ανάγνωσης GS1 έχουν χαλαρώσει', 'qr-rebuilder-pro' ),
+				'description' => '<p>' . esc_html__( 'Κώδικας του site (plugin ή θέμα) αλλάζει τις παρακάτω προεπιλογές. Βεβαιωθείτε ότι είναι σκόπιμο.', 'qr-rebuilder-pro' ) . '</p><ul>' . $items . '</ul>',
+			);
+		}
+
+		return self::site_health_result( $verdict, 'qrrp_safety_overrides' );
 	}
 
 	/**
@@ -419,7 +489,9 @@ final class QRRP_Site_Health {
 			return array(
 				'status'      => 'good',
 				'label'       => __( 'Οι επισκέπτες μετρώνται ανά διεύθυνση IP', 'qr-rebuilder-pro' ),
-				'description' => '<p>' . esc_html__( 'Δεν εντοπίστηκε κεφαλίδα προώθησης σε αυτό το αίτημα, οπότε η διεύθυνση που βλέπει το πρόσθετο είναι πιθανότατα του ίδιου του επισκέπτη.', 'qr-rebuilder-pro' ) . '</p>',
+				'description' => '<p>' . esc_html__( 'Δεν εντοπίστηκε κεφαλίδα προώθησης σε αυτό το αίτημα, οπότε η διεύθυνση που βλέπει το πρόσθετο είναι πιθανότατα του ίδιου του επισκέπτη.', 'qr-rebuilder-pro' ) . '</p>'
+					/* 2.16.1: ο έλεγχος βλέπει μόνο το αίτημα του διαχειριστή. */
+					. '<p>' . esc_html__( 'Ο έλεγχος βασίζεται στο δικό σας αίτημα. Αν φτάνετε στον server απευθείας (VPN, αρχείο hosts) ενώ οι επισκέπτες περνούν από CDN, το αποτέλεσμα δεν τους αφορά.', 'qr-rebuilder-pro' ) . '</p>',
 			);
 		}
 

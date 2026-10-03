@@ -4,7 +4,7 @@
  * Plugin URI:        https://pharmacyneeds.gr
  * Update URI:        https://pharmacyneeds.gr/qr-rebuilder-pro/
  * Description:       Σάρωση, ανάλυση και αναδημιουργία GS1 DataMatrix με αυτόματη εξαγωγή των πεδίων PC, SN, LOT και EXP.
- * Version:           2.16.0
+ * Version:           2.16.1
  * Requires at least: 6.1
  * Requires PHP:      8.2
  * Author:            PharmacyNeeds
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 if ( ! defined( 'QRRP_VERSION' ) ) {
-	define( 'QRRP_VERSION', '2.16.0' );
+	define( 'QRRP_VERSION', '2.16.1' );
 }
 
 if ( ! defined( 'QRRP_PLUGIN_FILE' ) ) {
@@ -101,8 +101,15 @@ require_once QRRP_PLUGIN_DIR . 'includes/class-qrrp-rate-limiter.php';
 require_once QRRP_PLUGIN_DIR . 'includes/class-qrrp-ajax.php';
 require_once QRRP_PLUGIN_DIR . 'includes/class-qrrp-shortcode.php';
 
-if ( is_admin() ) {
+/*
+ * 2.16.1: το Site Health και στο cron: ο εβδομαδιαίος έλεγχος του WordPress
+ * (wp_site_health_scheduled_check) τρέχει εκεί, όπου το is_admin() είναι false.
+ */
+if ( is_admin() || ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) ) {
 	require_once QRRP_PLUGIN_DIR . 'includes/class-qrrp-site-health.php';
+}
+
+if ( is_admin() ) {
 	require_once QRRP_PLUGIN_DIR . 'includes/class-qrrp-admin.php';
 	require_once QRRP_PLUGIN_DIR . 'includes/class-qrrp-vendor-check.php';
 }
@@ -118,6 +125,8 @@ function qrrp_load_textdomain() {
 /** 2.15.2: απενεργοποίηση — αφαιρεί το προγραμματισμένο sweep των temp PNG. */
 function qrrp_deactivate_plugin() {
 	wp_clear_scheduled_hook( QRRP_Mailer::SWEEP_CRON_HOOK );
+	/* 2.16.1: το ωριαίο sweep του rate limiter. */
+	wp_clear_scheduled_hook( QRRP_Rate_Limiter::CRON_HOOK );
 }
 
 /* Hooks. */
@@ -125,6 +134,8 @@ add_filter( 'user_has_cap', 'qrrp_grant_pharmacist_cap', 10, 4 );
 register_activation_hook( QRRP_PLUGIN_FILE, 'qrrp_activate_plugin' );
 register_deactivation_hook( QRRP_PLUGIN_FILE, 'qrrp_deactivate_plugin' );
 add_action( 'admin_init', 'qrrp_run_upgrade_maintenance' );
+/* 2.16.1: πριν από κάθε έλεγχο δικαιώματος (το QRRP_Ajax διαβάζει τις ρυθμίσεις μετά το init). */
+add_action( 'init', 'qrrp_run_access_migrations', 0 );
 add_action( 'init', 'qrrp_load_textdomain', 1 );
 /* 2.15.2: σβήνει τα temp PNG επιτυχών αποστολών email (βλ. QRRP_Mailer::send()). */
 add_action( QRRP_Mailer::SWEEP_CRON_HOOK, array( 'QRRP_Mailer', 'run_scheduled_sweep' ) );

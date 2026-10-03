@@ -23,6 +23,7 @@ final class QRRP_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_dependency_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_guest_email_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_open_email_notice' ) );
 		add_action( 'admin_post_qrrp_hide_pharmacist_warning', array( __CLASS__, 'hide_pharmacist_warning' ) );
 
 		/* 2.16.0: έγκριση φαρμακοποιού για email, στο προφίλ και στη λίστα χρηστών. */
@@ -88,6 +89,37 @@ final class QRRP_Admin {
 			. esc_html__( 'Από την 2.15.3 οι επισκέπτες στέλνουν email μόνο σε domains που ορίζετε. Η λίστα είναι κενή, οπότε το email επισκεπτών είναι προς το παρόν ανενεργό.', 'qr-rebuilder-pro' )
 			. ' <a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) ) . '">'
 			. esc_html__( 'Ορισμός επιτρεπτών domains', 'qr-rebuilder-pro' )
+			. '</a></p></div>';
+	}
+
+	/**
+	 * 2.16.1: email «ίδιο με το εργαλείο» με εργαλείο ανοιχτό σε κάθε
+	 * συνδεδεμένο (read) ή σε αυτο-δηλωμένους φαρμακοποιούς: οποιοσδήποτε
+	 * λογαριασμός στέλνει από τη διεύθυνση του site σε οποιονδήποτε, με δικό
+	 * του κείμενο στο «Πελάτης». Επιτρεπτή επιλογή, αλλά όχι σιωπηλά.
+	 */
+	public static function maybe_show_open_email_notice() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'toplevel_page_' . self::PAGE_SLUG ), true ) ) {
+			return;
+		}
+
+		$email = get_option( 'qrrp_email_capability', null );
+
+		if (
+			! current_user_can( 'manage_options' )
+			|| ! is_string( $email )
+			|| '' !== trim( $email )
+			|| ! in_array( qrrp_tool_capability(), array( 'read', 'qrrp_pharmacist' ), true )
+		) {
+			return;
+		}
+
+		echo '<div class="notice notice-warning"><p><strong>QR ReBuilder Pro:</strong> '
+			. esc_html__( 'Το email είναι ανοιχτό σε όσους έχουν πρόσβαση στο εργαλείο, χωρίς έγκριση. Κάθε λογαριασμός που μπορεί να εγγραφεί στέλνει email από τη διεύθυνση του site σε οποιονδήποτε παραλήπτη. Συνιστάται «Μόνο εγκεκριμένοι φαρμακοποιοί».', 'qr-rebuilder-pro' )
+			. ' <a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) ) . '">'
+			. esc_html__( 'Ρυθμίσεις email', 'qr-rebuilder-pro' )
 			. '</a></p></div>';
 	}
 
@@ -1001,6 +1033,23 @@ final class QRRP_Admin {
 			return $email;
 		}
 
+		/*
+		 * 2.16.1: πρώτα η προηγούμενη έγκυρη τιμή, όπως λέει η κεφαλίδα της
+		 * κλάσης· πριν ένα τυπογραφικό λάθος άλλαζε σιωπηλά τον αποστολέα στο
+		 * admin email (πιθανή αποτυχία SPF/DMARC).
+		 */
+		$previous = get_option( 'qrrp_email_from_address', '' );
+		$previous = is_scalar( $previous ) ? sanitize_email( (string) $previous ) : '';
+
+		if ( is_email( $previous ) ) {
+			self::add_setting_warning(
+				'qrrp_invalid_sender_email',
+				__( 'Το email αποστολέα δεν ήταν έγκυρο. Κρατήθηκε η προηγούμενη τιμή.', 'qr-rebuilder-pro' )
+			);
+
+			return $previous;
+		}
+
 		$fallback = sanitize_email( (string) get_option( 'admin_email' ) );
 
 		self::add_setting_warning(
@@ -1313,7 +1362,7 @@ final class QRRP_Admin {
 			</p>
 		<?php endif; ?>
 		<?php if ( array() === qrrp_guest_email_domains() && '1' === get_option( 'qrrp_allow_guest_email', '0' ) ) : ?>
-			<p class="description" style="color:#b32d2e">
+			<p class="description qrrp-field-warning">
 				<?php esc_html_e( 'Το email επισκεπτών είναι ενεργό αλλά η λίστα είναι κενή: από την 2.15.3 οι επισκέπτες δεν μπορούν να στείλουν email μέχρι να προσθέσετε domains.', 'qr-rebuilder-pro' ); ?>
 			</p>
 		<?php endif; ?>
@@ -1343,7 +1392,7 @@ final class QRRP_Admin {
 			'qrrp_hide_pharmacist_warning'
 		);
 		?>
-		<p class="description" style="color:#b32d2e">
+		<p class="description qrrp-field-warning">
 			<strong><?php esc_html_e( 'Προσοχή:', 'qr-rebuilder-pro' ); ?></strong>
 			<?php esc_html_e( 'η εγγραφή χρηστών είναι ανοιχτή και το «Φαρμακείο» το δηλώνει ο ίδιος ο χρήστης στη φόρμα εγγραφής. Οποιοσδήποτε εγγραφεί ως «Φαρμακείο» παίρνει αυτό το δικαίωμα. Για επαληθευμένους λογαριασμούς, συνδέστε το φίλτρο qrrp_is_pharmacist με την έγκριση λογαριασμών του site.', 'qr-rebuilder-pro' ); ?>
 		</p>
@@ -1365,8 +1414,14 @@ final class QRRP_Admin {
 			return;
 		}
 
-		$user_id  = (int) $user->ID;
-		$verified = '1' === get_user_meta( $user_id, QRRP_VERIFIED_PHARMACIST_META, true );
+		$user_id = (int) $user->ID;
+
+		/* 2.16.1: όχι στο δικό του προφίλ· ένας διαχειριστής είναι ήδη εγκεκριμένος σε αυτό το site. */
+		if ( get_current_user_id() === $user_id ) {
+			return;
+		}
+
+		$verified = qrrp_user_has_verified_flag( $user_id );
 		$declared = qrrp_user_is_pharmacist( $user_id );
 		?>
 		<h2><?php esc_html_e( 'QR ReBuilder Pro', 'qr-rebuilder-pro' ); ?></h2>
@@ -1406,6 +1461,8 @@ final class QRRP_Admin {
 
 		if (
 			$user_id < 1
+			/* 2.16.1: καμία αυτο-έγκριση (π.χ. διαχειριστής άλλου site του δικτύου). */
+			|| get_current_user_id() === $user_id
 			|| ! current_user_can( 'manage_options' )
 			|| ! current_user_can( 'edit_user', $user_id )
 			|| ! isset( $_POST['qrrp_verified_pharmacist_nonce'] )
@@ -1415,9 +1472,9 @@ final class QRRP_Admin {
 		}
 
 		if ( isset( $_POST['qrrp_verified_pharmacist'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['qrrp_verified_pharmacist'] ) ) ) {
-			update_user_meta( $user_id, QRRP_VERIFIED_PHARMACIST_META, '1' );
+			update_user_meta( $user_id, qrrp_verified_pharmacist_meta_key(), '1' );
 		} else {
-			delete_user_meta( $user_id, QRRP_VERIFIED_PHARMACIST_META );
+			delete_user_meta( $user_id, qrrp_verified_pharmacist_meta_key() );
 		}
 	}
 
@@ -1552,7 +1609,7 @@ final class QRRP_Admin {
 			);
 			?>
 		</p>
-		<ul style="margin:0 0 1em 1.5em;list-style:disc;">
+		<ul class="qrrp-xdim-list">
 			<?php foreach ( $sizes as $cols ) : ?>
 				<?php
 				$total = qrrp_total_print_modules( $cols, $quiet );

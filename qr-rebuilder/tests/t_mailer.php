@@ -13,7 +13,7 @@ function sanitize_email($e){return trim($e);} function is_email($e){return (bool
 function is_user_logged_in(){return $GLOBALS['__logged_in'] ?? true;} function qrrp_guest_email_recipient_allowed($e){return true;} function sanitize_text_field($s){return trim($s);}
 function wp_specialchars_decode($s,$q=null){return $s;} function get_bloginfo($k=''){return $k==='version'?'6.8':'Φαρμακείο';}
 function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES);} function esc_html__($s,$d=null){return esc_html($s);} function esc_url($u){return $u;} function esc_attr($s){return esc_html($s);}
-function add_filter(...$a){} function remove_filter(...$a){}
+function add_filter(...$a){} function remove_filter(...$a){} if(!function_exists("add_action")){ function add_action(...$a){} } function remove_action(...$a){}
 function qrrp_asset_version($p){return '1';} function qrrp_tool_page_id(){return 0;} function esc_url_raw($u){return $u;} function get_permalink($i=0){return false;} function home_url($p=''){return 'https://example.gr'.$p;}
 foreach(array('qrrp_print_barcode_mm','qrrp_x_dimension_mm','qrrp_gs1_minimum_x_dimension_mm','qrrp_gs1_minimum_print_width_mm') as $fn) eval("function $fn(...\$a){return false;}");
 require $PD.'/includes/class-qrrp-text.php';
@@ -94,11 +94,18 @@ echo ($r===true && strpos($b0['raw'],'17280200')!==false && strpos($GLOBALS['las
 if(!function_exists('add_query_arg')){ function add_query_arg($a,$u){ return $u.'?'.http_build_query($a); } }
 $bh=new ReflectionMethod('QRRP_Mailer','build_html'); $bh->setAccessible(true);
 $sf=new ReflectionMethod('QRRP_Mailer','sanitize_fields'); $sf->setAccessible(true); $df=$sf->invoke(null,$f);
-$tok=null; $GLOBALS['__logged_in']=true;
-$html=$bh->invokeArgs(null,array('Site',$df,'','',$raw,'x.png','https://example.gr/tool/',&$tok,array(),''));
-echo (strpos($html,'qrrp_token=')!==false && ''!==$tok ? 'PASS':'FAIL')," logged-in email has prefill link\n";
-$tok=null; $GLOBALS['__logged_in']=false;
-$html=$bh->invokeArgs(null,array('Site',$df,'','',$raw,'x.png','https://example.gr/tool/',&$tok,array(),''));
-echo (strpos($html,'qrrp_token=')===false && ''===$tok ? 'PASS':'FAIL')," guest email: no link, no token issued\n";
+$html=$bh->invokeArgs(null,array('Site',$df,'','',$raw,'x.png','https://example.gr/tool/','0123456789abcdef0123456789abcdef'));
+echo (strpos($html,'qrrp_token=0123456789abcdef0123456789abcdef')!==false ? 'PASS':'FAIL')," email with token has prefill link\n";
+$html=$bh->invokeArgs(null,array('Site',$df,'','',$raw,'x.png','https://example.gr/tool/',''));
+echo (strpos($html,'qrrp_token=')===false ? 'PASS':'FAIL')," email without token: no link\n";
+/* 2.16.1: το token δημιουργείται στη send(), μόνο για συνδεδεμένους· ο renderer δεν δημιουργεί token. */
+$GLOBALS['__filters']['qrrp_email_tool_page_url']=function(){return 'https://example.gr/tool/';};
+$GLOBALS['__logged_in']=false; $GLOBALS['mail_ok']=true;
+QRRP_Mailer::send('a@b.gr',$f,'','',$raw,'https://example.gr/tool/',array());
+echo (strpos($GLOBALS['last_body'],'qrrp_token=')===false ? 'PASS':'FAIL')," 2.16.1: guest send: no link, no token issued\n";
+$GLOBALS['__logged_in']=true;
+$bt=new ReflectionMethod('QRRP_Mailer','build_text'); $bt->setAccessible(true);
+$txt=$bt->invokeArgs(null,array('Site',$df,'Πελάτης Α','',$raw,'https://example.gr/tool/','0123456789abcdef0123456789abcdef'));
+echo (strpos($txt,'SN: '.$df['SN'])!==false && strpos($txt,'qrrp_token=0123456789abcdef0123456789abcdef')!==false && strpos($txt,'[GS]')!==false && false===strpos($txt,'<') ? 'PASS':'FAIL')," 2.16.1: text/plain alternative carries fields, link and [GS] text, no HTML\n";
 $GLOBALS['__logged_in']=true;
 array_map('unlink', glob(__DIR__.'/tmpmail/*'));
