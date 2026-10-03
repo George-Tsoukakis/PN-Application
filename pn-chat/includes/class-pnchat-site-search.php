@@ -872,6 +872,20 @@ final class PNChat_Site_Search {
 		// conversation is about a list («Και το Aerolin;»).
 		$out['yes'] = (bool) $context || (bool) preg_match( '/ (ine|iparx\w*|periex\w*|perilam\w*|anik\w*|exi|exoun|lista\w*|mesa|kalipt\w*) /', $folded );
 		$rare       = max( 3, (int) ceil( 0.05 * self::count() ) );
+		// The pages with a table the question is about (the question without
+		// the names, and the conversation's): the one whose title names more
+		// of the question first («…του Μαΐου»), else the newest.
+		// Only the names (Latin letters or digits: «Fortimel», «R03AC02») go;
+		// «λίστα απαγόρευσης εξαγωγών» is what finds the list.
+		$rest = (string) $question;
+		foreach ( $terms as $orig ) {
+			if ( ! preg_match( '/\p{Greek}/u', $orig ) || preg_match( '/\d/', $orig ) ) {
+				$rest = (string) preg_replace( '/(?<![\p{L}\p{N}])' . preg_quote( $orig, '/' ) . '(?![\p{L}\p{N}])/iu', ' ', $rest );
+			}
+		}
+		$lists = self::lists_for( trim( $rest ), $context );
+		// The list the answer goes by: the month asked, else the newest.
+		$newest = $lists ? $lists[0] : null;
 
 		foreach ( $terms as $f => $orig ) {
 			// Codes and barcodes (R03AC02) match only exactly; names allow a typo.
@@ -899,28 +913,10 @@ final class PNChat_Site_Search {
 				// page has: when the question is about a page with a table,
 				// it is not in that table.
 				if ( $greek && preg_match( '/^[a-z][a-z0-9-]*$/i', $orig ) ) {
-					$rest = trim( (string) preg_replace( '/\b' . preg_quote( $orig, '/' ) . '\b/iu', ' ', $question ) );
-					// The page the question names, else the one the
-					// conversation is about.
-					$cands = array_column( self::search( $rest, 1 ), 'id' );
-					$placed = false;
-					foreach ( array_merge( $cands, $context ) as $pid ) {
-						$post = get_post( (int) $pid );
-						$rows = self::searchable( $post ) ? self::rows_of( $post ) : array();
-						if ( count( $rows ) >= 10 ) {
-							$out['missing'][] = array(
-								'term'  => $orig,
-								'id'    => (int) $pid,
-								'title' => html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' ),
-								'url'   => (string) get_permalink( $post ),
-								'rows'  => count( $rows ),
-							);
-							$placed = true;
-							break;
-						}
-					}
-					// No list to say «Όχι» about: the chat may ask which one.
-					if ( ! $placed ) {
+					if ( $lists ) {
+						$out['missing'][] = self::missing_in( $orig, $lists[0] );
+					} else {
+						// No list to say «Όχι» about: the chat may ask which one.
 						$out['loose'][] = $orig;
 					}
 				}
@@ -965,9 +961,10 @@ final class PNChat_Site_Search {
 				}
 				$title = html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
 				$tf    = ' ' . PNChat_Text::fold( $title ) . ' ';
-				// The page the conversation is about comes first.
-				$fit = in_array( (int) $id, $context, true ) ? 3.0 : 0.0;
-				foreach ( self::query_words( $question ) as $alts ) {
+				// The page whose title names more of the question first, then
+				// the newest; the conversation's page only breaks a tie.
+				$fit = in_array( (int) $id, $context, true ) ? 0.01 : 0.0;
+				foreach ( self::query_words( $rest ) as $alts ) {
 					$fit += self::best_in( $alts, $tf );
 				}
 				$found[] = array(
@@ -983,9 +980,18 @@ final class PNChat_Site_Search {
 			usort(
 				$found,
 				function ( $a, $b ) {
-					return array( $b['fit'], $b['date'] ) <=> array( $a['fit'], $a['date'] );
+					return array( round( $b['fit'], 1 ), $b['date'] ) <=> array( round( $a['fit'], 1 ), $a['date'] );
 				}
 			);
+			// In an older list only: the newest list of the subject says «Όχι»
+			// first, and the older one is shown as older (a ban that ended).
+			$ids = array_column( $found, 'id' );
+			if ( $found && $newest && ! in_array( $newest['id'], $ids, true ) ) {
+				$out['missing'][] = self::missing_in( $found[0]['term'], $newest );
+				foreach ( $found as $k => $hit ) {
+					$found[ $k ]['old'] = true;
+				}
+			}
 			foreach ( array_slice( $found, 0, 2 ) as $hit ) {
 				unset( $hit['fit'], $hit['date'] );
 				$out['found'][] = $hit;
@@ -1047,6 +1053,106 @@ final class PNChat_Site_Search {
 	}
 
 	/**
+	 * Pages with a table (ten rows or more) about a question, with the
+	 * conversation's: title fit to the question first, then newest.
+	 *
+	 * @param string $question Question without the names looked up.
+	 * @param int[]  $context  Pages the conversation is about.
+	 * @return array<int,array{id:int,title:string,url:string,rows:int,date:string}>
+	 */
+	private static function lists_for( $question, array $context ) {
+		$ids = array_merge( '' !== trim( $question ) ? array_column( self::search( $question, 5 ), 'id' ) : array(), $context );
+		$out = array();
+		foreach ( array_unique( array_map( 'intval', $ids ) ) as $id ) {
+			$post = get_post( $id );
+			if ( ! self::searchable( $post ) ) {
+				continue;
+			}
+			$rows = count( self::rows_of( $post ) );
+			if ( $rows < 10 ) {
+				continue;
+			}
+			$title = html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
+			$tf    = ' ' . PNChat_Text::fold( $title ) . ' ';
+			$fit   = 0.0;
+			foreach ( self::query_words( $question ) as $alts ) {
+				$fit += self::best_in( $alts, $tf );
+			}
+			// «…του Μαΐου», «27 Αυγ 2026»: the list of that month.
+			if ( array_intersect( self::months( $question ), self::months( $title ) ) ) {
+				$fit += 2.0;
+			}
+			$out[] = array(
+				'id'    => $id,
+				'title' => $title,
+				'url'   => (string) get_permalink( $post ),
+				'rows'  => $rows,
+				'date'  => (string) $post->post_date_gmt,
+				'fit'   => round( $fit, 1 ),
+			);
+		}
+		usort(
+			$out,
+			function ( $a, $b ) {
+				return array( $b['fit'], $b['date'] ) <=> array( $a['fit'], $a['date'] );
+			}
+		);
+		return $out;
+	}
+
+	/**
+	 * Months a text names, in any form («Μάιος», «Μαΐου», «Αυγ», «08/2026»
+	 * is not one): 1–12.
+	 *
+	 * @param string $text Text.
+	 * @return int[]
+	 */
+	private static function months( $text ) {
+		// Folded forms: name, genitive, short («Ιανουάριος», «Ιανουαρίου»,
+		// «Ιαν»); «Μάιος» folds to «meos».
+		$forms = array(
+			1  => '(ianouari(os|ou)|ian)',
+			2  => '(fevrouari(os|ou)|fev|feb)',
+			3  => '(marti(os|ou))',
+			4  => '(aprili(os|ou)|apr)',
+			5  => '(meos|meou|maios|maiou|may)',
+			6  => '(iouni(os|ou)|ioun)',
+			7  => '(iouli(os|ou)|ioul)',
+			8  => '(avgoust(os|ou)|avg|aug)',
+			9  => '(septemvri(os|ou)|sept|sep)',
+			10 => '(oktovri(os|ou)|okt|oct)',
+			11 => '(noemvri(os|ou)|noe|nov)',
+			12 => '(dekemvri(os|ou)|dek|dec)',
+		);
+		$out   = array();
+		foreach ( explode( ' ', PNChat_Text::fold( (string) $text ) ) as $w ) {
+			foreach ( $forms as $n => $re ) {
+				if ( preg_match( '/^' . $re . '$/', $w ) ) {
+					$out[ $n ] = $n;
+				}
+			}
+		}
+		return array_values( $out );
+	}
+
+	/**
+	 * «Όχι — το X δεν υπάρχει στη σελίδα …».
+	 *
+	 * @param string              $term Name as asked.
+	 * @param array<string,mixed> $list Page from lists_for().
+	 * @return array{term:string,id:int,title:string,url:string,rows:int}
+	 */
+	private static function missing_in( $term, array $list ) {
+		return array(
+			'term'  => (string) $term,
+			'id'    => (int) $list['id'],
+			'title' => (string) $list['title'],
+			'url'   => (string) $list['url'],
+			'rows'  => (int) $list['rows'],
+		);
+	}
+
+	/**
 	 * The table rows (lines with cells) of a page.
 	 *
 	 * @param WP_Post|null $post Post.
@@ -1075,11 +1181,27 @@ final class PNChat_Site_Search {
 	public static function render_lookup( array $look ) {
 		$items = array();
 		$named = array();
+		foreach ( $look['missing'] as $miss ) {
+			$named[ $miss['term'] ] = true;
+			$html    = '<p>' . esc_html( 'Όχι — το «' . $miss['term'] . '» δεν υπάρχει στη σελίδα ' ) . '<strong>' . esc_html( '«' . $miss['title'] . '»' ) . '</strong>' . esc_html( ' (ελέγξαμε ' . $miss['rows'] . ' γραμμές του πίνακα).' ) . '</p><p><a href="' . esc_url( $miss['url'] ) . '" target="_blank" rel="noopener">Δείτε όλη τη σελίδα →</a></p>';
+			$items[] = array(
+				'kind'  => 'site',
+				'title' => '',
+				'html'  => $html,
+				'id'    => (int) $miss['id'],
+			);
+		}
 		foreach ( $look['found'] as $hit ) {
-			$first = ! isset( $named[ $hit['term'] ] );
+			if ( ! empty( $hit['old'] ) ) {
+				$lead = 'Υπήρχε στην παλαιότερη σελίδα ';
+			} else {
+				$first = ! isset( $named[ $hit['term'] ] );
+				$lead  = $first
+					? ( ! empty( $look['yes'] ) ? 'Ναι — το' : 'Το' ) . ' «' . $hit['term'] . '» υπάρχει στη σελίδα '
+					: 'Το «' . $hit['term'] . '» υπάρχει και στη σελίδα ';
+			}
 			$named[ $hit['term'] ] = true;
-			$lead  = $first && ! empty( $look['yes'] ) ? 'Ναι — ' : '';
-			$html  = '<p>' . esc_html( $lead . ( '' === $lead ? 'Το' : 'το' ) . ' «' . $hit['term'] . '» υπάρχει στη σελίδα ' ) . '<strong>' . esc_html( '«' . $hit['title'] . '»' ) . '</strong>:</p><ul>';
+			$html                  = '<p>' . esc_html( $lead ) . '<strong>' . esc_html( '«' . $hit['title'] . '»' ) . '</strong>:</p><ul>';
 			foreach ( $hit['rows'] as $row ) {
 				$html .= '<li>' . esc_html( $row ) . '</li>';
 			}
@@ -1089,15 +1211,6 @@ final class PNChat_Site_Search {
 				'title' => '',
 				'html'  => $html,
 				'id'    => (int) $hit['id'],
-			);
-		}
-		foreach ( $look['missing'] as $miss ) {
-			$html    = '<p>' . esc_html( 'Όχι — το «' . $miss['term'] . '» δεν υπάρχει στη σελίδα ' ) . '<strong>' . esc_html( '«' . $miss['title'] . '»' ) . '</strong>' . esc_html( ' (ελέγξαμε ' . $miss['rows'] . ' γραμμές του πίνακα).' ) . '</p><p><a href="' . esc_url( $miss['url'] ) . '" target="_blank" rel="noopener">Δείτε όλη τη σελίδα →</a></p>';
-			$items[] = array(
-				'kind'  => 'site',
-				'title' => '',
-				'html'  => $html,
-				'id'    => (int) $miss['id'],
 			);
 		}
 		return $items;

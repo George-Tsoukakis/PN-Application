@@ -382,6 +382,10 @@ final class PNChat_Rest {
 			// έτοιμη απάντηση» before it.
 			$intro   = $rows && ! $site ? '' : (string) $s['site_intro'];
 			$message = (string) $s['site_more'];
+		} elseif ( 'partial' === $result['status'] && $rows ) {
+			// A table answered the rest («…είναι το Fortimel;»): the leftover
+			// words («27 Αυγ 2026») are not «δεν έχουμε πληροφορίες».
+			$message = '';
 		} elseif ( 'partial' === $result['status'] ) {
 			$message = $site ? (string) $s['site_more'] : PNChat_Settings::fill( (string) $s['partial'], 'question', implode( '», «', $result['unmatched'] ) );
 		}

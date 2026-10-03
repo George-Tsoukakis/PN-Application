@@ -194,6 +194,53 @@ list( , $d ) = pnt_rest( '/ask', array( 'question' => 'το fortimel ειναι;
 $html        = implode( ' ', array_column( $d['items'], 'html' ) );
 pnt_check( false === strpos( $html, 'Όχι — ' ), 'conversation: a context page without a table gives no «Όχι»' );
 
+// 1.13.1: two lists of the same subject. The newest goes first, a month the
+// question names wins, a name only in the older list says so.
+wp_set_current_user( $admin->ID );
+$old_list = '<p>Η λίστα του Μαΐου.</p><table><tr><th>Όνομα</th><th>ATC</th></tr><tr><td>Aerolin</td><td>R03AC02</td></tr><tr><td>Lantuspnt</td><td>A10AE04</td></tr>';
+for ( $i = 1; $i <= 10; $i++ ) {
+	$old_list .= '<tr><td>Παλιό' . $i . '</td><td>P' . $i . '</td></tr>';
+}
+$may = wp_insert_post(
+	array(
+		'post_type'    => 'page',
+		'post_status'  => 'publish',
+		'post_title'   => 'Απαγόρευση εξαγωγών φαρμάκων ζζπντ Μάιος',
+		'post_content' => $old_list . '</table>',
+		'post_date'    => '2026-05-20 10:00:00',
+	)
+);
+$made[] = $may;
+wp_update_post(
+	array(
+		'ID'        => $ban,
+		'post_date' => '2026-08-27 10:00:00',
+	)
+);
+wp_set_current_user( 0 );
+PNChat_Site_Search::index_post( $may );
+PNChat_Site_Search::index_post( $ban );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'ειναι το fortimel στην απαγορευση εξαγωγων ζζπντ;' ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Όχι — το «Fortimel» δεν υπάρχει στη σελίδα <strong>«Απαγόρευση εξαγωγών φαρμάκων ζζπντ Αύγουστος»' ), 'two lists: «Όχι» about the newest one' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'ειναι το fortimel στην απαγορευση εξαγωγων ζζπντ του Μαΐου;' ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'σελίδα <strong>«Απαγόρευση εξαγωγών φαρμάκων ζζπντ Μάιος»' ), 'two lists: «…του Μαΐου» → the list of May' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'ειναι το Lantuspnt στην απαγορευση εξαγωγων ζζπντ;' ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Όχι — το «Lantuspnt» δεν υπάρχει στη σελίδα <strong>«Απαγόρευση εξαγωγών φαρμάκων ζζπντ Αύγουστος»' ) && false !== strpos( $html, 'Υπήρχε στην παλαιότερη σελίδα <strong>«Απαγόρευση εξαγωγών φαρμάκων ζζπντ Μάιος»' ), 'two lists: only in the older one → «Όχι» for the newest, «Υπήρχε στην παλαιότερη»' );
+pnt_check( false === strpos( $html, 'Ναι — ' ), 'two lists: no «Ναι» for a name only in the older list' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => 'ειναι το Lantuspnt στην απαγορευση εξαγωγων ζζπντ του Μαΐου;' ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Ναι — το «Lantuspnt» υπάρχει στη σελίδα <strong>«Απαγόρευση εξαγωγών φαρμάκων ζζπντ Μάιος»' ), 'two lists: asked about May, found in May → «Ναι»' );
+list( , $d ) = pnt_rest( '/ask', array( 'question' => "27 Αυγ 2026\nΝέα λίστα απαγόρευσης εξαγωγής φαρμάκων ζζπντ\nσε αυτην την λιστα ειναι το aerolin ?" ) );
+$html        = implode( ' ', array_column( $d['items'], 'html' ) );
+pnt_check( false !== strpos( $html, 'Ναι — το «Aerolin» υπάρχει στη σελίδα <strong>«Απαγόρευση εξαγωγών φαρμάκων ζζπντ Αύγουστος»' ), 'pasted «27 Αυγ 2026 …»: the August list first' );
+pnt_check( false === strpos( (string) $d['message'], 'δεν έχουμε πληροφορίες' ), 'pasted text: the leftover words get no «δεν έχουμε πληροφορίες»' );
+$m = new ReflectionMethod( 'PNChat_Site_Search', 'months' );
+$m->setAccessible( true );
+pnt_same( array( array( 5 ), array( 5 ), array( 8 ), array( 8 ), array() ), array( $m->invoke( null, 'Μάιος' ), $m->invoke( null, 'του Μαΐου' ), $m->invoke( null, '27 Αυγ' ), $m->invoke( null, 'Αυγούστου' ), $m->invoke( null, 'δεκάδες φάρμακα' ) ), 'months: any form of a month, not words that start like one' );
+
 // Subject pages: the home page gives way, the opening is shown.
 $r = PNChat_Site_Search::search( 'τι είναι το χαμόγελο του ζζπντ', 3 );
 pnt_same( $smile, $r ? $r[0]['id'] : 0, 'search: the page about the subject comes before the home page' );

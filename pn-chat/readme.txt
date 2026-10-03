@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.13.0
+Stable tag: 1.13.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,11 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.13.1 =
+* Several lists of the same subject (export bans of May and August): the answer goes by the list whose title names the question's month («…του Μαΐου», «27 Αυγ 2026»), else the newest. A name only in an older list gets «Όχι» for the newest and «Υπήρχε στην παλαιότερη σελίδα …», never «Ναι».
+* The list is found from the question's own words («λίστα απαγόρευσης εξαγωγών»); only product names and codes are left out (before, every word was, so no list was found).
+* When a table answers, the leftover words of a pasted text («27 Αυγ 2026») no longer get «δεν έχουμε πληροφορίες».
 
 = 1.13.0 =
 * Conversation notebook: the chat keeps the last topics and pages with a table of the conversation and sends them with each question. An earlier topic that answers a question the current one does not is offered («Αναφέρεστε στο «QR ReBuilder»;»); a product name long after a list asks «Αναφέρεστε στη σελίδα «…»;».
