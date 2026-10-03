@@ -39,13 +39,28 @@
 			if (data && Array.isArray(data.messages)) {
 				data.seen = Array.isArray(data.seen) ? data.seen : [];
 				data.conv = data.conv || newConv();
+				data.memo = data.memo && typeof data.memo === 'object' ? data.memo : { topics: [], tables: [] };
 				return data;
 			}
 		} catch (e) { /* storage blocked or corrupt: start fresh */ }
-		return { open: false, messages: [], seen: [], prev: 0, conv: newConv() };
+		return { open: false, messages: [], seen: [], prev: 0, conv: newConv(), memo: { topics: [], tables: [] } };
 	}
 
 	/** Random id of this conversation (kept in the tab, hashed by the server). */
+	/** A list of the last five, newest last, without repeats. */
+	function remember5(list, value) {
+		list = Array.isArray(list) ? list.slice() : [];
+		if (!value) {
+			return list;
+		}
+		var i = list.indexOf(value);
+		if (i !== -1) {
+			list.splice(i, 1);
+		}
+		list.push(value);
+		return list.slice(-5);
+	}
+
 	function newConv() {
 		var s = '';
 		var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -63,6 +78,7 @@
 				topic: state.topic || '',
 				prev: state.prev || 0,
 				sctx: state.sctx || 0,
+				memo: state.memo || { topics: [], tables: [] },
 				seen: (state.seen || []).slice(-30),
 				conv: state.conv || '',
 				messages: state.messages.slice(-MAX_KEPT)
@@ -525,6 +541,7 @@
 		this.state.topic = '';
 		this.state.prev = 0;
 		this.state.sctx = 0;
+		this.state.memo = { topics: [], tables: [] };
 		this.state.seen = [];
 		this.state.conv = newConv();
 		save(this.state);
@@ -569,6 +586,7 @@
 				message: m.message || '',
 				related: m.related || [],
 				didyoumean: m.didyoumean || [],
+				clarify: m.clarify || null,
 				live: live && live.id ? { id: live.id, token: live.token, ask_email: !!live.ask_email, email_button: !!live.email_button, feedback: !!live.feedback, user_email: live.user_email || '' } : null
 			});
 			live = stored.live;
@@ -595,6 +613,9 @@
 		}
 		if ((m.didyoumean || []).length && live && live.id) {
 			wrap.appendChild(this.didYouMeanRow(m, live, stored));
+		}
+		if (m.clarify && (m.clarify.options || []).length) {
+			wrap.appendChild(this.clarifyRow(m, stored, live));
 		}
 		if (live && live.ask_email) {
 			wrap.appendChild(this.emailForm(live));
@@ -658,14 +679,18 @@
 		this.hideChips();
 		this.input.value = '';
 		this.autosize();
-		this.addUser(q, true);
+		// A choice of «Αναφέρεστε…;» shows the button's words, and sends the
+		// question again with the chosen topic or page.
+		this.addUser(extra && extra.shown ? extra.shown : q, true);
 		this.typing(true);
+		var chosen = extra && extra.choice ? extra.choice : null;
 		api('/ask', {
 			question: q,
 			page: window.location.href.split('#')[0],
-			context: this.state.topic || '',
+			context: chosen ? chosen.context || '' : this.state.topic || '',
 			prev: this.state.prev || 0,
-			sctx: this.state.sctx || 0,
+			sctx: chosen ? chosen.sctx || 0 : this.state.sctx || 0,
+			memo: this.state.memo || { topics: [], tables: [] },
 			seen: this.state.seen || [],
 			conv: this.state.conv || '',
 			via: via || '',
@@ -688,8 +713,14 @@
 				self.state.prev = res.entry;
 				self.state.seen = (self.state.seen || []).concat([res.entry]).slice(-30);
 			}
+			// The notebook: every topic and list of the conversation, so a
+			// question about one of them later is understood (or asked).
+			var memo = self.state.memo || { topics: [], tables: [] };
+			memo.topics = remember5(memo.topics, res.topic);
+			memo.tables = remember5(memo.tables, res.sctx);
+			self.state.memo = memo;
 			save(self.state);
-			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '', related: res.related || [], didyoumean: res.didyoumean || [] }, true, res, null);
+			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '', related: res.related || [], didyoumean: res.didyoumean || [], clarify: res.clarify || null }, true, res, null);
 			// Small talk («ωραίο», «οκ»): offer the suggested questions again.
 			if (res.show_suggestions && (cfg.suggestions || []).length && self.chips.hidden) {
 				self.toggleChips();
@@ -778,6 +809,66 @@
 			}));
 		});
 		return row;
+	};
+
+	/**
+	 * «Αναφέρεστε στο…;»: the chat is not sure what the question is about
+	 * (or has just changed topic). A button sends the question again with
+	 * that topic or page; «Κάτι άλλο» only closes the question.
+	 */
+	Chat.prototype.clarifyRow = function (m, stored, live) {
+		var self = this;
+		var c = m.clarify;
+		var box = el('div', { className: 'pnchat__clarify', role: 'group', 'aria-label': c.text });
+		box.appendChild(el('p', { className: 'pnchat__clarify-text', text: c.text }));
+		var row = el('div', { className: 'pnchat__related' });
+		var done = function () {
+			box.remove();
+			if (stored) {
+				stored.clarify = null;
+				self.update();
+			}
+		};
+		c.options.forEach(function (o) {
+			row.appendChild(el('button', {
+				type: 'button',
+				className: 'pnchat__chip',
+				text: o.label,
+				onclick: function () {
+					if (self.busy) {
+						return;
+					}
+					done();
+					self.send(c.question, 'clarify', { shown: o.label, choice: { context: o.context || '', sctx: o.sctx || 0 } });
+				}
+			}));
+		});
+		if (c.mode === 'ask') {
+			row.appendChild(el('button', {
+				type: 'button',
+				className: 'pnchat__chip pnchat__chip--ghost',
+				text: 'Κάτι άλλο',
+				onclick: function () {
+					// Neither: ask for more words, or a person.
+					var note = el('div', { className: 'pnchat__bubble pnchat__bubble--notice', text: 'Εντάξει. Γράψτε μου την ερώτηση με λίγες λεπτομέρειες ακόμα, ή ζητήστε απάντηση από άνθρωπο.' });
+					box.replaceWith(note);
+					if (live && live.id) {
+						note.after(self.humanButton(live));
+					}
+					if (stored) {
+						stored.clarify = null;
+						stored.message = note.textContent;
+						if (live) {
+							live.email_button = true;
+						}
+						self.update();
+					}
+					self.scroll();
+				}
+			}));
+		}
+		box.appendChild(row);
+		return box;
 	};
 
 	/** «Θέλω απάντηση από άνθρωπο»: opens the e-mail form of that question. */

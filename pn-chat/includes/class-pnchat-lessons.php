@@ -168,7 +168,7 @@ final class PNChat_Lessons {
 	 * @param string $phrase   The visitor's wording.
 	 * @param int    $entry_id Entry it meant.
 	 * @param string $conv     Conversation (hashed); '' counts nothing.
-	 * @param string $source   'click' («Μήπως εννοείτε») or 'rephrase'.
+	 * @param string $source   'click' («Μήπως εννοείτε», «Αναφέρεστε…;»), 'thumb' (👍) or 'rephrase'.
 	 * @return array<string,mixed>|null The lesson after it (null: not a lesson).
 	 */
 	public static function record( $phrase, $entry_id, $conv, $source ) {
@@ -211,7 +211,8 @@ final class PNChat_Lessons {
 		if ( ! in_array( $conv, $convs, true ) ) {
 			$convs[] = $conv;
 		}
-		if ( 'click' === $source && ! in_array( $conv, $clicks, true ) ) {
+		// A tapped button or a 👍 is the visitor's own confirmation.
+		if ( in_array( $source, array( 'click', 'thumb' ), true ) && ! in_array( $conv, $clicks, true ) ) {
 			$clicks[] = $conv;
 		}
 		$convs  = array_slice( $convs, -self::MAX_CONVS );
@@ -622,6 +623,42 @@ final class PNChat_Lessons {
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * What the chat did and learned in the last days, for «Τι έμαθε αυτή
+	 * την εβδομάδα».
+	 *
+	 * @param int $days How far back.
+	 * @return array{questions:int,answered:int,unknown:int,new_wordings:int,learned_auto:int,learned_added:int,pending:int,proposals:int,groups:array<int,array<string,mixed>>}
+	 */
+	public static function week_summary( $days = 7 ) {
+		global $wpdb;
+		$since = gmdate( 'Y-m-d H:i:s', time() - (int) $days * DAY_IN_SECONDS );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT status, COUNT(*) AS n FROM %i WHERE created_at >= %s GROUP BY status', PNChat_Store::questions_table(), $since ), ARRAY_A );
+		$by     = array();
+		foreach ( (array) $rows as $r ) {
+			$by[ (string) $r['status'] ] = (int) $r['n'];
+		}
+		$count = function ( $where ) use ( $wpdb, $since ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared -- $where is fixed SQL of this class.
+			return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE ' . $where . ' AND updated_at >= %s', self::table(), $since ) );
+		};
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$new = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', self::table(), $since ) );
+		return array(
+			'questions'     => array_sum( $by ),
+			'answered'      => ( $by['answered'] ?? 0 ) + ( $by['site'] ?? 0 ) + ( $by['ai'] ?? 0 ),
+			// Not answered, half answered, 👎, or answered later by e-mail.
+			'unknown'       => array_sum( $by ) - ( $by['answered'] ?? 0 ) - ( $by['site'] ?? 0 ) - ( $by['ai'] ?? 0 ),
+			'new_wordings'  => $new,
+			'learned_auto'  => $count( "status = 'auto'" ),
+			'learned_added' => $count( "status = 'added'" ),
+			'pending'       => self::count_pending(),
+			'proposals'     => PNChat_Learn::count_pending(),
+			'groups'        => self::unanswered_groups( (int) $days, 3 ),
+		);
 	}
 
 	/**

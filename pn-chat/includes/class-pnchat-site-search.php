@@ -837,12 +837,13 @@ final class PNChat_Site_Search {
 	 * @param string $covered  Text already in the answer (a word in it is not looked up).
 	 * @param int[]  $context  Pages with a table the conversation is about
 	 *                         («Το Fortimel είναι;» after the export list).
-	 * @return array{found:array<int,array{term:string,id:int,title:string,url:string,rows:string[]}>,missing:array<int,array{term:string,id:int,title:string,url:string,rows:int}>,yes:bool}
+	 * @return array{found:array<int,array{term:string,id:int,title:string,url:string,rows:string[]}>,missing:array<int,array{term:string,id:int,title:string,url:string,rows:int}>,loose:string[],yes:bool}
 	 */
 	public static function lookup( $question, $covered = '', array $context = array() ) {
 		$out = array(
 			'found'   => array(),
 			'missing' => array(),
+			'loose'   => array(),
 			'yes'     => false,
 		);
 		$skip  = ' ' . PNChat_Text::fold( $covered ) . ' ';
@@ -902,6 +903,7 @@ final class PNChat_Site_Search {
 					// The page the question names, else the one the
 					// conversation is about.
 					$cands = array_column( self::search( $rest, 1 ), 'id' );
+					$placed = false;
 					foreach ( array_merge( $cands, $context ) as $pid ) {
 						$post = get_post( (int) $pid );
 						$rows = self::searchable( $post ) ? self::rows_of( $post ) : array();
@@ -913,8 +915,13 @@ final class PNChat_Site_Search {
 								'url'   => (string) get_permalink( $post ),
 								'rows'  => count( $rows ),
 							);
+							$placed = true;
 							break;
 						}
+					}
+					// No list to say «Όχι» about: the chat may ask which one.
+					if ( ! $placed ) {
+						$out['loose'][] = $orig;
 					}
 				}
 				continue;

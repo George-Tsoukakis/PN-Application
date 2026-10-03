@@ -713,3 +713,30 @@
 	background: #fff;
 	color: var(--pnchat-accent);
 }
+
+/* 1.13.0: «Αναφέρεστε στο…;» */
+.pnchat__clarify {
+	max-width: 100%;
+	margin-top: 4px;
+	padding: 10px 12px;
+	border: 1px solid var(--pnchat-border);
+	border-left: 3px solid var(--pnchat-accent);
+	border-radius: 12px;
+	background: var(--pnchat-bg);
+}
+
+.pnchat__clarify-text {
+	margin: 0 0 8px;
+	color: var(--pnchat-fg);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.pnchat__clarify .pnchat__related {
+	margin: 0;
+}
+
+.pnchat .pnchat__chip--ghost {
+	border-color: var(--pnchat-border);
+	color: var(--pnchat-muted);
+}

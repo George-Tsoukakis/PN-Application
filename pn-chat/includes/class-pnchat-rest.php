@@ -60,6 +60,10 @@ final class PNChat_Rest {
 					'sctx'     => array(
 						'type' => 'integer',
 					),
+					// 1.13.0: the conversation's notebook (earlier topics and pages).
+					'memo'     => array(
+						'type' => 'object',
+					),
 					'seen'     => array(
 						'type'  => 'array',
 						'items' => array( 'type' => 'integer' ),
@@ -197,12 +201,46 @@ final class PNChat_Rest {
 		if ( $prev && '' !== $own && PNChat_Topics::of_entry( $prev ) !== $own ) {
 			$prev = 0;
 		}
-		$result  = $picked ? $picked : self::answer_in_context( $search, $follow ? $context : '', $prev );
+		// A button of «Αναφέρεστε…;»: the visitor chose the topic (or the
+		// page with a table, sent as sctx).
+		$chosen = ! $picked && 'clarify' === (string) $req->get_param( 'via' );
+		if ( $chosen ) {
+			$follow = '' !== $context;
+			$result = self::answer_in_topic( $search, $context );
+		} else {
+			$result = $picked ? $picked : self::answer_in_context( $search, $follow ? $context : '', $prev );
+		}
+		$memo    = self::memo( $req );
+		$clarify = $result['clarify'] ?? null;
+		unset( $result['clarify'] );
+		// Nothing in this topic, but an earlier topic of the conversation
+		// answers it: asked, not assumed.
+		if ( ! $clarify && ! $chosen && ! $picked && 'unanswered' === $result['status'] && '' === $own ) {
+			$older = array_reverse( array_values( array_diff( $memo['topics'], array( $context ) ) ) );
+			$t     = self::older_topic( $search, $older );
+			if ( '' !== $t ) {
+				$clarify = self::clarify_options( 'ask', $search, array( $t ) );
+			}
+		}
 		$site    = self::site_results( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
 		// «Είναι το Aerolin στη λίστα;»: the row of the site's table that
 		// names it, even next to a trained answer that does not.
 		$tables = self::table_context( $req );
-		$rows   = self::table_rows( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search, $tables );
+		$loose  = array();
+		$rows   = self::table_rows( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search, $tables, $loose );
+		// «Το Fortimel είναι;» long after a list was shown: which list?
+		if ( ! $rows && $loose && ! $clarify && ! $chosen ) {
+			$offer = array();
+			foreach ( array_reverse( array_diff( $memo['tables'], $tables ) ) as $tid ) {
+				$tp = get_post( $tid );
+				if ( count( PNChat_Site_Search::rows_of( $tp ) ) >= 10 ) {
+					$offer[ $tid ] = html_entity_decode( get_the_title( $tp ), ENT_QUOTES, 'UTF-8' );
+				}
+			}
+			if ( $offer ) {
+				$clarify = self::clarify_options( 'ask', $search, array(), '', array_slice( $offer, 0, 2, true ) );
+			}
+		}
 		if ( $rows ) {
 			$shown = array_column( $rows, 'id' );
 			$site  = array_values(
@@ -286,9 +324,18 @@ final class PNChat_Rest {
 			}
 		}
 
+		// The visitor's choice says what the question meant: a lesson, like
+		// a tapped «Μήπως εννοείτε» button.
+		if ( $chosen && 'answered' === $result['status'] && $first ) {
+			// The question it asked about is settled: a later answer in the
+			// conversation must not take it for a rephrasing.
+			PNChat_Store::hint_previous( $conv, $first );
+			PNChat_Lessons::record( '' !== $context ? rtrim( $search, " \t?;;.!" ) . ' (' . $context . ')' : $search, $first, $conv, 'click' );
+		}
+
 		// Not sure: the closest entries as «Μήπως εννοείτε…;» buttons.
 		$dym = array();
-		if ( 'unanswered' === $result['status'] && ! empty( $s['didyoumean'] ) ) {
+		if ( 'unanswered' === $result['status'] && ! empty( $s['didyoumean'] ) && ! ( $clarify && 'ask' === $clarify['mode'] ) ) {
 			$dym = PNChat_Lessons::suggestions( $search, $follow ? $context : '' );
 		}
 
@@ -321,7 +368,12 @@ final class PNChat_Rest {
 		// questions again and the e-mail form behind a button, so a remark
 		// out of the chat's subjects is not met with a form.
 		$button = 'unanswered' === $result['status'] && ! empty( $s['fallback_button'] );
-		if ( 'unanswered' === $result['status'] ) {
+		// «Αναφέρεστε…;» stands alone: no «don't know», form or suggestions
+		// next to it («Κάτι άλλο» brings the «άνθρωπο» button).
+		$asking = $clarify && 'ask' === $clarify['mode'] && 'unanswered' === $result['status'];
+		if ( $asking ) {
+			$button = false;
+		} elseif ( 'unanswered' === $result['status'] ) {
 			$message = $dym ? (string) $s['didyoumean_text'] : (string) $s['fallback'];
 		} elseif ( 'ai' === $result['status'] ) {
 			$message = (string) $s['site_more'];
@@ -344,9 +396,10 @@ final class PNChat_Rest {
 				'topic'      => self::topic_of( $result, $own, $follow ? $context : '' ),
 				'entry'      => $first,
 				'sctx'       => self::next_table( $rows, $result, $site ),
+				'clarify'    => $clarify,
 				'related'    => 'answered' === $result['status'] ? self::related( $first, (array) $req->get_param( 'seen' ), (int) $s['related_max'] ) : array(),
 				'message'    => $message,
-				'ask_email'  => $id && ! $button && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
+				'ask_email'  => $id && ! $button && ! $asking && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
 				'email_button'     => $id && $button,
 				'show_suggestions' => $button && ! $dym,
 				'didyoumean'       => $dym,
@@ -489,6 +542,9 @@ final class PNChat_Rest {
 		if ( ! $helpful && in_array( $q['status'], array( 'answered', 'partial', 'site' ), true ) && ! PNChat_Store::update_question( (int) $q['id'], array( 'status' => 'unhelpful' ) ) ) {
 			return new WP_Error( 'pnchat_feedback_save', 'Δεν αποθηκεύτηκε. Δοκιμάστε ξανά σε λίγο.', array( 'status' => 500 ) );
 		}
+		if ( $helpful && 'answered' === $q['status'] ) {
+			self::learn_from_thumb( $q );
+		}
 		$s = PNChat_Settings::get();
 		return rest_ensure_response(
 			array(
@@ -497,6 +553,37 @@ final class PNChat_Rest {
 				'message'   => $helpful ? 'Ευχαριστούμε!' : (string) $s['unhelpful'],
 			)
 		);
+	}
+
+	/**
+	 * 👍 on an answer: the visitor's wording fits that entry, a lesson like
+	 * a tapped button (it counts towards «learn on its own after N
+	 * visitors», with the same checks). A follow-up («Είναι δωρεάν;» about
+	 * the QR ReBuilder) is kept with the entry's topic.
+	 *
+	 * @param array<string,mixed> $q Logged question.
+	 * @return void
+	 */
+	private static function learn_from_thumb( array $q ) {
+		$ids   = array_filter( array_map( 'absint', explode( ',', (string) $q['matched'] ) ) );
+		$entry = $ids ? (int) reset( $ids ) : 0;
+		$text  = PNChat_Smalltalk::strip_lead( (string) $q['question'] );
+		if ( ! $entry || '' === trim( $text ) ) {
+			return;
+		}
+		$topic = PNChat_Topics::of_entry( $entry );
+		if ( '' === $topic ) {
+			// An entry of no topic: only a wording that finds it by itself.
+			$plain = PNChat_Brain::matcher()->ask( $text );
+			if ( 'answered' !== $plain['status'] || (int) $plain['items'][0]['id'] !== $entry ) {
+				return;
+			}
+			$phrase = $text;
+		} else {
+			// «Πόσο κοστίζει;» is about the PlanDose only in that conversation.
+			$phrase = '' !== PNChat_Topics::detect( $text, true ) ? $text : rtrim( $text, " \t?;;.!" ) . ' (' . $topic . ')';
+		}
+		PNChat_Lessons::record( $phrase, $entry, (string) $q['conv'], 'thumb' );
 	}
 
 	/**
@@ -564,10 +651,25 @@ final class PNChat_Rest {
 		if ( $after ) {
 			return $after;
 		}
-		// An entry of no topic (greetings, «Εγγραφή στην PharmacyNeeds»),
-		// or a clear match in another topic: the visitor moved on.
-		if ( 'answered' === $plain['status'] && ( '' === $plain_topic || (float) $plain['items'][0]['score'] >= 0.85 ) ) {
+		// An entry of no topic (greetings, «Εγγραφή στην PharmacyNeeds»).
+		if ( 'answered' === $plain['status'] && '' === $plain_topic ) {
 			return $plain;
+		}
+		// An entry of another topic, and the question names no topic: the
+		// visitor may have moved on. A clear match is answered, with a
+		// button back to the topic of the conversation; an unsure one asks.
+		if ( 'answered' === $plain['status'] ) {
+			if ( (float) $plain['items'][0]['score'] >= 0.85 ) {
+				$plain['clarify'] = self::clarify_options( 'switch', $question, array( $context ), $plain_topic );
+				return $plain;
+			}
+			return array(
+				'status'    => 'unanswered',
+				'items'     => array(),
+				'unmatched' => array( $question ),
+				'parts'     => $plain['parts'],
+				'clarify'   => self::clarify_options( 'ask', $question, array( $plain_topic, $context ) ),
+			);
 		}
 		// A vague question with nothing about this topic: an answer about
 		// another topic would be wrong here, so it is reported as unanswered.
@@ -580,6 +682,163 @@ final class PNChat_Rest {
 			);
 		}
 		return $plain;
+	}
+
+	/**
+	 * A question back to the visitor, as buttons: «Αναφέρεστε στο «Α» ή
+	 * στο «Β»;» (ask: nothing answered yet), «Αλλάξαμε θέμα σε «Β»· αν
+	 * ρωτάτε για το «Α»:» (switch: answered, one button back).
+	 *
+	 * @param string   $mode     ask or switch.
+	 * @param string   $question The question, sent again with the choice.
+	 * @param string[] $topics   Topics to offer (first the likeliest).
+	 * @param string   $to       The topic answered (switch).
+	 * @param array<int,string> $tables Pages with a table to offer (id => title).
+	 * @return array{mode:string,text:string,question:string,options:array<int,array{label:string,context:string,sctx:int}>}
+	 */
+	public static function clarify_options( $mode, $question, array $topics, $to = '', array $tables = array() ) {
+		$topics  = array_values( array_unique( array_filter( $topics ) ) );
+		$one     = 1 === count( $topics ) + count( $tables );
+		$options = array();
+		foreach ( $topics as $t ) {
+			$options[] = array(
+				'label'   => ( $one && 'ask' === $mode ? 'Ναι, για το «' : 'Για το «' ) . $t . '»',
+				'context' => $t,
+				'sctx'    => 0,
+			);
+		}
+		foreach ( $tables as $id => $title ) {
+			$options[] = array(
+				'label'   => ( $one ? 'Ναι, στη σελίδα «' : 'Στη σελίδα «' ) . $title . '»',
+				'context' => '',
+				'sctx'    => (int) $id,
+			);
+		}
+		if ( 'switch' === $mode ) {
+			$text = 'Πήγαμε στο θέμα «' . $to . '». Αν ρωτάτε για κάτι άλλο:';
+		} elseif ( $tables && ! $topics ) {
+			$text = $one ? 'Αναφέρεστε στη σελίδα «' . reset( $tables ) . '»;' : 'Σε ποια σελίδα αναφέρεστε;';
+		} elseif ( $one ) {
+			$text = 'Αναφέρεστε στο «' . $topics[0] . '»;';
+		} else {
+			$text = 'Αναφέρεστε στο «' . implode( '» ή στο «', array_slice( $topics, 0, 3 ) ) . '»;';
+		}
+		return array(
+			'mode'     => $mode,
+			'text'     => $text,
+			'question' => (string) $question,
+			'options'  => array_slice( $options, 0, 3 ),
+		);
+	}
+
+	/**
+	 * The answer in a topic the visitor chose from «Αναφέρεστε…;»: only an
+	 * entry of that topic, or nothing.
+	 *
+	 * @param string $question Question.
+	 * @param string $context  Chosen topic ('' = none).
+	 * @return array<string,mixed>
+	 */
+	public static function answer_in_topic( $question, $context ) {
+		$m     = PNChat_Brain::matcher();
+		$plain = $m->ask( $question );
+		if ( '' === $context || 'blocked' === $plain['status'] ) {
+			return $plain;
+		}
+		$ctx = $m->ask( rtrim( $question, " \t?;;.!" ) . ' ' . $context );
+		if ( 'answered' === $ctx['status'] && 'answer' === $ctx['items'][0]['kind'] && PNChat_Topics::of_entry( (int) $ctx['items'][0]['id'] ) === $context && self::own_words_fit( $question, (int) $ctx['items'][0]['id'], true ) ) {
+			$ctx['items'] = array_slice( $ctx['items'], 0, 1 );
+			return $ctx;
+		}
+		if ( 'answered' === $plain['status'] && PNChat_Topics::of_entry( (int) $plain['items'][0]['id'] ) === $context ) {
+			return $plain;
+		}
+		return array(
+			'status'    => 'unanswered',
+			'items'     => array(),
+			'unmatched' => array( $question ),
+			'parts'     => $plain['parts'],
+		);
+	}
+
+	/**
+	 * The question's own words (without the added topic) point to the entry:
+	 * the topic's words alone would bring its general entry for anything.
+	 *
+	 * When the visitor chose the topic («Για το «Κοινότητα Viber»»), any
+	 * sign from the own words is enough («Πόσο κοστίζει;» → «Κόστος
+	 * συμμετοχής»); none at all would be the topic's general entry.
+	 *
+	 * @param string $question Question.
+	 * @param int    $id       Entry id.
+	 * @param bool   $chosen   The visitor chose the topic.
+	 * @return bool
+	 */
+	private static function own_words_fit( $question, $id, $chosen = false ) {
+		$m   = PNChat_Brain::matcher();
+		$own = 0.0;
+		foreach ( $m->rank( $question ) as $x ) {
+			if ( (int) $x['id'] === (int) $id ) {
+				$own = (float) $x['score'];
+				break;
+			}
+		}
+		if ( $own >= ( $chosen ? 0.05 : 0.25 ) ) {
+			return true;
+		}
+		return $m->coverage( $question, (int) $id ) >= ( $chosen ? 0.5 : 0.6 );
+	}
+
+	/**
+	 * An earlier topic of the conversation that answers a question the
+	 * current one does not («…και το PlanDose πόσο κάνει;» three questions
+	 * later): it is offered, not assumed.
+	 *
+	 * @param string   $question Question.
+	 * @param string[] $older    Earlier topics, newest first.
+	 * @return string The topic, '' for none.
+	 */
+	private static function older_topic( $question, array $older ) {
+		$m = PNChat_Brain::matcher();
+		foreach ( $older as $t ) {
+			$r = $m->ask( rtrim( $question, " \t?;;.!" ) . ' ' . $t );
+			if ( 'answered' !== $r['status'] || 'answer' !== $r['items'][0]['kind'] || PNChat_Topics::of_entry( (int) $r['items'][0]['id'] ) !== $t ) {
+				continue;
+			}
+			if ( self::own_words_fit( $question, (int) $r['items'][0]['id'] ) ) {
+				return $t;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * The conversation's notebook sent by the chat: earlier topics and
+	 * pages with a table, newest last.
+	 *
+	 * @param WP_REST_Request $req Request.
+	 * @return array{topics:string[],tables:int[]}
+	 */
+	private static function memo( WP_REST_Request $req ) {
+		$memo   = (array) $req->get_param( 'memo' );
+		$topics = array();
+		foreach ( array_slice( (array) ( $memo['topics'] ?? array() ), -5 ) as $t ) {
+			$t = is_scalar( $t ) ? PNChat_Topics::valid( sanitize_text_field( (string) $t ) ) : '';
+			if ( '' !== $t ) {
+				$topics[] = $t;
+			}
+		}
+		$tables = array();
+		foreach ( array_slice( (array) ( $memo['tables'] ?? array() ), -5 ) as $id ) {
+			$id = is_scalar( $id ) ? absint( $id ) : 0;
+			if ( $id && PNChat_Site_Search::searchable( get_post( $id ) ) ) {
+				$tables[] = $id;
+			}
+		}
+		return array(
+			'topics' => array_values( array_unique( $topics ) ),
+			'tables' => array_values( array_unique( $tables ) ),
+		);
 	}
 
 	/**
@@ -831,9 +1090,11 @@ final class PNChat_Rest {
 	 * @param array<string,mixed> $result   Brain result.
 	 * @param string              $question Question.
 	 * @param int[]               $context  Pages with a table the conversation is about.
+	 * @param string[]            $loose    Set to product names no page has and no list to check them in.
 	 * @return array<int,array{kind:string,title:string,html:string,id:int}>
 	 */
-	public static function table_rows( array $result, $question, array $context = array() ) {
+	public static function table_rows( array $result, $question, array $context = array(), &$loose = array() ) {
+		$loose = array();
 		if ( empty( PNChat_Settings::value( 'site_search' ) ) || 'ai' === $result['status'] ) {
 			return array();
 		}
@@ -841,7 +1102,9 @@ final class PNChat_Rest {
 		foreach ( $result['items'] as $i ) {
 			$covered .= ' ' . ( $i['title'] ?? '' ) . ' ' . wp_strip_all_tags( (string) ( $i['answer'] ?? '' ) );
 		}
-		return PNChat_Site_Search::render_lookup( PNChat_Site_Search::lookup( $question, $covered, $context ) );
+		$look  = PNChat_Site_Search::lookup( $question, $covered, $context );
+		$loose = $look['loose'];
+		return PNChat_Site_Search::render_lookup( $look );
 	}
 
 	/**

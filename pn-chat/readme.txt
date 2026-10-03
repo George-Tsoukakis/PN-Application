@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.12.1
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,12 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.13.0 =
+* Conversation notebook: the chat keeps the last topics and pages with a table of the conversation and sends them with each question. An earlier topic that answers a question the current one does not is offered («Αναφέρεστε στο «QR ReBuilder»;»); a product name long after a list asks «Αναφέρεστε στη σελίδα «…»;».
+* «Αναφέρεστε…;»: a question that names no topic and matches another topic is no longer dropped: an unsure match asks «Αναφέρεστε στο «PlanDose» ή στο «QR ReBuilder»;» with buttons (and «Κάτι άλλο», which offers a person); the answer in the chosen topic follows, and the choice is a lesson like a «Μήπως εννοείτε» tap. Shown alone, without the «don't know» text, form or suggestions.
+* 👍 teaches: the visitor's wording (with the topic for a follow-up) is a lesson that counts towards learning on its own, with the same checks.
+* «Τι έμαθε αυτή την εβδομάδα»: a box on the WordPress Dashboard and at the top of «Μάθηση» (questions, answered, not known, learned on its own, waiting for approval, what visitors asked and the chat did not know).
 
 = 1.12.1 =
 * The chat remembers the page with a table the conversation is about (the list whose rows it showed, the page of the site results, or the page of the trained answer): «Το Fortimel είναι;» after «Ποια είναι η λίστα απαγόρευσης;» is looked up in that list («Όχι — …» / «Ναι — …»), also after small talk or a page reload. No «Δεν έχω έτοιμη απάντηση» before an answer from a table.

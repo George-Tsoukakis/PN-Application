@@ -34,6 +34,7 @@ final class PNChat_Admin {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
+		add_action( 'wp_dashboard_setup', array( __CLASS__, 'dashboard' ) );
 		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'learn_read', 'learn_site', 'learn_control', 'proposal', 'proposals_bulk', 'lesson', 'lesson_group', 'lesson_word', 'tests_run', 'test_add', 'test_remove', 'index_now', 'index_refresh', 'index_media' ) as $a ) {
 			add_action( 'admin_post_pnchat_' . $a, array( __CLASS__, 'handle_' . $a ) );
 		}
@@ -1110,12 +1111,58 @@ final class PNChat_Admin {
 			: 'Η αυτόματη μάθηση είναι κλειστή (Ρυθμίσεις): όλα περιμένουν εσάς.';
 		echo '</p>';
 
+		echo '<div class="pnchat-card"><h2>Αυτή την εβδομάδα</h2>';
+		self::week_box();
+		echo '</div>';
 		self::lessons_pending();
 		self::lessons_unknown();
 		self::lessons_words();
 		self::lessons_fixing();
 		self::lessons_auto();
 		self::lessons_tests();
+		echo '</div>';
+	}
+
+	/**
+	 * Dashboard box «PN Chat: τι έμαθε αυτή την εβδομάδα».
+	 *
+	 * @return void
+	 */
+	public static function dashboard() {
+		if ( current_user_can( self::capability() ) ) {
+			wp_add_dashboard_widget( 'pnchat_learning', 'PN Chat: τι έμαθε αυτή την εβδομάδα', array( __CLASS__, 'week_box' ) );
+		}
+	}
+
+	/**
+	 * What the chat did and learned in the last 7 days.
+	 *
+	 * @return void
+	 */
+	public static function week_box() {
+		$w    = PNChat_Lessons::week_summary( 7 );
+		$link = function ( $page, $text ) {
+			return '<a href="' . esc_url( admin_url( 'admin.php?page=' . $page ) ) . '">' . esc_html( $text ) . '</a>';
+		};
+		echo '<div class="pnchat-week">';
+		echo '<p><strong>' . (int) $w['questions'] . '</strong> ερωτήσεις: <strong>' . (int) $w['answered'] . '</strong> απαντήθηκαν, <strong>' . (int) $w['unknown'] . '</strong> δεν τις ήξερε.</p>';
+		echo '<ul class="pnchat-list">';
+		echo '<li>🧠 Έμαθε μόνο του <strong>' . (int) $w['learned_auto'] . '</strong> νέες διατυπώσεις (από κουμπιά, 👍 και «Αναφέρεστε…;» 3 διαφορετικών επισκεπτών)· εγκρίνατε <strong>' . (int) $w['learned_added'] . '</strong>.</li>';
+		echo '<li>✍️ Νέες διατυπώσεις που είδε: <strong>' . (int) $w['new_wordings'] . '</strong>· ' . ( $w['pending'] ? '<strong>' . (int) $w['pending'] . '</strong> περιμένουν την έγκρισή σας (' . wp_kses_post( $link( 'pn-chat-lessons', 'Μάθηση' ) ) . ').' : 'καμία δεν περιμένει έγκριση.' ) . '</li>';
+		if ( $w['proposals'] ) {
+			echo '<li>✨ <strong>' . (int) $w['proposals'] . '</strong> προτάσεις γνώσεων από το AI περιμένουν (' . wp_kses_post( $link( 'pn-chat-learn', 'Προτάσεις AI' ) ) . ').</li>';
+		}
+		echo '</ul>';
+		if ( $w['groups'] ) {
+			echo '<p><strong>Ρωτούσαν και δεν ήξερε:</strong></p><ul class="pnchat-list">';
+			foreach ( $w['groups'] as $g ) {
+				echo '<li>«' . esc_html( (string) $g['word'] ) . '»: ' . (int) $g['count'] . ' ερωτήσεις, π.χ. «' . esc_html( (string) ( $g['questions'][0] ?? '' ) ) . '»</li>';
+			}
+			echo '</ul><p>' . wp_kses_post( $link( 'pn-chat-lessons', 'Νέα γνώση με αυτές →' ) ) . '</p>';
+		}
+		if ( ! $w['questions'] ) {
+			echo '<p class="description">Καμία ερώτηση στο chat αυτή την εβδομάδα.</p>';
+		}
 		echo '</div>';
 	}
 
