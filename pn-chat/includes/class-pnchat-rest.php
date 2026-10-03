@@ -195,6 +195,20 @@ final class PNChat_Rest {
 		}
 		$result  = $picked ? $picked : self::answer_in_context( $search, $follow ? $context : '', $prev );
 		$site    = self::site_results( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
+		// «Είναι το Aerolin στη λίστα;»: the row of the site's table that
+		// names it, even next to a trained answer that does not.
+		$rows = self::table_rows( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
+		if ( $rows ) {
+			$shown = array_column( $rows, 'id' );
+			$site  = array_values(
+				array_filter(
+					$site,
+					function ( $r ) use ( $shown ) {
+						return ! in_array( (int) $r['id'], $shown, true );
+					}
+				)
+			);
+		}
 
 		// No trained answer, but pages of the site are about it: the AI may
 		// answer from those pages, and its answer waits in Ερωτήματα as a
@@ -217,12 +231,19 @@ final class PNChat_Rest {
 				$site             = array();
 			}
 		}
-		if ( $site && 'unanswered' === $result['status'] ) {
+		if ( ( $site || $rows ) && 'unanswered' === $result['status'] ) {
 			$result['status'] = 'site';
 		}
 
 		$items   = array();
 		$matched = array();
+		foreach ( $rows as $r ) {
+			$items[] = array(
+				'kind'  => 'site',
+				'title' => '',
+				'html'  => $r['html'],
+			);
+		}
 		foreach ( $result['items'] as $i ) {
 			$matched[] = (int) $i['id'];
 			$items[]   = array(
@@ -793,6 +814,25 @@ final class PNChat_Rest {
 		}
 		$text = 'partial' === $result['status'] ? implode( ' ', $result['unmatched'] ) : $question;
 		return PNChat_Site_Search::search( $text, (int) $s['site_max'] );
+	}
+
+	/**
+	 * Rows of the site's tables for a name in the question that the answer
+	 * does not mention.
+	 *
+	 * @param array<string,mixed> $result   Brain result.
+	 * @param string              $question Question.
+	 * @return array<int,array{kind:string,title:string,html:string,id:int}>
+	 */
+	public static function table_rows( array $result, $question ) {
+		if ( empty( PNChat_Settings::value( 'site_search' ) ) || 'ai' === $result['status'] ) {
+			return array();
+		}
+		$covered = '';
+		foreach ( $result['items'] as $i ) {
+			$covered .= ' ' . ( $i['title'] ?? '' ) . ' ' . wp_strip_all_tags( (string) ( $i['answer'] ?? '' ) );
+		}
+		return PNChat_Site_Search::render_lookup( PNChat_Site_Search::lookup( $question, $covered ) );
 	}
 
 	/**

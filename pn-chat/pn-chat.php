@@ -3,7 +3,7 @@
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
  * Description: Our own chat assistant for PharmacyNeeds. It answers from the knowledge we train it with and from the site's own pages, and logs what it cannot answer so we can reply by e-mail and teach it. Optional, off by default: Claude (Anthropic) reads the site, a web address or a PDF and proposes entries that an administrator approves, and may answer in the chat from the site's pages.
- * Version: 1.10.0
+ * Version: 1.11.0
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.10.0' );
+define( 'PNCHAT_VERSION', '1.11.0' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );
@@ -80,6 +80,7 @@ function pnchat_deactivate() {
 	wp_clear_scheduled_hook( 'pnchat_daily' );
 	wp_clear_scheduled_hook( 'pnchat_hourly' );
 	wp_clear_scheduled_hook( PNChat_Site_Search::CRON_HOOK );
+	wp_clear_scheduled_hook( PNChat_Site_Search::REFRESH );
 	wp_clear_scheduled_hook( PNChat_Learn::CRON );
 	wp_clear_scheduled_hook( PNChat_Learn::WEEKLY );
 }
@@ -104,6 +105,11 @@ function pnchat_maybe_upgrade() {
 		update_option( 'pnchat_site_index_started', 1, false );
 		PNChat_Site_Search::schedule();
 	}
+	// 1.11.0: pages are read again with their tables and shortcodes.
+	if ( ! get_option( 'pnchat_site_index_v2' ) ) {
+		update_option( 'pnchat_site_index_v2', 1, false );
+		PNChat_Site_Search::request_refresh();
+	}
 }
 add_action( 'plugins_loaded', 'pnchat_maybe_upgrade' );
 
@@ -118,6 +124,9 @@ function pnchat_daily() {
 	PNChat_Learn::purge_old();
 	// Pages published without save_post (imports, direct edits) get indexed.
 	PNChat_Site_Search::index_batch();
+	// What shortcodes show can change without a save: pages unread for a
+	// week are read again, a few a day.
+	PNChat_Site_Search::refresh_some( time() - WEEK_IN_SECONDS, 40 );
 }
 add_action( 'pnchat_daily', 'pnchat_daily' );
 

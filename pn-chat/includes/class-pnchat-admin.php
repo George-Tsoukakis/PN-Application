@@ -558,6 +558,9 @@ final class PNChat_Admin {
 			if ( $r['unmatched'] ) {
 				echo '<p>Χωρίς απάντηση: «' . esc_html( implode( '», «', $r['unmatched'] ) ) . '»</p>';
 			}
+			foreach ( PNChat_Rest::table_rows( $r, $q ) as $tr ) {
+				echo '<div class="pnchat-test-item is-site"><strong>Από πίνακα του site</strong><div>' . wp_kses_post( $tr['html'] ) . '</div></div>';
+			}
 			$site = PNChat_Rest::site_results( $r, $q );
 			if ( $site ) {
 				echo '<p><strong>Από το site:</strong></p>';
@@ -2158,7 +2161,7 @@ final class PNChat_Admin {
 		$area( 'site_intro', 'Κείμενο πριν τις σελίδες' );
 		$area( 'site_more', 'Κείμενο μετά τις σελίδες', 'Ακολουθεί φόρμα για το e-mail του επισκέπτη.' );
 		echo '</table>';
-		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα. Διαβάζεται το κείμενο της σελίδας· ό,τι βγάζουν shortcodes (π.χ. φόρμες, λίστες προϊόντων) δεν διαβάζεται. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a></p>';
+		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Διαβάζεται ό,τι δείχνει η σελίδα, μαζί με πίνακες, shortcodes και blocks (π.χ. ένας πίνακας με λίστα φαρμάκων): έτσι στο «Είναι το Aerolin στη λίστα;» ο βοηθός δείχνει τη γραμμή του πίνακα. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα, και κάθε σελίδα ξαναδιαβάζεται μία φορά την εβδομάδα. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a> <a href="#pnchat-peek">Τι διαβάζει από μια σελίδα;</a></p>';
 
 		echo '<h2 id="pnchat-ai">✨ AI βοηθός εκπαίδευσης (Claude)</h2>';
 		echo '<p class="description">Στο wp-admin: το AI διαβάζει σελίδες του site, διευθύνσεις και PDF και προτείνει γνώσεις (μενού «Προτάσεις AI»), που εγκρίνετε εσείς. Στο δημόσιο chat απαντά μόνο αν ενεργοποιήσετε παρακάτω το «AI και μέσα στο chat». Στο Claude στέλνονται σελίδες του δημόσιου site και το κείμενο της ερώτησης· τα πεδία e-mail και ονόματος του επισκέπτη δεν στέλνονται, και e-mail, τηλέφωνα και ΑΜΚΑ γραμμένα μέσα στην ερώτηση αντικαθίστανται πριν την αποστολή. Χρεώνεται ανά χρήση στον λογαριασμό σας στο console.anthropic.com.</p>';
@@ -2199,7 +2202,61 @@ final class PNChat_Admin {
 		echo '</table>';
 
 		submit_button( 'Αποθήκευση ρυθμίσεων' );
-		echo '</form></div>';
+		echo '</form>';
+		self::site_peek();
+		echo '</div>';
+	}
+
+	/**
+	 * «Τι διαβάζει από μια σελίδα»: the text and table rows the chat reads
+	 * from a page, and the rows with a word, to check that a table is read.
+	 *
+	 * @return void
+	 */
+	private static function site_peek() {
+		$page = self::get( 'peek' );
+		$word = self::get( 'peek_word' );
+		echo '<h2 id="pnchat-peek">Τι διαβάζει από μια σελίδα</h2>';
+		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '#pnchat-peek"><input type="hidden" name="page" value="pn-chat-settings">';
+		echo '<p><input name="peek" type="text" class="regular-text" placeholder="Διεύθυνση ή ID σελίδας" value="' . esc_attr( $page ) . '"> <input name="peek_word" type="text" placeholder="Λέξη, π.χ. Aerolin" value="' . esc_attr( $word ) . '"> <button class="button">Δείξε</button></p></form>';
+		if ( '' === $page ) {
+			return;
+		}
+		$id   = ctype_digit( $page ) ? (int) $page : url_to_postid( $page );
+		$post = $id ? get_post( $id ) : null;
+		if ( ! $post instanceof WP_Post ) {
+			echo '<p class="pnchat-warn">Δεν βρέθηκε σελίδα με αυτή τη διεύθυνση.</p>';
+			return;
+		}
+		if ( ! PNChat_Site_Search::searchable( $post ) ) {
+			echo '<p class="pnchat-warn">Η σελίδα «' . esc_html( get_the_title( $post ) ) . '» δεν είναι στην αναζήτηση (δεν είναι δημοσιευμένη, έχει κωδικό, είναι εξαιρεμένη ή δεν είναι από τους τύπους που ψάχνει).</p>';
+			return;
+		}
+		$text = PNChat_Site_Search::read_text( $post );
+		$rows = array_values(
+			array_filter(
+				explode( "\n", $text ),
+				function ( $l ) {
+					return false !== strpos( $l, ' · ' );
+				}
+			)
+		);
+		echo '<p><strong>' . esc_html( get_the_title( $post ) ) . '</strong>: ' . esc_html( number_format_i18n( mb_strlen( $text ) ) ) . ' χαρακτήρες, ' . count( $rows ) . ' γραμμές πινάκων.</p>';
+		if ( '' !== $word ) {
+			$w    = ' ' . PNChat_Text::fold( $word ) . ' ';
+			$hits = array();
+			foreach ( explode( "\n", $text ) as $line ) {
+				if ( false !== strpos( ' ' . PNChat_Text::fold( $line ) . ' ', $w ) ) {
+					$hits[] = $line;
+				}
+			}
+			echo $hits ? '<p>Γραμμές με «' . esc_html( $word ) . '» (' . count( $hits ) . '):</p><ul class="ul-disc">' : '<p class="pnchat-warn">Η λέξη «' . esc_html( $word ) . '» δεν υπάρχει σε ό,τι διαβάζει ο βοηθός από αυτή τη σελίδα. Αν φαίνεται στη σελίδα, ο πίνακας μάλλον φορτώνεται από αρχείο ή άλλο site (π.χ. Google Sheets) και δεν διαβάζεται· γράψτε τον ως πίνακα μέσα στη σελίδα.</p>';
+			foreach ( array_slice( $hits, 0, 20 ) as $line ) {
+				echo '<li>' . esc_html( $line ) . '</li>';
+			}
+			echo $hits ? '</ul>' : '';
+		}
+		echo '<details><summary>Όλο το κείμενο</summary><pre style="white-space:pre-wrap;max-height:400px;overflow:auto">' . esc_html( mb_substr( $text, 0, 20000 ) ) . '</pre></details>';
 	}
 
 	/**

@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,12 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.11.0 =
+* Site search reads what a page shows: shortcodes and blocks are rendered, table rows are kept as lines («Aerolin · Salbutamol · R03AC02»), and data a script turns into a table is read too. The text is stored with the index; pages are read again weekly, after a TablePress table is saved, and once after this update.
+* «Είναι το Aerolin στη λίστα;»: the chat shows the table row and the page («Ναι — …»), also next to a trained answer that does not name it; a product no page has, asked about a page with a table, gets «Όχι — … (ελέγξαμε N γραμμές)». Codes match exactly; names allow a typo.
+* The home page gives way to the page about the subject, and a page about the question shows its opening sentences.
+* Settings: «Τι διαβάζει από μια σελίδα» shows the text and table rows the chat reads from a page, and the rows with a word.
 
 = 1.10.0 =
 * «Μήπως εννοείτε…;»: up to 3 closest answers as buttons when the chat is not sure (none near a refusal; in a conversation only short follow-ups get topic-only suggestions). A tapped button answers and teaches.

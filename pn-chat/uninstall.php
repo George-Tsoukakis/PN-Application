@@ -22,6 +22,7 @@ if ( ! function_exists( 'pnchat_uninstall_site' ) ) {
 		wp_clear_scheduled_hook( 'pnchat_daily' );
 		wp_clear_scheduled_hook( 'pnchat_hourly' );
 		wp_clear_scheduled_hook( 'pnchat_site_index' );
+		wp_clear_scheduled_hook( 'pnchat_site_refresh' );
 		wp_clear_scheduled_hook( 'pnchat_learn' );
 		wp_clear_scheduled_hook( 'pnchat_learn_weekly' );
 		// PDFs waiting to be read.
@@ -53,8 +54,11 @@ if ( ! function_exists( 'pnchat_uninstall_site' ) ) {
 		delete_option( 'pnchat_tests' );
 		delete_option( 'pnchat_ignored_words' );
 		delete_post_meta_by_key( '_pnchat_tokens' );
+		delete_post_meta_by_key( '_pnchat_text' );
+		delete_post_meta_by_key( '_pnchat_text_at' );
+		delete_post_meta_by_key( '_pnchat_read_at' );
 		delete_post_meta_by_key( '_pnchat_learned' );
-		foreach ( array( 'pnchat_settings', 'pnchat_db_version', 'pnchat_brain_version', 'pnchat_snapshots', 'pnchat_seeded', 'pnchat_settings_version', 'pnchat_site_index_started', 'pnchat_ai_usage' ) as $opt ) {
+		foreach ( array( 'pnchat_settings', 'pnchat_db_version', 'pnchat_brain_version', 'pnchat_snapshots', 'pnchat_seeded', 'pnchat_settings_version', 'pnchat_site_index_started', 'pnchat_site_index_v2', 'pnchat_site_refresh', 'pnchat_ai_usage' ) as $opt ) {
 			delete_option( $opt );
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
