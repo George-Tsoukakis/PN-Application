@@ -33,7 +33,7 @@ echo "Plugin: $PDIR"
 echo "PHP $($PHP -r 'echo PHP_VERSION;')  GD: $($PHP -r 'echo extension_loaded("gd") ? "yes" : "no";')"
 
 fail=0
-for t in t_rebuild t_race t_mailer t_greek_sigma t_expiry_dd00 t_hri_split t_sigma_perf t_guest t_tokens_limiter t_storage_longrun t_token_sweep_edges t_admin t_admin_webmail t_access_2155 t_vendor_check t_datamatrix_gd t_mixed_separators t_token_capacity t_ajax_denials; do
+for t in t_rebuild t_race t_mailer t_greek_sigma t_expiry_dd00 t_hri_split t_sigma_perf t_guest t_tokens_limiter t_storage_longrun t_token_sweep_edges t_admin t_admin_webmail t_access_2155 t_vendor_check t_datamatrix_gd t_mixed_separators t_token_capacity t_ajax_denials t_passthrough_unanchored t_absent_field t_limiter_atomic t_backend_2161; do
 	out=$($PHP "$t.php" 2>&1)
 	rc=$?
 	# 2.15.7: και PHP Warning/Notice/Deprecated μετρούν ως αποτυχία.
@@ -55,7 +55,7 @@ for t in t_rebuild t_race t_mailer t_greek_sigma t_expiry_dd00 t_hri_split t_sig
 	fi
 done
 $PHP golden.php 2>/dev/null > golden-out.json
-if cmp -s golden-out.json golden-2.15.7.json; then echo "golden               identical to golden-2.15.7.json"; else echo "golden               DIFFERS"; fail=1; fi
+if cmp -s golden-out.json golden-2.16.1.json; then echo "golden               identical to golden-2.16.1.json"; else echo "golden               DIFFERS"; fail=1; fi
 rm -f golden-out.json
 $PHP bench.php
 [ -n "${tmp:-}" ] && rm -rf "$tmp"

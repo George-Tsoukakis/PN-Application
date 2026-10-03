@@ -254,3 +254,13 @@
 	color: #8a2424;
 	font-weight: 600;
 }
+
+/* 2.16.1: πρώην inline styles της σελίδας ρυθμίσεων. */
+.qrrp-admin-wrap .qrrp-field-warning {
+	color: #b32d2e;
+}
+
+.qrrp-admin-wrap .qrrp-xdim-list {
+	margin: 0 0 1em 1.5em;
+	list-style: disc;
+}

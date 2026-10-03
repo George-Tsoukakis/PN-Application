@@ -33,7 +33,23 @@ QR ReBuilder Pro 2.15.5 — browser regression tests (frontend, χωρίς WordP
             σφάλμα → alert, κανονικό μήνυμα → status· #qrrp-status aria-hidden=true.
   e. Fix 6  EXP 2028-02-00 → πεδίο 2028-02-29, προειδοποίηση ΗΗ=00, POST exp=2028-02-00·
             αλλαγή σε 2028-02-15 → POST exp=2028-02-15.
-  f.        provenance 'user_declared' → #qrrp-summary-provenance περιέχει «Δηλωμένο».
+  f.        provenance 'user_declared' → output κανονικά, χωρίς σημείωση «Δηλωμένο»
+            (αφαιρέθηκε στην 2.16.0· το state() είναι null-safe για το #qrrp-summary-provenance).
+  g. 2.15.7 ελληνικά αυτούσια στον server, ανακοίνωση parse, email μετά από «Νέα σάρωση».
+  h. 2.16.1 Fix 1  εστίαση στον σαρωτή μετά από rebuild/Εκτύπωση/Αντιγραφή/Λήψη/email
+            (όχι αν ο χρήστης είναι στο πεδίο email/πελάτη)· σάρωση με εστίαση στο κουμπί
+            «Εκτύπωση» → καμία επανεκτύπωση, όλο το burst στο parse, ροή νέας σάρωσης·
+            γνήσιο Enter/Space στο κουμπί εκτυπώνει κανονικά.
+  i. 2.16.1 Fix 2  το παράθυρο εκτύπωσης κλείνει με afterprint, με print() που μπλόκαρε,
+            ή (χωρίς afterprint) όταν ο χρήστης γυρίσει στο εργαλείο — όχι νωρίτερα· εστίαση
+            πίσω στον σαρωτή. Το print() του popup είναι stub (τύλιγμα του window.open).
+  j. 2.16.1 Fix 3  κουμπί email με επικαλυπτόμενες αποστολές: νέος κωδικός → σωστή ετικέτα,
+            χωρίς aria-busy· η παλιά αποστολή δεν επαναφέρει το κουμπί της νέας.
+  k. 2.16.1 Fixes 4-7  fieldsChanged = πραγματική ετικέτα κουμπιού (PHP = JS fallback),
+            #qrrp-warnings χωρίς role=alert και ανακοίνωση στο #qrrp-status-live,
+            aria-describedby στο .qrrp-hw-hint, χωρίς emailSent, κουμπιά ανθεκτικά σε
+            «.entry-content button» του theme.
 
 Οι έλεγχοι επαληθεύτηκαν με mutation: αφαίρεση κάθε fix από αντίγραφο του qrrp-app.js
-κάνει τους αντίστοιχους ελέγχους FAIL.
+κάνει τους αντίστοιχους ελέγχους FAIL (h–k: με PDIR στο 2.16.0 αποτυγχάνουν 18 έλεγχοι·
+χωρίς μόνο τον document keydown listener ο [h] δείχνει επανεκτύπωση).

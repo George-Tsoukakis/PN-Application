@@ -98,8 +98,7 @@ final class QRRP_Shortcode {
 	}
 
 	private static function guest_access_enabled() {
-		return '1' === get_option( 'qrrp_allow_guests', '0' )
-			&& 'read' === self::configured_capability();
+		return qrrp_guest_access_enabled();
 	}
 
 	private static function can_use_tool() {
@@ -110,13 +109,12 @@ final class QRRP_Shortcode {
 		return self::guest_access_enabled();
 	}
 
-	/** Η απόφαση του server (QRRP_Ajax)· αν λείπει η κλάση, χωρίς κουμπί email. */
+	/**
+	 * Η απόφαση του server. 2.16.1: χωρίς class_exists· η QRRP_Ajax φορτώνεται
+	 * πάντα πριν από το shortcode, και αλλού (NONCE_ACTION) χρησιμοποιούνταν ήδη απευθείας.
+	 */
 	private static function can_send_email() {
-		if ( class_exists( 'QRRP_Ajax' ) && is_callable( array( 'QRRP_Ajax', 'can_send_email' ) ) ) {
-			return QRRP_Ajax::can_send_email();
-		}
-
-		return false;
+		return QRRP_Ajax::can_send_email();
 	}
 
 	/**
@@ -236,7 +234,6 @@ final class QRRP_Shortcode {
 					'contestedValueRejected'  => __( 'Η επιλεγμένη τιμή δεν έγινε δεκτή από το πεδίο. Συμπληρώστε την χειροκίνητα από τη συσκευασία.', 'qr-rebuilder-pro' ),
 					'expiryNotReadable'       => __( 'Η ημερομηνία λήξης δεν μπόρεσε να συμπληρωθεί αυτόματα. Συμπληρώστε την από τη συσκευασία.', 'qr-rebuilder-pro' ),
 					'scanMergedAfterPause'    => __( 'Ο σαρωτής έκανε παύση στη μέση της σάρωσης και τα δύο τμήματα ενώθηκαν. Ελέγξτε SN και LOT στη συσκευασία.', 'qr-rebuilder-pro' ),
-					'userDeclaredNote'        => __( 'Δηλωμένο από τον χρήστη: τα στοιχεία δόθηκαν από επισκέπτη και η προέλευσή τους δεν επαληθεύεται.', 'qr-rebuilder-pro' ),
 					'expiryDayZero'           => __( 'Η λήξη δεν έχει ημέρα (ΗΗ=00): ισχύει έως το τέλος του μήνα και διατηρείται έτσι στον νέο κωδικό.', 'qr-rebuilder-pro' ),
 					'expiryDayZeroShort'      => __( 'χωρίς ημέρα – έως το τέλος του μήνα', 'qr-rebuilder-pro' ),
 					'scanUnverified'          => __( 'Η σάρωση ήταν πολύ σύνθετη για να επαληθευτεί αυτόματα. Ελέγξτε τα στοιχεία στη συσκευασία.', 'qr-rebuilder-pro' ),
@@ -250,9 +247,11 @@ final class QRRP_Shortcode {
 					'outputStale'             => __( 'Η επαλήθευση του ήδη δημιουργημένου κωδικού έληξε ή δεν αντιστοιχεί στα τρέχοντα στοιχεία. Δημιουργήστε ξανά τον κωδικό.', 'qr-rebuilder-pro' ),
 					'missingFields'         => __( 'Λείπουν υποχρεωτικά πεδία.', 'qr-rebuilder-pro' ),
 					'invalidExpiry'         => __( 'Μη έγκυρη ημερομηνία λήξης.', 'qr-rebuilder-pro' ),
-					'emailSent'             => __( 'Το email στάλθηκε με επιτυχία.', 'qr-rebuilder-pro' ),
+					/* translators: %s: recipient email address. */
+					'emailSentTo'           => __( 'Το email στάλθηκε στο %s.', 'qr-rebuilder-pro' ),
+					'sendingEmailButton'    => __( 'Αποστολή…', 'qr-rebuilder-pro' ),
 					'emailFailed'           => __( 'Η αποστολή email απέτυχε.', 'qr-rebuilder-pro' ),
-					'fieldsChanged'         => __( 'Αλλάξατε τα στοιχεία — πατήστε «Αναδημιουργία» για να ενημερωθεί το GS1 DataMatrix.', 'qr-rebuilder-pro' ),
+					'fieldsChanged'         => __( 'Αλλάξατε τα στοιχεία — πατήστε «Δημιουργία νέου GS1 DataMatrix» για να ενημερωθεί ο κωδικός.', 'qr-rebuilder-pro' ),
 					'prefilledFromLink'     => __( 'Τα στοιχεία φορτώθηκαν από τον σύνδεσμο. Πατήστε «Δημιουργία νέου GS1 DataMatrix».', 'qr-rebuilder-pro' ),
 					'invalidGs1Data'        => __( 'Μη έγκυρα δεδομένα GS1.', 'qr-rebuilder-pro' ),
 					'analyzingGs1'          => __( 'Ανάλυση GS1…', 'qr-rebuilder-pro' ),
@@ -276,9 +275,6 @@ final class QRRP_Shortcode {
 					'gs1CheckFailed'        => __( 'Τα δεδομένα δεν πέρασαν τον έλεγχο GS1.', 'qr-rebuilder-pro' ),
 					'datamatrixCreated'     => __( 'Το νέο GS1 DataMatrix δημιουργήθηκε με επιτυχία.', 'qr-rebuilder-pro' ),
 					/* translators: {fields} is replaced in JavaScript with field labels, e.g. "SN, LOT". */
-					'manualChangeFields'    => __( 'Χειροκίνητη αλλαγή: {fields} (δηλώθηκε από τον χρήστη, όχι από σάρωση).', 'qr-rebuilder-pro' ),
-					'manualEntryNote'       => __( 'Χειροκίνητη καταχώριση: οι τιμές δηλώθηκαν από τον χρήστη, όχι από σάρωση.', 'qr-rebuilder-pro' ),
-					'scanUnverifiedNote'    => __( 'Μη επαληθευμένη ανάγνωση: οι τιμές επιβεβαιώθηκαν από τον χρήστη.', 'qr-rebuilder-pro' ),
 					'datamatrixFailed'      => __( 'Η δημιουργία του GS1 DataMatrix απέτυχε.', 'qr-rebuilder-pro' ),
 					'createFirst'           => __( 'Δημιουργήστε πρώτα το νέο GS1 DataMatrix.', 'qr-rebuilder-pro' ),
 					'imageSaveFailed'       => __( 'Η αποθήκευση της εικόνας απέτυχε.', 'qr-rebuilder-pro' ),
@@ -307,13 +303,9 @@ final class QRRP_Shortcode {
 	 * @return array|null
 	 */
 	private static function get_prefill_fields() {
-		if ( ! isset( $_GET['qrrp_token'] ) || ! is_scalar( $_GET['qrrp_token'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			return null;
-		}
+		$token = self::requested_token();
 
-		$token = sanitize_key( (string) wp_unslash( $_GET['qrrp_token'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-		if ( ! preg_match( '/^[a-f0-9]{32}$/', $token ) ) {
+		if ( '' === $token ) {
 			return null;
 		}
 
@@ -510,6 +502,17 @@ final class QRRP_Shortcode {
 	 *
 	 * @return string
 	 */
+	/** 2.16.1: το ?qrrp_token του αιτήματος σε έγκυρη μορφή (32 hex), αλλιώς ''. */
+	private static function requested_token() {
+		if ( ! isset( $_GET['qrrp_token'] ) || ! is_scalar( $_GET['qrrp_token'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return '';
+		}
+
+		$token = sanitize_key( (string) wp_unslash( $_GET['qrrp_token'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		return 1 === preg_match( '/^[a-f0-9]{32}$/', $token ) ? $token : '';
+	}
+
 	private static function login_url() {
 		$redirect = '';
 
@@ -518,6 +521,17 @@ final class QRRP_Shortcode {
 
 			if ( is_string( $permalink ) && '' !== $permalink ) {
 				$redirect = $permalink;
+
+				/*
+				 * 2.16.1: ο σύνδεσμος του email κρατά το token μετά τη σύνδεση·
+				 * πριν ο παραλήπτης έφτανε στο εργαλείο χωρίς προσυμπλήρωση. Μόνο
+				 * έγκυρη μορφή (32 hex), όπως στην get_prefill_fields().
+				 */
+				$token = self::requested_token();
+
+				if ( '' !== $token ) {
+					$redirect = add_query_arg( 'qrrp_token', $token, $redirect );
+				}
 			}
 		}
 
@@ -739,8 +753,9 @@ final class QRRP_Shortcode {
 							autocapitalize="off"
 							spellcheck="false"
 							placeholder="<?php esc_attr_e( 'Κάντε κλικ εδώ και σαρώστε τον κωδικό…', 'qr-rebuilder-pro' ); ?>"
+							aria-describedby="qrrp-hw-hint"
 						/>
-						<p class="qrrp-hw-hint"><?php esc_html_e( 'Κάντε κλικ στο πεδίο και σαρώστε τον κωδικό με το scanner σας. Τα δεδομένα θα αναλυθούν αυτόματα μόλις ολοκληρωθεί η σάρωση.', 'qr-rebuilder-pro' ); ?></p>
+						<p class="qrrp-hw-hint" id="qrrp-hw-hint"><?php esc_html_e( 'Κάντε κλικ στο πεδίο και σαρώστε τον κωδικό με το scanner σας. Τα δεδομένα θα αναλυθούν αυτόματα μόλις ολοκληρωθεί η σάρωση.', 'qr-rebuilder-pro' ); ?></p>
 					</div>
 				</div>
 
@@ -780,7 +795,10 @@ final class QRRP_Shortcode {
 					<h3><?php esc_html_e( 'Πληροφορίες GS1 DataMatrix', 'qr-rebuilder-pro' ); ?></h3>
 				</div>
 
-				<div id="qrrp-warnings" class="qrrp-warnings" role="alert" hidden></div>
+				<?php
+				/* 2.16.1: χωρίς role="alert" — οι προειδοποιήσεις ανακοινώνονται μία φορά από το #qrrp-status-live. */
+				?>
+				<div id="qrrp-warnings" class="qrrp-warnings" hidden></div>
 
 				<div id="qrrp-manual-entry-note" class="qrrp-manual-entry-note" hidden>
 					<strong><?php esc_html_e( 'Χειροκίνητη δημιουργία.', 'qr-rebuilder-pro' ); ?></strong>
@@ -879,7 +897,6 @@ final class QRRP_Shortcode {
 						<p><strong>EXP:</strong> <span id="qrrp-summary-exp"></span></p>
 						<p><strong><?php esc_html_e( 'Πελάτης:', 'qr-rebuilder-pro' ); ?></strong> <span id="qrrp-summary-customer"></span></p>
 						<p><strong><?php esc_html_e( 'Ημ/νία εκτύπωσης:', 'qr-rebuilder-pro' ); ?></strong> <span id="qrrp-summary-printdate"></span></p>
-						<p class="qrrp-summary-provenance" id="qrrp-summary-provenance" hidden></p>
 					</div>
 				</div>
 
@@ -888,6 +905,10 @@ final class QRRP_Shortcode {
 					<button type="button" class="qrrp-btn" id="qrrp-print-qr"><?php esc_html_e( 'Εκτύπωση', 'qr-rebuilder-pro' ); ?></button>
 					<button type="button" class="qrrp-btn" id="qrrp-copy-raw"><?php esc_html_e( 'Αντιγραφή GS1 για Ctrl+V', 'qr-rebuilder-pro' ); ?></button>
 				</div>
+
+				<?php if ( ! $can_send_email && QRRP_Ajax::email_awaits_approval() ) : ?>
+					<p class="qrrp-email-awaiting"><?php esc_html_e( 'Η αποστολή με email ενεργοποιείται όταν εγκριθεί ο λογαριασμός σας ως φαρμακείο. Επικοινωνήστε μαζί μας για έγκριση.', 'qr-rebuilder-pro' ); ?></p>
+				<?php endif; ?>
 
 				<div class="qrrp-email-box"<?php if ( ! $can_send_email ) : ?> hidden<?php endif; ?>>
 					<div class="qrrp-email-heading">
@@ -917,6 +938,15 @@ final class QRRP_Shortcode {
 
 						<button type="button" class="qrrp-btn qrrp-btn-primary" id="qrrp-send-email"><?php esc_html_e( 'Αποστολή email', 'qr-rebuilder-pro' ); ?></button>
 					</div>
+
+					<?php
+					/*
+					 * 2.15.7: ορατό αποτέλεσμα της αποστολής δίπλα στο κουμπί (το γενικό
+					 * status είναι στην κορυφή, εκτός οθόνης). aria-hidden: οι screen
+					 * readers παίρνουν το ίδιο μήνυμα από τις live regions του εργαλείου.
+					 */
+					?>
+					<p class="qrrp-email-feedback" id="qrrp-email-feedback" aria-hidden="true" hidden></p>
 
 					<p class="qrrp-email-note">
 						<?php esc_html_e( 'Η εικόνα αποστέλλεται ως αρχείο PNG (με λευκό φόντο) και μπορεί να αποθηκευτεί ή να εκτυπωθεί απευθείας από τον παραλήπτη.', 'qr-rebuilder-pro' ); ?>

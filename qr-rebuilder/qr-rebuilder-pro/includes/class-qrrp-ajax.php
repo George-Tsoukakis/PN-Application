@@ -52,8 +52,7 @@ final class QRRP_Ajax {
 	}
 
 	private static function guest_access_enabled() {
-		return '1' === get_option( 'qrrp_allow_guests', '0' )
-			&& 'read' === self::configured_capability();
+		return qrrp_guest_access_enabled();
 	}
 
 	/**
@@ -123,7 +122,8 @@ final class QRRP_Ajax {
 	 *   ''                => ίδιο με το δικαίωμα του εργαλείου (ρητή επιλογή)
 	 *   'edit_posts'      => Συνεργάτες και άνω
 	 *   'manage_options'  => Μόνο διαχειριστές
-	 *   'qrrp_pharmacist' => Εγγεγραμμένοι φαρμακοποιοί
+	 *   'qrrp_pharmacist' => Εγγεγραμμένοι φαρμακοποιοί (αυτο-δήλωση)
+	 *   'qrrp_verified_pharmacist' => Εγκεκριμένοι από διαχειριστή (2.16.0, προεπιλογή)
 	 *
 	 * Η προεπιλογή έρχεται από τη σταθερά QRRP_DEFAULT_EMAIL_CAPABILITY, όχι από
 	 * literal: όταν το get_option() παίρνει δικό του default, το default του
@@ -181,6 +181,22 @@ final class QRRP_Ajax {
 
 		return current_user_can( self::configured_capability() )
 			&& current_user_can( self::email_capability() );
+	}
+
+	/**
+	 * 2.16.0: φαρμακείο (αυτο-δήλωση) που χρησιμοποιεί το εργαλείο αλλά δεν έχει
+	 * ακόμη έγκριση για email. Μόνο για το ενημερωτικό μήνυμα της φόρμας.
+	 *
+	 * @return bool
+	 */
+	public static function email_awaits_approval() {
+		if ( ! is_user_logged_in() || self::can_send_email() ) {
+			return false;
+		}
+
+		return 'qrrp_verified_pharmacist' === self::email_capability()
+			&& current_user_can( self::configured_capability() )
+			&& qrrp_user_is_pharmacist( get_current_user_id() );
 	}
 
 	private static function check_email_permissions() {
@@ -375,14 +391,14 @@ final class QRRP_Ajax {
 	 * Καταναλώνει μόνο τα handles που επαλήθευσε ο server (ποτέ τιμές του POST),
 	 * και μόνο μετά από επιτυχία. Αποτυχία διαγραφής δεν ακυρώνει την απάντηση.
 	 *
-	 * @param array $verdict Verdict με consume_token / consume_challenge / consume_proof.
+	 * @param array $verdict Verdict με consume_token / consume_challenge.
 	 * @return bool false αν κάποιο handle είχε ήδη καταναλωθεί (ταυτόχρονο αίτημα).
 	 */
 	private static function consume_verified_handles( array $verdict ) {
+		/* 2.16.1: χωρίς consume_proof· το validated_output proof δεν καταναλώνεται ποτέ (νεκρό κλειδί). */
 		$types = array(
 			'consume_token'     => 'email_rebuild',
 			'consume_challenge' => 'provenance_challenge',
-			'consume_proof'     => 'validated_output',
 		);
 		$all_consumed = true;
 
@@ -514,37 +530,35 @@ final class QRRP_Ajax {
 			return false;
 		}
 
-		$signature = QRRP_GS1_Parser::canonical_reading_signature( $fields );
+		$fps = self::validated_output_fingerprints( $fields, $raw );
 
-		$tuple_fp = qrrp_fingerprint(
-			'validated_output_tuple',
-			$signature,
-			1
-		);
-
-		$raw_fp = qrrp_fingerprint(
-			'validated_output_raw',
-			(string) $raw,
-			1
-		);
-
-		if (
-			! is_string( $tuple_fp ) || '' === $tuple_fp
-			|| ! is_string( $raw_fp ) || '' === $raw_fp
-		) {
+		if ( null === $fps ) {
 			return false;
 		}
 
-		$payload = QRRP_Tokens::verify_token_for_request(
-			$handle,
-			'validated_output',
-			array(
-				'tuple_fp' => $tuple_fp,
-				'raw_fp'   => $raw_fp,
-			)
-		);
+		$payload = QRRP_Tokens::verify_token_for_request( $handle, 'validated_output', $fps );
 
 		return is_array( $payload ) ? $payload : false;
+	}
+
+	/**
+	 * 2.16.1: τα keyed fingerprints του proof (tuple + raw), κοινά για έκδοση
+	 * και επαλήθευση· πριν ο ίδιος κώδικας υπήρχε δύο φορές.
+	 *
+	 * @return array{tuple_fp:string, raw_fp:string}|null
+	 */
+	private static function validated_output_fingerprints( array $fields, $raw ) {
+		$tuple_fp = qrrp_fingerprint( 'validated_output_tuple', QRRP_GS1_Parser::canonical_reading_signature( $fields ) );
+		$raw_fp   = qrrp_fingerprint( 'validated_output_raw', (string) $raw );
+
+		if ( ! is_string( $tuple_fp ) || '' === $tuple_fp || ! is_string( $raw_fp ) || '' === $raw_fp ) {
+			return null;
+		}
+
+		return array(
+			'tuple_fp' => $tuple_fp,
+			'raw_fp'   => $raw_fp,
+		);
 	}
 
 	/**
@@ -564,30 +578,15 @@ final class QRRP_Ajax {
 			return '';
 		}
 
-		$signature = QRRP_GS1_Parser::canonical_reading_signature( $fields );
+		$fps = self::validated_output_fingerprints( $fields, $raw );
 
-		$tuple_fp = qrrp_fingerprint(
-			'validated_output_tuple',
-			$signature,
-			1
-		);
-
-		$raw_fp = qrrp_fingerprint(
-			'validated_output_raw',
-			(string) $raw,
-			1
-		);
-
-		if (
-			! is_string( $tuple_fp ) || '' === $tuple_fp
-			|| ! is_string( $raw_fp ) || '' === $raw_fp
-		) {
+		if ( null === $fps ) {
 			return '';
 		}
 
 		$payload = array(
-			'tuple_fp'               => $tuple_fp,
-			'raw_fp'                 => $raw_fp,
+			'tuple_fp'               => $fps['tuple_fp'],
+			'raw_fp'                 => $fps['raw_fp'],
 			'provenance'             => (string) $verdict['provenance'],
 			'source_state'           => isset( $verdict['source_state'] ) ? $verdict['source_state'] : null,
 			'changed_fields'         => isset( $verdict['changed_fields'] ) && is_array( $verdict['changed_fields'] )
@@ -700,7 +699,7 @@ final class QRRP_Ajax {
 		} elseif ( 'manual_reconstruction' === $provenance && is_array( $verdict['verified_baseline'] ) ) {
 			$anchor = $verdict['verified_baseline'];
 		} else {
-			return array();
+			return self::passthrough_without_anchor( $source_raw, $fields, $provenance );
 		}
 
 		$out = self::guarded(
@@ -731,6 +730,49 @@ final class QRRP_Ajax {
 	 *
 	 * @param string[] $ais Τα AI που διακυβεύονται (μπορεί να είναι κενό).
 	 */
+	/**
+	 * 2.16.1: scan_unverified (κομμένη αναζήτηση, επιβεβαιωμένη από τον χρήστη)
+	 * ή χειροκίνητη αλλαγή χωρίς επαληθευμένη βάση. Πριν επέστρεφε πάντα κενό:
+	 * ένας κωδικός με AI 240 / 91 κ.λπ. έβγαινε σιωπηλά μόνο με τα τέσσερα
+	 * πεδία. Τώρα: extras που αποδεικνύονται με την επιβεβαιωμένη ανάγνωση
+	 * μεταφέρονται (μόνο στο scan_unverified)· αν η πηγή έχει extras που δεν
+	 * αποδεικνύονται, fail closed.
+	 *
+	 * @param string $source_raw Η αρχική σάρωση.
+	 * @param array  $fields     Τα πεδία του αιτήματος.
+	 * @param string $provenance Ο τύπος provenance.
+	 * @return array
+	 */
+	private static function passthrough_without_anchor( $source_raw, array $fields, $provenance ) {
+		$out = self::guarded(
+			'passthrough',
+			static fn() => QRRP_GS1_Parser::passthrough_for_reading( $source_raw, $fields )
+		);
+
+		if ( 'scan_unverified' === $provenance && ! empty( $out['proven'] ) ) {
+			return ! empty( $out['extras'] ) ? $out['extras'] : array();
+		}
+
+		$unproven = isset( $out['unproven_ais'] ) && is_array( $out['unproven_ais'] ) ? $out['unproven_ais'] : array();
+
+		$parsed = self::guarded(
+			'extras_probe',
+			static fn() => QRRP_GS1_Parser::parse( $source_raw )
+		);
+
+		/*
+		 * Μόνο extras της ίδιας της πηγής μετράνε. Μια εναλλακτική ανάγνωση με AI
+		 * (21ABC24012 → SN «ABC» + AI 240) δεν είναι πεδίο της συσκευασίας.
+		 */
+		$has_extras = array() !== $unproven || ! empty( $parsed['extra_ais_present'] );
+
+		if ( $has_extras ) {
+			self::extras_unprovable_error( $unproven );
+		}
+
+		return array();
+	}
+
 	private static function extras_unprovable_error( array $ais ) {
 		QRRP_Stats::record_rejection();
 
@@ -959,7 +1001,6 @@ final class QRRP_Ajax {
 				'verified_baseline'       => null,
 				'consume_token'           => '',
 				'consume_challenge'       => '',
-				'consume_proof'           => '',
 			);
 
 			/*
@@ -1054,9 +1095,23 @@ final class QRRP_Ajax {
 		}
 
 		$page_url = self::post_scalar( 'page_url' );
-		$result   = self::guarded(
+
+		/*
+		 * 2.16.1: ένα exception (π.χ. άλλου plugin στο wp_mail) γίνεται εδώ
+		 * WP_Error, ώστε ο χρήστης να μάθει παρακάτω ότι το handle καταναλώθηκε·
+		 * μέσω guarded() έβλεπε μόνο «απρόσμενο σφάλμα».
+		 */
+		$result = self::guarded(
 			'send_email',
-			static fn() => QRRP_Mailer::send( $to, $fields, $customer_name, $print_date, $submitted_raw, $page_url, $mail_extras, self::provenance_metadata( $verdict ) )
+			static function () use ( $to, $fields, $customer_name, $print_date, $submitted_raw, $page_url, $mail_extras ) {
+				try {
+					return QRRP_Mailer::send( $to, $fields, $customer_name, $print_date, $submitted_raw, $page_url, $mail_extras );
+				} catch ( \Throwable $qrrp_mail_exception ) {
+					self::report_unexpected_failure( 'send_email', $qrrp_mail_exception );
+
+					return new WP_Error( 'qrrp_mail_exception', __( 'Παρουσιάστηκε απρόσμενο σφάλμα κατά την αποστολή του email.', 'qr-rebuilder-pro' ) );
+				}
+			}
 		);
 
 		if ( is_wp_error( $result ) ) {

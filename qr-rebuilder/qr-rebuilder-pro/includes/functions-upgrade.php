@@ -240,6 +240,25 @@ function qrrp_cleanup_legacy_subscription_data() {
 
 	$usage_prefix = $wpdb->esc_like( 'qrrp_usage_' ) . '%';
 
+	/*
+	 * 2.16.1: οι χρήστες του batch, για να καθαριστεί και η cache τους· με
+	 * persistent object cache τα σβησμένα meta σερβίρονταν ακόμη.
+	 */
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Same rows as the DELETE below.
+	$user_ids = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT DISTINCT user_id FROM {$wpdb->usermeta}
+			 WHERE ( meta_key IN ( %s, %s, %s, %s ) OR meta_key LIKE %s )
+			 LIMIT %d",
+			'qrrp_pro_expires',
+			'qrrp_pro_activated_on',
+			'qrrp_manual_access',
+			'qrrp_invoices',
+			$usage_prefix,
+			$batch
+		)
+	);
+
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off legacy cleanup; no core API deletes usermeta by key across all users.
 	$deleted = $wpdb->query(
 		$wpdb->prepare(
@@ -255,6 +274,12 @@ function qrrp_cleanup_legacy_subscription_data() {
 			$batch
 		)
 	);
+
+	if ( is_array( $user_ids ) && function_exists( 'wp_cache_delete' ) ) {
+		foreach ( $user_ids as $uid ) {
+			wp_cache_delete( (int) $uid, 'user_meta' );
+		}
+	}
 
 	if ( false === $deleted ) {
 		return array(
@@ -337,10 +362,34 @@ function qrrp_activate_plugin() {
 
 	qrrp_maybe_migrate_guest_manual_entry( $installed_version );
 
+	qrrp_maybe_migrate_verified_email( $installed_version );
+
 	qrrp_remove_obsolete_options();
 
 	qrrp_maybe_cleanup_legacy_data();
 	update_option( 'qrrp_version', QRRP_VERSION );
+}
+
+/**
+ * 2.16.1: οι μεταπτώσεις πρόσβασης (μόνο προς το αυστηρότερο) τρέχουν σε κάθε
+ * αίτημα μέχρι να ολοκληρωθεί η αναβάθμιση, όχι μόνο όταν ένας διαχειριστής
+ * ανοίξει το wp-admin. Με αυτόματη ενημέρωση ή ανέβασμα μέσω FTP/CLI δεν
+ * τρέχει activation hook, και ως τότε το email έμενε ανοιχτό στους
+ * αυτο-δηλωμένους φαρμακοποιούς (2.16.0). Κόστος μετά την αναβάθμιση: ένα
+ * autoloaded get_option και ένα version_compare.
+ */
+function qrrp_run_access_migrations() {
+	$installed_version = (string) get_option( 'qrrp_version', '' );
+
+	if ( '' !== $installed_version && version_compare( $installed_version, QRRP_VERSION, '>=' ) ) {
+		return;
+	}
+
+	qrrp_maybe_migrate_access_choices( $installed_version );
+
+	qrrp_maybe_migrate_guest_manual_entry( $installed_version );
+
+	qrrp_maybe_migrate_verified_email( $installed_version );
 }
 
 /** Η εργασία αναβάθμισης· οι έλεγχοι περιβάλλοντος ζουν στην qrrp_run_upgrade_maintenance(). */
@@ -362,7 +411,49 @@ function qrrp_maybe_upgrade() {
 
 	qrrp_maybe_migrate_guest_manual_entry( $installed_version );
 
+	qrrp_maybe_migrate_verified_email( $installed_version );
+
 	update_option( 'qrrp_version', QRRP_VERSION );
+}
+
+/**
+ * 2.16.0: το email από αυτο-δηλωμένους φαρμακοποιούς (ή από κάθε συνδεδεμένο)
+ * ήταν ανοιχτό relay: όποιος γραφόταν ως «Φαρμακείο» έστελνε σε οποιαδήποτε
+ * διεύθυνση από το domain του site. Γίνεται «Μόνο εγκεκριμένοι φαρμακοποιοί»:
+ *   qrrp_pharmacist                                   → qrrp_verified_pharmacist
+ *   '' (ίδιο με το εργαλείο), εργαλείο read ή
+ *   qrrp_pharmacist, χωρίς email επισκεπτών           → qrrp_verified_pharmacist
+ * Μόνο προς το αυστηρότερο. Το «Ελεύθερο για όλους» (email επισκεπτών ανοιχτό)
+ * είναι ρητή επιλογή και μένει. Μία φορά, από έκδοση < 2.16.0 (ή άγνωστη).
+ *
+ * @param string $installed_version Έκδοση πριν από αυτό το πέρασμα ('' αν λείπει).
+ * @return bool Αν άλλαξε η τιμή.
+ */
+function qrrp_maybe_migrate_verified_email( $installed_version ) {
+	$installed_version = is_scalar( $installed_version ) ? trim( (string) $installed_version ) : '';
+
+	if ( '' !== $installed_version && version_compare( $installed_version, '2.16.0', '>=' ) ) {
+		return false;
+	}
+
+	$email = get_option( 'qrrp_email_capability', null );
+
+	if ( ! is_string( $email ) ) {
+		return false;
+	}
+
+	$email       = trim( $email );
+	$guest_email = '1' === get_option( 'qrrp_allow_guest_email', '0' );
+	$tool        = qrrp_tool_capability();
+
+	$migrate = 'qrrp_pharmacist' === $email
+		|| ( '' === $email && ! $guest_email && in_array( $tool, array( 'read', 'qrrp_pharmacist' ), true ) );
+
+	if ( ! $migrate ) {
+		return false;
+	}
+
+	return (bool) update_option( 'qrrp_email_capability', 'qrrp_verified_pharmacist' );
 }
 
 /**

@@ -20,24 +20,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Keyed, domain-separated fingerprint (HMAC-SHA256 με wp_salt('auth')) για
- * βραχύβια contexts. Το "\0" κάνει το purpose/value μη διφορούμενο· τα
- * purposes audit_* είναι δεσμευμένα και απορρίπτονται.
+ * βραχύβια contexts. Το "\0" κάνει το purpose/value μη διφορούμενο.
+ * 2.16.1: χωρίς το αχρησιμοποίητο key_version και τα δεσμευμένα audit_*.
  *
  * @return string|false
  */
-function qrrp_fingerprint( $purpose, $value, $key_version = 1 ) {
-	if ( 1 !== (int) $key_version ) {
-		return false;
-	}
-
+function qrrp_fingerprint( $purpose, $value ) {
 	$purpose = is_scalar( $purpose ) ? (string) $purpose : '';
 	$value   = is_scalar( $value ) ? (string) $value : '';
 
 	if ( '' === $purpose ) {
-		return false;
-	}
-
-	if ( 0 === strpos( $purpose, 'audit_' ) ) {
 		return false;
 	}
 

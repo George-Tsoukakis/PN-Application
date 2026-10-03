@@ -34,9 +34,12 @@ use QRRP_Rate_Limiter as RL;
 const TO_PFX  = '_transient_timeout_qrrp_rl_';
 const VAL_PFX = '_transient_qrrp_rl_';
 
-/* Γραμμές παραθύρου όπως τις γράφουν create_window()/reset_window()/write_timeout(). */
+/* Γραμμές παραθύρου όπως τις γράφουν create_window()/reset_window()/write_timeout(). 2.16.1: start+count, όχι serialized. */
+function rl_val( $count, $start ) { return RL::encode_window( $start, $count ); }
+/* Η παλιά (≤ 2.16.0) μορφή: την αποκωδικοποιούν ακόμη το sweep και το hit(). */
+function rl_legacy( $count, $start ) { return serialize( array( 'count' => $count, 'start' => $start ) ); }
 function rl_write( QRRP_SQLite_WPDB $db, $key, $count, $start, $window, $with_timeout = true ) {
-	$db->raw_set( '_transient_' . $key, serialize( array( 'count' => $count, 'start' => $start ) ) );
+	$db->raw_set( '_transient_' . $key, rl_val( $count, $start ) );
 	if ( $with_timeout ) {
 		$db->raw_set( '_transient_timeout_' . $key, (string) ( $start + $window + MINUTE_IN_SECONDS ) );
 	}
@@ -112,9 +115,9 @@ $sim_hit = static function ( $key, $window, $now ) use ( $db, &$model, &$sweeps,
 		$model[ $key ] = array( $now, $window, 1 );
 		$new           = true;
 	} else {
-		$s = unserialize( $raw );
+		$s = array( 'start' => (int) substr( $raw, 0, 10 ), 'count' => (int) substr( $raw, 10 ) );
 		if ( $s['start'] <= $now && ( $now - $s['start'] ) < $window ) {
-			$db->raw_set( '_transient_' . $key, serialize( array( 'count' => $s['count'] + 1, 'start' => $s['start'] ) ) );
+			$db->raw_set( '_transient_' . $key, rl_val( $s['count'] + 1, $s['start'] ) );
 			$model[ $key ] = array( $s['start'], $window, $s['count'] + 1 );
 		} else {
 			rl_write( $db, $key, 1, $now, $window );
@@ -165,7 +168,7 @@ for ( $day = 1; $day <= $DAYS; $day++ ) {
 	$expected = array();
 	$live     = 0;
 	foreach ( $model as $k => $m ) {
-		$expected[ '_transient_' . $k ]         = serialize( array( 'count' => $m[2], 'start' => $m[0] ) );
+		$expected[ '_transient_' . $k ]         = rl_val( $m[2], $m[0] );
 		$expected[ '_transient_timeout_' . $k ] = (string) ( $m[0] + $m[1] + MINUTE_IN_SECONDS );
 		if ( $day_end - $m[0] < $m[1] ) { ++$live; }
 	}
@@ -248,7 +251,7 @@ $db->before_query = static function ( $sql, $d ) use ( $kr, $kr3, $now, &$fired 
 		$d->before_query = null;
 		++$fired;
 		// Παράλληλο reset_window(): νέα τιμή, η λήξη δεν έχει γραφτεί ακόμη.
-		$d->raw_set( '_transient_' . $kr, serialize( array( 'count' => 1, 'start' => $now ) ) );
+		$d->raw_set( '_transient_' . $kr, rl_val( 1, $now ) );
 		// Παράλληλο write_timeout() σε άλλο κλειδί: μόνο η λήξη άλλαξε.
 		$d->raw_set( '_transient_timeout_' . $kr3, (string) ( $now + 660 ) );
 	}
@@ -266,7 +269,7 @@ $db->before_query = static function ( $sql, $d ) use ( $ko2, $now, &$fired ) {
 	if ( 0 === strpos( ltrim( $sql ), 'DELETE FROM' ) && false !== strpos( $sql, '( option_name =' ) ) {
 		$d->before_query = null;
 		++$fired;
-		$d->raw_set( '_transient_' . $ko2, serialize( array( 'count' => 1, 'start' => $now ) ) );
+		$d->raw_set( '_transient_' . $ko2, rl_val( 1, $now ) );
 	}
 };
 RL::sweep( $now );
@@ -275,7 +278,7 @@ check( 'a3: race (delete_exact_rows, orphan pass): changed value NOT deleted', 1
 /* --- a5. Reset χωρίς εγγραφή λήξης (write_timeout() απέτυχε): start ≥ παλιά λήξη. Μόνο καταγραφή. --- */
 $db = qrrp_sqlite_install();
 $ks = guest_key( 'parse', '2001:db8:20::1' );
-$db->raw_set( '_transient_' . $ks, serialize( array( 'count' => 1, 'start' => $now - 3 * DAY_IN_SECONDS ) ) );
+$db->raw_set( '_transient_' . $ks, rl_val( 1, $now - 3 * DAY_IN_SECONDS ) );
 $db->raw_set( '_transient_timeout_' . $ks, (string) ( $now - 3 * DAY_IN_SECONDS - 1 ) );
 RL::sweep( $now );
 RL::sweep( $now + 30 * DAY_IN_SECONDS );
@@ -291,17 +294,18 @@ for ( $i = 0; $i < 25000; $i++ ) {
 	$k = 'qrrp_rl_' . md5( 'backlog' . $i );
 	$w = $wins[ $i % 3 ];
 	$s = $now - $w - 120 - mt_rand( 0, 20 * DAY_IN_SECONDS );
-	$ins->execute( array( '_transient_' . $k, serialize( array( 'count' => mt_rand( 1, 99 ), 'start' => $s ) ), 'no' ) );
+	/* 2.16.1: μισό backlog στην παλιά μορφή (αναβάθμιση από ≤ 2.16.0). */
+	$ins->execute( array( '_transient_' . $k, ( $i % 2 ? 'rl_val' : 'rl_legacy' )( mt_rand( 1, 99 ), $s ), 'no' ) );
 	$ins->execute( array( '_transient_timeout_' . $k, (string) ( $s + $w + 60 ), 'no' ) );
 	if ( 0 === $i % 50 ) { // ζωντανά ανάμεσα στα ληγμένα (keyset)
 		$lk = 'qrrp_rl_' . md5( 'live' . $i );
 		$ls = $now - mt_rand( 0, HOUR_IN_SECONDS ); // 24ωρα παράθυρα: ζωντανά σε όλη τη διάρκεια του drain
-		$ins->execute( array( '_transient_' . $lk, serialize( array( 'count' => 1, 'start' => $ls ) ), 'no' ) );
+		$ins->execute( array( '_transient_' . $lk, rl_val( 1, $ls ), 'no' ) );
 		$ins->execute( array( '_transient_timeout_' . $lk, (string) ( $ls + DAY_IN_SECONDS + 60 ), 'no' ) );
 	}
 	if ( 0 === $i % 8 && $i < 24000 ) {
 		$ok_ = 'qrrp_rl_' . md5( 'orphan' . $i );
-		$ins->execute( array( '_transient_' . $ok_, serialize( array( 'count' => 1, 'start' => $now - 3 * DAY_IN_SECONDS ) ), 'no' ) );
+		$ins->execute( array( '_transient_' . $ok_, ( $i % 16 ? 'rl_val' : 'rl_legacy' )( 1, $now - 3 * DAY_IN_SECONDS ), 'no' ) );
 	}
 }
 $db->pdo->commit();

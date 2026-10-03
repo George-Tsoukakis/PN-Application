@@ -108,7 +108,8 @@ const state = (page) => page.evaluate(() => {
     active: document.activeElement ? document.activeElement.id : null,
     exp: $('qrrp-field-exp').value,
     warnings: $('qrrp-warnings').hidden ? '' : $('qrrp-warnings').textContent,
-    provenance: $('qrrp-summary-provenance').hidden ? null : $('qrrp-summary-provenance').textContent,
+    // 2.16.0 αφαίρεσε το #qrrp-summary-provenance· null-safe ώστε το state() να μη σκάει.
+    provenance: !$('qrrp-summary-provenance') || $('qrrp-summary-provenance').hidden ? null : $('qrrp-summary-provenance').textContent,
     summaryExp: $('qrrp-summary-exp').textContent,
   };
 });
@@ -404,11 +405,15 @@ tests['e. Fix 6 DD=00 UI'] = async (browser) => {
   await t.context.close();
 };
 
-tests['f. user_declared provenance note'] = async (browser) => {
+// 2.16.0 αφαίρεσε τη σημείωση «Δηλωμένο…» (CHANGELOG 2.16.0): η provenance του server δεν φαίνεται στη σύνοψη.
+tests['f. user_declared provenance: no note (2.16.0)'] = async (browser) => {
   const t = await newTool(browser);
   await scanAndBuild(t, 1, { provenance: 'user_declared' });
   const s = await state(t.page);
-  check('[f] #qrrp-summary-provenance visible and contains «Δηλωμένο»', s.provenance !== null && s.provenance.includes('Δηλωμένο'), s.provenance);
+  check('[f] output rendered for provenance user_declared', !s.outputHidden && !s.printDisabled, s);
+  check('[f] no «Δηλωμένο» note anywhere in the tool (removed in 2.16.0)',
+    s.provenance === null && !(await t.page.$eval('#qrrp-app', (el) => el.textContent.includes('Δηλωμένο'))), s.provenance);
+  check('[f] no JS errors', t.errors.length === 0, t.errors);
   await t.context.close();
 };
 
@@ -456,6 +461,225 @@ tests['g. 2.15.7: Greek passthrough, parse announcement, stale email status'] = 
   s = await state(page);
   check('[g] email reply after «Νέα σάρωση» does not show «sent» on the reset tool', !/στάλθηκε/.test(s.status) && !/στάλθηκε/.test(s.statusLive), s);
   check('[g] no JS errors', t.errors.length === 0, t.errors);
+  await t.context.close();
+};
+
+// ---------------------------------------------------------------- 2.16.1
+// Το window.open του εργαλείου τυλίγεται ώστε το print() του popup να είναι stub:
+// mode 'afterprint' (επιστρέφει αμέσως, afterprint σε 30 ms), 'none' (χωρίς afterprint),
+// 'block' (κρατά 600 ms σαν μπλοκαρισμένος διάλογος, χωρίς afterprint).
+async function stubPrint(page, mode) {
+  await page.evaluate((mode) => {
+    window.__prints = 0;
+    window.__popups = [];
+    const orig = window.__origOpen || window.open;
+    window.__origOpen = orig;
+    window.open = function (...args) {
+      const w = orig.apply(window, args);
+      if (w) {
+        w.print = function () {
+          window.__prints++;
+          if (mode === 'block') { const end = Date.now() + 600; while (Date.now() < end) { /* busy */ } }
+          if (mode === 'afterprint') setTimeout(() => w.dispatchEvent(new Event('afterprint')), 30);
+        };
+        window.__popups.push(w);
+      }
+      return w;
+    };
+  }, mode);
+}
+const prints = (page) => page.evaluate(() => window.__prints);
+const lastPopupClosed = (page) => page.evaluate(() => { const p = window.__popups[window.__popups.length - 1]; return !p || p.closed; });
+
+tests['h. 2.16.1 Fix 1: scanner focus after output actions, burst never re-clicks Print'] = async (browser) => {
+  const t = await newTool(browser);
+  const { page } = t;
+  await scanAndBuild(t, 1);
+  let s = await state(page);
+  check('[h] after successful rebuild focus returns to #qrrp-hw-input', s.active === 'qrrp-hw-input', s.active);
+
+  await stubPrint(page, 'none');
+  await page.click('#qrrp-print-qr');
+  await page.waitForFunction(() => window.__prints === 1);
+  s = await state(page);
+  check('[h] after Print focus is on #qrrp-hw-input', s.active === 'qrrp-hw-input', s.active);
+
+  // Η κατάσταση πριν από το fix: εστίαση στο κουμπί «Εκτύπωση» όταν φτάνει η επόμενη σάρωση.
+  await page.focus('#qrrp-print-qr');
+  await sleep(300);
+  const f2 = fieldsFor(2);
+  const gate = deferred();
+  t.handlers.qrrp_parse = async () => { await gate.promise; return parseOk(f2); };
+  const raw2 = '01' + f2.PC + '17280331';
+  await scan(page, raw2);
+  await waitRequests(t, 'qrrp_parse', 2).catch(() => {});
+  await sleep(100);
+  s = await state(page);
+  check('[h] burst on focused Print: no reprint of the previous label', (await prints(page)) === 1, await prints(page));
+  check('[h] burst routed into the scanner field (focus on #qrrp-hw-input)', s.active === 'qrrp-hw-input', s.active);
+  const p2 = t.requests.filter((r) => r.action === 'qrrp_parse')[1];
+  const sent = p2 ? p2.params.get('raw') : null;
+  check('[h] the whole burst (first char included) reached the parser', sent === raw2, sent);
+  check('[h] new-scan flow: old output hidden and Print disabled while parsing', s.outputHidden && s.printDisabled, s);
+  gate.resolve();
+  await page.waitForSelector('#qrrp-results-panel:not([hidden])');
+
+  // Γνήσιο πάτημα Enter / Space σε κουμπί (χωρίς προηγούμενη σάρωση) λειτουργεί.
+  await page.click('#qrrp-regenerate');
+  await page.waitForFunction(() => !document.getElementById('qrrp-print-qr').disabled);
+  await page.focus('#qrrp-print-qr');
+  await sleep(300);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__prints === 2, null, { timeout: 2000 }).catch(() => {});
+  check('[h] genuine Enter on focused Print still prints', (await prints(page)) === 2, await prints(page));
+  await page.focus('#qrrp-print-qr');
+  await sleep(300);
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => window.__prints === 3, null, { timeout: 2000 }).catch(() => {});
+  check('[h] genuine Space on focused Print still prints', (await prints(page)) === 3, await prints(page));
+
+  // Αντιγραφή / λήψη: εστίαση πίσω στον σαρωτή.
+  await page.click('#qrrp-copy-raw');
+  await page.waitForFunction(() => /αντιγράφηκαν|απέτυχε/.test(document.getElementById('qrrp-status').textContent));
+  s = await state(page);
+  check('[h] after Copy focus is on #qrrp-hw-input', s.active === 'qrrp-hw-input', s.active);
+  await page.click('#qrrp-download-qr');
+  await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'qrrp-hw-input', null, { timeout: 2000 }).catch(() => {});
+  s = await state(page);
+  check('[h] after Download focus is on #qrrp-hw-input', s.active === 'qrrp-hw-input', s.active);
+
+  // Δεν κλέβει την εστίαση από πεδίο όπου γράφει ο χρήστης· πληκτρολόγηση εκεί δεν πάει στον σαρωτή.
+  await page.focus('#qrrp-customer-name');
+  await page.keyboard.type('Maria');
+  s = await state(page);
+  check('[h] typing in customer name stays there', s.active === 'qrrp-customer-name' &&
+    (await page.$eval('#qrrp-customer-name', (e) => e.value)) === 'Maria', s.active);
+
+  // Email: η εστίαση γυρίζει μόνο αν έμεινε στο κουμπί.
+  const eg = deferred();
+  t.handlers.qrrp_send_email = async () => { await eg.promise; return json({ success: true, data: {} }); };
+  await page.fill('#qrrp-email-input', 'a@example.org');
+  await page.click('#qrrp-send-email');
+  await waitRequests(t, 'qrrp_send_email', 1);
+  eg.resolve();
+  await page.waitForFunction(() => /στάλθηκε/.test(document.getElementById('qrrp-status').textContent));
+  s = await state(page);
+  check('[h] after email send (focus left on button) focus returns to #qrrp-hw-input', s.active === 'qrrp-hw-input', s.active);
+  const eg2 = deferred();
+  t.handlers.qrrp_send_email = async () => { await eg2.promise; return json({ success: true, data: {} }); };
+  await page.click('#qrrp-send-email');
+  await waitRequests(t, 'qrrp_send_email', 2);
+  await page.focus('#qrrp-email-input');
+  eg2.resolve();
+  await sleep(200);
+  s = await state(page);
+  check('[h] email completion does not steal focus from the email input', s.active === 'qrrp-email-input', s.active);
+  check('[h] no JS errors', t.errors.length === 0, t.errors);
+  await t.context.close();
+};
+
+tests['i. 2.16.1 Fix 2: print window closes after printing'] = async (browser) => {
+  for (const mode of ['afterprint', 'block', 'none']) {
+    const t = await newTool(browser);
+    const { page } = t;
+    await scanAndBuild(t, 1);
+    await stubPrint(page, mode);
+    await page.click('#qrrp-print-qr');
+    await page.waitForFunction(() => window.__prints === 1);
+    if (mode === 'none') {
+      await sleep(150);
+      check('[i/none] without afterprint the window is NOT closed early', !(await lastPopupClosed(page)));
+      await page.evaluate(() => { document.getElementById('qrrp-print-qr').focus(); window.dispatchEvent(new Event('focus')); });
+    }
+    await page.waitForFunction(() => window.__popups[0].closed, null, { timeout: 2000 }).catch(() => {});
+    check(`[i/${mode}] print window closed`, await lastPopupClosed(page));
+    const s = await state(page);
+    check(`[i/${mode}] focus back on #qrrp-hw-input`, s.active === 'qrrp-hw-input', s.active);
+    check(`[i/${mode}] no JS errors`, t.errors.length === 0, t.errors);
+    await t.context.close();
+  }
+};
+
+tests['j. 2.16.1 Fix 3: email button state with overlapping sends'] = async (browser) => {
+  const t = await newTool(browser);
+  const { page } = t;
+  await scanAndBuild(t, 1);
+  const label = await page.$eval('#qrrp-send-email', (b) => b.textContent);
+  const btn = () => page.$eval('#qrrp-send-email', (b) => ({ text: b.textContent, busy: b.getAttribute('aria-busy'), disabled: b.disabled }));
+  const g1 = deferred();
+  const g2 = deferred();
+  t.handlers.qrrp_send_email = async (p, n) => { await (n === 1 ? g1 : g2).promise; return json({ success: true, data: {} }); };
+  await page.fill('#qrrp-email-input', 'a@example.org');
+  await page.click('#qrrp-send-email');
+  await waitRequests(t, 'qrrp_send_email', 1);
+  let b = await btn();
+  check('[j] first send in flight: «Αποστολή…», aria-busy, disabled', b.busy === 'true' && b.disabled && b.text !== label, b);
+
+  // Νέος κωδικός όσο εκκρεμεί η αποστολή.
+  await page.click('#qrrp-regenerate');
+  await waitRequests(t, 'qrrp_rebuild', 2);
+  await page.waitForFunction(() => !document.getElementById('qrrp-send-email').disabled);
+  b = await btn();
+  check('[j] new code re-enables the button with its real label, no aria-busy', b.text === label && b.busy === null && !b.disabled, b);
+
+  await page.click('#qrrp-send-email');
+  await waitRequests(t, 'qrrp_send_email', 2);
+  g1.resolve();
+  await sleep(200);
+  b = await btn();
+  check('[j] old send completing does not reset the running second send', b.busy === 'true' && b.disabled && b.text !== label, b);
+  g2.resolve();
+  await page.waitForFunction(() => !document.getElementById('qrrp-send-email').hasAttribute('aria-busy'));
+  b = await btn();
+  check('[j] second send completing restores label and re-enables', b.text === label && b.busy === null && !b.disabled, b);
+  check('[j] no JS errors', t.errors.length === 0, t.errors);
+  await t.context.close();
+};
+
+tests['k. 2.16.1 Fixes 4-7: strings, a11y, CSS specificity'] = async (browser) => {
+  const t = await newTool(browser);
+  const { page } = t;
+  const info = await page.evaluate(() => {
+    const hw = document.getElementById('qrrp-hw-input');
+    const hint = document.getElementById(hw.getAttribute('aria-describedby') || '-');
+    return {
+      warnRole: document.getElementById('qrrp-warnings').getAttribute('role'),
+      hint: hint ? hint.className : null,
+      emailSent: Object.prototype.hasOwnProperty.call(window.QRRP.i18n, 'emailSent'),
+      fieldsChanged: window.QRRP.i18n.fieldsChanged,
+      regenLabel: document.getElementById('qrrp-regenerate').textContent.trim(),
+    };
+  });
+  check('[k] #qrrp-warnings has no role=alert', info.warnRole === null, info.warnRole);
+  check('[k] scanner input aria-describedby -> .qrrp-hw-hint', info.hint === 'qrrp-hw-hint', info.hint);
+  check('[k] dead i18n key emailSent removed', !info.emailSent);
+  check('[k] fieldsChanged names the real button label', info.fieldsChanged.includes('«' + info.regenLabel + '»'), info);
+  const js = fs.readFileSync(path.join(PDIR, 'assets/js/qrrp-app.js'), 'utf8');
+  check('[k] JS fallback of fieldsChanged identical to the localized string', js.includes("t( 'fieldsChanged', '" + info.fieldsChanged + "' )"));
+
+  // Προειδοποιήσεις: μία ανακοίνωση, στο #qrrp-status-live.
+  t.handlers.qrrp_parse = async () => parseOk(fieldsFor(1), { warnings: ['WARN-ONE.'] });
+  await scan(page, '0108006540718101172803311001');
+  await page.waitForSelector('#qrrp-results-panel:not([hidden])');
+  await page.waitForFunction(() => document.getElementById('qrrp-status-live').textContent !== '');
+  const s = await state(page);
+  check('[k] parse warnings announced via #qrrp-status-live, not the alert region', /WARN-ONE\./.test(s.statusLive) && s.alertLive === '', s);
+  check('[k] warnings still visible in #qrrp-warnings', /WARN-ONE\./.test(s.warnings), s.warnings);
+
+  // Theme rule τύπου .entry-content button δεν πατά τα κουμπιά του εργαλείου.
+  const css = await page.evaluate(() => {
+    const st = document.createElement('style');
+    st.textContent = '.entry-content button, .entry-content a { background: rgb(255, 0, 0); color: rgb(0, 255, 0); border-radius: 0; }';
+    document.head.appendChild(st);
+    document.body.classList.add('entry-content');
+    const cs = (id) => getComputedStyle(document.getElementById(id));
+    return { primaryBg: cs('qrrp-regenerate').backgroundImage, primaryColor: cs('qrrp-regenerate').color,
+      plainBg: cs('qrrp-rescan').backgroundColor, radius: cs('qrrp-rescan').borderTopLeftRadius };
+  });
+  check('[k] .qrrp-btn-primary keeps its gradient and white text under theme button rules',
+    /gradient/.test(css.primaryBg) && css.primaryColor === 'rgb(255, 255, 255)', css);
+  check('[k] .qrrp-btn keeps its background/radius under theme button rules', css.plainBg !== 'rgb(255, 0, 0)' && css.radius === '8px', css);
+  check('[k] no JS errors', t.errors.length === 0, t.errors);
   await t.context.close();
 };
 

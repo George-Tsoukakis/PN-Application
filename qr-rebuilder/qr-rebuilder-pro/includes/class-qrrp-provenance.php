@@ -476,7 +476,7 @@ final class QRRP_Provenance {
 
 	/** Fingerprint για context challenge· αποτυχία → κενό string. */
 	private static function fp( $purpose, $value ) {
-		$fp = qrrp_fingerprint( $purpose, (string) $value, 1 );
+		$fp = qrrp_fingerprint( $purpose, (string) $value );
 
 		return is_string( $fp ) ? $fp : '';
 	}

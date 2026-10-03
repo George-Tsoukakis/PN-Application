@@ -5,7 +5,7 @@ Tags: gs1, datamatrix, barcode, pharmacy, scanner
 Requires at least: 6.1
 Requires PHP: 8.2
 Tested up to: 7.1
-Stable tag: 2.15.7
+Stable tag: 2.16.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,7 +91,7 @@ Alternatively choose manual entry and paste the raw GS1 data. Both a real ASCII 
 
 "Manual entry" also opens the four fields - PC, SN, LOT and EXP - empty, so a pharmacist can type them from the printed text on the pack (for example when the 2D code is damaged and cannot be scanned) and create a new GS1 DataMatrix without any scan.
 
-Before anything is generated the server asks for an explicit declaration that the four values were read from the pack itself. The declaration is bound to the exact four values: changing any of them requires a new one. The result is labelled as a manual reconstruction, never as a scan. Every other server-side check still applies (GTIN check digit, date, character set, expiry confirmation). Logged-in users can always use it. Guests can use it when guest access is enabled and the setting "Manual creation by guests" is on (the default since 2.13.2); switching that setting off limits manual creation to logged-in users.
+Before anything is generated the server asks for an explicit declaration that the four values were read from the pack itself. The declaration is bound to the exact four values: changing any of them requires a new one. Since 2.16.0 the result carries no provenance note on screen, on the label or in the email, so the label stays compact. Every other server-side check still applies (GTIN check digit, date, character set, expiry confirmation). Logged-in users can always use it. Guests can use it only when guest access is enabled and the setting "Manual creation by guests" is on. That setting has been off by default since 2.15.5, so manual creation is normally reserved for logged-in users.
 
 = Reviewing the fields =
 
@@ -114,7 +114,7 @@ After reviewing the fields, press the generate button. The data is validated aga
 
 = Email =
 
-When email is allowed for the current user, the message can include:
+Email is available to verified pharmacists: administrators, plus users an administrator has approved with the "Verified pharmacist" checkbox on their profile (Users → Edit user; the Users list shows a "QR email" column with the pending requests). A self-declared "Φαρμακείο" registration alone no longer allows email. When email is allowed for the current user, the message can include:
 
 * The PNG image, with a solid white background.
 * PC / GTIN.
@@ -141,7 +141,7 @@ QR ReBuilder Pro applies several layers of control:
 * WordPress nonce verification on AJAX requests.
 * Capability checks for authenticated users. The access setting offers "Free for everyone", "Logged-in users only", "Pharmacists only" and "Administrators only".
 * "Pharmacists only" means administrators plus accounts whose registration category is "Φαρμακείο" (Pharmacy). That category is self-declared by the user at registration; sites that verify pharmacies elsewhere can plug their own check into the `qrrp_is_pharmacist` filter (arguments: `bool $is`, `int $user_id`).
-* A separate permission check for email. A missing email-permission setting defaults to pharmacists only (`qrrp_pharmacist`); an already saved value, including the explicit empty value meaning "same as the tool capability", is preserved.
+* A separate permission check for email. Since 2.16.0 the default is "Verified pharmacists only" (`qrrp_verified_pharmacist`): administrators plus users an administrator approved on their profile. Self-declared pharmacies can use the tool but cannot send email until approved, so free registrations cannot turn the site into a spam relay. Sites with their own verification can use the `qrrp_is_verified_pharmacist` filter (arguments: `bool $is`, `int $user_id`).
 * Optional guest access, disabled by default.
 * A separate optional switch for guest email.
 * Server-side GS1 validation.
@@ -221,6 +221,31 @@ If your label is borderline, the two settings that save height are "Show note" a
 
 == Changelog ==
 
+= 2.16.1 =
+
+**Fixes from a full review of 2.16.0. One parsing change: a code without separators that can also be read as a code missing one of the four fields now always asks for confirmation (22 of the 4,021 golden inputs; no field value changes).**
+
+* Parsing: without Group Separators, `21ABCD10EFGH` can be SN "ABCD" plus LOT "EFGH", or only SN "ABCD10EFGH" on a pack without a LOT. The 2.16.0 short-value check did not catch it, so a LOT that is not on the pack could be printed without asking. Now, whenever the scan also reads completely as a code without one of PC/SN/LOT/EXP, confirmation is required and the warning names the alternative (for example `SN «ABCD10EFGH» χωρίς LOT`).
+* Rebuild: extra GS1 fields of the pack (e.g. AI 240, AI 91) are no longer dropped silently after an unverified scan or a manual change without a verified baseline. Extras proven by the confirmed reading are carried; otherwise the request is refused with "extras_unprovable" instead of printing an incomplete code.
+* Access: the 2.16.0 email migration now runs on the first request after an update, not only when an administrator opens wp-admin (automatic and FTP/CLI updates left email open until then). New admin notice when email is "same as the tool" and the tool is open to every logged-in user.
+* Access: nobody can approve themselves as a verified pharmacist.
+* Scanner workflow: after generating, printing, copying, downloading or emailing, focus returns to the scanner field. A scan that starts while a button has focus goes to the scanner, and its Enter can no longer press Print again (which reprinted the previous label). Print windows close after printing.
+* Email: an exception during sending now tells the user that the link or confirmation was used up; text/plain alternative body; `lang` from the site language; temporary images are deleted even if PHP stops on max_execution_time; per-recipient limit treats Gmail dot variants as one address; the email button no longer shows a stale "Sending…" state; generating again clears the previous code's proof.
+* Rate limiting: counters use a single atomic UPDATE, so concurrent legitimate guests no longer get false 429 responses (rows convert from the 2.16.0 format on their next hit). The hourly cleanup runs from WP-Cron (`qrrp_rl_sweep`) instead of inside a visitor's request. Opt-in helper `QRRP_Rate_Limiter::trusted_proxy_remote_addr` for sites behind a CDN.
+* Settings: an invalid sender email keeps the previous value instead of switching to the admin email. Site Health also runs in the weekly background check and has a new test that lists filters relaxing the GS1 reading checks; `qrrp_century_reference_year` can move the window by at most one year.
+* Accessibility and theming: warnings are announced once; the scanner field is described by its hint; button styles are scoped so themes no longer override them; the "fields changed" message names the real button.
+
+= 2.16.0 =
+
+**Review release: email only from verified pharmacists, no provenance notes on labels, safer reading of codes without separators.**
+
+* Email: new default "Verified pharmacists only". An administrator approves each pharmacy once with the "Verified pharmacist" checkbox on the user's profile; the Users list gets a "QR email" column showing approved users and pending "Φαρμακείο" registrations. Before, anyone who registered for free as "Φαρμακείο" could email any address from the site's domain, with their own text in the customer field. The update moves "Pharmacists only" and "same as the tool" (for logged-in tools) to the new setting; "Free for everyone" and "Administrators only" are kept. Unapproved pharmacies see a short note instead of the email form.
+* Labels: provenance notes ("User-declared…", "Manual change…", "Unverified reading…") are no longer shown in the summary, on the printed label, in the saved image or in the email. The confirmation steps before generating a code are unchanged.
+* Parsing: a code without Group Separators is no longer accepted automatically when the most likely reading gives an SN or LOT shorter than 4 characters. Such a split usually means a field that is not on the pack was invented from another value (for example `21AB10CD` read as SN "AB" plus LOT "CD" when the pack has no LOT). It now asks for confirmation. Filter `qrrp_auto_inference_min_length` (1–20). Normal codes without separators are accepted as before.
+* Email links: scanning a different pack after opening an emailed link no longer uses up that link.
+* Printing: one label now reliably fits one page; before, a label taller than the page could spill onto a second and third sheet.
+* Readme: corrected the default for guest manual creation, and added the missing 2.15.7 upgrade notice.
+
 = 2.15.7 =
 
 **Fixes from a code review. One parsing change: mixed-separator inputs now always ask for confirmation.**
@@ -231,188 +256,23 @@ If your label is borderline, the two settings that save height are "Show note" a
 * Site Health: the legacy email-link check is cached for 12 hours instead of reading every stored link on each Site Health visit. When the `qrrp_page_cache_lifespan` filter overrides WP Rocket's value, the source is now reported as the filter.
 * Greek keyboard layout: the browser no longer converts Greek characters to Latin itself (paste, and keystrokes without a physical key code). That conversion lost information (Σ always became S, ά became a) and hid the recovery from the server, so no confirmation was asked. The characters now reach the server unchanged, which recovers them and asks for confirmation. ΐ / ΰ now keep their W.
 * Email limits: the site-wide email quota is checked first and charged last, so a request refused by the per-recipient or daily limit no longer uses up the site-wide quota.
+* Email: the result of sending now appears right under the "Send email" button: a green confirmation naming the recipient, or a red error. The button shows "Sending…" meanwhile. Before, the message appeared only at the top of the tool, off screen, so sending looked silent.
 * Accessibility: a finished analysis is announced to screen readers. An email reply that arrives after "New scan" no longer shows "Email sent" on the reset tool.
 * DataMatrix: a symbol whose separators came out as a literal GS instead of FNC1 is now refused by default (filter `qrrp_datamatrix_require_fnc1`). The bundled library always writes FNC1; this only guards against a future library regression.
 * Settings: no false "tool page is not published" warning when the site has no published pages. Smaller fixes: the tool-page detection runs once per request, the library version check times out after 5 seconds per package.
-
-= 2.15.6 =
-
-* Settings: new "DataMatrix library" card with a "Check for a new version" button. It shows the bundled tc-lib-barcode and tc-lib-color versions and, on request, the newest stable release of each from the public PHP package repository (repo.packagist.org), with a link to what changed. It only reports; it never installs anything, because every library upgrade goes through the checked procedure in `vendor/QRRP-VENDOR-NOTES.md` and a new plugin release.
-* This is the plugin's only outbound connection, made only when an administrator presses the button. Nothing about the site is sent (not even its URL in the User-Agent). The last result is kept in one non-autoloaded option, removed on uninstall.
-
-= 2.15.5 =
-
-**Security-defaults release from a code review: stricter email and guest defaults, updated barcode library. No change to parsing (4,021-input comparison identical).**
-
-* Email by logged-in users: new abuse limits, because "Pharmacist" can be a self-declared registration category. At most 50 emails per user per 24 hours (filter `qrrp_user_email_daily_limit`) and at most 10 from the same user to the same address per 24 hours (filter `qrrp_user_email_per_recipient_limit`). The per-address limit is counted per sender, so one account cannot block an address for everyone else; many accounts together are still capped by the site-wide email quota. Administrators are exempt (filter `qrrp_user_email_limits_exempt`).
-* Guest email: public email services (gmail.com, outlook.com, yahoo, icloud and others; filter `qrrp_webmail_domains`) are no longer accepted in "Guest email: allowed domains", because they would let any visitor send email from your site to all of their users. Such entries already saved are ignored and flagged in the settings. Filter `qrrp_guest_email_allow_webmail` restores the old behaviour.
-* Manual creation by guests is now off by default. On update it is switched off only on sites where guest access is off (so nothing changes for sites that already use guest access).
-* DataMatrix: bundled tc-lib-barcode updated to 2.16.4 and tc-lib-color to 3.0.7. The old version wrote the pad codewords of the symbol with an off-by-one position (ISO/IEC 16022 §5.2.3). Labels still scanned correctly, because scanners ignore padding, but the symbol was not strictly conformant. Every symbol is still verified by the plugin's own decoder before it is shown.
-* Documentation: corrected the readme where it no longer matched the code (extra AIs are kept in the rebuilt code, day `00` needs no confirmation, the printed code can shrink down to a minimum size, rate-limit and token storage details).
-* Tests (outside the package): `t_rebuild` now fails when the rebuild fails (it could pass before); `run-all.sh` fails a script that prints no PASS or exits non-zero; new `t_access_2155`, `t_admin_webmail` and a pad-codeword check in `t_datamatrix_gd`.
-
-= 2.15.4 =
-
-**Small maintenance release: storage cleanup, guest-email policy and test infrastructure. No change to parsing, DataMatrix or the main tool.**
-
-* Storage: expired short-lived tokens (confirmations, output proofs) are now also removed by the plugin's hourly cleanup. Before, only WordPress's daily cron removed them, so on sites with WP-Cron disabled they piled up in `wp_options`.
-* Guest email: at most 3 emails per recipient per 24 hours (was per hour). Filters `qrrp_guest_email_per_recipient_limit` and `qrrp_guest_email_per_recipient_window` (1–24 h) adjust it.
-* Guest email: with an empty domain list, guest email is off (form hidden and the server refuses with `guest_email_disabled`), even if a `qrrp_guest_email_recipient_allowed` filter exists. **If your site uses that filter to allow recipients without a domain list, guest sending stops after this update until you also return `true` from the new `qrrp_guest_email_open_recipients` filter.**
-* Settings: invalid entries in "Guest email: allowed domains" (or more than 50) are listed in a notice instead of being dropped silently.
-* Settings: the "Pharmacists only" warning can be hidden per administrator ("Hide"). It changes only what is shown; access control is unchanged.
-* Tests (outside the package): logic tests run without GD using a stand-in renderer; real DataMatrix tests are reported as SKIP when GD is missing instead of FAIL; new long-running storage tests on a real SQL engine (30 simulated days); full suite verified on PHP 8.3 and 8.4, with and without GD.
-
-= 2.15.3 =
-
-**Hardening release: guests, email, labels and scan reading.**
-
-* Labels: a new scan now clears the previous pack's code from the screen before the request is sent, so a failed or slow scan can never leave the old code printable.
-* Guests: anything created by a guest is labelled "User-declared" in the summary, on the printed label and in the email, because the server cannot prove that a guest's "scan" came from a real scanner. With "Manual creation by guests" off, guests can no longer change values away from what the scan contains either.
-* Guest email is now deny-by-default: guests can only send to domains listed in the new setting "Guest email: allowed domains" (empty = none), at most 3 emails per hour per recipient (plus-addresses count as the same recipient). The site-wide guest caps are checked before any per-IP counter is written. Guest emails no longer contain a prefill link.
-* Email links: when the link store is full, a new email goes out without a link instead of invalidating links that were already sent.
-* Expiry with day 00 (YYMM00) is kept as 00 in the rebuilt code (valid until the end of the month) instead of being rewritten to the last day. Filter `qrrp_preserve_expiry_day_zero` (return false) restores the old behaviour.
-* Greek keyboard layout: Σ can be S or W, so the affected field is now offered as a choice instead of being silently read as S.
-* HRI with parentheses: an AI marker that could be part of a value (for example `(21)AB(90)CD`) now requires confirmation instead of being split silently.
-* Pages served from a cache after their security token expired now fetch a fresh token and retry once, instead of asking for a hard refresh.
-* Scanners that send Enter+Tab no longer move focus away from the scanner field; focus returns to it after every scan.
-* Screen readers: status and error messages are announced reliably (errors as alerts).
-* Settings: a warning appears when "Pharmacists only" relies on open, self-declared registration. Use the `qrrp_is_pharmacist` filter to link it to verified accounts.
-* Filter change: `qrrp_guest_email_recipient_allowed` now receives the domain-list decision (not `true`) and the lowercased address.
-
-= 2.15.2 =
-
-**Security and correctness release from an independent code review.**
-
-* Provenance: when the parser has one clear reading of a scan (for example SN `ABC24012`) and a different admissible reading is submitted (SN `ABC`, which assumes a missing separator), the request is now treated as a manual change: it needs the explicit confirmation step, is recorded as a change of that field, and extra AIs are taken from the parser's reading. Before, it passed as a plain scan and could add an AI (for example 240) that no standard decoder reads from the pack. A client-declared baseline no longer overrides the parser's clear reading.
-* Email: single-use handles (email-link token, confirmation) are consumed before the message is sent, so two simultaneous requests with the same link can no longer send two emails. If SMTP then fails, the user rebuilds the code and sends again. The usual path (after a rebuild) is unchanged.
-* Performance: the GS1 search now also budgets the candidate lengths it tries, and repeated searches of the same scan within one request are cached. A crafted 4 KB input dropped from about 2.7 s to about 0.12 s of CPU per rebuild. Results for real scans are unchanged (4,021-input comparison).
-* Email attachments: the temporary PNG is kept after a successful hand-off to `wp_mail()`, so queued SMTP plugins still find it, and is removed by a sweep about an hour later (WP-Cron, rescheduled while files remain) or on uninstall. Failed sends still delete it immediately.
-* Manual changes are now labelled in the result summary, on the printed label and in the email (for example "Manual change: SN").
-* Pages opened with `?qrrp_token` send `Referrer-Policy: no-referrer` and `noindex`.
-* Settings: notices no longer land inside the header, fields have proper labels, and an unpublished tool page is shown and kept instead of being reset silently on the next save.
-* Login and contact buttons use the page permalink (works with plain permalinks and WPML/Polylang).
-* Primary button contrast meets WCAG AA (at least 4.5:1).
-
-= 2.15.1 =
-
-**Correctness fix: the rebuilt code no longer loses an extra AI of the pack.**
-
-* An extra AI (for example 240) that a theoretical alternative reading overshadowed (such as `240ABC4032` read as `240=ABC` + `403=2`) was silently dropped, and the code was built without it. When the scan has real Group Separators, the strict reading (no inferred boundary) now decides, which is how every standard GS1 decoder reads the symbol, and the field is kept.
-* When extra AIs cannot be proven safely, rebuild and email are refused with a 409 `extras_unprovable` that names the AIs. An incomplete code is never produced without a clear notice.
-* The `qrrp_token` of the email link is removed from the address bar once the data is loaded.
-* Parser comment corrected; new regression script for the AI 240 case (kept outside the package, like the other tests).
-
-= 2.15.0 =
-
-**Quality and security release. Fixes every issue found in a full code review of 2.14.4.**
-
-GS1 parsing and building:
-
-* Extra AIs with a fixed length that is not GS1 "predefined" (for example 7003, 8005, 422) are now followed by a separator when the code is built. Before, the generated element string was not conformant and could be misread by strict scanners.
-* A separator typed as the text `<GS>` is read as a separator, but the tool always asks for confirmation. Before, it was accepted into the LOT without warning.
-* `]C1`, `]e0` and `]J1` are recognised as GS1 symbology identifiers. An identifier followed directly by a separator, `]:3` from a Greek keyboard, a trailing `[GS]`, NBSP and zero-width characters are handled.
-* A duplicate AI with two different values is no longer resolved silently. An invalid expiry date is returned empty, and malformed HRI gets a clear error.
-
-DataMatrix:
-
-* Every symbol is verified from the final PNG: module grid, finder pattern, Reed-Solomon, leading FNC1 and the decoded payload. If the check cannot run, nothing is produced.
-* Input is limited to the DataMatrix capacity and the GS1 character set. Oversized images are rejected before rendering. Output always comes from GD.
-
-Security and robustness:
-
-* Guest rate limits group IPv6 addresses by /64 and add site-wide caps for parse and rebuild. Expired rate-limit rows are cleaned up fully, every hour.
-* Short-lived confirmation tokens no longer share the email-link index, so a flood cannot evict other users' tokens. Single-use tokens are consumed atomically.
-* Guest emails no longer include the free-text customer name. A new `qrrp_guest_email_recipient_allowed` filter can restrict recipients.
-* Settings sanitizers only read form data on this plugin's settings save.
-* Email links only resolve email tokens.
-
-WordPress integration:
-
-* Translations in `/languages` now load. A `.pot` template is included.
-* The access migration only runs once, when upgrading from a version below 2.14.1. The default email permission is "Pharmacists only".
-* The tool no longer disappears when an SEO or page-builder plugin runs the shortcode early. Its stylesheet loads in the page head.
-* The login button uses the site's published `login` page if one exists, otherwise the WordPress login, and returns to the tool afterwards. Filter: `qrrp_login_url`.
-* The "Contact" button appears only if a published `contact` page exists. Filter: `qrrp_contact_url`.
-* Access settings always offer "Logged-in users only" («Μόνο συνδεδεμένοι χρήστες»), which is the default for new installs, alongside the other three choices.
-* An email link that has expired or was already used now shows a clear message.
-* Site Health: a WP Rocket cache that never expires is reported as critical when guest access is on. The Site Health checks moved to their own class.
-* Uninstall cleans every site on multisite, and also removes leftover temporary files.
-
-Front end:
-
-* Scanner handling:
-  * The pause before a scan without Enter/Tab is submitted is now 300 ms. It can be changed with the `qrrp_scanner_idle_ms` filter.
-  * A scan split by a short pause is joined back together, with a warning.
-  * Alt+Numpad scanners and Japanese keyboards are handled.
-  * Letter case still follows only the scanner's Shift, so a forgotten Caps Lock cannot change SN/LOT.
-* Accessibility:
-  * The focus ring is clearly visible.
-  * Screen readers no longer repeat the warnings on every key press.
-  * Focus is no longer pulled away from other controls.
-* Error handling: a stale page, a denied request and an HTTP error each get a clear message, including when sending email.
-* The printed date follows the server date. The saved image is drawn without blur, and there is a print stylesheet for the page.
-
-Code:
-
-* Removed internal code that nothing called: the unused `qrrp_audit_*` functions, `QRRP_DataMatrix::jpg_bytes_from_raw()`, `QRRP_Mailer::token_transient_key()`, and the old guest checkbox fields. The Site Health methods moved from `QRRP_Admin` to `QRRP_Site_Health`. No filters or actions were removed.
-* Historical comments were moved to CHANGELOG.md. The code itself is about 40% shorter to read.
-* Large files were split into focused classes: rate limiter, Site Health, and the access, print and upgrade helpers.
-* About 1,300 regression tests were written for these fixes. They are kept outside the plugin package.
-
-= 2.14.4 =
-
-* When the tool is locked, its place now shows the access card, the disclaimer and the counters, as in the open tool.
-* The counters refresh live: when the page opens and every minute while it stays open, also in the locked state.
-
-= 2.14.3 =
-
-* The access message (for example the "Pharmacies only" card, «Μόνο για φαρμακεία») now appears **in place of the tool** on the page, next to the title, instead of at the end of the page.
-
-= 2.14.2 =
-
-* With "Pharmacists only", anyone without access now sees a clear "Pharmacies only" card instead of a generic message:
-  * Guest: what is needed (business category: Pharmacy), three steps and a "Log in / Register" button to /login/.
-  * Logged-in account that is not a pharmacy: an explanation and a "Contact" button to /contact/.
-
-= 2.14.1 =
-
-* "Who can send email" now has **the same three choices** as access: Free for everyone (including guests) / Pharmacists only / Administrators only. The separate "Email from guests" checkbox was removed; "Free for everyone" covers it.
-* On upgrade, the old "Contributors and above" settings become "Pharmacists only" automatically. "Free for everyone" access stays as it is.
-
-= 2.14.0 =
-
-**Simple access setting.**
-
-* "Who can use the tool" now has three clear choices: **Free for everyone** (including guests), **Pharmacists only** (accounts with registration category "Φαρμακείο" / Pharmacy), **Administrators only**. Administrators always have access.
-* The separate "Guests without login" checkbox was removed; it follows from "Free for everyone".
-* "Who can send email" has the same easy choices: Everyone with access to the tool / Pharmacists only / Administrators only.
-* An account that is not a pharmacy gets a clear message about what is missing.
-* Older settings (for example "Contributors and above") are shown as they are, so saving the page changes nothing you did not choose.
 
 The full history is in CHANGELOG.md, shipped with the plugin.
 
 == Upgrade Notice ==
 
-= 2.15.6 =
-Adds a "Check for a new version" button for the bundled DataMatrix library in the settings. No change to scanning, parsing or email.
+= 2.16.1 =
+Codes scanned without separators that could also be a pack missing a field now ask for confirmation. Existing pharmacist approvals are kept.
 
-= 2.15.5 =
-Stricter defaults: logged-in users get daily and per-recipient email limits (administrators exempt), public email domains such as gmail.com are ignored in the guest domain list, and manual creation by guests is off by default. Also updates the barcode library for strictly conformant DataMatrix padding. Recommended for all sites.
+= 2.16.0 =
+Email is now limited to verified pharmacists. After updating, approve each real pharmacy once under Users (column "QR email", checkbox on the profile); until then only administrators can send email. Provenance notes no longer appear on labels.
 
-= 2.15.4 =
-Cleans up expired tokens on sites without WP-Cron, and tightens guest email to 3 messages per recipient per day. If you allow guest recipients through the `qrrp_guest_email_recipient_allowed` filter without a domain list, also return true from `qrrp_guest_email_open_recipients`, or guest email stops. Recommended for all sites.
-
-= 2.15.3 =
-Guest email becomes deny-by-default: if guests send email on your site, add the allowed domains in the settings after updating, otherwise guest email stays off. Also fixes a stale label that could remain printable after a failed scan. Recommended for all sites.
-
-= 2.15.2 =
-Closes a provenance gap that could add an unproven AI to a rebuilt code, prevents duplicate emails from one link, and limits CPU use on crafted input. Recommended for all sites.
-
-= 2.15.1 =
-Fixes a case where an extra AI of the pack (for example 240) could be left out of the rebuilt code. Recommended for all sites.
-
-= 2.15.0 =
-Fixes every issue from a full code review: GS1 separator placement, stronger DataMatrix verification, guest rate limits, token handling, translations and accessibility. Recommended for all sites.
+= 2.15.7 =
+Temporary email images are deleted right after sending. If your mail plugin queues messages and sends them later, return true from `qrrp_mail_attachment_deferred`, or emails may go out without the image.
 
 == License ==
 

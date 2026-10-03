@@ -144,6 +144,8 @@ function qrrp_uninstall_site() {
 
 	/* 2.15.2: το single event που σβήνει τα temp PNG των αποστολών email. */
 	wp_clear_scheduled_hook( 'qrrp_sweep_mail_temp_files' );
+	/* 2.16.1: το ωριαίο cron καθαρισμού του rate limiter. */
+	wp_clear_scheduled_hook( 'qrrp_rl_sweep' );
 
 	qrrp_uninstall_delete_uploads();
 }
@@ -216,12 +218,21 @@ function qrrp_uninstall_network() {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No core API deletes usermeta rows by key across all users.
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( %s, %s, %s, %s, %s )",
+			"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( %s, %s, %s, %s, %s, %s )",
 			'qrrp_pro_expires',
 			'qrrp_pro_activated_on',
 			'qrrp_manual_access',
 			'qrrp_invoices',
-			'qrrp_hide_pharmacist_warning' /* 2.15.4 */
+			'qrrp_hide_pharmacist_warning', /* 2.15.4 */
+			'qrrp_verified_pharmacist' /* 2.16.0 */
+		)
+	);
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- 2.16.1: per-site approval keys ({prefix}qrrp_verified_pharmacist) on multisite.
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE %s",
+			'%' . $wpdb->esc_like( '_qrrp_verified_pharmacist' )
 		)
 	);
 

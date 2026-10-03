@@ -37,7 +37,64 @@ function qrrp_allowed_tool_capabilities() {
 
 /** Μη κενές τιμές δικαιώματος email· το '' («ίδιο με το εργαλείο») είναι επίσης θεμιτό. */
 function qrrp_allowed_email_capabilities() {
-	return array( 'edit_posts', 'manage_options', 'qrrp_pharmacist' );
+	return array( 'edit_posts', 'manage_options', 'qrrp_pharmacist', 'qrrp_verified_pharmacist' );
+}
+
+/** 2.16.0: user meta της έγκρισης φαρμακοποιού από διαχειριστή ('1' = εγκεκριμένος). */
+const QRRP_VERIFIED_PHARMACIST_META = 'qrrp_verified_pharmacist';
+
+/**
+ * 2.16.1: το meta key της έγκρισης. Στο multisite ανά site (με το πρόθεμα του
+ * blog, όπως η update_user_option()): το user meta είναι κοινό σε όλο το
+ * δίκτυο, και έγκριση από τον διαχειριστή ενός site ίσχυε σε όλα. Στο απλό
+ * site αμετάβλητο, άρα οι εγκρίσεις της 2.16.0 μένουν.
+ *
+ * @return string
+ */
+function qrrp_verified_pharmacist_meta_key() {
+	global $wpdb;
+
+	if ( function_exists( 'is_multisite' ) && is_multisite() && isset( $wpdb ) && is_object( $wpdb ) && method_exists( $wpdb, 'get_blog_prefix' ) ) {
+		return $wpdb->get_blog_prefix() . QRRP_VERIFIED_PHARMACIST_META;
+	}
+
+	return QRRP_VERIFIED_PHARMACIST_META;
+}
+
+/**
+ * 2.16.1: η αποθηκευμένη έγκριση του χρήστη σε αυτό το site (χωρίς τους
+ * διαχειριστές και χωρίς το φίλτρο· βλ. qrrp_user_is_verified_pharmacist()).
+ *
+ * @param int $user_id
+ * @return bool
+ */
+function qrrp_user_has_verified_flag( $user_id ) {
+	return '1' === get_user_meta( (int) $user_id, qrrp_verified_pharmacist_meta_key(), true );
+}
+
+/**
+ * 2.16.0: εγκεκριμένος φαρμακοποιός; Οι διαχειριστές πάντα· οι υπόλοιποι μόνο
+ * με έγκριση από διαχειριστή στο προφίλ τους (όχι με αυτο-δήλωση). Φίλτρο
+ * 'qrrp_is_verified_pharmacist' (bool, $user_id) για άλλη πηγή έγκρισης· δεν
+ * πρέπει να καλεί current_user_can( 'qrrp_verified_pharmacist' ).
+ *
+ * @param int $user_id
+ * @return bool
+ */
+function qrrp_user_is_verified_pharmacist( $user_id ) {
+	$user_id = (int) $user_id;
+
+	if ( $user_id < 1 ) {
+		return false;
+	}
+
+	if ( user_can( $user_id, 'manage_options' ) ) {
+		return true;
+	}
+
+	$is = qrrp_user_has_verified_flag( $user_id );
+
+	return (bool) apply_filters( 'qrrp_is_verified_pharmacist', $is, $user_id );
 }
 
 /** Δικαίωμα email για απούσα γραμμή: η σταθερά, αν είναι αποδεκτή, αλλιώς fail-closed. */
@@ -106,16 +163,23 @@ function qrrp_fold_greek( $text ) {
 }
 
 /**
- * user_has_cap: δίνει το qrrp_pharmacist σε φαρμακοποιούς, μόνο όταν ζητείται.
+ * user_has_cap: δίνει το qrrp_pharmacist σε φαρμακοποιούς και το
+ * qrrp_verified_pharmacist (2.16.0) σε εγκεκριμένους, μόνο όταν ζητείται.
  * Μόνο προσθέτει· δικαίωμα δοσμένο ρητά (π.χ. από role editor) μένει.
  */
 function qrrp_grant_pharmacist_cap( $allcaps, $caps, $args, $user ) {
-	if (
-		in_array( 'qrrp_pharmacist', (array) $caps, true )
-		&& empty( $allcaps['qrrp_pharmacist'] )
-		&& is_object( $user ) && isset( $user->ID )
-	) {
+	if ( ! is_object( $user ) || ! isset( $user->ID ) ) {
+		return $allcaps;
+	}
+
+	$caps = (array) $caps;
+
+	if ( in_array( 'qrrp_pharmacist', $caps, true ) && empty( $allcaps['qrrp_pharmacist'] ) ) {
 		$allcaps['qrrp_pharmacist'] = ! empty( $allcaps['manage_options'] ) || qrrp_user_is_pharmacist( (int) $user->ID );
+	}
+
+	if ( in_array( 'qrrp_verified_pharmacist', $caps, true ) && empty( $allcaps['qrrp_verified_pharmacist'] ) ) {
+		$allcaps['qrrp_verified_pharmacist'] = ! empty( $allcaps['manage_options'] ) || qrrp_user_is_verified_pharmacist( (int) $user->ID );
 	}
 
 	return $allcaps;
@@ -329,7 +393,15 @@ function qrrp_normalize_email_for_limit( $email ) {
 		$local = substr( $local, 0, $plus );
 	}
 
-	return $local . substr( $email, $at );
+	$domain = substr( $email, $at + 1 );
+
+	/* 2.16.1: το Gmail αγνοεί τις τελείες (a.b@ = ab@)· αλλιώς παρέκαμπταν το όριο ανά παραλήπτη. */
+	if ( in_array( $domain, array( 'gmail.com', 'googlemail.com' ), true ) ) {
+		$local  = str_replace( '.', '', $local );
+		$domain = 'gmail.com';
+	}
+
+	return $local . '@' . $domain;
 }
 
 /**
@@ -356,7 +428,17 @@ function qrrp_manual_entry_allowed() {
 		return true;
 	}
 
-	return '1' === get_option( 'qrrp_allow_guests', '0' )
-		&& 'read' === qrrp_tool_capability()
+	return qrrp_guest_access_enabled()
 		&& '1' === get_option( 'qrrp_allow_guest_manual_entry', '0' );
+}
+
+/**
+ * 2.16.1: πρόσβαση επισκεπτών στο εργαλείο (opt-in και εργαλείο ανοιχτό σε
+ * όλους). Μία πηγή για Ajax, Shortcode και χειροκίνητη εισαγωγή.
+ *
+ * @return bool
+ */
+function qrrp_guest_access_enabled() {
+	return '1' === get_option( 'qrrp_allow_guests', '0' )
+		&& 'read' === qrrp_tool_capability();
 }

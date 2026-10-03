@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the QR ReBuilder Pro plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: QR ReBuilder Pro 2.15.7\n"
+"Project-Id-Version: QR ReBuilder Pro 2.16.1\n"
 "Report-Msgid-Bugs-To: https://pharmacyneeds.gr\n"
-"POT-Creation-Date: 2026-09-29 18:25:18+00:00\n"
+"POT-Creation-Date: 2026-10-03 08:54:31+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -51,548 +51,609 @@ msgstr ""
 msgid "Τοποθετήστε το shortcode %s σε οποιαδήποτε σελίδα ή άρθρο για να εμφανιστεί το εργαλείο σάρωσης και αναδημιουργίας QR."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:80
+#: includes/class-qrrp-admin.php:89
 msgid "Από την 2.15.3 οι επισκέπτες στέλνουν email μόνο σε domains που ορίζετε. Η λίστα είναι κενή, οπότε το email επισκεπτών είναι προς το παρόν ανενεργό."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:82
+#: includes/class-qrrp-admin.php:91
 msgid "Ορισμός επιτρεπτών domains"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:88
+#: includes/class-qrrp-admin.php:120
+msgid "Το email είναι ανοιχτό σε όσους έχουν πρόσβαση στο εργαλείο, χωρίς έγκριση. Κάθε λογαριασμός που μπορεί να εγγραφεί στέλνει email από τη διεύθυνση του site σε οποιονδήποτε παραλήπτη. Συνιστάται «Μόνο εγκεκριμένοι φαρμακοποιοί»."
+msgstr ""
+
+#: includes/class-qrrp-admin.php:122
+msgid "Ρυθμίσεις email"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:128
 msgid "QR ReBuilder Pro — Ρυθμίσεις"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:199
+#: includes/class-qrrp-admin.php:239
 msgid "Πρόσβαση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:206
+#: includes/class-qrrp-admin.php:246
 msgid "Ποιος έχει πρόσβαση στο εργαλείο"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:219
+#: includes/class-qrrp-admin.php:259
 msgid "Χειροκίνητη δημιουργία από επισκέπτες"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:227
+#: includes/class-qrrp-admin.php:267
 msgid "Ποιος μπορεί να στέλνει email"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:236
+#: includes/class-qrrp-admin.php:276
 msgid "Email επισκεπτών: επιτρεπτά domains"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:245
+#: includes/class-qrrp-admin.php:285
 msgid "Σελίδα εργαλείου"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:254 includes/class-qrrp-admin.php:270
+#: includes/class-qrrp-admin.php:294 includes/class-qrrp-admin.php:310
 msgid "Email αποστολέα"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:261
+#: includes/class-qrrp-admin.php:301
 msgid "Όνομα αποστολέα"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:279
+#: includes/class-qrrp-admin.php:319
 msgid "Ανάλυση QR χωρίς διαχωριστικό (GS1 Group Separator)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:286
+#: includes/class-qrrp-admin.php:326
 msgid "Συνηθισμένο μήκος SN"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:295
+#: includes/class-qrrp-admin.php:335
 msgid "Συνηθισμένο μήκος LOT"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:304 includes/class-qrrp-shortcode.php:888
+#: includes/class-qrrp-admin.php:344 includes/class-qrrp-shortcode.php:905
 msgid "Εκτύπωση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:311
+#: includes/class-qrrp-admin.php:351
 msgid "Προσανατολισμός εκτύπωσης"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:320
+#: includes/class-qrrp-admin.php:360
 msgid "Μέγεθος DataMatrix στην εκτύπωση (mm)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:329
+#: includes/class-qrrp-admin.php:369
 msgid "Επεξηγηματικό σχόλιο στην εκτύπωση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:337
+#: includes/class-qrrp-admin.php:377
 msgid "Πεδία PC/SN/LOT/EXP στην εκτύπωση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:346
+#: includes/class-qrrp-admin.php:386
 msgid "Χρήση εργαλείου"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:363
+#: includes/class-qrrp-admin.php:403
 msgid "Επιτυχείς δημιουργίες κωδικού. Κάθε πάτημα «Δημιουργία» που παρήγαγε κωδικό μετράει ξεχωριστά — και οι αναδημιουργίες της ίδιας συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:367
+#: includes/class-qrrp-admin.php:407
 msgid "Δεν έχει καταγραφεί ακόμη καμία δημιουργία κωδικού."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:388 includes/class-qrrp-admin.php:494
+#: includes/class-qrrp-admin.php:428 includes/class-qrrp-admin.php:534
 msgid "Σύνολο"
 msgstr ""
 
 #. translators: %s: the current month, e.g. "Αύγουστος 2026".
-#: includes/class-qrrp-admin.php:410
+#: includes/class-qrrp-admin.php:450
 msgid "Απορρίψεις (επικύρωση/προέλευση) (%s)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:419
+#: includes/class-qrrp-admin.php:459
 msgid "Καταγραφή από"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:427
+#: includes/class-qrrp-admin.php:467
 msgid "Καταγράφεται μόνο ο μήνας και ο αριθμός. Ποτέ PC, SN, LOT, EXP, χρήστης ή διεύθυνση."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:458
+#: includes/class-qrrp-admin.php:498
 msgid "Σχήμα αναγνώσεων"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:461
+#: includes/class-qrrp-admin.php:501
 msgid "Πόσο δυσκολεύτηκε η ανάγνωση της σάρωσης, πριν καν ζητηθεί κωδικός. Μετράει κάθε προσπάθεια ανάγνωσης ξεχωριστά — και τις επαναλήψεις της ίδιας συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:469
+#: includes/class-qrrp-admin.php:509
 msgid "Οι σαρώσεις και οι δημιουργίες μετρώνται ανεξάρτητα: μία σάρωση μπορεί να μη δώσει καμία δημιουργία, ή να δώσει πολλές. Η χειροκίνητη εισαγωγή δίνει δημιουργία χωρίς σάρωση. Οι δύο αριθμοί δεν είναι συγκρίσιμοι μεταξύ τους."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:473
+#: includes/class-qrrp-admin.php:513
 msgid "Προσπάθειες ανάγνωσης"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:474
+#: includes/class-qrrp-admin.php:514
 msgid "Χωρίς διαχωριστικά (χρειάστηκε συμπερασμός ορίων)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:475
+#: includes/class-qrrp-admin.php:515
 msgid "Ζητήθηκε επιβεβαίωση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:476
+#: includes/class-qrrp-admin.php:516
 msgid "Περισσότερες από μία πιθανές αναγνώσεις"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:477
+#: includes/class-qrrp-admin.php:517
 msgid "Εντοπίστηκε επιπλέον AI"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:478
+#: includes/class-qrrp-admin.php:518
 msgid "Χαμηλή βεβαιότητα"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:484
+#: includes/class-qrrp-admin.php:524
 msgid "Ο σαρωτής έστειλε GS1 DataMatrix identifier (]d2)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:485
+#: includes/class-qrrp-admin.php:525
 msgid "Ο σαρωτής έστειλε ΑΛΛΟ identifier"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:486
+#: includes/class-qrrp-admin.php:526
 msgid "Χωρίς identifier (χειροκίνητη εισαγωγή ή σαρωτής που δεν τον στέλνει)"
 msgstr ""
 
 #. translators: 1: read attempts with a recorded identifier, 2: all read attempts.
-#: includes/class-qrrp-admin.php:518
+#: includes/class-qrrp-admin.php:558
 msgid "Το identifier του σαρωτή καταγράφεται μόνο από τη στιγμή που προστέθηκε αυτή η μέτρηση, οπότε οι τρεις γραμμές identifier καλύπτουν %1$s από τις %2$s προσπάθειες ανάγνωσης. Τα ποσοστά τους υπολογίζονται επί των σαρώσεων με καταγεγραμμένο identifier."
 msgstr ""
 
 #. translators: 1: absolute count, 2: percentage of read attempts.
-#: includes/class-qrrp-admin.php:539
+#: includes/class-qrrp-admin.php:579
 msgid "%1$s (%2$s%%)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:691
+#: includes/class-qrrp-admin.php:731
 msgid "Η σελίδα εργαλείου δεν είναι δημοσιευμένη σελίδα. Η προηγούμενη επιλογή διατηρήθηκε."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:709
+#: includes/class-qrrp-admin.php:749
 msgid "— Αυτόματη ανίχνευση —"
 msgstr ""
 
 #. translators: %s: page title or ID.
-#: includes/class-qrrp-admin.php:728
+#: includes/class-qrrp-admin.php:768
 msgid "%s (μη δημοσιευμένη — επιλέξτε άλλη)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:750
+#: includes/class-qrrp-admin.php:790
 msgid "Η ρυθμισμένη σελίδα εργαλείου δεν είναι πλέον δημοσιευμένη. Επιλέξτε μια δημοσιευμένη σελίδα ή «Αυτόματη ανίχνευση» και αποθηκεύστε."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:758
+#: includes/class-qrrp-admin.php:798
 msgid "Η σελίδα που περιέχει το shortcode. Όταν οριστεί ρητά, ο αποκλεισμός της από full-page cache και ο σύνδεσμος στο email γίνονται βέβαιοι αντί για εικασία — και δουλεύουν ακόμη κι όταν η σελίδα είναι φτιαγμένη με page builder."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:789
+#: includes/class-qrrp-admin.php:829
 msgid "Η τιμή για το δικαίωμα χρήσης του εργαλείου δεν ήταν έγκυρη και αγνοήθηκε. Η προηγούμενη ρύθμιση διατηρήθηκε."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:826
+#: includes/class-qrrp-admin.php:867
 msgid "Η τιμή για το δικαίωμα αποστολής email δεν ήταν έγκυρη και αγνοήθηκε. Η προηγούμενη ρύθμιση διατηρήθηκε."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:884
+#: includes/class-qrrp-admin.php:925
 msgid "Η πρόσβαση επισκεπτών χωρίς σύνδεση απενεργοποιήθηκε, επειδή υπάρχει μόνο όταν η πρόσβαση είναι «Ελεύθερο για όλους»."
 msgstr ""
 
 #. translators: %s: comma-separated list of rejected entries.
-#: includes/class-qrrp-admin.php:914
+#: includes/class-qrrp-admin.php:955
 msgid "Email επισκεπτών: αγνοήθηκαν όσα δεν είναι έγκυρα domains (ή περισσεύουν πάνω από 50): %s"
 msgstr ""
 
 #. translators: %s: comma-separated list of removed public email domains, e.g. gmail.com.
-#: includes/class-qrrp-admin.php:928
+#: includes/class-qrrp-admin.php:969
 msgid "Email επισκεπτών: αφαιρέθηκαν δημόσιες υπηρεσίες email, γιατί θα επέτρεπαν σε οποιονδήποτε επισκέπτη να στέλνει email από το site σας σε όλους τους χρήστες τους: %s. Βάλτε μόνο το domain του φαρμακείου σας."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:965
+#: includes/class-qrrp-admin.php:1006
 msgid "Η αποστολή email από επισκέπτες απενεργοποιήθηκε, επειδή ισχύει μόνο όταν η πρόσβαση είναι «Ελεύθερο για όλους»."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:999
+#: includes/class-qrrp-admin.php:1047
+msgid "Το email αποστολέα δεν ήταν έγκυρο. Κρατήθηκε η προηγούμενη τιμή."
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1057
 msgid "Το email αποστολέα δεν ήταν έγκυρο. Χρησιμοποιήθηκε το admin email του WordPress."
 msgstr ""
 
 #. translators: 1: setting label, 2: minimum, 3: maximum, 4: value kept.
-#: includes/class-qrrp-admin.php:1074
+#: includes/class-qrrp-admin.php:1132
 msgid "Το «%1$s» δέχεται ακέραιο από %2$d ως %3$d. Η τιμή που δώσατε δεν είναι έγκυρη και δεν αποθηκεύτηκε — διατηρήθηκε η προηγούμενη (%4$d)."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1090
+#: includes/class-qrrp-admin.php:1148
 msgid "Τυπικό μήκος σειριακού αριθμού (SN)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1099
+#: includes/class-qrrp-admin.php:1157
 msgid "Τυπικό μήκος παρτίδας (LOT)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1118
+#: includes/class-qrrp-admin.php:1176
 msgid "Το μέγεθος του κωδικού δεν ήταν έγκυρος αριθμός χιλιοστών. Η προηγούμενη τιμή διατηρήθηκε."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1150
+#: includes/class-qrrp-admin.php:1208
 msgid "Ο προσανατολισμός εκτύπωσης δεν ήταν έγκυρη επιλογή. Η προηγούμενη τιμή διατηρήθηκε."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1174 includes/class-qrrp-admin.php:1215
+#: includes/class-qrrp-admin.php:1232 includes/class-qrrp-admin.php:1274
 msgid "Ελεύθερο για όλους (και χωρίς σύνδεση)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1175
+#: includes/class-qrrp-admin.php:1233
 msgid "Μόνο συνδεδεμένοι χρήστες"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1176 includes/class-qrrp-admin.php:1216
+#: includes/class-qrrp-admin.php:1234
 msgid "Μόνο φαρμακοποιοί"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1177 includes/class-qrrp-admin.php:1217
+#: includes/class-qrrp-admin.php:1235 includes/class-qrrp-admin.php:1277
 msgid "Μόνο διαχειριστές"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1179 includes/class-qrrp-admin.php:1211
+#: includes/class-qrrp-admin.php:1237 includes/class-qrrp-admin.php:1270
 msgid "Συνεργάτες και άνω (παλαιότερη ρύθμιση)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1183
+#: includes/class-qrrp-admin.php:1241
 msgid "«Ελεύθερο για όλους»: το εργαλείο λειτουργεί για οποιονδήποτε, ακόμη και χωρίς λογαριασμό. «Μόνο συνδεδεμένοι χρήστες»: οποιοσδήποτε έχει συνδεθεί με λογαριασμό του site. «Μόνο φαρμακοποιοί»: μόνο συνδεδεμένοι λογαριασμοί με Κατηγορία «Φαρμακείο» (από τη φόρμα εγγραφής). Οι διαχειριστές έχουν πάντα πρόσβαση."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1210
+#: includes/class-qrrp-admin.php:1269
 msgid "Όλοι οι συνδεδεμένοι χρήστες (παλαιότερη ρύθμιση)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1223
+#: includes/class-qrrp-admin.php:1275
+msgid "Μόνο εγκεκριμένοι φαρμακοποιοί (συνιστάται)"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1276
+msgid "Όλοι όσοι δηλώνουν «Φαρμακείο» (χωρίς έγκριση)"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1283
 msgid "Ποιος μπορεί να στέλνει τον κωδικό με email. Δεν μπορεί να είναι πιο ανοιχτό από την πρόσβαση στο εργαλείο. Με «Ελεύθερο για όλους» οι ανώνυμοι επισκέπτες στέλνουν μόνο στα domains της λίστας «Email επισκεπτών: επιτρεπτά domains»."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1239
+#. translators: %s: link to the Users screen.
+#: includes/class-qrrp-admin.php:1290
+msgid "Εγκεκριμένοι φαρμακοποιοί: επιλέξτε «Εγκεκριμένος φαρμακοποιός» στο προφίλ του χρήστη (%s, στήλη «QR email»). Οι διαχειριστές είναι πάντα εγκεκριμένοι."
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1291
+msgid "Χρήστες"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1311
 msgid "Να επιτρέπεται σε μη συνδεδεμένους επισκέπτες να δημιουργούν κωδικό χειροκίνητα, χωρίς σάρωση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1242
+#: includes/class-qrrp-admin.php:1314
 msgid "Ο επισκέπτης πληκτρολογεί PC, SN, LOT και EXP και επιβεβαιώνει ότι τα διάβασε από τη συσκευασία. Ισχύει μόνο όταν η πρόσβαση είναι «Ελεύθερο για όλους». Αν το απενεργοποιήσετε, η χειροκίνητη δημιουργία και η αλλαγή τιμών που δεν προκύπτουν από τη σάρωση μένουν μόνο για όσους έχουν συνδεθεί."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1245
+#: includes/class-qrrp-admin.php:1317
 msgid "Όριο:"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1246
-msgid "ο server δεν μπορεί να αποδείξει ότι μια «σάρωση» έγινε με πραγματικό σαρωτή. Ένας επισκέπτης με τεχνικές γνώσεις μπορεί να στείλει δικά του δεδομένα ως σάρωση. Γι' αυτό ό,τι δημιουργεί επισκέπτης σημειώνεται πάντα ως «Δηλωμένο από τον χρήστη». Για πραγματικό έλεγχο, κρατήστε το εργαλείο για συνδεδεμένους χρήστες."
+#: includes/class-qrrp-admin.php:1318
+msgid "ο server δεν μπορεί να αποδείξει ότι μια «σάρωση» έγινε με πραγματικό σαρωτή. Ένας επισκέπτης με τεχνικές γνώσεις μπορεί να στείλει δικά του δεδομένα ως σάρωση, οπότε η ρύθμιση αυτή δεν είναι έλεγχος ασφαλείας. Για πραγματικό έλεγχο, κρατήστε το εργαλείο για συνδεδεμένους χρήστες."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1258
+#: includes/class-qrrp-admin.php:1330
 msgid "Ένα domain ανά γραμμή, π.χ. pharmacyneeds.gr. Ισχύει μόνο όταν το email είναι «Ελεύθερο για όλους». Κενό = οι επισκέπτες δεν στέλνουν email πουθενά. Κάθε διεύθυνση δέχεται έως 3 email το 24ωρο από επισκέπτες."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1260
+#: includes/class-qrrp-admin.php:1332
 msgid "Δημόσιες υπηρεσίες email (gmail.com, outlook.com κ.λπ.) δεν γίνονται δεκτές."
 msgstr ""
 
 #. translators: 1: emails per logged-in user per 24 hours, 2: emails from one logged-in user to the same address per 24 hours.
-#: includes/class-qrrp-admin.php:1268
+#: includes/class-qrrp-admin.php:1340
 msgid "Η λίστα δεν αφορά τους συνδεδεμένους χρήστες. Εκείνοι στέλνουν έως %1$d email το 24ωρο ο καθένας και έως %2$d στην ίδια διεύθυνση· οι διαχειριστές εξαιρούνται."
 msgstr ""
 
 #. translators: %s: comma-separated list of ignored public email domains, e.g. gmail.com.
-#: includes/class-qrrp-admin.php:1285
+#: includes/class-qrrp-admin.php:1357
 msgid "Από την 2.15.5 αγνοούνται δημόσιες υπηρεσίες email της λίστας (%s): θα επέτρεπαν σε οποιονδήποτε επισκέπτη να στέλνει email από το site σας σε όλους τους χρήστες τους. Αποθηκεύστε ξανά τις ρυθμίσεις για να αφαιρεθούν."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1294
+#: includes/class-qrrp-admin.php:1366
 msgid "Το email επισκεπτών είναι ενεργό αλλά η λίστα είναι κενή: από την 2.15.3 οι επισκέπτες δεν μπορούν να στείλουν email μέχρι να προσθέσετε domains."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1324
+#: includes/class-qrrp-admin.php:1396
 msgid "Προσοχή:"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1325
+#: includes/class-qrrp-admin.php:1397
 msgid "η εγγραφή χρηστών είναι ανοιχτή και το «Φαρμακείο» το δηλώνει ο ίδιος ο χρήστης στη φόρμα εγγραφής. Οποιοσδήποτε εγγραφεί ως «Φαρμακείο» παίρνει αυτό το δικαίωμα. Για επαληθευμένους λογαριασμούς, συνδέστε το φίλτρο qrrp_is_pharmacist με την έγκριση λογαριασμών του site."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1328
+#: includes/class-qrrp-admin.php:1400
 msgid "Αν εγκρίνετε κάθε λογαριασμό χειροκίνητα πριν μπορέσει να συνδεθεί, η προειδοποίηση δεν σας αφορά."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1329
+#: includes/class-qrrp-admin.php:1401
 msgid "Απόκρυψη"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1340 includes/class-qrrp-vendor-check.php:56
+#: includes/class-qrrp-admin.php:1430 includes/class-qrrp-shortcode.php:939
+msgid "Αποστολή email"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1435
+msgid "Εγκεκριμένος φαρμακοποιός: μπορεί να στέλνει τον κωδικό με email"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1441
+msgid "Ο χρήστης έχει δηλώσει «Φαρμακείο» κατά την εγγραφή. Εγκρίνετε μόνο αφού βεβαιωθείτε ότι είναι πραγματικό φαρμακείο."
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1442
+msgid "Ο χρήστης δεν έχει δηλώσει «Φαρμακείο» κατά την εγγραφή."
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1487
+msgid "QR email"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1508
+msgid "Εγκεκριμένος"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1512
+msgid "Αναμένει έγκριση"
+msgstr ""
+
+#: includes/class-qrrp-admin.php:1524 includes/class-qrrp-vendor-check.php:56
 msgid "Δεν έχετε δικαίωμα για αυτή την ενέργεια."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1368
+#: includes/class-qrrp-admin.php:1552
 msgid "Όταν ένας κωδικός δεν περιέχει τον αόρατο χαρακτήρα διαχωρισμού GS1, το plugin δοκιμάζει τα επιτρεπτά όρια για SN και LOT και επιλέγει την πιο συνεπή ερμηνεία. Αν προκύψει μία μοναδική, πλήρης και έγκυρη λύση, η ανάλυση συνεχίζει χωρίς υποχρεωτική επιβεβαίωση. Χειροκίνητος έλεγχος ζητείται μόνο όταν υπάρχει πραγματική αμφιβολία ή πρόβλημα εγκυρότητας. Αν υπάρχει πραγματικός Group Separator, αυτός έχει πάντα προτεραιότητα."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1378
+#: includes/class-qrrp-admin.php:1562
 msgid "Ρυθμίσεις για τη λειτουργία «Εκτύπωση». Το φυσικό μέγεθος του DataMatrix ορίζεται εδώ ώστε να ταιριάζει στον ετικετογράφο σας (π.χ. μικρότερο για DYMO/μικρές ετικέτες, μεγαλύτερο για μεγάλη ετικέτα Zebra). Αν η ετικέτα βγαίνει κομμένη ή σε δύο κομμάτια, δοκιμάστε «Οριζόντια» στον προσανατολισμό."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1391
+#: includes/class-qrrp-admin.php:1575
 msgid "Πλάτος του κωδικού στην εκτύπωση. Προτεινόμενο 20–40mm. Για μικρές ετικέτες (π.χ. DYMO 450) βάλτε μικρότερο, π.χ. 18–22mm· για τη μεγάλη ετικέτα του Zebra μπορείτε 30–40mm. Πολύ μικρό μέγεθος μπορεί να μη σκαναρίζεται."
 msgstr ""
 
 #. translators: %s: the minimum width in millimetres below which the barcode is never shrunk.
-#: includes/class-qrrp-admin.php:1397
+#: includes/class-qrrp-admin.php:1581
 msgid "Σε στενή ετικέτα ο κωδικός σμικρύνεται όσο χρειάζεται για να χωρέσει, αλλά ποτέ κάτω από %s mm — κάτω από εκεί σταματά και ξεχειλίζει ορατά, ώστε να μη βγει ετικέτα που φαίνεται σωστή αλλά δεν σαρώνεται."
 msgstr ""
 
 #. translators: %s: the configured print width in millimetres.
-#: includes/class-qrrp-admin.php:1423
+#: includes/class-qrrp-admin.php:1607
 msgid "Στα %s mm, το πλάτος κάθε module (X-dimension) εξαρτάται από το μέγεθος του συμβόλου, το οποίο αλλάζει ανάλογα με τα δεδομένα της συσκευασίας:"
 msgstr ""
 
 #. translators: 1: symbol size in modules, 2: X-dimension in millimetres.
-#: includes/class-qrrp-admin.php:1442
+#: includes/class-qrrp-admin.php:1626
 msgid "%1$s modules → %2$s mm ανά module"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1451
+#: includes/class-qrrp-admin.php:1635
 msgid "Οι προδιαγραφές GS1 για ρυθμιζόμενα προϊόντα υγείας ορίζουν ελάχιστο 0,254 mm και στόχο 0,380 mm ανά module. Πιο πλατύ module σημαίνει καθαρότερη εκτύπωση και ευκολότερη σάρωση."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1461
+#: includes/class-qrrp-admin.php:1645
 msgid "Οριζόντια (συνιστάται για ετικέτες)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1462
+#: includes/class-qrrp-admin.php:1646
 msgid "Κάθετα"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1463
+#: includes/class-qrrp-admin.php:1647
 msgid "Αυτόματο (όπως ο εκτυπωτής)"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1468
+#: includes/class-qrrp-admin.php:1652
 msgid "Για φαρδιές-κοντές ετικέτες (π.χ. Zebra) η «Οριζόντια» χωράει τα πάντα σε μία σελίδα και είναι η ασφαλής επιλογή. Το «Αυτόματο» δεν ορίζει προσανατολισμό: ακολουθεί τον οδηγό του εκτυπωτή, οπότε αν εκείνος είναι δηλωμένος κάθετος η ετικέτα μπορεί να βγει κομμένη ή σε δύο κομμάτια."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1477
+#: includes/class-qrrp-admin.php:1661
 msgid "Εμφάνιση του επεξηγηματικού σχολίου («Αντιγράψτε το…») κάτω από το GS1"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1479
+#: includes/class-qrrp-admin.php:1663
 msgid "Απενεργοποιήστε το σε πολύ μικρές ετικέτες για να μη γεμίζει ο χώρος."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1488
+#: includes/class-qrrp-admin.php:1672
 msgid "Εμφάνιση των πεδίων PC/SN/LOT/EXP και ημερομηνίας στην εκτύπωση"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1490
+#: includes/class-qrrp-admin.php:1674
 msgid "Το DataMatrix και το GS1 ήδη περιέχουν αυτά τα στοιχεία· απενεργοποιήστε τα για μικρές ετικέτες."
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1499 includes/class-qrrp-admin.php:1508
+#: includes/class-qrrp-admin.php:1683 includes/class-qrrp-admin.php:1692
 msgid "χαρακτήρες"
 msgstr ""
 
-#: includes/class-qrrp-admin.php:1525
+#: includes/class-qrrp-admin.php:1709
 msgid "Το αρχείο προβολής των ρυθμίσεων δεν βρέθηκε."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:74
+#: includes/class-qrrp-ajax.php:73
 msgid "Ο έλεγχος ασφαλείας απέτυχε. Ανανεώστε τη σελίδα και δοκιμάστε ξανά."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:90
+#: includes/class-qrrp-ajax.php:89
 msgid "Μη επιτρεπτή μέθοδος αιτήματος."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:102
+#: includes/class-qrrp-ajax.php:101
 msgid "Δεν έχετε δικαίωμα χρήσης αυτού του εργαλείου."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:113
+#: includes/class-qrrp-ajax.php:112
 msgid "Η πρόσβαση επισκεπτών δεν είναι ενεργοποιημένη."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:194
+#: includes/class-qrrp-ajax.php:210
 msgid "Η αποστολή email από επισκέπτες δεν είναι ενεργοποιημένη."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:201 includes/class-qrrp-shortcode.php:288
+#: includes/class-qrrp-ajax.php:217 includes/class-qrrp-shortcode.php:284
 msgid "Δεν έχετε δικαίωμα αποστολής email από αυτό το εργαλείο."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:230 includes/class-qrrp-gs1-parser.php:426
+#: includes/class-qrrp-ajax.php:246 includes/class-qrrp-gs1-parser.php:426
 msgid "Δεν δόθηκαν δεδομένα QR."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:234 includes/class-qrrp-gs1-parser.php:430
+#: includes/class-qrrp-ajax.php:250 includes/class-qrrp-gs1-parser.php:430
 msgid "Τα δεδομένα QR υπερβαίνουν το επιτρεπτό μέγεθος."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:297 includes/class-qrrp-ajax.php:1001
+#: includes/class-qrrp-ajax.php:313 includes/class-qrrp-ajax.php:1042
 msgid "Δεν ήταν δυνατή η αναδημιουργία του κωδικού με όλα τα πεδία της συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:316 includes/class-qrrp-ajax.php:1051
+#: includes/class-qrrp-ajax.php:332 includes/class-qrrp-ajax.php:1092
 msgid "Ο σύνδεσμος ή η επιβεβαίωση χρησιμοποιήθηκε ήδη. Ξαναδοκίμασε από την αρχή."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:368
+#: includes/class-qrrp-ajax.php:384
 msgid "Η ημερομηνία λήξης έχει παρέλθει. Επιβεβαιώστε ότι θέλετε να δημιουργήσετε κωδικό για ληγμένο προϊόν."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:431
+#: includes/class-qrrp-ajax.php:447
 msgid "Τα αρχικά δεδομένα της σάρωσης υπερβαίνουν το επιτρεπτό μέγεθος."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:745
+#: includes/class-qrrp-ajax.php:787
 msgid "Ο κωδικός περιέχει πρόσθετα πεδία που δεν μπορούν να μεταφερθούν με ασφάλεια στον νέο κωδικό. Σαρώστε ξανά τη συσκευασία."
 msgstr ""
 
 #. translators: %s: λίστα GS1 Application Identifiers, π.χ. «AI 240, AI 403».
-#: includes/class-qrrp-ajax.php:748
+#: includes/class-qrrp-ajax.php:790
 msgid "Ο κωδικός περιέχει πρόσθετα πεδία (%s) που δεν μπορούν να μεταφερθούν με ασφάλεια στον νέο κωδικό. Σαρώστε ξανά τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:758
+#: includes/class-qrrp-ajax.php:800
 msgid "Λείπει η αρχική σάρωση. Σαρώστε ξανά τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:759
+#: includes/class-qrrp-ajax.php:801
 msgid "Ο σύνδεσμος του email έληξε ή έχει ήδη χρησιμοποιηθεί. Σαρώστε ξανά τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:760
+#: includes/class-qrrp-ajax.php:802
 msgid "Η σάρωση δεν διαβάστηκε. Σαρώστε ξανά τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:761
+#: includes/class-qrrp-ajax.php:803
 msgid "Η σάρωση δεν μπόρεσε να επαληθευτεί πλήρως. Ελέγξτε τα στοιχεία στη συσκευασία και επιβεβαιώστε."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:762
+#: includes/class-qrrp-ajax.php:804
 msgid "Οι τιμές που ζητάτε να κωδικοποιηθούν δεν προκύπτουν από τη σάρωση. Επιβεβαιώστε τις από το HRI της συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:763
+#: includes/class-qrrp-ajax.php:805
 msgid "Δημιουργία χωρίς σάρωση: επιβεβαιώστε ότι τα PC, SN, LOT και EXP τα διαβάσατε από την ίδια τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:764
+#: includes/class-qrrp-ajax.php:806
 msgid "Η ανάγνωση δεν είναι μονοσήμαντη. Ελέγξτε τη συσκευασία και επιβεβαιώστε."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:765
+#: includes/class-qrrp-ajax.php:807
 msgid "Η αλλαγή τιμών που δεν προκύπτουν από τη σάρωση επιτρέπεται μόνο σε συνδεδεμένους χρήστες."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:770
+#: includes/class-qrrp-ajax.php:812
 msgid "Δεν ήταν δυνατή η επαλήθευση της προέλευσης των στοιχείων."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:857 includes/class-qrrp-mailer.php:96
+#: includes/class-qrrp-ajax.php:899 includes/class-qrrp-mailer.php:93
 msgid "Μη έγκυρη διεύθυνση email."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:868
+#: includes/class-qrrp-ajax.php:910
 msgid "Η αποστολή σε αυτή τη διεύθυνση δεν επιτρέπεται για επισκέπτες."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:879
+#: includes/class-qrrp-ajax.php:921
 msgid "Λείπουν τα επικυρωμένα δεδομένα του QR. Δημιουργήστε ξανά τον κωδικό."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:887
+#: includes/class-qrrp-ajax.php:929
 msgid "Τα επικυρωμένα δεδομένα του QR υπερβαίνουν το επιτρεπτό μέγεθος."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:908 includes/class-qrrp-ajax.php:1014
+#: includes/class-qrrp-ajax.php:950 includes/class-qrrp-ajax.php:1055
 msgid "Τα στοιχεία δεν συμφωνούν με τον δημιουργημένο QR. Δημιουργήστε ξανά τον κωδικό και δοκιμάστε πάλι."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:929 includes/class-qrrp-shortcode.php:250
+#: includes/class-qrrp-ajax.php:971 includes/class-qrrp-shortcode.php:247
 msgid "Η επαλήθευση του ήδη δημιουργημένου κωδικού έληξε ή δεν αντιστοιχεί στα τρέχοντα στοιχεία. Δημιουργήστε ξανά τον κωδικό."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:978
+#: includes/class-qrrp-ajax.php:1019
 msgid "Δεν ήταν δυνατή η επαλήθευση όλων των πεδίων του ήδη δημιουργημένου κωδικού."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1067
+#: includes/class-qrrp-ajax.php:1112
+msgid "Παρουσιάστηκε απρόσμενο σφάλμα κατά την αποστολή του email."
+msgstr ""
+
+#: includes/class-qrrp-ajax.php:1122
 msgid "Ο σύνδεσμος ή η επιβεβαίωση έχει πια χρησιμοποιηθεί: ξεκίνησε ξανά από τη σάρωση του κωδικού και μετά στείλε το email."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1112
+#: includes/class-qrrp-ajax.php:1167
 msgid "Ένα από τα δεδομένα του αιτήματος υπερβαίνει το επιτρεπτό μέγεθος."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1210 includes/class-qrrp-ajax.php:1247
+#: includes/class-qrrp-ajax.php:1265 includes/class-qrrp-ajax.php:1302
 msgid "Στάλθηκαν ήδη αρκετά email σε αυτή τη διεύθυνση σήμερα. Δοκιμάστε ξανά αργότερα."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1255
+#: includes/class-qrrp-ajax.php:1310
 msgid "Φτάσατε το ημερήσιο όριο αποστολής email. Δοκιμάστε ξανά αύριο."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1305
+#: includes/class-qrrp-ajax.php:1360
 msgid "Έγιναν πάρα πολλά αιτήματα. Δοκιμάστε ξανά αργότερα."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1351
+#: includes/class-qrrp-ajax.php:1406
 msgid "Παρουσιάστηκε απρόσμενο σφάλμα. Δοκιμάστε ξανά."
 msgstr ""
 
-#: includes/class-qrrp-ajax.php:1360
+#: includes/class-qrrp-ajax.php:1415
 msgid "Μια απαραίτητη λειτουργία του plugin δεν είναι διαθέσιμη."
 msgstr ""
 
@@ -616,7 +677,7 @@ msgstr ""
 msgid "Η εικόνα του GS1 DataMatrix θα ξεπερνούσε το μέγιστο επιτρεπτό μέγεθος. Μειώστε την κλίμακα ή το περιθώριο."
 msgstr ""
 
-#: includes/class-qrrp-datamatrix.php:227 includes/class-qrrp-shortcode.php:282
+#: includes/class-qrrp-datamatrix.php:227 includes/class-qrrp-shortcode.php:278
 msgid "Η δημιουργία του GS1 DataMatrix απέτυχε."
 msgstr ""
 
@@ -686,879 +747,881 @@ msgstr ""
 msgid "Ο κωδικός είχε ρητά όρια πεδίων (Group Separator ή παρενθέσεις), αλλά για να βρεθούν όλα τα PC/SN/LOT/EXP χρειάστηκε να χωριστεί τιμή που ο κωδικός είχε ήδη κλείσει. Κάποιο πεδίο μπορεί να μην υπάρχει στον αρχικό κωδικό. Ελέγξτε όλα τα πεδία με τη συσκευασία πριν συνεχίσετε."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:597
+#. translators: %s: the competing reading(s), e.g. 'SN «ABCD10EFGH» χωρίς LOT'.
+#: includes/class-qrrp-gs1-parser.php:600
+msgid "Ο κωδικός δεν περιείχε Group Separator και διαβάζεται και ως κωδικός χωρίς κάποιο πεδίο: %s. Αν η συσκευασία δεν έχει αυτό το πεδίο, ο parser το δημιούργησε κόβοντας άλλη τιμή. Ελέγξτε όλα τα πεδία με τη συσκευασία πριν συνεχίσετε."
+msgstr ""
+
+#. translators: %s: comma-separated field values, e.g. SN «AB», LOT «CD».
+#: includes/class-qrrp-gs1-parser.php:610
+msgid "Ο κωδικός δεν περιείχε Group Separator και η πιθανότερη ανάγνωση δίνει ασυνήθιστα κοντές τιμές: %s. Αν η συσκευασία δεν έχει κάποιο από αυτά τα πεδία, ο parser μπορεί να το δημιούργησε κόβοντας άλλη τιμή. Ελέγξτε όλα τα πεδία με τη συσκευασία πριν συνεχίσετε."
+msgstr ""
+
+#: includes/class-qrrp-gs1-parser.php:638
 msgid "Αγνοήθηκε περιττός Group Separator μετά από fixed-length πεδίο."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:697 includes/class-qrrp-gs1-parser.php:3537
+#: includes/class-qrrp-gs1-parser.php:738 includes/class-qrrp-gs1-parser.php:3578
 msgid "Το PC (GTIN) απέτυχε τον έλεγχο ψηφίου ελέγχου GS1 — πιθανό σφάλμα σάρωσης. Ελέγξτε το πριν συνεχίσετε."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:713
+#: includes/class-qrrp-gs1-parser.php:754
 msgid "ΠΡΟΣΟΧΗ — το Serial ή το LOT περιέχει «;» ή «:». Αν στη συσκευασία υπάρχει στη θέση τους «Q», το πληκτρολόγιο ήταν σε ελληνική διάταξη. Ελέγξτε τα με τη συσκευασία."
 msgstr ""
 
 #. translators: %s: expiry date in YYYY-MM-DD form.
-#: includes/class-qrrp-gs1-parser.php:724
+#: includes/class-qrrp-gs1-parser.php:765
 msgid "Η ημερομηνία λήξης (%s) έχει ήδη παρέλθει. Ελέγξτε το προϊόν πριν συνεχίσετε."
 msgstr ""
 
 #. translators: %s: the competing reading, e.g. 'SN «ABC»'.
-#: includes/class-qrrp-gs1-parser.php:766
+#: includes/class-qrrp-gs1-parser.php:807
 msgid "Ο κωδικός δεν περιείχε Group Separator και υπάρχει και δεύτερη έγκυρη ανάγνωση, επειδή τμήμα της τιμής μπορεί να είναι άλλο GS1 πεδίο: %s. Ελέγξτε τα πεδία με τη συσκευασία πριν συνεχίσετε."
 msgstr ""
 
 #. translators: %s: comma-separated list of the inferred fields with their values, e.g. «SN «ABC4032», LOT «NK4032»».
-#: includes/class-qrrp-gs1-parser.php:792
+#: includes/class-qrrp-gs1-parser.php:833
 msgid "Ο κωδικός δεν περιείχε Group Separator. Τα όρια υπολογίστηκαν ως η πιθανότερη ανάγνωση: %s. Ρίξτε μια ματιά στη συσκευασία για επιβεβαίωση."
 msgstr ""
 
 #. translators: %s: the fields as read when "<GS>" is part of the value.
-#: includes/class-qrrp-gs1-parser.php:853
+#: includes/class-qrrp-gs1-parser.php:894
 msgid "Αν το «<GS>» είναι μέρος της τιμής και όχι διαχωριστής, η ανάγνωση είναι: %s. Επιλέξτε την τιμή που υπάρχει στη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:942
+#: includes/class-qrrp-gs1-parser.php:983
 msgid "Αφαιρέθηκε UTF-8 BOM από την αρχή των δεδομένων."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:950
+#: includes/class-qrrp-gs1-parser.php:991
 msgid "Αφαιρέθηκαν αόρατοι χαρακτήρες (non-breaking space ή zero-width) που προέρχονται από αντιγραφή κειμένου."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:961
+#: includes/class-qrrp-gs1-parser.php:1002
 msgid "Αφαιρέθηκε το πρόθεμα «GS1:» που αντιγράφηκε μαζί με τα δεδομένα."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:968
+#: includes/class-qrrp-gs1-parser.php:1009
 msgid "Αφαιρέθηκαν χαρακτήρες αρχής/τέλους από scanner suffix ή copy/paste."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:983
+#: includes/class-qrrp-gs1-parser.php:1024
 msgid "ΠΡΟΣΟΧΗ — η σάρωση περιείχε ελληνικούς χαρακτήρες: το πληκτρολόγιο ήταν σε ελληνική διάταξη όταν διαβάστηκε ο κωδικός. Οι χαρακτήρες επαναφέρθηκαν στα λατινικά τους πλήκτρα, ΑΛΛΑ μια σάρωση σε λάθος διάταξη μπορεί να έχει χάσει ή να έχει διπλώσει χαρακτήρες. ΕΛΕΓΞΤΕ πεδίο προς πεδίο — ή, ασφαλέστερα, αλλάξτε τη γλώσσα σε αγγλικά και σαρώστε ξανά."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:999
+#: includes/class-qrrp-gs1-parser.php:1040
 msgid "ΠΡΟΣΟΧΗ — ο identifier «]:3» σημαίνει ότι το πληκτρολόγιο ήταν σε ελληνική διάταξη. Τα «;» και «:» επαναφέρθηκαν σε «q» και «Q». Ελέγξτε τα πεδία με τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1007
+#: includes/class-qrrp-gs1-parser.php:1048
 msgid "Αφαιρέθηκαν κενά/αλλαγές γραμμής μέσα στα δεδομένα (προέρχονται από αντιγραφή αναδιπλωμένου κειμένου· τα GS1 δεδομένα δεν περιέχουν ποτέ κενά)."
 msgstr ""
 
 #. translators: %s: the symbology identifier that was removed, e.g. ]d2.
-#: includes/class-qrrp-gs1-parser.php:1025
+#: includes/class-qrrp-gs1-parser.php:1066
 msgid "Αφαιρέθηκε scanner symbology identifier «%s», αλλά δεν είναι ο αναμενόμενος GS1 identifier. Ελέγξτε την πηγή."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1044
+#: includes/class-qrrp-gs1-parser.php:1085
 msgid "Μετατράπηκε ορατή αναπαράσταση Group Separator σε ASCII 29."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1050
+#: includes/class-qrrp-gs1-parser.php:1091
 msgid "Τα δεδομένα περιείχαν το κείμενο «<GS>» και διαβάστηκε ως Group Separator. Επειδή το GS1 επιτρέπει τους χαρακτήρες «<» και «>» μέσα σε Serial ή LOT, ελέγξτε τα πεδία με τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1051
+#: includes/class-qrrp-gs1-parser.php:1092
 msgid "Τα δεδομένα περιέχουν το κείμενο «<GS>». Διατηρήθηκε ΩΣ ΕΧΕΙ, επειδή το GS1 επιτρέπει τους χαρακτήρες «<» και «>» μέσα σε Serial ή LOT. Αν εννοούσατε πραγματικό Group Separator, χρησιμοποιήστε τη μορφή [GS] ή σαρώστε ξανά τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1063
+#: includes/class-qrrp-gs1-parser.php:1104
 msgid "Αναγνωρίστηκε μορφή HRI με παρενθέσεις και μετατράπηκε σε GS1 element string."
 msgstr ""
 
 #. translators: %s: comma separated list of GS1 Application Identifiers, e.g. "240, 30".
-#: includes/class-qrrp-gs1-parser.php:1075
+#: includes/class-qrrp-gs1-parser.php:1116
 msgid "Ο κωδικός περιείχε και άλλα GS1 πεδία (AI %s) εκτός των PC/SN/LOT/EXP. Δεν εμφανίζονται ως επεξεργάσιμα πεδία. Στον νέο κωδικό θα διατηρηθούν μόνο όσα επαληθευτούν με ασφάλεια από την αρχική πηγή."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1083
+#: includes/class-qrrp-gs1-parser.php:1124
 msgid "πιθανό διπλό ή άκυρο AI"
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1090
+#: includes/class-qrrp-gs1-parser.php:1131
 msgid "Αφαιρέθηκε περιττός Group Separator από την αρχή ή το τέλος."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1097
+#: includes/class-qrrp-gs1-parser.php:1138
 msgid "Συγχωνεύτηκαν διαδοχικοί Group Separators."
 msgstr ""
 
 #. translators: 1: field label (SN, LOT), 2: comma-separated character positions.
-#: includes/class-qrrp-gs1-parser.php:1528
+#: includes/class-qrrp-gs1-parser.php:1569
 msgid "%1$s θέση %2$s"
 msgstr ""
 
 #. translators: 1: field label (SN, LOT), 2: comma-separated character positions. */ 				__( '%1$s θέση %2$s', 'qr-rebuilder-pro' ), 				$label, 				implode( ', ', $list ) 			); 		}  		if ( ! empty( $places ) ) { 			$result['warnings'][] = sprintf( 				/* translators: %s: fields and character positions, e.g. "SN θέση 3, 7".
-#: includes/class-qrrp-gs1-parser.php:1537
+#: includes/class-qrrp-gs1-parser.php:1578
 msgid "ΠΡΟΣΟΧΗ — το «Σ» της ελληνικής διάταξης βγαίνει και από το S και από το W (Shift+W σε Linux). Μπορεί να είναι «S» ή «W»: %s. Επιλέξτε την τιμή που είναι τυπωμένη στη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1543
+#: includes/class-qrrp-gs1-parser.php:1584
 msgid "ΠΡΟΣΟΧΗ — η σάρωση περιείχε «Σ», που στην ελληνική διάταξη βγαίνει και από το S και από το W (Shift+W σε Linux). Διαβάστηκε ως «S» σε πεδίο που δεν αλλάζει τα PC/SN/LOT/EXP. Ελέγξτε τον κωδικό με τη συσκευασία ή σαρώστε ξανά με αγγλική διάταξη."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1547
+#: includes/class-qrrp-gs1-parser.php:1588
 msgid "ΠΡΟΣΟΧΗ — η σάρωση περιείχε «Σ», που στην ελληνική διάταξη βγαίνει και από το S και από το W (Shift+W σε Linux). Διαβάστηκε ως «S» χωρίς πλήρη έλεγχο της εναλλακτικής. Σαρώστε ξανά με αγγλική διάταξη."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1604
+#: includes/class-qrrp-gs1-parser.php:1645
 msgid "δεν ξεκινά με Application Identifier σε παρενθέσεις"
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1624
+#: includes/class-qrrp-gs1-parser.php:1665
 msgid "το AI (%s) εμφανίζεται δύο φορές"
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1630
+#: includes/class-qrrp-gs1-parser.php:1671
 msgid "άγνωστο AI (%s)"
 msgstr ""
 
 #. translators: %s: GS1 Application Identifier. */ 				$error = sprintf( __( 'άγνωστο AI (%s)', 'qr-rebuilder-pro' ), $ai ); 				return null; 			}  			if ( ! self::value_matches_definition( $value, $full_table[ $ai ] ) ) { 				$error = sprintf( 					/* translators: 1: the rejected value, 2: GS1 Application Identifier.
-#: includes/class-qrrp-gs1-parser.php:1637
+#: includes/class-qrrp-gs1-parser.php:1678
 msgid "η τιμή «%1$s» δεν είναι έγκυρη για το AI (%2$s)"
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1669
+#: includes/class-qrrp-gs1-parser.php:1710
 msgid "δεν περιέχει κανένα από τα AI (01), (17), (10), (21)"
 msgstr ""
 
 #. translators: 1: the extra AI, 2: the preceding field (e.g. "SN" or "AI 240"), 3: the value if the parentheses belong to it.
-#: includes/class-qrrp-gs1-parser.php:1770
+#: includes/class-qrrp-gs1-parser.php:1811
 msgid "Στη μορφή HRI το «(%1$s)» ακολουθεί πεδίο μεταβλητού μήκους (%2$s). Οι παρενθέσεις επιτρέπονται μέσα σε τιμή GS1, οπότε μπορεί να είναι νέο πεδίο ή μέρος της τιμής: %2$s «%3$s». Ελέγξτε με τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1804
+#: includes/class-qrrp-gs1-parser.php:1845
 msgid "Το πεδίο PC (GTIN) είναι υποχρεωτικό."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1806
+#: includes/class-qrrp-gs1-parser.php:1847
 msgid "Το PC (GTIN, AI 01) πρέπει να αποτελείται από ακριβώς 14 ψηφία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1808
+#: includes/class-qrrp-gs1-parser.php:1849
 msgid "Το PC (GTIN, AI 01) απέτυχε τον έλεγχο του ψηφίου ελέγχου GS1 (check digit) — πιθανό λάθος σάρωσης ή πληκτρολόγησης."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1814
+#: includes/class-qrrp-gs1-parser.php:1855
 msgid "SN (Serial Number, AI 21)"
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1815
+#: includes/class-qrrp-gs1-parser.php:1856
 msgid "LOT (Batch/Lot, AI 10)"
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1824
+#: includes/class-qrrp-gs1-parser.php:1865
 msgid "Το πεδίο %s είναι υποχρεωτικό."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1827
+#: includes/class-qrrp-gs1-parser.php:1868
 msgid "Το %1$s υπερβαίνει το μέγιστο επιτρεπτό μήκος (%2$d χαρακτήρες) του GS1."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1830
+#: includes/class-qrrp-gs1-parser.php:1871
 msgid "Το %s περιέχει χαρακτήρες που δεν επιτρέπονται από το GS1 (character set 82)."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1838
+#: includes/class-qrrp-gs1-parser.php:1879
 msgid "Το πεδίο EXP (ημερομηνία λήξης) είναι υποχρεωτικό."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1840
+#: includes/class-qrrp-gs1-parser.php:1881
 msgid "Το EXP πρέπει να είναι έγκυρη ημερομηνία (YYYY-MM-DD)."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1846
+#: includes/class-qrrp-gs1-parser.php:1887
 msgid "Το EXP δεν είναι πραγματική ημερομηνία."
 msgstr ""
 
 #. translators: 1: first supported year, 2: last supported year.
-#: includes/class-qrrp-gs1-parser.php:1859
+#: includes/class-qrrp-gs1-parser.php:1900
 msgid "Το EXP πρέπει να ανήκει στα έτη %1$d-%2$d. Το GS1 αποθηκεύει μόνο τα δύο τελευταία ψηφία του έτους (YYMMDD), οπότε έτος εκτός αυτού του εύρους θα διαβαζόταν ως διαφορετική ημερομηνία κατά τη σάρωση."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:1872 includes/class-qrrp-gs1-parser.php:1884 includes/class-qrrp-gs1-parser.php:1897
+#: includes/class-qrrp-gs1-parser.php:1913 includes/class-qrrp-gs1-parser.php:1925 includes/class-qrrp-gs1-parser.php:1938
 msgid "Τα επιπλέον GS1 πεδία δεν έχουν έγκυρη μορφή passthrough."
 msgstr ""
 
 #. translators: 1: field label, 2: the chosen value, 3: comma-separated alternative values.
-#: includes/class-qrrp-gs1-parser.php:2069
+#: includes/class-qrrp-gs1-parser.php:2110
 msgid "%1$s = %2$s (εναλλακτικά: %3$s)"
 msgstr ""
 
 #. translators: 1: number of readings found, 2: fields to review.
-#: includes/class-qrrp-gs1-parser.php:2083
+#: includes/class-qrrp-gs1-parser.php:2124
 msgid "Η ανάγνωση δεν ήταν μονοσήμαντη: βρέθηκαν %1$d πιθανές ερμηνείες. Επιλέχθηκε η πιθανότερη — ελέγξτε στη συσκευασία: %2$s."
 msgstr ""
 
 #. translators: %s: per-field list such as "SN = 1234 (alternatives: 12, 1)".
-#: includes/class-qrrp-gs1-parser.php:2099
+#: includes/class-qrrp-gs1-parser.php:2140
 msgid "Η ανάγνωση δεν ήταν μονοσήμαντη. Το εργαλείο επέλεξε την πιθανότερη — ελέγξτε στη συσκευασία: %s."
 msgstr ""
 
 #. translators: %s: per-field list such as "SN = 1234 (alternatives: 12, 1)". */ 			__( 'Η ανάγνωση δεν ήταν μονοσήμαντη. Το εργαλείο επέλεξε την πιθανότερη — ελέγξτε στη συσκευασία: %s.', 'qr-rebuilder-pro' ), 			implode( ' · ', $parts ) 		);  		if ( ! empty( $safe ) ) { 			$message .= ' ' . sprintf( 				/* translators: %s: comma-separated field labels that are not in doubt.
-#: includes/class-qrrp-gs1-parser.php:2106
+#: includes/class-qrrp-gs1-parser.php:2147
 msgid "Τα %s δεν αμφισβητούνται."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:2305
+#: includes/class-qrrp-gs1-parser.php:2346
 msgid "Μη έγκυρη ημερομηνία λήξης (αναμένονται 6 ψηφία YYMMDD)."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:2315 includes/class-qrrp-gs1-parser.php:2322 includes/class-qrrp-gs1-parser.php:2354 includes/class-qrrp-shortcode.php:252
+#: includes/class-qrrp-gs1-parser.php:2356 includes/class-qrrp-gs1-parser.php:2363 includes/class-qrrp-gs1-parser.php:2395 includes/class-qrrp-shortcode.php:249
 msgid "Μη έγκυρη ημερομηνία λήξης."
 msgstr ""
 
 #. translators: 1: month/year, e.g. 02/2028, 2: last day of that month.
-#: includes/class-qrrp-gs1-parser.php:2336
+#: includes/class-qrrp-gs1-parser.php:2377
 msgid "Η ημερομηνία λήξης δεν έχει ημέρα (DD=00): ισχύει έως το τέλος του μήνα %1$s (%2$s). Ο νέος κωδικός διατηρεί το «00» όπως στην αρχική σάρωση."
 msgstr ""
 
 #. translators: 1: original scanned value, 2: proposed date.
-#: includes/class-qrrp-gs1-parser.php:2347
+#: includes/class-qrrp-gs1-parser.php:2388
 msgid "ΠΡΟΣΟΧΗ — ο σαρωμένος κωδικός δεν περιείχε ημέρα λήξης: η αρχική τιμή ήταν %1$s (μόνο μήνας/έτος, DD=00). Προτείνεται %2$s (τέλος μήνα) — επιβεβαιώστε ή διορθώστε την πραγματική ημερομηνία πριν τη δημιουργία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3450
+#: includes/class-qrrp-gs1-parser.php:3491
 msgid "Αγνοήθηκε περιττός Group Separator κατά την best-effort ανάλυση."
 msgstr ""
 
 #. translators: 1: the unrecognised Application Identifier digits, 2: character position in the payload.
-#: includes/class-qrrp-gs1-parser.php:3459
+#: includes/class-qrrp-gs1-parser.php:3500
 msgid "Άγνωστο Application Identifier «%1$s» στη θέση %2$d — η ανάλυση σταμάτησε εκεί."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3474
+#: includes/class-qrrp-gs1-parser.php:3515
 msgid "Το πεδίο %s έχει μη έγκυρο μήκος."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3515
+#: includes/class-qrrp-gs1-parser.php:3556
 msgid "Το πεδίο %s εμφανίστηκε περισσότερες από μία φορές. Κρατήθηκε η τελευταία τιμή."
 msgstr ""
 
 #. translators: %s: label of the GS1 field that was repeated. */ 					$warnings[] = sprintf( __( 'Το πεδίο %s εμφανίστηκε περισσότερες από μία φορές. Κρατήθηκε η τελευταία τιμή.', 'qr-rebuilder-pro' ), self::ai_report_label( $ai, $def ) ); 					continue; 				}  				$warnings[] = sprintf( 					/* translators: 1: label of the GS1 field, 2: first value, 3: second value.
-#: includes/class-qrrp-gs1-parser.php:3521
+#: includes/class-qrrp-gs1-parser.php:3562
 msgid "Το πεδίο %1$s εμφανίστηκε δύο φορές με διαφορετικές τιμές («%2$s» και «%3$s»). Δεν επιλέχθηκε καμία — συμπληρώστε τη σωστή τιμή από τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3590
+#: includes/class-qrrp-gs1-parser.php:3631
 msgid "Το πεδίο %s πρέπει να περιέχει μόνο ψηφία."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3593
+#: includes/class-qrrp-gs1-parser.php:3634
 msgid "Το πεδίο %s περιέχει χαρακτήρες εκτός του επιτρεπτού GS1 character set."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3598
+#: includes/class-qrrp-gs1-parser.php:3639
 msgid "Το πεδίο %1$s έχει μη έγκυρο μήκος (1-%2$d χαρακτήρες)."
 msgstr ""
 
+#. translators: 1: the changed field values, 2: the missing field labels.
+#: includes/class-qrrp-gs1-parser.php:3942
+msgid "%1$s χωρίς %2$s"
+msgstr ""
+
+#: includes/class-qrrp-gs1-parser.php:3943
+msgid "ίδια πεδία"
+msgstr ""
+
 #. translators: %s: the Serial Number as read by the parser.
-#: includes/class-qrrp-gs1-parser.php:3868
+#: includes/class-qrrp-gs1-parser.php:4002
 msgid "Έλειπε Group Separator μετά το SN. Το όριο του Serial Number υπολογίστηκε από τον parser. Ελέγξτε ότι το SN είναι «%s»."
 msgstr ""
 
 #. translators: %s: the Serial Number as read by the parser. */ 					__( 'Έλειπε Group Separator μετά το SN. Το όριο του Serial Number υπολογίστηκε από τον parser. Ελέγξτε ότι το SN είναι «%s».', 'qr-rebuilder-pro' ), 					$value 				); 				return; 			}  			if ( 'LOT' === $label ) { 				$warnings[] = sprintf( 					/* translators: %s: the Batch/Lot Number as read by the parser.
-#: includes/class-qrrp-gs1-parser.php:3877
+#: includes/class-qrrp-gs1-parser.php:4011
 msgid "Έλειπε Group Separator μετά το LOT. Το όριο του Batch/Lot Number υπολογίστηκε από τον parser. Ελέγξτε ότι το LOT είναι «%s»."
 msgstr ""
 
 #. translators: %s: the Batch/Lot Number as read by the parser. */ 					__( 'Έλειπε Group Separator μετά το LOT. Το όριο του Batch/Lot Number υπολογίστηκε από τον parser. Ελέγξτε ότι το LOT είναι «%s».', 'qr-rebuilder-pro' ), 					$value 				); 				return; 			}  			$warnings[] = sprintf( 				/* translators: 1: label of the GS1 field, 2: the value as read by the parser.
-#: includes/class-qrrp-gs1-parser.php:3885
+#: includes/class-qrrp-gs1-parser.php:4019
 msgid "Έλειπε Group Separator μετά το πεδίο %1$s. Το όριό του υπολογίστηκε από τον parser. Ελέγξτε ότι η τιμή είναι «%2$s»."
 msgstr ""
 
-#: includes/class-qrrp-gs1-parser.php:3956
+#: includes/class-qrrp-gs1-parser.php:4090
 msgid "Το πεδίο %s λείπει από τα δεδομένα."
 msgstr ""
 
 #. translators: 1: number of variable-length field boundaries inferred by the parser, 2: comma-separated list of the fields to review.
-#: includes/class-qrrp-gs1-parser.php:3904
+#: includes/class-qrrp-gs1-parser.php:4038
 msgid "Έλειπε Group Separator και %1$d όριο μεταβλητού πεδίου υπολογίστηκε από τον parser. Ελέγξτε: %2$s."
 msgid_plural "Έλειπαν Group Separators και %1$d όρια μεταβλητών πεδίων υπολογίστηκαν από τον parser. Ελέγξτε: %2$s."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of variable-length field boundaries inferred by the parser.
-#: includes/class-qrrp-gs1-parser.php:3918
+#: includes/class-qrrp-gs1-parser.php:4052
 msgid "Έλειπε Group Separator και %d όριο μεταβλητού πεδίου υπολογίστηκε από τον parser. Απαιτείται χειροκίνητος έλεγχος."
 msgid_plural "Έλειπαν Group Separators και %d όρια μεταβλητών πεδίων υπολογίστηκαν από τον parser. Απαιτείται χειροκίνητος έλεγχος."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-qrrp-mailer.php:102
+#: includes/class-qrrp-mailer.php:99
 msgid "Η αποστολή σε αυτή τη διεύθυνση δεν επιτρέπεται."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:128
+#: includes/class-qrrp-mailer.php:125
 msgid "Η συμβολοσειρά GS1 υπερβαίνει το μέγιστο επιτρεπτό μήκος."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:181
+#: includes/class-qrrp-mailer.php:191
 msgid "Δεν υπάρχει έγκυρη διεύθυνση email αποστολέα."
 msgstr ""
 
 #. translators: %s: the site name, used as the email subject prefix.
-#: includes/class-qrrp-mailer.php:186
+#: includes/class-qrrp-mailer.php:196
 msgid "[%s] Νέο GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:268
+#: includes/class-qrrp-mailer.php:287
 msgid "Η αποστολή email απέτυχε. Ελέγξτε τις ρυθμίσεις SMTP του site."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:359
+#: includes/class-qrrp-mailer.php:378
 msgid "Η δημιουργία του GS1 DataMatrix δεν είναι διαθέσιμη."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:399
+#: includes/class-qrrp-mailer.php:418
 msgid "Η επαλήθευση των GS1 δεδομένων δεν είναι διαθέσιμη."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:418
+#: includes/class-qrrp-mailer.php:437
 msgid "Τα GS1 δεδομένα δεν πέρασαν τον τελικό έλεγχο πριν από την αποστολή email."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:425
+#: includes/class-qrrp-mailer.php:444
 msgid "Τα GS1 δεδομένα δεν συμφωνούν με το RAW payload του DataMatrix."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:448
+#: includes/class-qrrp-mailer.php:467
 msgid "Δεν ήταν δυνατή η πρόσβαση στον προσωρινό φάκελο αρχείων."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:465
+#: includes/class-qrrp-mailer.php:484
 msgid "Δεν ήταν δυνατή η δημιουργία ασφαλούς προσωρινού ονόματος αρχείου."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:513
+#: includes/class-qrrp-mailer.php:532
 msgid "Αποτυχία προσωρινής αποθήκευσης της εικόνας GS1 DataMatrix."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:520
+#: includes/class-qrrp-mailer.php:539
 msgid "Δεν ήταν δυνατή η δημιουργία προσωρινού αρχείου εικόνας."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:871 includes/class-qrrp-shortcode.php:247
+#: includes/class-qrrp-mailer.php:884 includes/class-qrrp-mailer.php:1019 includes/class-qrrp-shortcode.php:244
 msgid "Πελάτης"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:875
+#: includes/class-qrrp-mailer.php:888 includes/class-qrrp-mailer.php:1023
 msgid "Ημερομηνία"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:887
+#: includes/class-qrrp-mailer.php:900 includes/class-qrrp-mailer.php:1031
 msgid "(χωρίς ημέρα – έως το τέλος του μήνα)"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:922 includes/class-qrrp-mailer.php:935
+#: includes/class-qrrp-mailer.php:923 includes/class-qrrp-mailer.php:936
 msgid "Αναδημιουργία κωδικού"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:925
+#: includes/class-qrrp-mailer.php:926
 msgid "Σαρώστε απευθείας την επισυναπτόμενη εικόνα, ή ανοίξτε το εργαλείο με προσυμπληρωμένα τα στοιχεία, πατήστε «Δημιουργία» και σαρώστε τον κωδικό."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:928
+#: includes/class-qrrp-mailer.php:929 includes/class-qrrp-mailer.php:1040
 msgid "Άνοιγμα στο QR ReBuilder Pro"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:938
+#: includes/class-qrrp-mailer.php:939
 msgid "Σαρώστε την επισυναπτόμενη εικόνα, ή εισάγετε τα παραπάνω στοιχεία (PC, SN, LOT, EXP) στο QR ReBuilder Pro για να αναδημιουργηθεί ο κωδικός."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:953
+#: includes/class-qrrp-mailer.php:954 includes/class-qrrp-mailer.php:1045
 msgid "GS1 για Χειροκίνητη εισαγωγή"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:956 includes/class-qrrp-shortcode.php:292
+#: includes/class-qrrp-mailer.php:957 includes/class-qrrp-shortcode.php:288
 msgid "Αντιγράψτε το και επικολλήστε το στη «Χειροκίνητη εισαγωγή» του QR ReBuilder Pro για να αναδημιουργηθεί ο κωδικός. Το [GS] είναι ο διαχωριστής των πεδίων."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:971
+#: includes/class-qrrp-mailer.php:972 includes/class-qrrp-mailer.php:1013
 msgid "Νέο GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:976
+#: includes/class-qrrp-mailer.php:977 includes/class-qrrp-mailer.php:1015
 msgid "Το αναδημιουργημένο GS1 DataMatrix είναι έτοιμο. Η εικόνα βρίσκεται επισυναπτόμενη στο email."
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:986
+#: includes/class-qrrp-mailer.php:987
 msgid "Εικόνα:"
 msgstr ""
 
-#: includes/class-qrrp-mailer.php:1011 includes/class-qrrp-shortcode.php:239
-msgid "Δηλωμένο από τον χρήστη: τα στοιχεία δόθηκαν από επισκέπτη και η προέλευσή τους δεν επαληθεύεται."
-msgstr ""
-
-#: includes/class-qrrp-mailer.php:1015 includes/class-qrrp-shortcode.php:281
-msgid "Μη επαληθευμένη ανάγνωση: οι τιμές επιβεβαιώθηκαν από τον χρήστη."
-msgstr ""
-
-#: includes/class-qrrp-mailer.php:1029 includes/class-qrrp-shortcode.php:280
-msgid "Χειροκίνητη καταχώριση: οι τιμές δηλώθηκαν από τον χρήστη, όχι από σάρωση."
-msgstr ""
-
-#. translators: %s: comma-separated field labels, e.g. "SN, LOT".
-#: includes/class-qrrp-mailer.php:1034
-msgid "Χειροκίνητη αλλαγή: %s (δηλώθηκε από τον χρήστη, όχι από σάρωση)."
-msgstr ""
-
-#: includes/class-qrrp-shortcode.php:230
+#: includes/class-qrrp-shortcode.php:228
 msgid "Ο server δεν απάντησε εγκαίρως. Δοκιμάστε ξανά — αν είχατε ζητήσει αποστολή email, ελέγξτε πρώτα αν έφτασε, γιατί μπορεί να στάλθηκε παρότι διακόπηκε η αναμονή."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:231
+#: includes/class-qrrp-shortcode.php:229
 msgid "Ο server αρνήθηκε το αίτημα — πιθανότατα έληξε η σύνδεσή σας ή άλλαξαν τα δικαιώματά σας. Ανανεώστε τη σελίδα και συνδεθείτε ξανά."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:233
+#: includes/class-qrrp-shortcode.php:231
 msgid "Σφάλμα του server (HTTP {status}). Δοκιμάστε ξανά σε λίγο."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:234
+#: includes/class-qrrp-shortcode.php:232
 msgid "Η σελίδα είναι παλιά και το διακριτικό ασφαλείας της έληξε. Κάντε σκληρή ανανέωση (Ctrl+F5 ή Cmd+Shift+R) και δοκιμάστε ξανά — μια απλή ανανέωση μπορεί να επιστρέψει το ίδιο αποθηκευμένο αντίγραφο."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:235
+#: includes/class-qrrp-shortcode.php:233
 msgid "Ποια τιμή δείχνει η συσκευασία;"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:236
+#: includes/class-qrrp-shortcode.php:234
 msgid "Η επιλεγμένη τιμή δεν έγινε δεκτή από το πεδίο. Συμπληρώστε την χειροκίνητα από τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:237
+#: includes/class-qrrp-shortcode.php:235
 msgid "Η ημερομηνία λήξης δεν μπόρεσε να συμπληρωθεί αυτόματα. Συμπληρώστε την από τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:238
+#: includes/class-qrrp-shortcode.php:236
 msgid "Ο σαρωτής έκανε παύση στη μέση της σάρωσης και τα δύο τμήματα ενώθηκαν. Ελέγξτε SN και LOT στη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:240
+#: includes/class-qrrp-shortcode.php:237
 msgid "Η λήξη δεν έχει ημέρα (ΗΗ=00): ισχύει έως το τέλος του μήνα και διατηρείται έτσι στον νέο κωδικό."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:241
+#: includes/class-qrrp-shortcode.php:238
 msgid "χωρίς ημέρα – έως το τέλος του μήνα"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:242
+#: includes/class-qrrp-shortcode.php:239
 msgid "Η σάρωση ήταν πολύ σύνθετη για να επαληθευτεί αυτόματα. Ελέγξτε τα στοιχεία στη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:243
+#: includes/class-qrrp-shortcode.php:240
 msgid "Τα παρακάτω δεν προκύπτουν από τη σάρωση:"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:244
+#: includes/class-qrrp-shortcode.php:241
 msgid "Επιβεβαιώστε τα από το τυπωμένο HRI της συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:245
+#: includes/class-qrrp-shortcode.php:242
 msgid "Οι τιμές που ζητάτε δεν προκύπτουν από τη σάρωση. Επιβεβαιώστε τις από το τυπωμένο HRI της συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:246
+#: includes/class-qrrp-shortcode.php:243
 msgid "Διαλέξτε πρώτα ποια τιμή δείχνει η συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:248
+#: includes/class-qrrp-shortcode.php:245
 msgid "Ημ/νία εκτύπωσης"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:249
+#: includes/class-qrrp-shortcode.php:246
 msgid "Ημ/νία"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:251
+#: includes/class-qrrp-shortcode.php:248
 msgid "Λείπουν υποχρεωτικά πεδία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:253
-msgid "Το email στάλθηκε με επιτυχία."
+#: includes/class-qrrp-shortcode.php:251
+msgid "Το email στάλθηκε στο %s."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:254
+#: includes/class-qrrp-shortcode.php:252
+msgid "Αποστολή…"
+msgstr ""
+
+#: includes/class-qrrp-shortcode.php:253
 msgid "Η αποστολή email απέτυχε."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:255
-msgid "Αλλάξατε τα στοιχεία — πατήστε «Αναδημιουργία» για να ενημερωθεί το GS1 DataMatrix."
+#: includes/class-qrrp-shortcode.php:254
+msgid "Αλλάξατε τα στοιχεία — πατήστε «Δημιουργία νέου GS1 DataMatrix» για να ενημερωθεί ο κωδικός."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:256
+#: includes/class-qrrp-shortcode.php:255
 msgid "Τα στοιχεία φορτώθηκαν από τον σύνδεσμο. Πατήστε «Δημιουργία νέου GS1 DataMatrix»."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:257
+#: includes/class-qrrp-shortcode.php:256
 msgid "Μη έγκυρα δεδομένα GS1."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:258
+#: includes/class-qrrp-shortcode.php:257
 msgid "Ανάλυση GS1…"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:259
+#: includes/class-qrrp-shortcode.php:258
 msgid "Η ανάλυση των GS1 δεδομένων απέτυχε."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:260
+#: includes/class-qrrp-shortcode.php:259
 msgid "Η ανάλυση ολοκληρώθηκε. Ελέγξτε τα πεδία PC, SN, LOT και EXP με τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:261
+#: includes/class-qrrp-shortcode.php:260
 msgid "Η ανάλυση ολοκληρώθηκε, αλλά χρειάζεται επιβεβαίωση: ελέγξτε τα πεδία και τις προειδοποιήσεις πριν δημιουργήσετε τον κωδικό."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:262
+#: includes/class-qrrp-shortcode.php:261
 msgid "Αποτυχία επικοινωνίας με τον server."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:263
+#: includes/class-qrrp-shortcode.php:262
 msgid "Προειδοποιήσεις:"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:264
+#: includes/class-qrrp-shortcode.php:263
 msgid "Το GS1 DataMatrix δημιουργήθηκε, αλλά στο επιλεγμένο πλάτος εκτύπωσης το X-dimension είναι κάτω από το ελάχιστο GS1."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:268
+#: includes/class-qrrp-shortcode.php:267
 msgid "Ελάχιστο X-dimension: {minimum_x} mm. Για αυτό το σύμβολο χρησιμοποιήστε πλάτος τουλάχιστον {minimum_width} mm."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:272
+#: includes/class-qrrp-shortcode.php:271
 msgid "Επιβεβαιώστε πρώτα ότι ελέγξατε τα πεδία χαμηλής βεβαιότητας."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:273
+#: includes/class-qrrp-shortcode.php:272
 msgid "Έλεγχος δεδομένων και δημιουργία GS1 DataMatrix…"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:274
+#: includes/class-qrrp-shortcode.php:273
 msgid "Δημιουργία χωρίς σάρωση: τα στοιχεία δεν προέρχονται από σάρωση. Επιβεβαιώστε ότι τα PC, SN, LOT και EXP τα διαβάσατε από την ίδια τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:275
+#: includes/class-qrrp-shortcode.php:274
 msgid "Τα διάβασα από τη συσκευασία — συνέχεια"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:276
+#: includes/class-qrrp-shortcode.php:275
 msgid "Τα δεδομένα δεν πέρασαν τον έλεγχο GS1."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:277
+#: includes/class-qrrp-shortcode.php:276
 msgid "Το νέο GS1 DataMatrix δημιουργήθηκε με επιτυχία."
 msgstr ""
 
 #: includes/class-qrrp-shortcode.php:279
-msgid "Χειροκίνητη αλλαγή: {fields} (δηλώθηκε από τον χρήστη, όχι από σάρωση)."
-msgstr ""
-
-#: includes/class-qrrp-shortcode.php:283
 msgid "Δημιουργήστε πρώτα το νέο GS1 DataMatrix."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:284
+#: includes/class-qrrp-shortcode.php:280
 msgid "Η αποθήκευση της εικόνας απέτυχε."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:285
+#: includes/class-qrrp-shortcode.php:281
 msgid "Το παράθυρο εκτύπωσης αποκλείστηκε από τον browser."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:286
+#: includes/class-qrrp-shortcode.php:282
 msgid "Τα GS1 δεδομένα αντιγράφηκαν. Επικολλήστε στο πρόγραμμα με Ctrl+V."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:287
+#: includes/class-qrrp-shortcode.php:283
 msgid "Η αντιγραφή απέτυχε."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:289
+#: includes/class-qrrp-shortcode.php:285
 msgid "Εισάγετε μία έγκυρη διεύθυνση email."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:290
+#: includes/class-qrrp-shortcode.php:286
 msgid "Τα επικυρωμένα GS1 δεδομένα άλλαξαν. Δημιουργήστε ξανά το GS1 DataMatrix."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:291
+#: includes/class-qrrp-shortcode.php:287
 msgid "Αποστολή email…"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:293
+#: includes/class-qrrp-shortcode.php:289
 msgid "Η εικόνα του κωδικού δεν φορτώθηκε, οπότε η εκτύπωση ακυρώθηκε — μια ετικέτα χωρίς DataMatrix δεν έχει καμία αξία. Δοκιμάστε ξανά."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:294
+#: includes/class-qrrp-shortcode.php:290
 msgid "Οι ρυθμίσεις εκτύπωσης δεν φορτώθηκαν, οπότε η εκτύπωση ακυρώθηκε — μια ετικέτα με μέγεθος κωδικού που δεν επιλέξατε δεν είναι αξιόπιστη. Ανανεώστε τη σελίδα και δοκιμάστε ξανά."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:295
+#: includes/class-qrrp-shortcode.php:291
 msgid "Το προϊόν έχει λήξει. Επιβεβαιώστε πρώτα ότι θέλετε να συνεχίσετε."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:395
+#: includes/class-qrrp-shortcode.php:387
 msgid "Απαιτείται Σύνδεση ή Δημιουργία Λογαριασμού"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:396
+#: includes/class-qrrp-shortcode.php:388
 msgid "Το QR ReBuilder Pro είναι διαθέσιμο μόνο σε συνδεδεμένους χρήστες. Συνδεθείτε στον λογαριασμό σας ή δημιουργήστε έναν νέο λογαριασμό και επιστρέψτε σε αυτή τη σελίδα για να χρησιμοποιήσετε το εργαλείο."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:404
+#: includes/class-qrrp-shortcode.php:396
 msgid "Ο λογαριασμός σας δεν έχει πρόσβαση στο εργαλείο"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:405
+#: includes/class-qrrp-shortcode.php:397
 msgid "Είστε συνδεδεμένοι, αλλά ο ρόλος σας δεν περιλαμβάνει το δικαίωμα χρήσης του εργαλείου QR ReBuilder Pro. Επικοινωνήστε με τον διαχειριστή της ιστοσελίδας."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:421 includes/class-qrrp-shortcode.php:436
+#: includes/class-qrrp-shortcode.php:413 includes/class-qrrp-shortcode.php:428
 msgid "Κατηγορία Επιχείρησης: Φαρμακείο"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:426
+#: includes/class-qrrp-shortcode.php:418
 msgid "Συνδεθείτε για να χρησιμοποιήσετε το εργαλείο"
 msgstr ""
 
 #. translators: %s: the «Κατηγορία Επιχείρησης: Φαρμακείο» badge.
-#: includes/class-qrrp-shortcode.php:429
+#: includes/class-qrrp-shortcode.php:421
 msgid "Για να κάνετε χρήση του QR-Rebuilder πρέπει να έχετε λογαριασμό με %s. Η εγγραφή είναι δωρεάν."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:434
+#: includes/class-qrrp-shortcode.php:426
 msgid "Πατήστε %s."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:434
+#: includes/class-qrrp-shortcode.php:426
 msgid "«Σύνδεση / Εγγραφή»"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:436
+#: includes/class-qrrp-shortcode.php:428
 msgid "Αν δεν έχετε λογαριασμό, κάντε εγγραφή και επιλέξτε %s."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:437
+#: includes/class-qrrp-shortcode.php:429
 msgid "Επιστρέψτε σε αυτή τη σελίδα — το εργαλείο θα είναι διαθέσιμο αμέσως."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:439
+#: includes/class-qrrp-shortcode.php:431
 msgid "Σύνδεση / Εγγραφή →"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:440
+#: includes/class-qrrp-shortcode.php:432
 msgid "Έχετε ήδη λογαριασμό φαρμακείου; Απλώς συνδεθείτε."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:445
+#: includes/class-qrrp-shortcode.php:437
 msgid "Ο λογαριασμός σας δεν είναι καταχωρισμένος ως Φαρμακείο"
 msgstr ""
 
 #. translators: %s: the «Κατηγορία Επιχείρησης: Φαρμακείο» badge.
-#: includes/class-qrrp-shortcode.php:448
+#: includes/class-qrrp-shortcode.php:440
 msgid "Το QR-Rebuilder είναι διαθέσιμο μόνο σε λογαριασμούς με %s. Αν είστε φαρμακείο, επικοινωνήστε μαζί μας για να ενημερωθεί η κατηγορία του λογαριασμού σας."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:453
+#: includes/class-qrrp-shortcode.php:445
 msgid "Επικοινωνία →"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:461
+#: includes/class-qrrp-shortcode.php:453
 msgid "Μόνο για φαρμακεία"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:477
+#: includes/class-qrrp-shortcode.php:469
 msgid "Η χρήση του εργαλείου γίνεται με ευθύνη του χρήστη."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:478
+#: includes/class-qrrp-shortcode.php:470
 msgid "Το εργαλείο δημιουργεί GS1 DataMatrix με βάση τα στοιχεία που εμφανίζονται στην οθόνη. Πριν από την εκτύπωση ή την αποστολή, βεβαιωθείτε ότι τα PC, SN, LOT και EXP συμφωνούν με τα στοιχεία της συσκευασίας."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:479
+#: includes/class-qrrp-shortcode.php:471
 msgid "Κάθε χειροκίνητη αλλαγή πρέπει να ελέγχεται προσεκτικά, καθώς τυχόν λανθασμένα στοιχεία θα οδηγήσουν στη δημιουργία λανθασμένου κωδικού."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:480
+#: includes/class-qrrp-shortcode.php:472
 msgid "Το εργαλείο δεν πραγματοποιεί έλεγχο ούτε επιβεβαιώνει τη γνησιότητα του φαρμάκου."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:563
+#: includes/class-qrrp-shortcode.php:577
 msgid "Σύνδεση"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:649
+#: includes/class-qrrp-shortcode.php:663
 msgid "Το εργαλείο εμφανίζεται ήδη σε αυτή τη σελίδα"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:650
+#: includes/class-qrrp-shortcode.php:664
 msgid "Το δεύτερο shortcode αγνοήθηκε, επειδή δύο αντίγραφα του εργαλείου στην ίδια σελίδα δεν μπορούν να λειτουργήσουν ταυτόχρονα. Το μήνυμα το βλέπουν μόνο όσοι μπορούν να επεξεργαστούν τη σελίδα."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:702
+#: includes/class-qrrp-shortcode.php:716
 msgid "Επεξεργασία…"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:721
+#: includes/class-qrrp-shortcode.php:735
 msgid "Σάρωση GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:726
+#: includes/class-qrrp-shortcode.php:740
 msgid "Σάρωση με εξωτερικό scanner"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:741
+#: includes/class-qrrp-shortcode.php:755
 msgid "Κάντε κλικ εδώ και σαρώστε τον κωδικό…"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:743
+#: includes/class-qrrp-shortcode.php:758
 msgid "Κάντε κλικ στο πεδίο και σαρώστε τον κωδικό με το scanner σας. Τα δεδομένα θα αναλυθούν αυτόματα μόλις ολοκληρωθεί η σάρωση."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:754
+#: includes/class-qrrp-shortcode.php:769
 msgid "Χειροκίνητη εισαγωγή"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:758
+#: includes/class-qrrp-shortcode.php:773
 msgid "Επικόλληση / πληκτρολόγηση δεδομένων GS1"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:766
+#: includes/class-qrrp-shortcode.php:781
 msgid "π.χ. 0108006540718100172803311026062921YN68XRRFDZP"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:770
+#: includes/class-qrrp-shortcode.php:785
 msgid "Δέχεται GS1 με [GS] ή συνεχόμενο κείμενο QR χωρίς [GS]."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:772
+#: includes/class-qrrp-shortcode.php:787
 msgid "Ανάλυση"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:780
+#: includes/class-qrrp-shortcode.php:795
 msgid "Πληροφορίες GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:786
+#: includes/class-qrrp-shortcode.php:804
 msgid "Χειροκίνητη δημιουργία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:787
+#: includes/class-qrrp-shortcode.php:805
 msgid "Συμπληρώστε τα PC, SN, LOT και EXP όπως είναι τυπωμένα στη συσκευασία και πατήστε «Δημιουργία». Θα σας ζητηθεί επιβεβαίωση ότι τα διαβάσατε από την ίδια τη συσκευασία."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:793
+#: includes/class-qrrp-shortcode.php:811
 msgid "Η ανάλυση χρειάστηκε χειροκίνητη επιβεβαίωση. Επιβεβαιώνω ότι έλεγξα το πεδίο που επισημαίνεται στην προειδοποίηση και ότι τα στοιχεία είναι σωστά."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:806
+#: includes/class-qrrp-shortcode.php:824
 msgid "Το προϊόν έχει λήξει. Επιβεβαιώνω ότι γνωρίζω ότι η ημερομηνία λήξης έχει παρέλθει και θέλω να συνεχίσω."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:811
+#: includes/class-qrrp-shortcode.php:829
 msgid "Αρχικό GS1"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:817
+#: includes/class-qrrp-shortcode.php:835
 msgid "PC (Product Code / GTIN)"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:822
+#: includes/class-qrrp-shortcode.php:840
 msgid "SN (Serial Number)"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:827
+#: includes/class-qrrp-shortcode.php:845
 msgid "LOT (Batch Number)"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:832
+#: includes/class-qrrp-shortcode.php:850
 msgid "EXP (Ημερομηνία λήξης)"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:839
+#: includes/class-qrrp-shortcode.php:857
 msgid "Στοιχεία πελάτη & εκτύπωσης"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:844
+#: includes/class-qrrp-shortcode.php:862
 msgid "Όνομα πελάτη"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:850
+#: includes/class-qrrp-shortcode.php:868
 msgid "π.χ. Παπαδόπουλος Γιώργος"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:855
+#: includes/class-qrrp-shortcode.php:873
 msgid "Ημερομηνία εκτύπωσης"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:861
+#: includes/class-qrrp-shortcode.php:879
 msgid "Δημιουργία νέου GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:862
+#: includes/class-qrrp-shortcode.php:880
 msgid "Νέα σάρωση"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:869
+#: includes/class-qrrp-shortcode.php:887
 msgid "Πληροφορίες νέου GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:880
+#: includes/class-qrrp-shortcode.php:898
 msgid "Πελάτης:"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:881
+#: includes/class-qrrp-shortcode.php:899
 msgid "Ημ/νία εκτύπωσης:"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:887
+#: includes/class-qrrp-shortcode.php:904
 msgid "Αποθήκευση εικόνας"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:889
+#: includes/class-qrrp-shortcode.php:906
 msgid "Αντιγραφή GS1 για Ctrl+V"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:895
+#: includes/class-qrrp-shortcode.php:910
+msgid "Η αποστολή με email ενεργοποιείται όταν εγκριθεί ο λογαριασμός σας ως φαρμακείο. Επικοινωνήστε μαζί μας για έγκριση."
+msgstr ""
+
+#: includes/class-qrrp-shortcode.php:916
 msgid "Αποστολή νέου GS1 DataMatrix μέσω email"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:896
+#: includes/class-qrrp-shortcode.php:917
 msgid "Στείλτε το νέο GS1 DataMatrix μαζί με όλα τα στοιχεία του."
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:900
+#: includes/class-qrrp-shortcode.php:921
 msgid "Περιεχόμενα email"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:901
+#: includes/class-qrrp-shortcode.php:922
 msgid "Εικόνα PNG"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:902
+#: includes/class-qrrp-shortcode.php:923
 msgid "PC / SN / LOT / EXP"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:903
+#: includes/class-qrrp-shortcode.php:924
 msgid "GS1"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:906
+#: includes/class-qrrp-shortcode.php:927
 msgid "Email παραλήπτη"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:915
+#: includes/class-qrrp-shortcode.php:936
 msgid "email@example.com"
 msgstr ""
 
-#: includes/class-qrrp-shortcode.php:918
-msgid "Αποστολή email"
-msgstr ""
-
-#: includes/class-qrrp-shortcode.php:922
+#: includes/class-qrrp-shortcode.php:952
 msgid "Η εικόνα αποστέλλεται ως αρχείο PNG (με λευκό φόντο) και μπορεί να αποθηκευτεί ή να εκτυπωθεί απευθείας από τον παραλήπτη."
 msgstr ""
 
@@ -1582,208 +1645,253 @@ msgstr ""
 msgid "Χωρητικότητα συνδέσμων email"
 msgstr ""
 
+#: includes/class-qrrp-site-health.php:59
+msgid "Έλεγχοι ασφαλείας της ανάγνωσης GS1"
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:77
+msgid "qrrp_strict_ambiguity = false: οι ασαφείς αναγνώσεις χωρίς separators κρίνονται με ευρετικό κανόνα αντί να ζητούν πάντα επιβεβαίωση."
+msgstr ""
+
+#. translators: %d: the configured minimum length.
+#: includes/class-qrrp-site-health.php:85
+msgid "qrrp_auto_inference_min_length = %d: πιο κοντά SN/LOT γίνονται δεκτά αυτόματα (προεπιλογή 4)."
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:91
+msgid "qrrp_preserve_expiry_day_zero = false: η λήξη με ημέρα 00 αλλάζει σε συγκεκριμένη ημέρα στον νέο κωδικό."
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:95
+msgid "qrrp_datamatrix_require_fnc1 = false: γίνεται δεκτό σύμβολο με literal GS αντί για FNC1."
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:99
+msgid "QRRP_ALLOW_UNVERIFIED_GS1 + qrrp_datamatrix_verify_gs1 = false: το παραγόμενο σύμβολο δεν επαληθεύεται πριν παραδοθεί."
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:111
+msgid "Οι έλεγχοι ασφαλείας της ανάγνωσης GS1 είναι στις προεπιλογές"
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:112
+msgid "Κανένα φίλτρο δεν χαλαρώνει την ανάγνωση ή την επαλήθευση των κωδικών."
+msgstr ""
+
 #: includes/class-qrrp-site-health.php:123
+msgid "Κάποιοι έλεγχοι ασφαλείας της ανάγνωσης GS1 έχουν χαλαρώσει"
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:124
+msgid "Κώδικας του site (plugin ή θέμα) αλλάζει τις παρακάτω προεπιλογές. Βεβαιωθείτε ότι είναι σκόπιμο."
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:193
 msgid "Δεν ήταν δυνατός ο έλεγχος της χωρητικότητας συνδέσμων"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:124 includes/class-qrrp-site-health.php:568
+#: includes/class-qrrp-site-health.php:194 includes/class-qrrp-site-health.php:640
 msgid "Το τμήμα διαχείρισης συνδέσμων δεν φορτώθηκε. Συνήθως σημαίνει ελλιπές ανέβασμα του πρόσθετου — ανεβάστε ξανά ολόκληρο τον φάκελο."
 msgstr ""
 
 #. translators: 1: live email rebuild links, 2: maximum.
-#: includes/class-qrrp-site-health.php:133
+#: includes/class-qrrp-site-health.php:203
 msgid "Ενεργοί σύνδεσμοι: %1$d από %2$d."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:137
+#: includes/class-qrrp-site-health.php:207
 msgid "Μειώστε τη διάρκεια των συνδέσμων (φίλτρο qrrp_rebuild_token_ttl) ή αυξήστε το ταβάνι (φίλτρο qrrp_token_index_max, έως 10000)."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:142
+#: includes/class-qrrp-site-health.php:212
 msgid "Κάποια email στάλθηκαν χωρίς σύνδεσμο ανακατασκευής"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:143
+#: includes/class-qrrp-site-health.php:213
 msgid "Τις τελευταίες 7 ημέρες το όριο ενεργών συνδέσμων γέμισε και νέα email στάλθηκαν χωρίς σύνδεσμο (ο κωδικός επισυνάπτεται κανονικά)."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:150
+#: includes/class-qrrp-site-health.php:220
 msgid "Οι ενεργοί σύνδεσμοι email πλησιάζουν το όριο"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:157
+#: includes/class-qrrp-site-health.php:227
 msgid "Υπάρχει χώρος για νέους συνδέσμους email"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:230
+#: includes/class-qrrp-site-health.php:300
 msgid "φίλτρο qrrp_page_cache_lifespan"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:261 includes/class-qrrp-site-health.php:404
+#: includes/class-qrrp-site-health.php:331 includes/class-qrrp-site-health.php:474
 msgid "Δεν ισχύει: η πρόσβαση επισκεπτών είναι κλειστή"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:262
+#: includes/class-qrrp-site-health.php:332
 msgid "Το εργαλείο απαιτεί σύνδεση, οπότε η σελίδα δεν σερβίρεται ποτέ από κοινόχρηστο cache με ενεργό εργαλείο. Αν κάποτε ανοίξετε την πρόσβαση επισκεπτών, αυτός ο έλεγχος θα αρχίσει να μετράει τη διάρκεια του page cache."
 msgstr ""
 
 #. translators: %s: name of the cache plugin or source.
-#: includes/class-qrrp-site-health.php:275
+#: includes/class-qrrp-site-health.php:345
 msgid "Το page cache δεν λήγει ποτέ (%s: διάρκεια 0)."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:278
+#: includes/class-qrrp-site-health.php:348
 msgid "Το page cache δεν λήγει ποτέ."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:282 includes/class-qrrp-site-health.php:323
+#: includes/class-qrrp-site-health.php:352 includes/class-qrrp-site-health.php:393
 msgid "Το page cache κρατά περισσότερο από όσο ζει το nonce"
 msgstr ""
 
 #. translators: %s: maximum safe cache lifetime in hours.
-#: includes/class-qrrp-site-health.php:285 includes/class-qrrp-site-health.php:326
+#: includes/class-qrrp-site-health.php:355 includes/class-qrrp-site-health.php:396
 msgid "Το όριο είναι %s ώρες. Οι ανώνυμοι επισκέπτες θα παίρνουν αποθηκευμένη σελίδα με ληγμένο nonce και κάθε σάρωση ή δημιουργία θα αποτυγχάνει με σφάλμα ασφαλείας — και η ανανέωση της σελίδας ΔΕΝ το λύνει, γιατί επιστρέφει το ίδιο αποθηκευμένο αντίγραφο. Μειώστε τη διάρκεια του page cache."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:298
+#: includes/class-qrrp-site-health.php:368
 msgid "Δεν μπορεί να επαληθευτεί η διάρκεια του page cache"
 msgstr ""
 
 #. translators: %s: maximum safe cache lifetime in hours.
-#: includes/class-qrrp-site-health.php:301
+#: includes/class-qrrp-site-health.php:371
 msgid "Το πρόσθετο δεν μπόρεσε να διαβάσει τη διάρκεια του page cache αυτού του ιστότοπου, οπότε δεν την ελέγχει. Ο κανόνας: για τους ανώνυμους επισκέπτες η σελίδα του εργαλείου επιτρέπεται να μπει σε cache, αλλά η διάρκεια πρέπει να μένει κάτω από %s ώρες. Πάνω από αυτό, το nonce μέσα στο αποθηκευμένο HTML λήγει και κάθε ενέργεια του επισκέπτη αποτυγχάνει με σφάλμα ασφαλείας. Δηλώστε τη διάρκεια με το φίλτρο qrrp_page_cache_lifespan για να ενεργοποιηθεί ο έλεγχος."
 msgstr ""
 
 #. translators: 1: cache lifetime in hours, 2: name of the cache plugin or source.
-#: includes/class-qrrp-site-health.php:310
+#: includes/class-qrrp-site-health.php:380
 msgid "Μετρήθηκε διάρκεια %1$s ωρών (%2$s)."
 msgstr ""
 
 #. translators: 1: cache lifetime in hours, 2: name of the cache plugin or source. */ 				esc_html__( 'Μετρήθηκε διάρκεια %1$s ωρών (%2$s).', 'qr-rebuilder-pro' ), 				esc_html( $hours( $lifespan ) ), 				esc_html( $source ) 			) 			: sprintf( 				/* translators: %s: cache lifetime in hours.
-#: includes/class-qrrp-site-health.php:316
+#: includes/class-qrrp-site-health.php:386
 msgid "Μετρήθηκε διάρκεια %s ωρών."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:336
+#: includes/class-qrrp-site-health.php:406
 msgid "Το page cache πλησιάζει το όριο του nonce"
 msgstr ""
 
 #. translators: %s: maximum safe cache lifetime in hours.
-#: includes/class-qrrp-site-health.php:339
+#: includes/class-qrrp-site-health.php:409
 msgid "Το όριο είναι %s ώρες. Λειτουργεί, αλλά μια αύξηση της διάρκειας θα σπάσει τις ενέργειες των ανώνυμων επισκεπτών."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:347
+#: includes/class-qrrp-site-health.php:417
 msgid "Η διάρκεια του page cache είναι μέσα στα όρια"
 msgstr ""
 
 #. translators: %s: maximum safe cache lifetime in hours.
-#: includes/class-qrrp-site-health.php:350
+#: includes/class-qrrp-site-health.php:420
 msgid "Το όριο είναι %s ώρες."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:405
+#: includes/class-qrrp-site-health.php:475
 msgid "Το όριο αιτημάτων μετρά ανά συνδεδεμένο χρήστη, οπότε η διεύθυνση IP δεν χρησιμοποιείται ως ταυτότητα."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:412
+#: includes/class-qrrp-site-health.php:482
 msgid "Η ταυτότητα επισκέπτη ορίζεται ρητά από τον ιστότοπο"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:413
+#: includes/class-qrrp-site-health.php:483
 msgid "Υπάρχει ενεργό φίλτρο qrrp_rate_limit_remote_addr, δηλαδή κάποιος έχει δηλώσει πώς εξάγεται η διεύθυνση του επισκέπτη πίσω από proxy. Το πρόσθετο δεν κρίνει την ορθότητά του."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:421
+#: includes/class-qrrp-site-health.php:491
 msgid "Οι επισκέπτες μετρώνται ανά διεύθυνση IP"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:422
+#: includes/class-qrrp-site-health.php:492
 msgid "Δεν εντοπίστηκε κεφαλίδα προώθησης σε αυτό το αίτημα, οπότε η διεύθυνση που βλέπει το πρόσθετο είναι πιθανότατα του ίδιου του επισκέπτη."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:431
+#: includes/class-qrrp-site-health.php:494
+msgid "Ο έλεγχος βασίζεται στο δικό σας αίτημα. Αν φτάνετε στον server απευθείας (VPN, αρχείο hosts) ενώ οι επισκέπτες περνούν από CDN, το αποτέλεσμα δεν τους αφορά."
+msgstr ""
+
+#: includes/class-qrrp-site-health.php:503
 msgid "Ο web server μεταφράζει σωστά τη διεύθυνση πίσω από το CDN"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:432
+#: includes/class-qrrp-site-health.php:504
 msgid "Υπάρχει κεφαλίδα προώθησης και συμφωνεί με τη διεύθυνση που βλέπει η PHP, δηλαδή κάθε επισκέπτης μετράει χωριστά στο όριο αιτημάτων."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:438
+#: includes/class-qrrp-site-health.php:510
 msgid "Όλοι οι επισκέπτες μοιράζονται ένα όριο αιτημάτων"
 msgstr ""
 
 #. translators: 1: address PHP sees, 2: address reported by the forwarding header.
-#: includes/class-qrrp-site-health.php:441
+#: includes/class-qrrp-site-health.php:513
 msgid "Η PHP βλέπει %1$s ενώ η κεφαλίδα προώθησης δηλώνει %2$s. Ο ιστότοπος είναι πίσω από CDN ή reverse proxy που δεν μεταφράζει τη διεύθυνση, οπότε το πρόσθετο μετράει όλους τους ανώνυμους επισκέπτες σαν έναν: μόλις ένας πιάσει το όριο, μπλοκάρονται και οι υπόλοιποι."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:444
+#: includes/class-qrrp-site-health.php:516
 msgid "Η σωστή λύση είναι ο web server να ξαναγράφει τη διεύθυνση (π.χ. real_ip module) μόνο για τους διακομιστές του CDN. Εναλλακτικά, ορίστε τη ρητά με το φίλτρο qrrp_rate_limit_remote_addr — ποτέ διαβάζοντας τυφλά την κεφαλίδα, γιατί είναι πλαστογραφήσιμη."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:471
+#: includes/class-qrrp-site-health.php:543
 msgid "Δεν φορτώθηκε η ενσωματωμένη βιβλιοθήκη barcode (vendor/tc-lib-barcode). Συνήθως σημαίνει ελλιπές ή κατεστραμμένο ανέβασμα του πρόσθετου — ανεβάστε ξανά ολόκληρο τον φάκελο."
 msgstr ""
 
 #. translators: %s: absolute path of the loaded library, shown to administrators only.
-#: includes/class-qrrp-site-health.php:480
+#: includes/class-qrrp-site-health.php:552
 msgid "Η βιβλιοθήκη barcode δεν φορτώθηκε από το ενσωματωμένο αντίγραφο του QR ReBuilder Pro. Συνήθως σημαίνει ελλιπές ανέβασμα, διακοπείσα αναβάθμιση ή διπλό αντίγραφο του φακέλου — ανεβάστε ξανά ολόκληρο τον φάκελο του πρόσθετου. Το πρόσθετο επαληθεύει κάθε κωδικό που παράγει και θα σταματήσει τη δημιουργία αν δεν μπορεί να επιβεβαιώσει το FNC1 — δηλαδή ή θα παράγεται σωστό GS1 DataMatrix ή θα εμφανίζεται σφάλμα, ποτέ σιωπηλά λάθος κωδικός. Φορτωμένη βιβλιοθήκη: %s"
 msgstr ""
 
 #. translators: %s: comma-separated list of missing GD functions.
-#: includes/class-qrrp-site-health.php:488
+#: includes/class-qrrp-site-health.php:560
 msgid "Λείπει η επέκταση GD της PHP ή κάποιες από τις συναρτήσεις της που χρησιμοποιεί το πρόσθετο (%s). Ζητήστε από τον πάροχο φιλοξενίας να ενεργοποιήσει την GD με υποστήριξη PNG."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:498
+#: includes/class-qrrp-site-health.php:570
 msgid "Η σάρωση και η ανάλυση GS1 λειτουργούν κανονικά· η εκτύπωση, η αποθήκευση και η αποστολή με email θα αποτυγχάνουν."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:502
+#: includes/class-qrrp-site-health.php:574
 msgid "Το QR ReBuilder Pro δεν μπορεί να δημιουργήσει GS1 DataMatrix"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:510
+#: includes/class-qrrp-site-health.php:582
 msgid "Η βιβλιοθήκη barcode δεν είναι το ενσωματωμένο αντίγραφο"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:517
+#: includes/class-qrrp-site-health.php:589
 msgid "Η δημιουργία GS1 DataMatrix λειτουργεί"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:518
+#: includes/class-qrrp-site-health.php:590
 msgid "Ο server διαθέτει την επέκταση GD με όλες τις συναρτήσεις που χρειάζεται το πρόσθετο, και χρησιμοποιείται η ενσωματωμένη βιβλιοθήκη barcode."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:567
+#: includes/class-qrrp-site-health.php:639
 msgid "Δεν ήταν δυνατός ο έλεγχος των παλαιών συνδέσμων"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:578
+#: includes/class-qrrp-site-health.php:650
 msgid "Δεν υπάρχουν παλαιοί σύνδεσμοι email σε εκκρεμότητα"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:579
+#: includes/class-qrrp-site-health.php:651
 msgid "Κάθε ενεργός σύνδεσμος έχει τη σημερινή μορφή."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:611
+#: includes/class-qrrp-site-health.php:683
 msgid "Ο έλεγχος συνδέσμων απορρίπτει αυτές τις εγγραφές. Η τρέχουσα έκδοση δεν τις δημιουργεί, άρα η εμφάνισή τους χρειάζεται διερεύνηση."
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:615
+#: includes/class-qrrp-site-health.php:687
 msgid "Εντοπίστηκαν εγγραφές συνδέσμων που δεν γίνονται δεκτές"
 msgstr ""
 
-#: includes/class-qrrp-site-health.php:588
+#: includes/class-qrrp-site-health.php:660
 msgid "Εντοπίστηκε %d ενεργή εγγραφή συνδέσμου email παλαιάς μορφής, την οποία η τρέχουσα έκδοση δεν αποδέχεται."
 msgid_plural "Εντοπίστηκαν %d ενεργές εγγραφές συνδέσμων email παλαιάς μορφής, τις οποίες η τρέχουσα έκδοση δεν αποδέχεται."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-qrrp-site-health.php:601
+#: includes/class-qrrp-site-health.php:673
 msgid "%d εγγραφή δεν μπόρεσε να διαβαστεί και δεν κατατάσσεται."
 msgid_plural "%d εγγραφές δεν μπόρεσαν να διαβαστούν και δεν κατατάσσονται."
 msgstr[0] ""
