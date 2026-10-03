@@ -161,6 +161,11 @@
 	.pnchat-admin .pnchat-table .num::before {
 		content: "Χρήσεις: ";
 	}
+
+	.pnchat-admin .pnchat-table td[data-label]::before {
+		content: attr(data-label) ": ";
+		color: #646970;
+	}
 }
 
 .pnchat-admin .pnchat-ai-card {
@@ -211,4 +216,51 @@
 	padding: 6px 8px;
 	background: #f0f6fc;
 	border-left: 3px solid #2271b1;
+}
+
+/* 1.12.0: Έλεγχος ευρετηρίου */
+.pnchat-admin .pnchat-index-sum {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pnchat-admin .pnchat-index-sum li {
+	margin: 0;
+	padding: 8px 14px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #8c8f94;
+}
+
+.pnchat-admin .pnchat-index-sum strong {
+	font-size: 1.4em;
+	margin-right: 4px;
+}
+
+.pnchat-admin .pnchat-index-sum .is-ok {
+	border-left-color: #00a32a;
+}
+
+.pnchat-admin .pnchat-index-sum .is-warn {
+	border-left-color: #dba617;
+}
+
+.pnchat-admin .pnchat-index-sum .is-bad {
+	border-left-color: #d63638;
+}
+
+.pnchat-admin p.pnchat-ok {
+	padding: 6px 10px;
+	background: #edfaef;
+	border-left: 4px solid #00a32a;
+	color: #1e4620;
+}
+
+.pnchat-admin details.pnchat-card > summary {
+	cursor: pointer;
+	padding: 4px 0;
 }

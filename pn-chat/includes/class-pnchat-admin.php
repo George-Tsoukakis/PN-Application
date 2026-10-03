@@ -34,7 +34,7 @@ final class PNChat_Admin {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
-		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'learn_read', 'learn_site', 'learn_control', 'proposal', 'proposals_bulk', 'lesson', 'lesson_group', 'lesson_word', 'tests_run', 'test_add', 'test_remove' ) as $a ) {
+		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'learn_read', 'learn_site', 'learn_control', 'proposal', 'proposals_bulk', 'lesson', 'lesson_group', 'lesson_word', 'tests_run', 'test_add', 'test_remove', 'index_now', 'index_refresh', 'index_media' ) as $a ) {
 			add_action( 'admin_post_pnchat_' . $a, array( __CLASS__, 'handle_' . $a ) );
 		}
 	}
@@ -63,6 +63,7 @@ final class PNChat_Admin {
 		add_submenu_page( 'pn-chat', 'Ερωτήματα', 'Ερωτήματα' . $badge, $cap, 'pn-chat-questions', array( __CLASS__, 'page_questions' ) );
 		add_submenu_page( 'pn-chat', 'Απαγορεύσεις', 'Απαγορεύσεις', $cap, 'pn-chat-blocks', array( __CLASS__, 'page_blocks' ) );
 		add_submenu_page( 'pn-chat', 'Εγκέφαλος (αντίγραφο)', 'Εγκέφαλος', $cap, 'pn-chat-brain', array( __CLASS__, 'page_brain' ) );
+		add_submenu_page( 'pn-chat', 'Έλεγχος ευρετηρίου', 'Έλεγχος ευρετηρίου', $cap, 'pn-chat-index', array( __CLASS__, 'page_index' ) );
 		add_submenu_page( 'pn-chat', 'Ρυθμίσεις', 'Ρυθμίσεις', $cap, 'pn-chat-settings', array( __CLASS__, 'page_settings' ) );
 	}
 
@@ -203,6 +204,11 @@ final class PNChat_Admin {
 			'rejected'     => array( 'success', 'Η πρόταση απορρίφθηκε. Δεν θα ξαναπροταθεί.' ),
 			'p_approved'   => array( 'success', sprintf( 'Εγκρίθηκαν %d προτάσεις.', $n ) ),
 			'p_rejected'   => array( 'success', sprintf( 'Απορρίφθηκαν %d προτάσεις.', $n ) ),
+			'index_now'    => array( 'success', sprintf( 'Διαβάστηκαν τώρα %d σελίδες.', $n ) ),
+			'index_refresh' => array( 'success', 'Όλες οι σελίδες θα ξαναδιαβαστούν στο παρασκήνιο, 40 ανά λεπτό. Η αναζήτηση συνεχίζει κανονικά στο μεταξύ.' ),
+			'media_queued' => array( 'success', sprintf( 'Μπήκαν %d PDF για διάβασμα με AI. Οι προτάσεις γνώσεων θα εμφανιστούν στις «Προτάσεις AI», συνήθως σε λίγα λεπτά.', $n ) ),
+			'media_none'   => array( 'success', 'Δεν μπήκε κανένα PDF: έχουν ήδη διαβαστεί ή είναι ήδη στην ουρά.' ),
+			'ai_off'       => array( 'error', 'Το AI δεν είναι ενεργό ή δεν έχει API key (Ρυθμίσεις → AI).' ),
 			'reindexed'    => array( 'success', sprintf( 'Η ενημέρωση του ευρετηρίου ξεκίνησε: %d σελίδες τώρα, οι υπόλοιπες στο παρασκήνιο (40 ανά λεπτό).', $n ) ),
 		);
 		if ( isset( $map[ $msg ] ) ) {
@@ -2161,7 +2167,7 @@ final class PNChat_Admin {
 		$area( 'site_intro', 'Κείμενο πριν τις σελίδες' );
 		$area( 'site_more', 'Κείμενο μετά τις σελίδες', 'Ακολουθεί φόρμα για το e-mail του επισκέπτη.' );
 		echo '</table>';
-		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Διαβάζεται ό,τι δείχνει η σελίδα, μαζί με πίνακες, shortcodes και blocks (π.χ. ένας πίνακας με λίστα φαρμάκων): έτσι στο «Είναι το Aerolin στη λίστα;» ο βοηθός δείχνει τη γραμμή του πίνακα. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα, και κάθε σελίδα ξαναδιαβάζεται μία φορά την εβδομάδα. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a> <a href="#pnchat-peek">Τι διαβάζει από μια σελίδα;</a></p>';
+		echo '<p>Ευρετήριο: <strong>' . (int) PNChat_Site_Search::count() . '</strong> σελίδες. Διαβάζεται ό,τι δείχνει η σελίδα, μαζί με πίνακες, shortcodes και blocks (π.χ. ένας πίνακας με λίστα φαρμάκων): έτσι στο «Είναι το Aerolin στη λίστα;» ο βοηθός δείχνει τη γραμμή του πίνακα. Ενημερώνεται μόνο του όταν αποθηκεύετε μια σελίδα, και κάθε σελίδα ξαναδιαβάζεται μία φορά την εβδομάδα. <a class="button" href="' . esc_url( self::action_url( 'site_reindex', array() ) ) . '">Ενημέρωση τώρα</a> <a href="#pnchat-peek">Τι διαβάζει από μια σελίδα;</a> · <a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-index' ) ) . '">Έλεγχος ευρετηρίου</a></p>';
 
 		echo '<h2 id="pnchat-ai">✨ AI βοηθός εκπαίδευσης (Claude)</h2>';
 		echo '<p class="description">Στο wp-admin: το AI διαβάζει σελίδες του site, διευθύνσεις και PDF και προτείνει γνώσεις (μενού «Προτάσεις AI»), που εγκρίνετε εσείς. Στο δημόσιο chat απαντά μόνο αν ενεργοποιήσετε παρακάτω το «AI και μέσα στο chat». Στο Claude στέλνονται σελίδες του δημόσιου site και το κείμενο της ερώτησης· τα πεδία e-mail και ονόματος του επισκέπτη δεν στέλνονται, και e-mail, τηλέφωνα και ΑΜΚΑ γραμμένα μέσα στην ερώτηση αντικαθίστανται πριν την αποστολή. Χρεώνεται ανά χρήση στον λογαριασμό σας στο console.anthropic.com.</p>';
@@ -2181,6 +2187,7 @@ final class PNChat_Admin {
 		$text( 'ai_model', 'Μοντέλο', 'Προεπιλογή: ' . PNChat_AI::DEFAULT_MODEL . ' (Claude Opus 5.5). Φθηνότερα: claude-sonnet-5-5, claude-haiku-4-5.' );
 		$number( 'ai_learn_monthly', 'Όριο διαβάσματος ανά μήνα', 'Το πολύ τόσες πηγές (σελίδες, διευθύνσεις ή PDF) διαβάζει το AI τον μήνα για τις «Προτάσεις AI» (αυτόν τον μήνα: ' . PNChat_Learn::used_this_month() . '). Το διάβασμα γίνεται με το Batch API της Anthropic, στη μισή τιμή: μια σελίδα περίπου 0,01–0,05 $, ένα PDF 40 σελίδων περίπου 0,25–0,75 $ με το προεπιλεγμένο μοντέλο.' );
 		$check( 'ai_learn_weekly', 'Κάθε εβδομάδα', 'Ξαναδιάβαζε μόνο του, μία φορά την εβδομάδα, τις σελίδες του site που άλλαξαν ή είναι καινούριες. Οι νέες γνώσεις μπαίνουν στις Προτάσεις· δεν φτάνουν στο chat χωρίς έγκριση.' );
+		$check( 'ai_learn_media', 'Νέα PDF', 'Κάθε PDF που ανεβαίνει στα Πολυμέσα διαβάζεται μόνο του και οι γνώσεις του μπαίνουν στις Προτάσεις για έγκριση. Μετράει στο όριο του μήνα (ένα PDF 40 σελίδων περίπου 0,25–0,75 $). Τα παλιά PDF: Έλεγχος ευρετηρίου → «PDF στα Πολυμέσα».' );
 		echo '<tr><th scope="row" colspan="2"><h3 style="margin:8px 0 0">AI και μέσα στο chat</h3></th></tr>';
 		$check( 'ai_chat', 'Στο chat', 'Όταν δεν υπάρχει γνώση αλλά βρεθούν σχετικές σελίδες, το AI απαντά στον επισκέπτη μόνο από αυτές. Η απάντηση εμφανίζεται ΑΜΕΣΩΣ, με την ετικέτα παρακάτω, χωρίς να την έχει δει άνθρωπος, και μπαίνει στα Ερωτήματα → «Απαντήσεις AI» για έγκριση ως γνώση. Το AI απαντά ΜΟΝΟ σε ερωτήσεις για τα εργαλεία του site (ένα από τα «Θέματα συζήτησης» ή λέξεις όπως εκτύπωση, ετικέτα, πλάνο, λογαριασμός), όχι κοντά σε κάποια Απαγόρευση και χωρίς ιατρικό σήμα (π.χ. «πόσα χάπια», «παρενέργειες», «500mg», «φάρμακο για τον πόνο»)· και το ίδιο το AI δηλώνει αν η ερώτηση ζητά ιατρική συμβουλή, οπότε δεν απαντά. Όλες οι άλλες ερωτήσεις παίρνουν τις σελίδες του site και τη φόρμα e-mail, όπως χωρίς AI.' );
 		$number( 'ai_chat_daily', 'Όριο κλήσεων ανά ημέρα', 'Το πολύ τόσες κλήσεις στο AI την ημέρα (σήμερα: ' . PNChat_AI::chat_used_today() . '). Μετράει κάθε κλήση που έφτασε στο Claude, και όταν δεν βρήκε απάντηση· όσες δεν έφτασαν (σφάλμα σύνδεσης ή κλειδιού) δεν μετράνε. Μετά το όριο, ο βοηθός ζητά e-mail όπως πριν. Και έως 10 την ώρα ανά επισκέπτη.' );
@@ -2257,6 +2264,207 @@ final class PNChat_Admin {
 			echo $hits ? '</ul>' : '';
 		}
 		echo '<details><summary>Όλο το κείμενο</summary><pre style="white-space:pre-wrap;max-height:400px;overflow:auto">' . esc_html( mb_substr( $text, 0, 20000 ) ) . '</pre></details>';
+	}
+
+	/**
+	 * «Έλεγχος ευρετηρίου»: which pages and posts the chat has read, which
+	 * are missing or have too little text, and the PDFs of the Media Library.
+	 *
+	 * @return void
+	 */
+	public static function page_index() {
+		if ( ! current_user_can( self::capability() ) ) {
+			wp_die( esc_html__( 'Δεν έχετε δικαίωμα πρόσβασης.', 'pn-chat' ), 403 );
+		}
+		$rows   = PNChat_Site_Search::report();
+		$by     = array(
+			'ok'       => array(),
+			'thin'     => array(),
+			'old'      => array(),
+			'missing'  => array(),
+			'excluded' => array(),
+		);
+		foreach ( $rows as $r ) {
+			$by[ $r['status'] ][] = $r;
+		}
+		$searched = count( $rows ) - count( $by['excluded'] );
+		$read     = count( $by['ok'] ) + count( $by['thin'] ) + count( $by['old'] );
+		$peek     = function ( $id ) {
+			return admin_url( 'admin.php?page=pn-chat-settings&peek=' . (int) $id . '#pnchat-peek' );
+		};
+		$when     = function ( $ts ) {
+			return $ts > 0 ? wp_date( 'j/n/Y H:i', $ts ) : '—';
+		};
+
+		echo '<div class="wrap pnchat-admin"><h1>Έλεγχος ευρετηρίου</h1>';
+		self::notices();
+		if ( empty( PNChat_Settings::value( 'site_search' ) ) ) {
+			echo '<p class="pnchat-warn">Η αναζήτηση στο site είναι κλειστή (Ρυθμίσεις → «Αναζήτηση στο site»): ο βοηθός δεν δείχνει σελίδες στο chat.</p>';
+		}
+		echo '<p class="pnchat-intro">Ψάχνει σε: <strong>' . esc_html( implode( ', ', PNChat_Site_Search::post_types() ) ) . '</strong> (Ρυθμίσεις → «Τι να ψάχνει»).';
+		if ( post_type_exists( 'product' ) && ! in_array( 'product', PNChat_Site_Search::post_types(), true ) ) {
+			echo ' Τα προϊόντα του καταστήματος δεν διαβάζονται· για να διαβάζονται, προσθέστε «product».';
+		}
+		echo '</p>';
+
+		echo '<ul class="pnchat-index-sum">';
+		echo '<li class="is-ok"><strong>' . (int) $read . ' / ' . (int) $searched . '</strong> διαβάστηκαν</li>';
+		echo '<li class="' . ( $by['missing'] ? 'is-bad' : 'is-ok' ) . '"><strong>' . count( $by['missing'] ) . '</strong> λείπουν</li>';
+		echo '<li class="' . ( $by['thin'] ? 'is-warn' : 'is-ok' ) . '"><strong>' . count( $by['thin'] ) . '</strong> με πολύ λίγο κείμενο</li>';
+		echo '<li><strong>' . count( $by['excluded'] ) . '</strong> εξαιρεμένες</li>';
+		echo '</ul>';
+		if ( ! $by['missing'] && ! $by['old'] && $searched > 0 ) {
+			echo '<p class="pnchat-ok">✅ Όλες οι σελίδες και τα άρθρα που ψάχνει ο βοηθός έχουν διαβαστεί.' . ( $by['thin'] ? ' Ελέγξτε μόνο όσες έχουν πολύ λίγο κείμενο.' : '' ) . '</p>';
+		} elseif ( $by['old'] ) {
+			$n = count( $by['old'] );
+			echo '<p class="pnchat-warn">' . esc_html( 1 === $n ? '1 σελίδα διαβάστηκε με την παλιά έκδοση και ξαναδιαβάζεται' : $n . ' σελίδες διαβάστηκαν με την παλιά έκδοση και ξαναδιαβάζονται' ) . ' στο παρασκήνιο (μαζί με πίνακες και shortcodes). Μέχρι τότε ο βοηθός ψάχνει κανονικά στο κείμενό τους.</p>';
+		}
+		echo '<p><a class="button button-primary" href="' . esc_url( self::action_url( 'index_now', array() ) ) . '">Διάβασε τώρα όσες λείπουν</a> ';
+		echo '<a class="button" href="' . esc_url( self::action_url( 'index_refresh', array() ) ) . '">Διάβασέ τα όλα ξανά</a></p>';
+		echo '<p class="description">Κάθε σελίδα διαβάζεται μόλις πατήσετε «Δημοσίευση» ή «Ενημέρωση», και ξανά μία φορά την εβδομάδα. Όσες μπήκαν αλλιώς (εισαγωγή) διαβάζονται μέσα στη μέρα.</p>';
+
+		$table = function ( $title, array $list, $note, $cols ) use ( $peek, $when ) {
+			echo '<div class="pnchat-card"><h2>' . esc_html( $title ) . ' (' . count( $list ) . ')</h2>';
+			if ( '' !== $note ) {
+				echo '<p class="description">' . esc_html( $note ) . '</p>';
+			}
+			if ( ! $list ) {
+				echo '<p>Καμία.</p></div>';
+				return;
+			}
+			echo '<table class="widefat striped pnchat-table"><thead><tr><th>Σελίδα</th><th>Τύπος</th>';
+			echo in_array( 'chars', $cols, true ) ? '<th class="num">Χαρακτήρες</th><th>Διαβάστηκε</th>' : '';
+			echo in_array( 'reason', $cols, true ) ? '<th>Γιατί</th>' : '';
+			echo '<th></th></tr></thead><tbody>';
+			foreach ( $list as $r ) {
+				echo '<tr><td><a href="' . esc_url( (string) get_permalink( $r['id'] ) ) . '" target="_blank" rel="noopener">' . esc_html( $r['title'] ) . '</a></td><td data-label="Τύπος">' . esc_html( $r['type'] ) . '</td>';
+				if ( in_array( 'chars', $cols, true ) ) {
+					echo '<td class="num" data-label="Χαρακτήρες">' . esc_html( number_format_i18n( $r['chars'] ) ) . '</td><td data-label="Διαβάστηκε">' . esc_html( $when( $r['read_at'] ) ) . '</td>';
+				}
+				if ( in_array( 'reason', $cols, true ) ) {
+					echo '<td data-label="Γιατί">' . esc_html( $r['reason'] ) . '</td>';
+				}
+				echo '<td><a href="' . esc_url( $peek( $r['id'] ) ) . '">Τι διαβάζει</a> · <a href="' . esc_url( (string) get_edit_post_link( $r['id'] ) ) . '">Επεξεργασία</a></td></tr>';
+			}
+			echo '</tbody></table></div>';
+		};
+		$table( '❌ Λείπουν', $by['missing'], 'Δημοσιευμένες αλλά δεν έχουν διαβαστεί ακόμα. Πατήστε «Διάβασε τώρα όσες λείπουν».', array() );
+		$table( '⚠️ Πολύ λίγο κείμενο', $by['thin'], 'Λιγότεροι από ' . PNChat_Site_Search::THIN . ' χαρακτήρες: ό,τι δείχνει η σελίδα μάλλον έρχεται από αλλού (εικόνα, αρχείο, Google Sheets, iframe) και δεν διαβάζεται. Δείτε «Τι διαβάζει»· αν λείπει κάτι σημαντικό, γράψτε το ως κείμενο ή πίνακα μέσα στη σελίδα.', array( 'chars' ) );
+		$table( '🚫 Εξαιρεμένες', $by['excluded'], 'Δεν εμφανίζονται ποτέ στο chat.', array( 'reason' ) );
+		echo '<details class="pnchat-card"><summary><strong>Όλες οι σελίδες και τα άρθρα (' . (int) $searched . ')</strong></summary>';
+		$all = array_merge( $by['ok'], $by['thin'], $by['old'], $by['missing'] );
+		usort(
+			$all,
+			function ( $a, $b ) {
+				return strcmp( $a['type'] . $a['title'], $b['type'] . $b['title'] );
+			}
+		);
+		$table( 'Διαβάστηκαν', $all, '', array( 'chars' ) );
+		echo '</details>';
+
+		self::index_media();
+		echo '</div>';
+	}
+
+	/**
+	 * PDFs of the Media Library on the index screen.
+	 *
+	 * @return void
+	 */
+	private static function index_media() {
+		$ids = PNChat_Learn::media_pdfs( 500 );
+		echo '<div class="pnchat-card" id="pnchat-media"><h2>📄 PDF στα Πολυμέσα (' . count( $ids ) . ')</h2>';
+		echo '<p class="description">Τα PDF δεν μπαίνουν στην αναζήτηση του chat. Τα διαβάζει το AI και προτείνει γνώσεις, που εγκρίνετε στις «Προτάσεις AI»· τίποτα δεν φτάνει στο chat χωρίς έγκριση. Κάθε PDF μετράει στο όριο του μήνα (' . (int) PNChat_Learn::used_this_month() . ' από ' . (int) PNChat_Learn::monthly_limit() . ')· ένα PDF 40 σελίδων κοστίζει περίπου 0,25–0,75 $.</p>';
+		$auto = ! empty( PNChat_Settings::value( 'ai_learn_media' ) );
+		echo '<p>Αυτόματο διάβασμα νέων PDF: <strong>' . ( $auto ? 'ενεργό' : 'ανενεργό' ) . '</strong> (<a href="' . esc_url( admin_url( 'admin.php?page=pn-chat-settings#pnchat-ai' ) ) . '">Ρυθμίσεις → AI → «Νέα PDF»</a>).</p>';
+		if ( ! PNChat_Learn::available() ) {
+			echo '<p class="pnchat-warn">Το AI δεν είναι ενεργό ή δεν έχει API key: τα PDF δεν μπορούν να διαβαστούν.</p>';
+		}
+		if ( ! $ids ) {
+			echo '<p>Δεν υπάρχουν PDF στα Πολυμέσα.</p></div>';
+			return;
+		}
+		$waiting = array();
+		foreach ( PNChat_Learn::queue() as $j ) {
+			if ( 'media' === ( $j['type'] ?? '' ) ) {
+				$waiting[ (int) $j['id'] ] = true;
+			}
+		}
+		// Sent to Claude, waiting for the answer (ids are unique across posts and files).
+		foreach ( PNChat_Learn::sent() as $b ) {
+			if ( ! empty( $b['src']['post_id'] ) ) {
+				$waiting[ (int) $b['src']['post_id'] ] = true;
+			}
+		}
+		$unread = 0;
+		$list   = array();
+		foreach ( $ids as $id ) {
+			$read = PNChat_Learn::media_read( $id );
+			if ( ! $read && ! isset( $waiting[ $id ] ) ) {
+				++$unread;
+			}
+			$list[] = array( $id, $read );
+		}
+		if ( $unread && PNChat_Learn::available() ) {
+			echo '<p><a class="button button-primary" href="' . esc_url( self::action_url( 'index_media', array( 'all' => 1 ) ) ) . '">Διάβασε με AI όσα δεν έχουν διαβαστεί (' . (int) $unread . ')</a></p>';
+		}
+		echo '<table class="widefat striped pnchat-table"><thead><tr><th>PDF</th><th>Ανέβηκε</th><th class="num">Μέγεθος</th><th>Κατάσταση</th><th></th></tr></thead><tbody>';
+		foreach ( $list as $item ) {
+			list( $id, $read ) = $item;
+			$path = (string) get_attached_file( $id );
+			$size = '' !== $path && is_readable( $path ) ? (int) filesize( $path ) : 0;
+			if ( isset( $waiting[ $id ] ) ) {
+				$state = '⏳ Διαβάζεται';
+			} elseif ( $read ) {
+				$state = '✅ Διαβάστηκε';
+			} else {
+				$state = '— Όχι ακόμα';
+			}
+			echo '<tr><td><a href="' . esc_url( (string) wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener">' . esc_html( get_the_title( $id ) ) . '</a></td><td data-label="Ανέβηκε">' . esc_html( (string) get_the_date( 'j/n/Y', $id ) ) . '</td><td class="num" data-label="Μέγεθος">' . esc_html( size_format( $size ) ? size_format( $size ) : '—' ) . '</td><td data-label="Κατάσταση">' . esc_html( $state ) . '</td><td>';
+			if ( ! isset( $waiting[ $id ] ) && PNChat_Learn::available() ) {
+				echo '<a href="' . esc_url( self::action_url( 'index_media', array( 'id' => $id ) ) ) . '">' . ( $read ? 'Διάβασε ξανά' : 'Διάβασε με AI' ) . '</a>';
+			}
+			echo '</td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * «Διάβασε τώρα όσες λείπουν».
+	 *
+	 * @return void
+	 */
+	public static function handle_index_now() {
+		self::guard( 'pnchat_index_now' );
+		self::back( 'pn-chat-index', 'index_now', array( 'n' => PNChat_Site_Search::index_batch() ) );
+	}
+
+	/**
+	 * «Διάβασέ τα όλα ξανά»: in the background, the index stays meanwhile.
+	 *
+	 * @return void
+	 */
+	public static function handle_index_refresh() {
+		self::guard( 'pnchat_index_refresh' );
+		PNChat_Site_Search::request_refresh();
+		self::back( 'pn-chat-index', 'index_refresh' );
+	}
+
+	/**
+	 * Reads PDFs of the Media Library with AI: one, or all not read yet.
+	 *
+	 * @return void
+	 */
+	public static function handle_index_media() {
+		self::guard( 'pnchat_index_media' );
+		if ( ! PNChat_Learn::available() ) {
+			self::back( 'pn-chat-index', 'ai_off' );
+		}
+		$id = absint( self::get( 'id' ) );
+		$n  = $id
+			? PNChat_Learn::enqueue_media( array( $id ), true, 'PDF: ' . get_the_title( $id ) )
+			: PNChat_Learn::enqueue_media( PNChat_Learn::media_pdfs( 500 ), false, 'PDF στα Πολυμέσα' );
+		self::back( 'pn-chat-index', $n ? 'media_queued' : 'media_none', array( 'n' => $n ) );
 	}
 
 	/**

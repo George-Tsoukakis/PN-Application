@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,11 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.12.0 =
+* New «Έλεγχος ευρετηρίου» screen: every published page and post of the searched types with its state (read, missing, very little text, waiting to be read again, excluded with the reason), characters and when it was read; «Διάβασε τώρα όσες λείπουν» and «Διάβασέ τα όλα ξανά» (in the background, the search keeps working).
+* PDFs of the Media Library: listed with their reading state; read with AI one by one or all not read yet; the proposals wait for approval and link to the PDF. A read PDF is not read again unless its file changes.
+* Setting «Νέα PDF» (off by default): every PDF uploaded to the Media Library is read on its own; it counts for the monthly limit.
 
 = 1.11.0 =
 * Site search reads what a page shows: shortcodes and blocks are rendered, table rows are kept as lines («Aerolin · Salbutamol · R03AC02»), and data a script turns into a table is read too. The text is stored with the index; pages are read again weekly, after a TablePress table is saved, and once after this update.

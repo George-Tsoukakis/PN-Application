@@ -278,6 +278,69 @@ pnt_same( 'text', $req['messages'][0]['content'][1]['type'] ?? '', 'PDF: the ins
 pnt_same( 24000, $req['max_tokens'] ?? null, 'PDF: max_tokens 24000' );
 pnt_check( false !== strpos( (string) $req['system'], 'έως 25 γνώσεις' ), 'PDF: up to 25 entries' );
 
+// ---- 1.12.0: PDFs of the Media Library ---------------------------------------------------
+$up   = wp_upload_dir();
+$mfile = trailingslashit( $up['path'] ) . 'pnt-media-' . wp_generate_password( 6, false ) . '.pdf';
+file_put_contents( $mfile, $pdf );
+pnt_settings( array( 'ai_learn_media' => 0 ) );
+$mid = wp_insert_attachment(
+	array(
+		'post_title'     => 'Απόφαση ΕΟΦ PNT',
+		'post_mime_type' => 'application/pdf',
+		'post_status'    => 'inherit',
+	),
+	$mfile
+);
+pnt_defer(
+	function () use ( $mid ) {
+		wp_delete_attachment( $mid, true );
+	}
+);
+pnt_check( ! in_array( 'media:' . $mid, array_map( fn( $j ) => ( $j['type'] ?? '' ) . ':' . ( $j['id'] ?? '' ), PNChat_Learn::queue() ), true ), 'media: with «Νέα PDF» off, an upload is not read' );
+pnt_check( in_array( $mid, PNChat_Learn::media_pdfs(), true ), 'media: the PDF is listed' );
+pnt_check( ! PNChat_Learn::media_read( $mid ), 'media: not read yet' );
+pnt_settings( array( 'ai_learn_media' => 1 ) );
+$mid2 = wp_insert_attachment(
+	array(
+		'post_title'     => 'Εικόνα PNT',
+		'post_mime_type' => 'image/png',
+		'post_status'    => 'inherit',
+	),
+	$mfile
+);
+pnt_defer(
+	function () use ( $mid2 ) {
+		wp_delete_post( $mid2, true );
+	}
+);
+pnt_same( array(), array_values( array_filter( PNChat_Learn::queue(), fn( $j ) => 'media' === ( $j['type'] ?? '' ) ) ), 'media: an image is never read' );
+do_action( 'add_attachment', $mid );
+$q = array_values( array_filter( PNChat_Learn::queue(), fn( $j ) => 'media' === ( $j['type'] ?? '' ) ) );
+pnt_same( array( array( 'type' => 'media', 'id' => $mid ) ), $q, 'media: with «Νέα PDF» on, an uploaded PDF is queued' );
+pnt_same( 'PDF: Απόφαση ΕΟΦ PNT', PNChat_Learn::job_label( $q[0] ), 'media: its label' );
+pnt_same( 0, PNChat_Learn::enqueue_media( array( $mid ), false, 'x' ), 'media: not queued twice' );
+$reply = array( $entry( 'Διάρκεια απαγόρευσης PNT', array( 'Πόσο διαρκεί η απαγόρευση PNT;' ) ) );
+$r     = pnt_learn_step();
+$req   = end( $sent );
+$block = $req['messages'][0]['content'][0] ?? array();
+pnt_same( 'done', $r['status'], 'media: read' );
+pnt_same( array( 'document', base64_encode( $pdf ) ), array( $block['type'] ?? '', $block['source']['data'] ?? '' ), 'media: the file is sent as a document' );
+pnt_check( file_exists( $mfile ), 'media: the file stays in the Media Library after reading' );
+pnt_check( PNChat_Learn::media_read( $mid ), 'media: marked as read' );
+$p = PNChat_Learn::pending();
+$p = end( $p );
+pnt_check( false !== strpos( $p['entry']['answer'], esc_url( wp_get_attachment_url( $mid ) ) ), 'media: the proposal links to the PDF' );
+pnt_same( 0, PNChat_Learn::enqueue_media( array( $mid ), false, 'x' ), 'media: a read PDF is not queued again' );
+file_put_contents( $mfile, $pdf . 'changed' );
+pnt_check( ! PNChat_Learn::media_read( $mid ), 'media: a changed file counts as not read' );
+pnt_same( 1, PNChat_Learn::enqueue_media( array( $mid ), true, 'x' ), '«Διάβασε ξανά»: queued' );
+delete_option( PNChat_Learn::QUEUE );
+file_put_contents( $mfile, 'not a pdf' );
+pnt_check( is_wp_error( PNChat_Learn::media_data( $mid ) ), 'media: a file that is not a PDF is refused' );
+pnt_check( is_wp_error( PNChat_Learn::media_data( $existing ) ), 'media: an id that is not a PDF attachment is refused' );
+file_put_contents( $mfile, $pdf );
+pnt_settings( array( 'ai_learn_media' => 0 ) );
+
 // ---- an uploaded PDF -----------------------------------------------------------------------
 $tmp = wp_tempnam( 'pnt' );
 file_put_contents( $tmp, $pdf );

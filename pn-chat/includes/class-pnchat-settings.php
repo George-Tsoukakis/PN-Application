@@ -51,6 +51,7 @@ final class PNChat_Settings {
 			'ai_chat_wait'     => 'Ψάχνω στις σελίδες μας…',
 			'ai_learn_monthly' => 200,
 			'ai_learn_weekly'  => 0,
+			'ai_learn_media'   => 0,
 			'smalltalk_praise'       => 'Χαίρομαι που σας αρέσει! Ρωτήστε με ό,τι άλλο θέλετε.',
 			'smalltalk_praise_topic' => 'Χαίρομαι που σας αρέσει! Θέλετε να μάθετε κάτι ακόμα για: {topic}; Δείτε και τις Συχνές ερωτήσεις.',
 			'smalltalk_ok'           => 'Τέλεια! Αν θέλετε κάτι άλλο, ρωτήστε με.',
@@ -158,7 +159,7 @@ final class PNChat_Settings {
 		$d   = self::defaults();
 		$out = array();
 
-		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat', 'ai_learn_weekly', 'fallback_button', 'didyoumean' ) as $k ) {
+		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat', 'ai_learn_weekly', 'ai_learn_media', 'fallback_button', 'didyoumean' ) as $k ) {
 			$out[ $k ] = empty( $in[ $k ] ) ? 0 : 1;
 		}
 		$out['visibility'] = in_array( $in['visibility'] ?? '', array( 'all', 'logged_in' ), true ) ? $in['visibility'] : $d['visibility'];

@@ -41,6 +41,8 @@ final class PNChat_Learn {
 	public static function init() {
 		add_action( self::CRON, array( __CLASS__, 'run_cron' ) );
 		add_action( self::WEEKLY, array( __CLASS__, 'weekly' ) );
+		// A PDF added to the Media Library is read, when switched on.
+		add_action( 'add_attachment', array( __CLASS__, 'on_upload' ) );
 	}
 
 	/**
@@ -203,6 +205,8 @@ final class PNChat_Learn {
 				return 'post:' . (int) $job['id'];
 			case 'url':
 				return 'url:' . (string) $job['url'];
+			case 'media':
+				return 'media:' . (int) $job['id'];
 			default:
 				return 'file:' . (string) ( $job['file'] ?? '' );
 		}
@@ -211,7 +215,7 @@ final class PNChat_Learn {
 	/**
 	 * Adds jobs to the queue and starts the background reading.
 	 *
-	 * @param array<int,array<string,mixed>> $jobs  Jobs: {type:post,id} {type:url,url} {type:file,file,name}.
+	 * @param array<int,array<string,mixed>> $jobs  Jobs: {type:post,id} {type:url,url} {type:file,file,name} {type:media,id}.
 	 * @param string                         $label What is being read, for the progress line.
 	 * @return int Jobs added (already queued ones are not added again).
 	 */
@@ -645,6 +649,8 @@ final class PNChat_Learn {
 				return (string) get_the_title( (int) $job['id'] );
 			case 'url':
 				return (string) $job['url'];
+			case 'media':
+				return 'PDF: ' . (string) get_the_title( (int) $job['id'] );
 			default:
 				return (string) ( $job['name'] ?? 'PDF' );
 		}
@@ -696,6 +702,24 @@ final class PNChat_Learn {
 				'external' => false,
 				'post_id'  => (int) $post->ID,
 				'hash'     => self::post_hash( $post ),
+			);
+		}
+		if ( 'media' === $type ) {
+			$id   = (int) ( $job['id'] ?? 0 );
+			$data = self::media_data( $id );
+			if ( is_wp_error( $data ) ) {
+				return $data;
+			}
+			$url = (string) wp_get_attachment_url( $id );
+			return array(
+				'title'    => (string) get_the_title( $id ),
+				'url'      => $url,
+				'text'     => '',
+				'pdf'      => base64_encode( $data ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- the API takes PDFs as base64.
+				// Uploads served from another host (a CDN) keep their link.
+				'external' => '' !== $url && ! self::is_own( $url ),
+				'post_id'  => $id,
+				'hash'     => md5( $data ),
 			);
 		}
 		if ( 'file' === $type ) {
@@ -823,6 +847,103 @@ final class PNChat_Learn {
 	/* ------------------------------------------------------------------ */
 	/* uploaded PDFs                                                        */
 	/* ------------------------------------------------------------------ */
+
+	/**
+	 * The content of a PDF of the Media Library.
+	 *
+	 * @param int $id Attachment id.
+	 * @return string|WP_Error
+	 */
+	public static function media_data( $id ) {
+		$post = get_post( (int) $id );
+		if ( ! $post instanceof WP_Post || 'attachment' !== $post->post_type || 'application/pdf' !== $post->post_mime_type ) {
+			return new WP_Error( 'pnchat_learn_source', 'Το PDF δεν βρέθηκε στα Πολυμέσα.' );
+		}
+		$path = (string) get_attached_file( (int) $id );
+		if ( '' === $path || ! is_readable( $path ) ) {
+			return new WP_Error( 'pnchat_learn_source', 'Το αρχείο του PDF δεν βρέθηκε στον server.' );
+		}
+		if ( (int) filesize( $path ) > self::PDF_BYTES ) {
+			return new WP_Error( 'pnchat_learn_source', 'Το PDF είναι μεγαλύτερο από 20 MB.' );
+		}
+		$data = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a file of the Media Library.
+		if ( false === $data || 0 !== strpos( $data, '%PDF' ) ) {
+			return new WP_Error( 'pnchat_learn_source', 'Το αρχείο δεν είναι έγκυρο PDF.' );
+		}
+		return $data;
+	}
+
+	/**
+	 * A PDF of the Media Library was read and has not changed since.
+	 *
+	 * @param int $id Attachment id.
+	 * @return bool
+	 */
+	public static function media_read( $id ) {
+		$hash = (string) get_post_meta( (int) $id, self::META, true );
+		if ( '' === $hash ) {
+			return false;
+		}
+		$path = (string) get_attached_file( (int) $id );
+		return '' !== $path && is_readable( $path ) && md5_file( $path ) === $hash;
+	}
+
+	/**
+	 * PDFs of the Media Library, newest first.
+	 *
+	 * @param int $limit Most.
+	 * @return int[]
+	 */
+	public static function media_pdfs( $limit = 500 ) {
+		return array_map(
+			'intval',
+			get_posts(
+				array(
+					'post_type'      => 'attachment',
+					'post_status'    => 'inherit',
+					'post_mime_type' => 'application/pdf',
+					'posts_per_page' => (int) $limit,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+					'fields'         => 'ids',
+				)
+			)
+		);
+	}
+
+	/**
+	 * Queues PDFs of the Media Library (not read yet, or every one).
+	 *
+	 * @param int[]  $ids   Attachment ids.
+	 * @param bool   $all   Read again those already read.
+	 * @param string $label Progress label.
+	 * @return int Jobs added.
+	 */
+	public static function enqueue_media( array $ids, $all, $label ) {
+		$jobs = array();
+		foreach ( $ids as $id ) {
+			if ( 'application/pdf' === get_post_mime_type( (int) $id ) && ( $all || ! self::media_read( (int) $id ) ) ) {
+				$jobs[] = array(
+					'type' => 'media',
+					'id'   => (int) $id,
+				);
+			}
+		}
+		return $jobs ? self::enqueue( $jobs, $label ) : 0;
+	}
+
+	/**
+	 * A file added to the Media Library: a PDF is read (setting «Νέα PDF»).
+	 *
+	 * @param int $id Attachment id.
+	 * @return void
+	 */
+	public static function on_upload( $id ) {
+		if ( empty( PNChat_Settings::value( 'ai_learn_media' ) ) || ! self::available() || 'application/pdf' !== get_post_mime_type( (int) $id ) ) {
+			return;
+		}
+		self::enqueue_media( array( (int) $id ), false, 'Νέο PDF: ' . get_the_title( (int) $id ) );
+	}
 
 	/**
 	 * Folder of uploaded PDFs waiting to be read (closed to the web).

@@ -22,6 +22,7 @@ final class PNChat_Site_Search {
 	const META_TIME   = '_pnchat_text_at'; // The page's change time it was read at.
 	const META_READ   = '_pnchat_read_at'; // When the page was last read.
 	const REFRESH     = 'pnchat_site_refresh';
+	const THIN        = 150;    // Fewer characters: probably not read (shown elsewhere, an image, a file).
 	const MAX_WORDS   = 6000;   // Distinct words kept per page.
 	const MAX_CHARS   = 200000; // Characters of a page that are read.
 	const MIN_SCORE   = 0.6;   // Share of the question a page must cover.
@@ -450,6 +451,56 @@ final class PNChat_Site_Search {
 			return;
 		}
 		delete_option( self::REFRESH );
+	}
+
+	/**
+	 * Every published page and post of the searched types, with what was
+	 * read: for «Έλεγχος ευρετηρίου».
+	 *
+	 * @return array<int,array{id:int,title:string,type:string,status:string,reason:string,chars:int,read_at:int}>
+	 *         status: ok, thin (little text), old (read before 1.11.0, waiting), missing, excluded.
+	 */
+	public static function report() {
+		global $wpdb;
+		$types = self::post_types();
+		if ( ! $types ) {
+			return array();
+		}
+		$in = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $in is placeholders only; the values are one array.
+		$rows     = $wpdb->get_results( $wpdb->prepare( "SELECT p.ID, p.post_title, p.post_type, p.post_password, t.meta_id AS indexed, CHAR_LENGTH( x.meta_value ) AS chars, r.meta_value AS read_at FROM %i p LEFT JOIN %i t ON t.post_id = p.ID AND t.meta_key = %s LEFT JOIN %i x ON x.post_id = p.ID AND x.meta_key = %s LEFT JOIN %i r ON r.post_id = p.ID AND r.meta_key = %s WHERE p.post_status = 'publish' AND p.post_type IN ( {$in} ) ORDER BY p.post_type, p.post_title", array_merge( array( $wpdb->posts, $wpdb->postmeta, self::META, $wpdb->postmeta, self::META_TEXT, $wpdb->postmeta, self::META_READ ), $types ) ), ARRAY_A );
+		$excluded = array_flip( self::excluded_ids() );
+		$out      = array();
+		foreach ( (array) $rows as $r ) {
+			$id     = (int) $r['ID'];
+			$chars  = null === $r['chars'] ? -1 : (int) $r['chars'];
+			$reason = '';
+			if ( '' !== (string) $r['post_password'] ) {
+				$status = 'excluded';
+				$reason = 'Έχει κωδικό';
+			} elseif ( isset( $excluded[ $id ] ) ) {
+				$status = 'excluded';
+				$reason = 'Εξαιρεμένη (Ρυθμίσεις → «Να μην ψάχνει σε», ή σελίδα καλαθιού, ταμείου, λογαριασμού)';
+			} elseif ( empty( $r['indexed'] ) ) {
+				$status = 'missing';
+			} elseif ( $chars < 0 ) {
+				$status = 'old';
+			} elseif ( $chars < self::THIN ) {
+				$status = 'thin';
+			} else {
+				$status = 'ok';
+			}
+			$out[] = array(
+				'id'      => $id,
+				'title'   => html_entity_decode( '' !== (string) $r['post_title'] ? (string) $r['post_title'] : '(χωρίς τίτλο)', ENT_QUOTES, 'UTF-8' ),
+				'type'    => (string) $r['post_type'],
+				'status'  => $status,
+				'reason'  => $reason,
+				'chars'   => max( 0, $chars ),
+				'read_at' => (int) $r['read_at'],
+			);
+		}
+		return $out;
 	}
 
 	/**
