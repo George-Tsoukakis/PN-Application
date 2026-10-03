@@ -33,6 +33,9 @@ final class PNChat_Settings {
 			'fallback'         => 'Δεν έχω ακόμα απάντηση γι\' αυτό. Δείτε μήπως σας βοηθούν οι Συχνές ερωτήσεις, ή πατήστε «Θέλω απάντηση από άνθρωπο» για να σας απαντήσουμε εμείς.',
 			'fallback_button'  => 1,
 			'related_max'      => 3,
+			'didyoumean'       => 1,
+			'didyoumean_text'  => 'Δεν είμαι σίγουρος ότι κατάλαβα. Μήπως εννοείτε:',
+			'learn_auto'       => 3,
 			'partial'          => 'Για το «{question}» δεν έχουμε πληροφορίες. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'unhelpful'        => 'Λυπούμαστε που δεν βοήθησε. Αφήστε το e-mail σας και θα σας απαντήσουμε σύντομα.',
 			'email_thanks'     => 'Ευχαριστούμε! Θα σας απαντήσουμε σύντομα στο {email}.',
@@ -155,7 +158,7 @@ final class PNChat_Settings {
 		$d   = self::defaults();
 		$out = array();
 
-		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat', 'ai_learn_weekly', 'fallback_button' ) as $k ) {
+		foreach ( array( 'enabled', 'feedback', 'notify_on_email', 'keep_on_uninstall', 'site_search', 'ai_enabled', 'ai_chat', 'ai_learn_weekly', 'fallback_button', 'didyoumean' ) as $k ) {
 			$out[ $k ] = empty( $in[ $k ] ) ? 0 : 1;
 		}
 		$out['visibility'] = in_array( $in['visibility'] ?? '', array( 'all', 'logged_in' ), true ) ? $in['visibility'] : $d['visibility'];
@@ -163,13 +166,13 @@ final class PNChat_Settings {
 		$out['strictness'] = in_array( $in['strictness'] ?? '', array( 'loose', 'normal', 'strict' ), true ) ? $in['strictness'] : $d['strictness'];
 		$out['position']   = in_array( $in['position'] ?? '', array( 'right', 'left' ), true ) ? $in['position'] : $d['position'];
 
-		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types', 'ai_chat_label', 'ai_chat_wait' ) as $k ) {
+		foreach ( array( 'title', 'subtitle', 'placeholder', 'privacy_note', 'reply_subject', 'site_types', 'ai_chat_label', 'ai_chat_wait', 'didyoumean_text' ) as $k ) {
 			$out[ $k ] = sanitize_text_field( (string) ( $in[ $k ] ?? '' ) );
 		}
 		foreach ( array( 'welcome', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_exclude', 'site_intro', 'site_more', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' ) as $k ) {
 			$out[ $k ] = sanitize_textarea_field( (string) ( $in[ $k ] ?? '' ) );
 		}
-		foreach ( array( 'title', 'fallback', 'unhelpful', 'placeholder', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' ) as $k ) {
+		foreach ( array( 'title', 'fallback', 'unhelpful', 'placeholder', 'didyoumean_text', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' ) as $k ) {
 			if ( '' === $out[ $k ] ) {
 				$out[ $k ] = $d[ $k ];
 			}
@@ -185,6 +188,7 @@ final class PNChat_Settings {
 		$out['ai_chat_daily']  = max( 1, min( 1000, absint( $in['ai_chat_daily'] ?? $d['ai_chat_daily'] ) ) );
 		$out['ai_learn_monthly'] = max( 1, min( 5000, absint( $in['ai_learn_monthly'] ?? $d['ai_learn_monthly'] ) ) );
 		$out['related_max']      = min( 5, absint( $in['related_max'] ?? $d['related_max'] ) );
+		$out['learn_auto']       = min( 50, absint( $in['learn_auto'] ?? $d['learn_auto'] ) );
 		$out['site_max']       = max( 1, min( 5, absint( $in['site_max'] ?? $d['site_max'] ) ) );
 		$out['max_answers']    = max( 1, min( 5, absint( $in['max_answers'] ?? $d['max_answers'] ) ) );
 		$out['rate_per_10min'] = max( 1, min( 500, absint( $in['rate_per_10min'] ?? $d['rate_per_10min'] ) ) );

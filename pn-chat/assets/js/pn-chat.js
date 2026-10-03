@@ -566,6 +566,7 @@
 				items: m.items || [],
 				message: m.message || '',
 				related: m.related || [],
+				didyoumean: m.didyoumean || [],
 				live: live && live.id ? { id: live.id, token: live.token, ask_email: !!live.ask_email, email_button: !!live.email_button, feedback: !!live.feedback, user_email: live.user_email || '' } : null
 			});
 			live = stored.live;
@@ -589,6 +590,9 @@
 		});
 		if (m.message) {
 			wrap.appendChild(el('div', { className: 'pnchat__bubble pnchat__bubble--notice', text: m.message }));
+		}
+		if ((m.didyoumean || []).length && live && live.id) {
+			wrap.appendChild(this.didYouMeanRow(m, live, stored));
 		}
 		if (live && live.ask_email) {
 			wrap.appendChild(this.emailForm(live));
@@ -642,7 +646,7 @@
 		}
 	};
 
-	Chat.prototype.send = function (q, via) {
+	Chat.prototype.send = function (q, via, extra) {
 		var self = this;
 		if (this.busy) {
 			return;
@@ -661,7 +665,10 @@
 			prev: this.state.prev || 0,
 			seen: this.state.seen || [],
 			conv: this.state.conv || '',
-			via: via || ''
+			via: via || '',
+			pick: extra && extra.pick ? extra.pick : 0,
+			from: extra && extra.from ? extra.from : 0,
+			from_token: extra && extra.from_token ? extra.from_token : ''
 		}).then(function (res) {
 			self.typing(false);
 			// The topic of this answer is the context of the next question,
@@ -674,7 +681,7 @@
 				self.state.seen = (self.state.seen || []).concat([res.entry]).slice(-30);
 			}
 			save(self.state);
-			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '', related: res.related || [] }, true, res, null);
+			self.addBot({ text: res.intro || '', items: res.items || [], message: res.message || '', related: res.related || [], didyoumean: res.didyoumean || [] }, true, res, null);
 			// Small talk («ωραίο», «οκ»): offer the suggested questions again.
 			if (res.show_suggestions && (cfg.suggestions || []).length && self.chips.hidden) {
 				self.toggleChips();
@@ -732,6 +739,35 @@
 		row.appendChild(el('p', { className: 'pnchat__related-title', text: 'Σχετικές ερωτήσεις' }));
 		related.forEach(function (r) {
 			row.appendChild(el('button', { type: 'button', className: 'pnchat__chip', text: r.text, onclick: function () { self.send(r.text, 'chip'); } }));
+		});
+		return row;
+	};
+
+	/**
+	 * «Μήπως εννοείτε…;»: the closest answers when the chat is not sure. The
+	 * tapped one is answered, and tells the site what the visitor meant.
+	 */
+	Chat.prototype.didYouMeanRow = function (m, live, stored) {
+		var self = this;
+		var row = el('div', { className: 'pnchat__related pnchat__didyoumean', role: 'group', 'aria-label': 'Μήπως εννοείτε' });
+		m.didyoumean.forEach(function (d) {
+			row.appendChild(el('button', {
+				type: 'button',
+				className: 'pnchat__chip',
+				text: d.text,
+				onclick: function () {
+					if (self.busy) {
+						return;
+					}
+					// Once chosen, the choice is not offered again.
+					row.remove();
+					if (stored) {
+						stored.didyoumean = [];
+						self.update();
+					}
+					self.send(d.text, 'didyoumean', { pick: d.id, from: live.id, from_token: live.token });
+				}
+			}));
 		});
 		return row;
 	};

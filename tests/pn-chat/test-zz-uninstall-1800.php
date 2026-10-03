@@ -46,7 +46,7 @@ pnt_check( $exists( PNChat_Store::entries_table() ) && $exists( PNChat_Store::qu
 PNChat_Store::install();
 PNChat_Settings::save( array_merge( PNChat_Settings::get(), array( 'keep_on_uninstall' => 0 ) ) );
 pnt_uninstall();
-pnt_check( ! $exists( PNChat_Store::entries_table() ) && ! $exists( PNChat_Store::questions_table() ) && ! $exists( PNChat_Learn::table() ), 'keep off: tables dropped (proposals too)' );
+pnt_check( ! $exists( PNChat_Store::entries_table() ) && ! $exists( PNChat_Store::questions_table() ) && ! $exists( PNChat_Learn::table() ) && ! $exists( PNChat_Lessons::table() ), 'keep off: tables dropped (proposals and lessons too)' );
 pnt_same( false, get_option( 'pnchat_settings' ), 'keep off: settings deleted' );
 
 pnt_done();

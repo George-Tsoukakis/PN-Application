@@ -34,7 +34,7 @@ final class PNChat_Admin {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
-		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'learn_read', 'learn_site', 'learn_control', 'proposal', 'proposals_bulk' ) as $a ) {
+		foreach ( array( 'save_entry', 'delete_entry', 'toggle_entry', 'save_synonyms', 'question', 'bulk_questions', 'send_reply', 'export', 'import', 'snapshot', 'save_settings', 'site_reindex', 'ai_draft', 'ai_page', 'learn_read', 'learn_site', 'learn_control', 'proposal', 'proposals_bulk', 'lesson', 'lesson_group', 'lesson_word', 'tests_run', 'test_add', 'test_remove' ) as $a ) {
 			add_action( 'admin_post_pnchat_' . $a, array( __CLASS__, 'handle_' . $a ) );
 		}
 	}
@@ -50,13 +50,15 @@ final class PNChat_Admin {
 		// Waiting for an administrator: e-mails to answer and AI answers to review.
 		$todo   = (int) $counts['email'] + (int) ( $counts['ai'] ?? 0 );
 		$props  = PNChat_Learn::count_pending();
+		$lessons = PNChat_Lessons::count_pending();
 		$bubble = function ( $n ) {
 			return $n > 0 ? ' <span class="awaiting-mod count-' . (int) $n . '"><span class="pending-count">' . (int) $n . '</span></span>' : '';
 		};
 		$badge  = $bubble( $todo );
 
-		add_menu_page( 'PN Chat', 'PN Chat' . $bubble( $todo + $props ), $cap, 'pn-chat', array( __CLASS__, 'page_training' ), 'dashicons-format-chat', 58 );
+		add_menu_page( 'PN Chat', 'PN Chat' . $bubble( $todo + $props + $lessons ), $cap, 'pn-chat', array( __CLASS__, 'page_training' ), 'dashicons-format-chat', 58 );
 		add_submenu_page( 'pn-chat', 'Εκπαίδευση', 'Εκπαίδευση', $cap, 'pn-chat', array( __CLASS__, 'page_training' ) );
+		add_submenu_page( 'pn-chat', 'Μάθηση από τις συζητήσεις', 'Μάθηση' . $bubble( $lessons ), $cap, 'pn-chat-lessons', array( __CLASS__, 'page_lessons' ) );
 		add_submenu_page( 'pn-chat', 'Προτάσεις AI', 'Προτάσεις AI' . $bubble( $props ), $cap, 'pn-chat-learn', array( __CLASS__, 'page_learn' ) );
 		add_submenu_page( 'pn-chat', 'Ερωτήματα', 'Ερωτήματα' . $badge, $cap, 'pn-chat-questions', array( __CLASS__, 'page_questions' ) );
 		add_submenu_page( 'pn-chat', 'Απαγορεύσεις', 'Απαγορεύσεις', $cap, 'pn-chat-blocks', array( __CLASS__, 'page_blocks' ) );
@@ -193,6 +195,10 @@ final class PNChat_Admin {
 			'learn_busy'   => array( 'error', 'Το AI διαβάζει ήδη μια πηγή στο παρασκήνιο. Περιμένετε λίγο.' ),
 			'learn_limit'  => array( 'error', 'Έφτασε το όριο του μήνα για διάβασμα με AI (Ρυθμίσεις → AI). Οι υπόλοιπες πηγές περιμένουν.' ),
 			'approved'     => array( 'success', 'Η γνώση εγκρίθηκε. Ο βοηθός την ξέρει από τώρα.' ),
+			'lesson_added' => array( 'success', 'Η διατύπωση προστέθηκε στη γνώση και στο σετ δοκιμών.' ),
+			'lesson_rejected' => array( 'success', 'Δεν θα προταθεί ξανά.' ),
+			'lesson_undone' => array( 'success', 'Η διατύπωση αφαιρέθηκε από τη γνώση και δεν θα ξαναμάθει μόνη της.' ),
+			'test_added'   => array( 'success', 'Η δοκιμή προστέθηκε.' ),
 			'merged'       => array( 'success', 'Οι ερωτήσεις προστέθηκαν στην υπάρχουσα γνώση.' ),
 			'rejected'     => array( 'success', 'Η πρόταση απορρίφθηκε. Δεν θα ξαναπροταθεί.' ),
 			'p_approved'   => array( 'success', sprintf( 'Εγκρίθηκαν %d προτάσεις.', $n ) ),
@@ -1071,6 +1077,312 @@ final class PNChat_Admin {
 		self::back( 'pn-chat-learn', $reject ? 'p_rejected' : 'p_approved', array( 'n' => $n ) );
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* learning from conversations («Μάθηση»)                              */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Μάθηση: what the conversations taught, what waits for a decision,
+	 * what visitors ask and the chat does not know, and the test set.
+	 *
+	 * @return void
+	 */
+	public static function page_lessons() {
+		if ( ! current_user_can( self::capability() ) ) {
+			wp_die( esc_html__( 'Δεν έχετε δικαίωμα πρόσβασης.', 'pn-chat' ), 403 );
+		}
+		$s    = PNChat_Settings::get();
+		$auto = (int) $s['learn_auto'];
+		echo '<div class="wrap pnchat-admin"><h1>Μάθηση από τις συζητήσεις</h1>';
+		self::notices();
+		echo '<p class="pnchat-intro">Ο βοηθός μαθαίνει <strong>πώς ρωτάνε</strong> οι επισκέπτες, χωρίς AI· οι <strong>απαντήσεις</strong> μένουν αυτές που γράψατε εσείς. Όταν δεν είναι σίγουρος δείχνει «Μήπως εννοείτε…;»: το κουμπί που πατά ο επισκέπτης λέει τι εννοούσε. ';
+		echo $auto > 0
+			? 'Μια διατύπωση που επιβεβαίωσαν <strong>' . (int) $auto . ' διαφορετικοί επισκέπτες</strong> μπαίνει μόνη της στη γνώση, αν δεν είναι ιατρική, δεν είναι κοντά σε απαγόρευση και δεν αλλάζει καμία απάντηση του σετ δοκιμών· την αναιρείτε όποτε θέλετε. Όλα τα άλλα περιμένουν εσάς.'
+			: 'Η αυτόματη μάθηση είναι κλειστή (Ρυθμίσεις): όλα περιμένουν εσάς.';
+		echo '</p>';
+
+		self::lessons_pending();
+		self::lessons_unknown();
+		self::lessons_words();
+		self::lessons_fixing();
+		self::lessons_auto();
+		self::lessons_tests();
+		echo '</div>';
+	}
+
+	/**
+	 * Lessons waiting for a decision.
+	 *
+	 * @return void
+	 */
+	private static function lessons_pending() {
+		$rows = PNChat_Lessons::by_status( 'pending', 100 );
+		echo '<div class="pnchat-card"><h2>Περιμένουν έγκριση (' . count( $rows ) . ')</h2>';
+		if ( ! $rows ) {
+			echo '<p class="description">Τίποτα ακόμα. Εδώ έρχονται διατυπώσεις επισκεπτών που επιβεβαιώθηκαν από λιγότερους επισκέπτες, ή που η αυτόματη μάθηση δεν πέρασε για λόγο ασφαλείας.</p></div>';
+			return;
+		}
+		echo '<table class="widefat striped pnchat-table"><thead><tr><th>Ο επισκέπτης έγραψε</th><th>Εννοούσε</th><th class="num">Επισκέπτες</th><th>Ενέργειες</th></tr></thead><tbody>';
+		foreach ( $rows as $r ) {
+			$e = PNChat_Store::entry( (int) $r['entry_id'] );
+			echo '<tr><td><strong>' . esc_html( (string) $r['phrase'] ) . '</strong>' . ( '' !== (string) $r['note'] ? '<div class="description">' . esc_html( (string) $r['note'] ) . '</div>' : '' ) . '</td>';
+			echo '<td>' . ( $e ? '<a href="' . esc_url( admin_url( 'admin.php?page=pn-chat&edit=' . (int) $e['id'] ) ) . '">' . esc_html( (string) $e['title'] ) . '</a>' : '—' ) . '</td>';
+			echo '<td class="num">' . (int) $r['seen'] . ( (int) $r['clicks'] ? '<div class="description">' . (int) $r['clicks'] . ' με κλικ</div>' : '' ) . '</td>';
+			echo '<td><a class="button button-primary button-small" href="' . esc_url( self::action_url( 'lesson', array( 'id' => (int) $r['id'], 'do' => 'add' ) ) ) . '">✔ Πρόσθεσε</a> ';
+			echo '<a class="button button-small" href="' . esc_url( self::action_url( 'lesson', array( 'id' => (int) $r['id'], 'do' => 'reject' ) ) ) . '">✖ Όχι</a></td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * What visitors ask and the chat does not know, in groups.
+	 *
+	 * @return void
+	 */
+	private static function lessons_unknown() {
+		$groups = PNChat_Lessons::unanswered_groups( 30, 10 );
+		echo '<div class="pnchat-card"><h2>Τι ρωτάνε και δεν ξέρει (30 ημέρες)</h2>';
+		if ( ! $groups ) {
+			echo '<p class="description">Δεν υπάρχουν αναπάντητες ερωτήσεις με κοινά θέματα.</p></div>';
+			return;
+		}
+		echo '<p class="description">Οι αναπάντητες ερωτήσεις, σε ομάδες με κοινή λέξη, οι πιο συχνές πρώτα. «Νέα γνώση» ανοίγει γνώση με αυτές τις ερωτήσεις έτοιμες· γράφετε μόνο την απάντηση.</p>';
+		foreach ( $groups as $g ) {
+			echo '<details class="pnchat-group"><summary><strong>' . esc_html( $g['word'] ) . '</strong> — ' . (int) $g['count'] . ' ερωτήσεις</summary><ul class="pnchat-list">';
+			foreach ( $g['questions'] as $q ) {
+				echo '<li>' . esc_html( $q ) . '</li>';
+			}
+			echo '</ul><p><a class="button button-primary button-small" href="' . esc_url( self::action_url( 'lesson_group', array( 'ids' => implode( ',', $g['ids'] ), 'do' => 'entry' ) ) ) . '">+ Νέα γνώση με αυτές</a> ';
+			echo '<a class="button button-small" href="' . esc_url( self::action_url( 'lesson_group', array( 'ids' => implode( ',', $g['ids'] ), 'do' => 'dismiss' ) ) ) . '">Αγνόηση</a></p></details>';
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * Unknown words that look like known ones.
+	 *
+	 * @return void
+	 */
+	private static function lessons_words() {
+		$words = PNChat_Lessons::word_suggestions();
+		if ( ! $words ) {
+			return;
+		}
+		echo '<div class="pnchat-card"><h2>Λέξεις που δεν ξέρει</h2><p class="description">Λέξεις από αναπάντητες ερωτήσεις (3+ φορές) που δεν υπάρχουν σε καμία γνώση. Αν σημαίνει κάτι που ο βοηθός ξέρει (π.χ. «χρεώνετε» = «κόστος»), γράψτε τη λέξη και πατήστε «Ίδια λέξη»: μπαίνει στα συνώνυμα.</p>';
+		echo '<table class="widefat striped pnchat-table"><thead><tr><th>Έγραψαν</th><th class="num">Φορές</th><th>Π.χ.</th><th>Σημαίνει το ίδιο με</th></tr></thead><tbody>';
+		foreach ( $words as $w ) {
+			echo '<tr><td><strong>' . esc_html( $w['word'] ) . '</strong></td><td class="num">' . (int) $w['count'] . '</td><td class="description">' . esc_html( $w['example'] ) . '</td><td>';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="pnchat-inline-form">';
+			self::form_fields( 'lesson_word' );
+			echo '<input type="hidden" name="word" value="' . esc_attr( $w['word'] ) . '"><input type="text" name="like" class="small-text" style="width:140px" value="' . esc_attr( $w['like'] ) . '" placeholder="π.χ. κόστος" aria-label="Σημαίνει το ίδιο με"> ';
+			echo '<button class="button button-small" name="do" value="add">= Ίδια λέξη</button> <button class="button button-small" name="do" value="ignore">Αγνόηση</button></form></td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * Entries visitors marked 👎.
+	 *
+	 * @return void
+	 */
+	private static function lessons_fixing() {
+		$list = PNChat_Lessons::needs_fixing();
+		if ( ! $list ) {
+			return;
+		}
+		echo '<div class="pnchat-card"><h2>Χρειάζονται διόρθωση</h2><p class="description">Γνώσεις που οι επισκέπτες σημείωσαν «δεν βοήθησε» 2+ φορές (90 ημέρες). Δείτε τι ρώτησαν: ίσως η απάντηση θέλει συμπλήρωση, ή η ερώτηση ήταν για κάτι άλλο.</p><ul class="pnchat-list">';
+		foreach ( $list as $f ) {
+			echo '<li><a href="' . esc_url( admin_url( 'admin.php?page=pn-chat&edit=' . (int) $f['entry']['id'] ) ) . '"><strong>' . esc_html( (string) $f['entry']['title'] ) . '</strong></a> — 👎 ' . (int) $f['count'] . ': «' . esc_html( implode( '», «', $f['questions'] ) ) . '»</li>';
+		}
+		echo '</ul></div>';
+	}
+
+	/**
+	 * Wordings learned on their own, with undo.
+	 *
+	 * @return void
+	 */
+	private static function lessons_auto() {
+		$rows = array_merge( PNChat_Lessons::by_status( 'auto', 50 ), PNChat_Lessons::by_status( 'added', 50 ) );
+		if ( ! $rows ) {
+			return;
+		}
+		usort(
+			$rows,
+			function ( $a, $b ) {
+				return strcmp( (string) $b['updated_at'], (string) $a['updated_at'] );
+			}
+		);
+		echo '<div class="pnchat-card"><h2>Έμαθε</h2><table class="widefat striped pnchat-table"><thead><tr><th>Διατύπωση</th><th>Στη γνώση</th><th>Πώς</th><th>Πότε</th><th></th></tr></thead><tbody>';
+		foreach ( array_slice( $rows, 0, 50 ) as $r ) {
+			$e = PNChat_Store::entry( (int) $r['entry_id'] );
+			echo '<tr><td>' . esc_html( (string) $r['phrase'] ) . '</td><td>' . esc_html( $e ? (string) $e['title'] : '—' ) . '</td>';
+			echo '<td>' . ( 'auto' === $r['status'] ? 'μόνο του (' . (int) $r['clicks'] . ' επισκέπτες)' : 'με έγκριση' ) . '</td><td>' . esc_html( self::date( (string) $r['updated_at'] ) ) . '</td>';
+			echo '<td><a class="button button-small" href="' . esc_url( self::action_url( 'lesson', array( 'id' => (int) $r['id'], 'do' => 'undo' ) ) ) . '" onclick="return confirm(\'Να αφαιρεθεί η διατύπωση από τη γνώση;\')">Αναίρεση</a></td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * The test set: questions with the entry that must answer them.
+	 *
+	 * @return void
+	 */
+	private static function lessons_tests() {
+		$tests = PNChat_Lessons::tests();
+		$last  = get_transient( 'pnchat_tests_result' );
+		echo '<div class="pnchat-card" id="pnchat-tests"><h2>Σετ δοκιμών (' . count( $tests ) . ')</h2>';
+		echo '<p class="description">Ερωτήσεις με τη γνώση που πρέπει να τις απαντά. Γεμίζει μόνο του από ό,τι μαθαίνει ο βοηθός· προσθέστε κι εσείς πραγματικές ερωτήσεις. Πριν μπει μόνη της μια διατύπωση, ελέγχεται ότι δεν αλλάζει καμία από αυτές τις απαντήσεις. Τρέξτε το μετά από αλλαγές σε συνώνυμα, αυστηρότητα ή γνώσεις.</p>';
+		if ( $tests ) {
+			echo '<p><a class="button button-primary" href="' . esc_url( self::action_url( 'tests_run', array() ) ) . '">▶ Τρέξε τις δοκιμές</a></p>';
+		}
+		if ( is_array( $last ) && $last['total'] ) {
+			$ok = (int) $last['total'] - count( $last['fail'] );
+			echo '<p><strong>Τελευταία εκτέλεση (' . esc_html( (string) $last['at'] ) . '): ' . (int) $ok . ' / ' . (int) $last['total'] . ' σωστές (' . (int) round( 100 * $ok / $last['total'] ) . '%)</strong></p>';
+			if ( $last['fail'] ) {
+				echo '<table class="widefat striped pnchat-table"><thead><tr><th>Ερώτηση</th><th>Έπρεπε</th><th>Απάντησε</th><th></th></tr></thead><tbody>';
+				foreach ( $last['fail'] as $i => $f ) {
+					echo '<tr><td>' . esc_html( $f['test']['q'] . ( '' !== $f['test']['ctx'] ? ' (' . $f['test']['ctx'] . ')' : '' ) ) . '</td><td>' . esc_html( (string) $f['test']['title'] ) . '</td><td>' . esc_html( $f['got'] ) . '</td>';
+					echo '<td><a href="' . esc_url( self::action_url( 'test_remove', array( 'i' => (int) $i ) ) ) . '">Αφαίρεση δοκιμής</a></td></tr>';
+				}
+				echo '</tbody></table>';
+			}
+		}
+		$entries = PNChat_Store::entries( 'answer', true );
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="pnchat-inline-form" style="margin-top:12px">';
+		self::form_fields( 'test_add' );
+		echo '<input type="text" name="q" class="regular-text" required placeholder="Ερώτηση επισκέπτη" aria-label="Ερώτηση"> ';
+		echo '<select name="entry" required aria-label="Σωστή γνώση"><option value="">— σωστή γνώση —</option>';
+		foreach ( $entries as $e ) {
+			echo '<option value="' . (int) $e['id'] . '">' . esc_html( (string) $e['title'] ) . '</option>';
+		}
+		echo '</select> <input type="text" name="ctx" class="small-text" style="width:140px" placeholder="θέμα (προαιρετικό)" aria-label="Θέμα συζήτησης"> <button class="button">+ Δοκιμή</button></form></div>';
+	}
+
+	/**
+	 * Add, reject or undo a lesson.
+	 *
+	 * @return void
+	 */
+	public static function handle_lesson() {
+		self::guard( 'pnchat_lesson' );
+		$do = self::get( 'do' );
+		$ok = PNChat_Lessons::decide( absint( self::get( 'id' ) ), $do );
+		$map = array(
+			'add'    => 'lesson_added',
+			'reject' => 'lesson_rejected',
+			'undo'   => 'lesson_undone',
+		);
+		self::back( 'pn-chat-lessons', $ok ? ( $map[ $do ] ?? 'not_found' ) : 'save_failed' );
+	}
+
+	/**
+	 * A group of unanswered questions: new entry with them, or dismiss.
+	 *
+	 * @return void
+	 */
+	public static function handle_lesson_group() {
+		self::guard( 'pnchat_lesson_group' );
+		$ids = array_filter( array_map( 'absint', explode( ',', self::get( 'ids' ) ) ) );
+		$qs  = array();
+		foreach ( $ids as $id ) {
+			$q = PNChat_Store::question( $id );
+			if ( $q ) {
+				$parts = PNChat_Store::lines( (string) $q['unmatched'] );
+				$qs[]  = $parts ? $parts[0] : (string) $q['question'];
+			}
+		}
+		if ( ! $qs ) {
+			self::back( 'pn-chat-lessons', 'not_found' );
+		}
+		if ( 'dismiss' === self::get( 'do' ) ) {
+			foreach ( $ids as $id ) {
+				PNChat_Store::update_question( $id, array( 'status' => 'dismissed' ) );
+			}
+			self::back( 'pn-chat-lessons', 'q_dismissed', array( 'n' => count( $ids ) ) );
+		}
+		$uid = get_current_user_id();
+		set_transient(
+			'pnchat_form_' . $uid,
+			array(
+				'kind'      => 'answer',
+				'id'        => 0,
+				'title'     => '',
+				'phrasings' => array_values( array_unique( $qs ) ),
+				'keywords'  => array(),
+				'answer'    => '',
+				'active'    => 1,
+			),
+			HOUR_IN_SECONDS
+		);
+		// Marked trained once the entry is saved.
+		set_transient( 'pnchat_group_' . $uid, $ids, HOUR_IN_SECONDS );
+		wp_safe_redirect( admin_url( 'admin.php?page=pn-chat&new=1' ) );
+		exit;
+	}
+
+	/**
+	 * A word suggestion: make it a synonym, or never suggest it again.
+	 *
+	 * @return void
+	 */
+	public static function handle_lesson_word() {
+		self::guard( 'pnchat_lesson_word' );
+		$word = sanitize_text_field( self::post( 'word' ) );
+		if ( 'ignore' === self::post( 'do' ) ) {
+			$ignored   = (array) get_option( 'pnchat_ignored_words', array() );
+			$ignored[] = PNChat_Text::fold( $word );
+			update_option( 'pnchat_ignored_words', array_slice( array_values( array_unique( $ignored ) ), -500 ), false );
+			self::back( 'pn-chat-lessons', 'dismissed' );
+		}
+		$ok = PNChat_Lessons::add_synonym( $word, sanitize_text_field( self::post( 'like' ) ) );
+		self::back( 'pn-chat-lessons', $ok ? 'synonyms' : 'empty' );
+	}
+
+	/**
+	 * Runs the test set.
+	 *
+	 * @return void
+	 */
+	public static function handle_tests_run() {
+		self::guard( 'pnchat_tests_run' );
+		$r = PNChat_Lessons::run_tests();
+		set_transient(
+			'pnchat_tests_result',
+			array(
+				'total' => $r['total'],
+				'fail'  => $r['fail'],
+				'at'    => wp_date( 'd/m/Y H:i' ),
+			),
+			WEEK_IN_SECONDS
+		);
+		wp_safe_redirect( admin_url( 'admin.php?page=pn-chat-lessons#pnchat-tests' ) );
+		exit;
+	}
+
+	/**
+	 * Adds a test.
+	 *
+	 * @return void
+	 */
+	public static function handle_test_add() {
+		self::guard( 'pnchat_test_add' );
+		$ok = PNChat_Lessons::add_test( self::post( 'q' ), PNChat_Topics::valid( sanitize_text_field( self::post( 'ctx' ) ) ), absint( self::post( 'entry' ) ), 'χειροκίνητα' );
+		self::back( 'pn-chat-lessons', $ok ? 'test_added' : 'empty' );
+	}
+
+	/**
+	 * Removes a test.
+	 *
+	 * @return void
+	 */
+	public static function handle_test_remove() {
+		self::guard( 'pnchat_test_remove' );
+		PNChat_Lessons::remove_test( absint( self::get( 'i' ) ) );
+		delete_transient( 'pnchat_tests_result' );
+		self::back( 'pn-chat-lessons', 'deleted' );
+	}
+
 	/**
 	 * Synonyms editor.
 	 *
@@ -1176,6 +1488,15 @@ final class PNChat_Admin {
 		}
 
 		self::warn_conflicts( $saved, $phrasings );
+
+		// A new entry made from a group of «Τι ρωτάνε και δεν ξέρει».
+		$group = $id ? false : get_transient( 'pnchat_group_' . get_current_user_id() );
+		if ( is_array( $group ) && 'answer' === $kind ) {
+			delete_transient( 'pnchat_group_' . get_current_user_id() );
+			foreach ( $group as $gid ) {
+				PNChat_Store::update_question( (int) $gid, array( 'status' => 'trained' ) );
+			}
+		}
 
 		if ( $from ) {
 			$q = PNChat_Store::question( $from );
@@ -1794,6 +2115,9 @@ final class PNChat_Admin {
 		$text( 'placeholder', 'Κείμενο στο πεδίο ερώτησης' );
 		$area( 'suggestions', 'Προτεινόμενες ερωτήσεις', 'Μία ανά γραμμή, εμφανίζονται ως κουμπιά κάτω από το καλωσόρισμα. Γραμμή που ξεκινά με # = νέα ομάδα (π.χ. «# Ερωτήσεις για το QR ReBuilder»)· η ομάδα ανοίγει με ένα πάτημα. «Κείμενο | /διεύθυνση/» = κουμπί που ανοίγει σελίδα (π.χ. «Άνοιγμα του QR ReBuilder | /qr-rebuilder/»).', 10 );
 		$area( 'fallback', 'Όταν δεν ξέρει την απάντηση', 'Ταιριάζει και σε άσχετες ερωτήσεις («τι καιρό κάνει»): ο βοηθός δεν μπορεί να ξεχωρίσει με σιγουριά το άσχετο από αυτό που δεν έχει μάθει ακόμα.' );
+		$check( 'didyoumean', '«Μήπως εννοείτε…;»', 'Όταν δεν είναι σίγουρος, δείχνει έως 3 κοντινές γνώσεις ως κουμπιά (ποτέ κοντά σε απαγόρευση). Ό,τι πατά ο επισκέπτης γίνεται μάθημα (μενού Μάθηση).' );
+		$text( 'didyoumean_text', 'Κείμενο πριν τα κουμπιά' );
+		$number( 'learn_auto', 'Αυτόματη μάθηση μετά από', 'Τόσοι διαφορετικοί επισκέπτες πρέπει να πατήσουν την ίδια γνώση για την ίδια διατύπωση, για να μπει μόνη της (0 = ποτέ μόνη της, όλα με έγκριση). Προεπιλογή 3.' );
 		$check( 'fallback_button', 'Φόρμα e-mail', 'Πίσω από κουμπί «Θέλω απάντηση από άνθρωπο», και ξανανοίγουν οι Συχνές ερωτήσεις (χωρίς τσεκ: η φόρμα εμφανίζεται αμέσως, όπως πριν την 1.9.2)' );
 		$number( 'related_max', 'Σχετικές ερωτήσεις', 'Πόσες ερωτήσεις του ίδιου θέματος προτείνει κάτω από κάθε απάντηση (0 = καμία, έως 5). Θέμα είναι το πρώτο μέρος του τίτλου πριν την άνω-κάτω τελεία («eΔΑΠΥ: …») ή ένα από τα Θέματα συζήτησης.' );
 		$area( 'partial', 'Όταν ξέρει μόνο ένα μέρος', 'Το {question} γίνεται το μέρος της ερώτησης χωρίς απάντηση. Το σύμβολο % γράφεται κανονικά.' );

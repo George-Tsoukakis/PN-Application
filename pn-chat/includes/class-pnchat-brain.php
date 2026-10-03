@@ -26,7 +26,7 @@ final class PNChat_Brain {
 	 *
 	 * @var string[]
 	 */
-	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint' );
+	const BRAIN_SETTINGS = array( 'title', 'subtitle', 'welcome', 'placeholder', 'fallback', 'partial', 'unhelpful', 'email_thanks', 'suggestions', 'synonyms', 'topics', 'site_intro', 'site_more', 'strictness', 'max_answers', 'privacy_note', 'smalltalk_praise', 'smalltalk_praise_topic', 'smalltalk_ok', 'smalltalk_bye', 'smalltalk_complaint', 'didyoumean_text' );
 
 	/**
 	 * Matcher of this request.
@@ -43,16 +43,27 @@ final class PNChat_Brain {
 	 */
 	public static function matcher( $fresh = false ) {
 		if ( null === self::$matcher || $fresh ) {
-			$s             = PNChat_Settings::get();
-			self::$matcher = new PNChat_Matcher(
-				PNChat_Store::entries( null, true ),
-				PNChat_Matcher::parse_synonyms( (string) $s['synonyms'] ),
-				PNChat_Settings::threshold(),
-				(int) $s['max_answers'],
-				self::subject_terms()
-			);
+			self::$matcher = self::matcher_for( PNChat_Store::entries( null, true ) );
 		}
 		return self::$matcher;
+	}
+
+	/**
+	 * A matcher on other entries with the site's settings (to try a change
+	 * before making it: the learning guard).
+	 *
+	 * @param array<int,array<string,mixed>> $entries Active entries.
+	 * @return PNChat_Matcher
+	 */
+	public static function matcher_for( array $entries ) {
+		$s = PNChat_Settings::get();
+		return new PNChat_Matcher(
+			$entries,
+			PNChat_Matcher::parse_synonyms( (string) $s['synonyms'] ),
+			PNChat_Settings::threshold(),
+			(int) $s['max_answers'],
+			self::subject_terms()
+		);
 	}
 
 	/**

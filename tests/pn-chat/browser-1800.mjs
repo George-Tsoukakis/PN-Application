@@ -4,7 +4,8 @@
  * full-screen chat; 1.8.2: suggestions right under the welcome, groups
  * open when they fit; 1.9.0: small talk («ωραίο») gets a reply and brings
  * the suggestions back; 1.9.2: «Σχετικές ερωτήσεις» under an answer, the
- * «Θέλω απάντηση από άνθρωπο» button, both kept on another page. Needs the test WordPress served at PN_BASE with PN Chat
+ * «Θέλω απάντηση από άνθρωπο» button, both kept on another page; 1.10.0:
+ * «Μήπως εννοείτε» buttons answer and go away. Needs the test WordPress served at PN_BASE with PN Chat
  * active (floating button), and playwright-core from tests/node_modules.
  *   PN_BASE=http://127.0.0.1:8898 node pn-chat/browser-1800.mjs
  */
@@ -167,6 +168,34 @@ try {
 		await openChat(pg);
 		check(await pg.locator('.pnchat__email').count() === 1, 'another page: the opened form is still there');
 		check(await pg.locator('.pnchat__related .pnchat__chip').count() >= 1, 'another page: the related questions are still there');
+		await c.close();
+	}
+
+	// ---- «Μήπως εννοείτε…;» ---------------------------------------------------------------
+	{
+		const c = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+		await c.route((url) => !String(url).startsWith(BASE), (r) => r.abort());
+		const pg = await c.newPage();
+		pg.on('pageerror', (e) => check(false, 'no page error: ' + e.message));
+		await pg.goto(BASE + '/', { waitUntil: 'load' });
+		await openChat(pg);
+		await ask(pg, 'Τι είναι το QR ReBuilder;');
+		await ask(pg, 'Θέλει ειδικό εξοπλισμό;');
+		const row = pg.locator('.pnchat__msg--bot').last().locator('.pnchat__didyoumean .pnchat__chip');
+		const n = await row.count();
+		check(n >= 1 && n <= 3, 'did you mean: ' + n + ' buttons when not sure');
+		if (n) {
+			const text = await row.first().innerText();
+			const bots = await pg.locator('.pnchat__msg--bot').count();
+			await row.first().click();
+			await pg.waitForFunction((k) => document.querySelectorAll('.pnchat__msg--bot:not(.pnchat__typing)').length > k, bots, { timeout: 30000 });
+			check(await pg.locator('.pnchat__didyoumean').count() === 0, 'did you mean: the buttons go away once one is chosen');
+			const last = await pg.locator('.pnchat__msg--bot').last().innerText();
+			check(!/Δεν έχω ακόμα|Μήπως εννοείτε/.test(last), 'did you mean: «' + text + '» is answered');
+			await pg.reload({ waitUntil: 'load' });
+			await openChat(pg);
+			check(await pg.locator('.pnchat__didyoumean').count() === 0, 'did you mean: not offered again on another page');
+		}
 		await c.close();
 	}
 

@@ -4,7 +4,7 @@ Tags: chat, faq, chatbot, knowledge base, support
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.9.2
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,9 +46,13 @@ Privacy).
   of the same subject follow every answer. When it does not know, it says so
   kindly, shows the suggested questions and keeps the e-mail form behind a
   «Θέλω απάντηση από άνθρωπο» button.
-* **Learns from conversations:** a question it did not understand, asked
-  again in other words and answered, appears under «💡 Μάλλον εννοούσαν»;
-  one click adds the first wording to that entry.
+* **Learns from conversations (no AI):** when it is not sure it asks «Μήπως
+  εννοείτε…;» with the closest answers. The button a visitor taps says what
+  their wording meant; a wording confirmed by 3 different visitors is added
+  on its own (never medical, never close to a refusal, never if it changes an
+  answer of the test set) and can be undone. Rephrased questions, unknown
+  words, the most asked unanswered subjects and answers marked 👎 wait in
+  «Μάθηση». A test set (question → right answer) grows with every lesson.
 * **Small talk:** "nice tool", "ok", "good night" get a friendly reply in the
   topic of the conversation instead of "no information"; complaints ("you did
   not help me") get the e-mail form. Texts in Settings.
@@ -160,6 +164,11 @@ copy from the Brain screen before big changes.
   text for the privacy policy.
 
 == Changelog ==
+
+= 1.10.0 =
+* «Μήπως εννοείτε…;»: up to 3 closest answers as buttons when the chat is not sure (none near a refusal; in a conversation only short follow-ups get topic-only suggestions). A tapped button answers and teaches.
+* Learning: wordings confirmed by taps in 3 different conversations are added on their own if they are not medical, not near a refusal and change no answer of the test set; e-mails, phones and AMKA are never learned. Setting: how many visitors (0 = always approval). Undo at any time.
+* New «Μάθηση» screen: waiting lessons, «Τι ρωτάνε και δεν ξέρει» (unanswered questions grouped, a new entry from a group in one click), unknown words to map to known ones (synonyms), answers marked 👎, what was learned, and the test set with «Τρέξε τις δοκιμές».
 
 = 1.9.2 =
 * Conversation topics also from title prefixes («eΔΑΠΥ: …», «Γενόσημα: …»), for follow-ups only (the AI's «tools only» check is unchanged).

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class PNChat_Store {
 
-	const DB_VERSION = 5;
+	const DB_VERSION = 6;
 
 	/**
 	 * Question statuses and their labels.
@@ -110,6 +110,7 @@ final class PNChat_Store {
 				page_url varchar(255) NOT NULL DEFAULT '',
 				conv char(32) NOT NULL DEFAULT '',
 				hint_entry bigint(20) unsigned NOT NULL DEFAULT 0,
+				offered varchar(100) NOT NULL DEFAULT '',
 				created_at datetime NOT NULL,
 				PRIMARY KEY  (id),
 				KEY status_created (status,created_at),
@@ -129,6 +130,8 @@ final class PNChat_Store {
 		);
 		// 1.9.0: entries proposed by the AI, waiting for approval.
 		dbDelta( PNChat_Learn::table_sql( $charset ) );
+		// 1.10.0: wordings learned from conversations.
+		dbDelta( PNChat_Lessons::table_sql( $charset ) );
 		update_option( 'pnchat_db_version', self::DB_VERSION, false );
 		// 1.8.0: the AI usage totals move from an option to the counters.
 		// Here, so that every path that installs (activation, upgrade) does it.
@@ -431,6 +434,7 @@ final class PNChat_Store {
 			'page_url'   => mb_substr( (string) ( $data['page_url'] ?? '' ), 0, 255 ),
 			'draft'      => isset( $data['draft'] ) ? wp_json_encode( $data['draft'] ) : null,
 			'conv'       => (string) ( $data['conv'] ?? '' ),
+			'offered'    => mb_substr( implode( ',', array_map( 'absint', (array) ( $data['offered'] ?? array() ) ) ), 0, 100 ),
 			'created_at' => current_time( 'mysql', true ),
 		);
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -448,24 +452,28 @@ final class PNChat_Store {
 	 * @param string $conv     Conversation (hashed).
 	 * @param int    $entry_id Entry that answered.
 	 * @param int    $minutes  How far back.
-	 * @return bool A question got the hint.
+	 * @return int The question that got the hint (0 for none).
 	 */
 	public static function hint_previous( $conv, $entry_id, $minutes = 10 ) {
 		global $wpdb;
 		if ( '' === $conv || ! $entry_id ) {
-			return false;
+			return 0;
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$n = $wpdb->query(
+		$id = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"UPDATE %i SET hint_entry = %d WHERE conv = %s AND hint_entry = 0 AND status IN ( 'unanswered', 'partial' ) AND created_at >= %s ORDER BY id DESC LIMIT 1",
+				"SELECT id FROM %i WHERE conv = %s AND hint_entry = 0 AND status IN ( 'unanswered', 'partial' ) AND created_at >= %s ORDER BY id DESC LIMIT 1",
 				self::questions_table(),
-				(int) $entry_id,
 				$conv,
 				gmdate( 'Y-m-d H:i:s', time() - $minutes * MINUTE_IN_SECONDS )
 			)
 		);
-		return (bool) $n;
+		if ( ! $id ) {
+			return 0;
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->update( self::questions_table(), array( 'hint_entry' => (int) $entry_id ), array( 'id' => $id ) );
+		return $id;
 	}
 
 	/**
@@ -501,7 +509,7 @@ final class PNChat_Store {
 	 */
 	public static function update_question( $id, array $cols ) {
 		global $wpdb;
-		$allowed = array_intersect_key( $cols, array_flip( array( 'status', 'email', 'name', 'reply', 'replied_at', 'token_hash', 'draft' ) ) );
+		$allowed = array_intersect_key( $cols, array_flip( array( 'status', 'email', 'name', 'reply', 'replied_at', 'token_hash', 'draft', 'hint_entry' ) ) );
 		if ( ! $allowed ) {
 			return false;
 		}

@@ -66,6 +66,17 @@ final class PNChat_Rest {
 					'via'      => array(
 						'type' => 'string',
 					),
+					// 1.10.0: a «Μήπως εννοείτε» button: the entry and the
+					// question it was offered for (with that question's token).
+					'pick'     => array(
+						'type' => 'integer',
+					),
+					'from'     => array(
+						'type' => 'integer',
+					),
+					'from_token' => array(
+						'type' => 'string',
+					),
 				),
 			)
 		);
@@ -160,7 +171,11 @@ final class PNChat_Rest {
 		// unless a trained entry answers it (e.g. «Ευχαριστώ»). A complaint
 		// («δεν με βοήθησες») always gets the e-mail form, even when it is
 		// close to an entry (here «…ο βοηθός»).
-		$talk = PNChat_Smalltalk::detect( $question );
+		// A tapped «Μήπως εννοείτε» button: that entry is the answer, and the
+		// visitor's first wording is a lesson for it.
+		$picked = self::picked( $req );
+
+		$talk = $picked ? '' : PNChat_Smalltalk::detect( $question );
 		if ( '' !== $talk ) {
 			$plain = 'complaint' === $talk ? array( 'status' => '' ) : PNChat_Brain::matcher()->ask( $question );
 			if ( 'answered' !== $plain['status'] ) {
@@ -178,7 +193,7 @@ final class PNChat_Rest {
 		if ( $prev && '' !== $own && PNChat_Topics::of_entry( $prev ) !== $own ) {
 			$prev = 0;
 		}
-		$result  = self::answer_in_context( $search, $follow ? $context : '', $prev );
+		$result  = $picked ? $picked : self::answer_in_context( $search, $follow ? $context : '', $prev );
 		$site    = self::site_results( $result, $follow ? rtrim( $search, " \t?;;.!" ) . ' ' . $context : $search );
 
 		// No trained answer, but pages of the site are about it: the AI may
@@ -238,8 +253,17 @@ final class PNChat_Rest {
 		// the same conversation probably meant this entry.
 		$conv  = self::conv_hash( (string) $req->get_param( 'conv' ) );
 		$first = self::first_answer( $result );
-		if ( 'answered' === $result['status'] && $first && 'chip' !== $req->get_param( 'via' ) ) {
-			PNChat_Store::hint_previous( $conv, $first );
+		if ( 'answered' === $result['status'] && $first && ! $picked && '' === (string) $req->get_param( 'via' ) ) {
+			$hinted = PNChat_Store::hint_previous( $conv, $first );
+			if ( $hinted ) {
+				PNChat_Lessons::record( self::wording( PNChat_Store::question( $hinted ) ), $first, $conv, 'rephrase' );
+			}
+		}
+
+		// Not sure: the closest entries as «Μήπως εννοείτε…;» buttons.
+		$dym = array();
+		if ( 'unanswered' === $result['status'] && ! empty( $s['didyoumean'] ) ) {
+			$dym = PNChat_Lessons::suggestions( $search, $follow ? $context : '' );
 		}
 
 		$token = wp_generate_password( 32, false );
@@ -247,6 +271,7 @@ final class PNChat_Rest {
 			array(
 				'question'   => $question,
 				'conv'       => $conv,
+				'offered'    => array_column( $dym, 'id' ),
 				'status'     => $result['status'],
 				'matched'    => $matched,
 				// Follow-up questions are logged with their topic, so the
@@ -271,7 +296,7 @@ final class PNChat_Rest {
 		// out of the chat's subjects is not met with a form.
 		$button = 'unanswered' === $result['status'] && ! empty( $s['fallback_button'] );
 		if ( 'unanswered' === $result['status'] ) {
-			$message = (string) $s['fallback'];
+			$message = $dym ? (string) $s['didyoumean_text'] : (string) $s['fallback'];
 		} elseif ( 'ai' === $result['status'] ) {
 			$message = (string) $s['site_more'];
 		} elseif ( 'site' === $result['status'] ) {
@@ -294,7 +319,8 @@ final class PNChat_Rest {
 				'message'    => $message,
 				'ask_email'  => $id && ! $button && in_array( $result['status'], array( 'unanswered', 'partial', 'site', 'ai' ), true ),
 				'email_button'     => $id && $button,
-				'show_suggestions' => $button,
+				'show_suggestions' => $button && ! $dym,
+				'didyoumean'       => $dym,
 				'feedback'   => ! empty( $s['feedback'] ) && $id && in_array( $result['status'], array( 'answered', 'partial', 'site', 'ai' ), true ),
 				'user_email' => self::user_email(),
 			)
@@ -572,6 +598,67 @@ final class PNChat_Rest {
 		}
 		$r['items'] = array_slice( $r['items'], 0, 1 );
 		return $r;
+	}
+
+	/**
+	 * The entry of a tapped «Μήπως εννοείτε» button, as a matcher result;
+	 * null when the request is not one (or not for a question it was
+	 * offered for, by the visitor who asked it).
+	 *
+	 * @param WP_REST_Request $req Request.
+	 * @return array<string,mixed>|null
+	 */
+	private static function picked( WP_REST_Request $req ) {
+		if ( 'didyoumean' !== $req->get_param( 'via' ) ) {
+			return null;
+		}
+		$pick  = absint( $req->get_param( 'pick' ) );
+		$from  = PNChat_Store::question( absint( $req->get_param( 'from' ) ) );
+		$token = (string) $req->get_param( 'from_token' );
+		if ( ! $pick || ! $from || '' === $token || '' === (string) $from['token_hash'] || ! hash_equals( (string) $from['token_hash'], hash( 'sha256', $token ) ) ) {
+			return null;
+		}
+		if ( ! in_array( $pick, array_map( 'intval', explode( ',', (string) $from['offered'] ) ), true ) ) {
+			return null;
+		}
+		$e = PNChat_Store::entry( $pick );
+		if ( ! $e || 'answer' !== $e['kind'] || empty( $e['active'] ) ) {
+			return null;
+		}
+		$conv = self::conv_hash( (string) $req->get_param( 'conv' ) );
+		if ( '' !== $conv && $conv === (string) $from['conv'] && (int) $from['hint_entry'] !== $pick ) {
+			PNChat_Store::update_question( (int) $from['id'], array( 'hint_entry' => $pick ) );
+			PNChat_Lessons::record( self::wording( $from ), $pick, $conv, 'click' );
+		}
+		return array(
+			'status'    => 'answered',
+			'items'     => array(
+				array(
+					'id'     => $pick,
+					'kind'   => 'answer',
+					'title'  => (string) $e['title'],
+					'answer' => (string) $e['answer'],
+					'score'  => 1.0,
+				),
+			),
+			'unmatched' => array(),
+			'parts'     => array(),
+		);
+	}
+
+	/**
+	 * What a logged question taught: its text, with the conversation topic
+	 * when it was a follow-up («Πρέπει να πληρώσω; (QR ReBuilder)»).
+	 *
+	 * @param array<string,mixed>|null $q Question row.
+	 * @return string
+	 */
+	private static function wording( $q ) {
+		if ( ! $q ) {
+			return '';
+		}
+		$parts = PNChat_Store::lines( (string) $q['unmatched'] );
+		return $parts ? $parts[0] : (string) $q['question'];
 	}
 
 	/**

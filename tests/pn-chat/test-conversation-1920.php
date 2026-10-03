@@ -232,7 +232,7 @@ $_REQUEST = array();
 $scanner  = PNChat_Store::entry( $id['QR ReBuilder: scanner'] );
 pnt_check( in_array( 'Θέλει μηχάνημα για το σκανάρισμα; (QR ReBuilder)', $scanner['phrasings'], true ), 'learning: «Πρόσθεσε την ερώτηση εκεί» adds the visitor\'s wording, with its topic' );
 pnt_same( 'trained', PNChat_Store::question( (int) $q['id'] )['status'], 'learning: the question is marked trained' );
-pnt_same( false, $hinted, 'learning: no conversation, no hint' );
+pnt_same( 0, $hinted, 'learning: no conversation, no hint' );
 wp_set_current_user( 0 );
 PNChat_Brain::matcher( true );
 $st = array( 'conv' => 'pntconversation00005' );

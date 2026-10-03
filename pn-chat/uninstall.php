@@ -49,7 +49,9 @@ if ( ! function_exists( 'pnchat_uninstall_site' ) ) {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuerySchemaChange
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i, %i, %i', $wpdb->prefix . 'pnchat_entries', $wpdb->prefix . 'pnchat_questions', $wpdb->prefix . 'pnchat_proposals' ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i, %i, %i, %i', $wpdb->prefix . 'pnchat_entries', $wpdb->prefix . 'pnchat_questions', $wpdb->prefix . 'pnchat_proposals', $wpdb->prefix . 'pnchat_lessons' ) );
+		delete_option( 'pnchat_tests' );
+		delete_option( 'pnchat_ignored_words' );
 		delete_post_meta_by_key( '_pnchat_tokens' );
 		delete_post_meta_by_key( '_pnchat_learned' );
 		foreach ( array( 'pnchat_settings', 'pnchat_db_version', 'pnchat_brain_version', 'pnchat_snapshots', 'pnchat_seeded', 'pnchat_settings_version', 'pnchat_site_index_started', 'pnchat_ai_usage' ) as $opt ) {

@@ -3,7 +3,7 @@
  * Plugin Name: PN Chat
  * Plugin URI: https://pharmacyneeds.gr
  * Description: Our own chat assistant for PharmacyNeeds. It answers from the knowledge we train it with and from the site's own pages, and logs what it cannot answer so we can reply by e-mail and teach it. Optional, off by default: Claude (Anthropic) reads the site, a web address or a PDF and proposes entries that an administrator approves, and may answer in the chat from the site's pages.
- * Version: 1.9.2
+ * Version: 1.10.0
  * Author: PharmacyNeeds
  * Author URI: https://pharmacyneeds.gr
  * License: GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PNCHAT_VERSION', '1.9.2' );
+define( 'PNCHAT_VERSION', '1.10.0' );
 define( 'PNCHAT_FILE', __FILE__ );
 define( 'PNCHAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PNCHAT_URL', plugin_dir_url( __FILE__ ) );
@@ -38,6 +38,7 @@ require_once PNCHAT_PATH . 'includes/class-pnchat-rest.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-frontend.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-ai.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-learn.php';
+require_once PNCHAT_PATH . 'includes/class-pnchat-lessons.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-mail.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-admin.php';
 require_once PNCHAT_PATH . 'includes/class-pnchat-privacy.php';
