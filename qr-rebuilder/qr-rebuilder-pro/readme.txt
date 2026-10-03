@@ -204,7 +204,7 @@ Only in one case: when an administrator presses "Check for a new version" in the
 
 = Does the plugin support WordPress Multisite? =
 
-It has not been tested on WordPress Multisite, and network-wide activation is not supported: activate it per site. Activation and upgrade routines act on the current site only. Since 2.16.1 the "Verified pharmacist" approval is stored per site, so an approval on one site does not apply to the others. Deleting the plugin runs the uninstall routine for every site of the network.
+It has not been tested on WordPress Multisite, and network-wide activation is not supported: activate it per site. Activation and upgrade routines act on the current site only. Deleting the plugin runs the uninstall routine for every site of the network.
 
 = What label size does printing work with? =
 
@@ -228,7 +228,7 @@ If your label is borderline, the two settings that save height are "Show note" a
 * Parsing: without Group Separators, `21ABCD10EFGH` can be SN "ABCD" plus LOT "EFGH", or only SN "ABCD10EFGH" on a pack without a LOT. The 2.16.0 short-value check did not catch it, so a LOT that is not on the pack could be printed without asking. Now, whenever the scan also reads completely as a code without one of PC/SN/LOT/EXP, confirmation is required and the warning names the alternative (for example `SN «ABCD10EFGH» χωρίς LOT`).
 * Rebuild: extra GS1 fields of the pack (e.g. AI 240, AI 91) are no longer dropped silently after an unverified scan or a manual change without a verified baseline. Extras proven by the confirmed reading are carried; otherwise the request is refused with "extras_unprovable" instead of printing an incomplete code.
 * Access: the 2.16.0 email migration now runs on the first request after an update, not only when an administrator opens wp-admin (automatic and FTP/CLI updates left email open until then). New admin notice when email is "same as the tool" and the tool is open to every logged-in user.
-* Multisite: the "Verified pharmacist" approval is stored per site, and nobody can approve themselves. Approvals from 2.16.0 on multisite networks must be given again per site; single sites keep them.
+* Access: nobody can approve themselves as a verified pharmacist.
 * Scanner workflow: after generating, printing, copying, downloading or emailing, focus returns to the scanner field. A scan that starts while a button has focus goes to the scanner, and its Enter can no longer press Print again (which reprinted the previous label). Print windows close after printing.
 * Email: an exception during sending now tells the user that the link or confirmation was used up; text/plain alternative body; `lang` from the site language; temporary images are deleted even if PHP stops on max_execution_time; per-recipient limit treats Gmail dot variants as one address; the email button no longer shows a stale "Sending…" state; generating again clears the previous code's proof.
 * Rate limiting: counters use a single atomic UPDATE, so concurrent legitimate guests no longer get false 429 responses (rows convert from the 2.16.0 format on their next hit). The hourly cleanup runs from WP-Cron (`qrrp_rl_sweep`) instead of inside a visitor's request. Opt-in helper `QRRP_Rate_Limiter::trusted_proxy_remote_addr` for sites behind a CDN.
@@ -266,7 +266,7 @@ The full history is in CHANGELOG.md, shipped with the plugin.
 == Upgrade Notice ==
 
 = 2.16.1 =
-Codes scanned without separators that could also be a pack missing a field now ask for confirmation. On multisite, approve verified pharmacists again on each site.
+Codes scanned without separators that could also be a pack missing a field now ask for confirmation. Existing pharmacist approvals are kept.
 
 = 2.16.0 =
 Email is now limited to verified pharmacists. After updating, approve each real pharmacy once under Users (column "QR email", checkbox on the profile); until then only administrators can send email. Provenance notes no longer appear on labels.
