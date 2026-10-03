@@ -30,8 +30,6 @@
 	var lastValidatedRaw = null;
 	var lastValidatedOutput = '';
 	var lastValidatedFields = null;
-	/* 2.15.2: σήμανση χειροκίνητης αλλαγής του τελευταίου output ('' = από σάρωση). */
-	var lastProvenanceNote = '';
 	/*
 	 * Δύο ανεξάρτητες πηγές warnings, που αποδίδονται μαζί στο ίδιο πλαίσιο:
 	 * sourceWarnings από τον parser / την ασάφεια της τρέχουσας πηγής,
@@ -672,12 +670,12 @@
 			summaryExp: document.getElementById( 'qrrp-summary-exp' ),
 			summaryCustomer: document.getElementById( 'qrrp-summary-customer' ),
 			summaryPrintdate: document.getElementById( 'qrrp-summary-printdate' ),
-			summaryProvenance: document.getElementById( 'qrrp-summary-provenance' ),
 			downloadQr: document.getElementById( 'qrrp-download-qr' ),
 			printQr: document.getElementById( 'qrrp-print-qr' ),
 			copyRaw: document.getElementById( 'qrrp-copy-raw' ),
 			emailInput: document.getElementById( 'qrrp-email-input' ),
 			sendEmail: document.getElementById( 'qrrp-send-email' ),
+			emailFeedback: document.getElementById( 'qrrp-email-feedback' ),
 			status: document.getElementById( 'qrrp-status' ),
 			statusLive: document.getElementById( 'qrrp-status-live' ),
 			alertLive: document.getElementById( 'qrrp-alert-live' )
@@ -752,7 +750,8 @@
 		var manualEntryMode = false;
 		var CAN_MANUAL_ENTRY = !! QRRP.canManualEntry && '0' !== String( QRRP.canManualEntry );
 
-		function setStatus( message, isError ) {
+		/* noScroll (2.15.7): το μήνυμα φαίνεται ήδη αλλού (π.χ. δίπλα στο κουμπί email). */
+		function setStatus( message, isError, noScroll ) {
 			if ( ! els.status ) {
 				return;
 			}
@@ -764,7 +763,7 @@
 
 			// Το μήνυμα είναι στην κορυφή του εργαλείου· ένα σφάλμα πρέπει να φαίνεται
 			// ακόμη κι αν ο χρήστης έχει κυλήσει πιο κάτω.
-			if ( message && isError && els.status.scrollIntoView ) {
+			if ( message && isError && ! noScroll && els.status.scrollIntoView ) {
 				els.status.scrollIntoView( { behavior: scrollBehavior(), block: 'nearest' } );
 			}
 		}
@@ -1649,6 +1648,7 @@
 			// Πεδία εκτός GS1 — καταλήγουν στην ετικέτα και στο email.
 			if ( els.customerName ) { els.customerName.value = ''; }
 			if ( els.emailInput ) { els.emailInput.value = ''; }
+			setEmailFeedback( '' );
 			if ( els.printDate ) { els.printDate.value = todayISO(); }
 
 			if ( els.ambiguousConfirm ) { els.ambiguousConfirm.hidden = true; }
@@ -1711,6 +1711,15 @@
 
 		if ( els.sendEmail && canSendEmail ) {
 			els.sendEmail.addEventListener( 'click', onSendEmail );
+
+			/* 2.15.7: νέα διεύθυνση → το προηγούμενο αποτέλεσμα δεν ισχύει πια γι' αυτήν. */
+			if ( els.emailInput ) {
+				els.emailInput.addEventListener( 'input', function () {
+					if ( els.emailFeedback && ! els.emailFeedback.classList.contains( 'qrrp-email-feedback-sending' ) ) {
+						setEmailFeedback( '' );
+					}
+				} );
+			}
 		} else if ( els.sendEmail ) {
 			els.sendEmail.disabled = true;
 		}
@@ -1721,49 +1730,6 @@
 			lastValidatedRaw = null;
 			lastValidatedOutput = '';
 			lastValidatedFields = null;
-			setProvenanceNote( '' );
-		}
-
-		/*
-		 * 2.15.2: κείμενο σήμανσης από τα metadata provenance του server. Μόνο για
-		 * εμφάνιση: ο server δεν διαβάζει ποτέ provenance από τον browser.
-		 */
-		function provenanceNoteFrom( data ) {
-			var kind = data && typeof data.provenance === 'string' ? data.provenance : '';
-
-			if ( 'user_declared' === kind ) {
-				return t( 'userDeclaredNote', 'Δηλωμένο από τον χρήστη: τα στοιχεία δόθηκαν από επισκέπτη και η προέλευσή τους δεν επαληθεύεται.' );
-			}
-
-			if ( 'scan_unverified' === kind ) {
-				return t( 'scanUnverifiedNote', 'Μη επαληθευμένη ανάγνωση: οι τιμές επιβεβαιώθηκαν από τον χρήστη.' );
-			}
-
-			if ( 'manual_reconstruction' !== kind ) {
-				return '';
-			}
-
-			var changed = ( ! data.changed_fields_unknown && Array.isArray( data.changed_fields ) )
-				? [ 'PC', 'SN', 'LOT', 'EXP' ].filter( function ( label ) {
-					return data.changed_fields.indexOf( label ) !== -1;
-				} )
-				: [];
-
-			if ( ! changed.length ) {
-				return t( 'manualEntryNote', 'Χειροκίνητη καταχώριση: οι τιμές δηλώθηκαν από τον χρήστη, όχι από σάρωση.' );
-			}
-
-			return t( 'manualChangeFields', 'Χειροκίνητη αλλαγή: {fields} (δηλώθηκε από τον χρήστη, όχι από σάρωση).' )
-				.replace( '{fields}', changed.join( ', ' ) );
-		}
-
-		function setProvenanceNote( note ) {
-			lastProvenanceNote = note || '';
-
-			if ( els.summaryProvenance ) {
-				els.summaryProvenance.textContent = lastProvenanceNote;
-				els.summaryProvenance.hidden = '' === lastProvenanceNote;
-			}
 		}
 
 		function setOutputActionsEnabled( enabled ) {
@@ -1800,6 +1766,7 @@
 			}
 
 			hideLoader();
+			setEmailFeedback( '' );
 			updateRegenerateAvailability();
 
 			if ( notify && hadOutput ) {
@@ -1977,6 +1944,13 @@
 			}
 
 			var thisParse = ++parseGeneration;
+
+			/*
+			 * 2.16.0: νέα σάρωση = άλλη συσκευασία από αυτή του συνδέσμου email. Το
+			 * token του συνδέσμου δεν στέλνεται μαζί της· αλλιώς ο server το
+			 * κατανάλωνε σε άσχετο rebuild και ο σύνδεσμος έβγαινε «ήδη χρησιμοποιημένος».
+			 */
+			activeRebuildToken = '';
 
 			/*
 			 * 2.15.3: πριν φύγει το αίτημα, η προηγούμενη συσκευασία φεύγει από την
@@ -2533,10 +2507,6 @@
 					/* Χωρίς passthrough_raw στην απάντηση, η normalizePassthroughRaw() δίνει ''. */
 					renderQrFromServer( json.data.raw, json.data.png, fields, json.data.passthrough_raw );
 
-					if ( lastValidatedRaw ) {
-						setProvenanceNote( provenanceNoteFrom( json.data ) );
-					}
-
 					/* Το geometry warning αφορά μόνο output που πράγματι αποδόθηκε. */
 					printWarnings = lastValidatedRaw
 						? printWarningsFromGeometry( json.data.geometry )
@@ -2877,11 +2847,6 @@
 				[ 'NOTE', t( 'rebuildNote', REBUILD_NOTE_FALLBACK ) ]
 			];
 
-			/* 2.15.2: η σήμανση χειροκίνητης αλλαγής και στην εικόνα, πριν από τη γραμμή GS1. */
-			if ( lastProvenanceNote ) {
-				rows.splice( rows.length - 2, 0, [ 'NOTE', lastProvenanceNote ] );
-			}
-
 			loadImageFromSrc( pngSrc )
 				.then( function ( image ) {
 					var canvas = renderCardCanvas( image, rows );
@@ -2973,7 +2938,12 @@
 				 */
 				'@page{size:' + pageSize + ';margin:0;}' +
 				'*{box-sizing:border-box;}' +
-				'html,body{margin:0;padding:0;}' +
+				/*
+				 * 2.16.0: ύψος στο html/body, αλλιώς το height:100% της ετικέτας (και το
+				 * max-height του κωδικού) δεν έχουν αναφορά και η ετικέτα μπορεί να
+				 * σπάσει σε δεύτερη σελίδα.
+				 */
+				'html,body{margin:0;padding:0;height:100%;}' +
 				'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#000;}' +
 				/*
 				 * Μία ετικέτα = μία σελίδα: height:100% και overflow:hidden δένουν την ετικέτα
@@ -2998,7 +2968,6 @@
 				 */
 				'.qrrp-print-gs1{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:9pt;font-weight:700;word-break:break-all;line-height:1.35;margin:0 0 1mm;max-width:min(22ch,100%);}' +
 				'.qrrp-print-note{font-size:7pt;color:#333;line-height:1.3;margin:0 0 1.5mm;word-break:break-word;}' +
-				'.qrrp-print-provenance{font-size:7pt;font-weight:700;color:#000;line-height:1.3;margin:0 0 1.5mm;padding:0.5mm 1mm;border:0.3mm solid #000;word-break:break-word;}' +
 				'.qrrp-print-meta{font-size:8pt;color:#000;line-height:1.5;}' +
 				/* white-space:normal: ένα μακρύ SN δεν γίνεται άσπαστο κουτί. */
 				'.qrrp-print-meta-item{display:inline-block;margin:0 2mm 0.5mm 0;white-space:normal;}' +
@@ -3035,10 +3004,6 @@
 			var noteBlock = String( QRRP.printShowNote ) !== '0'
 				? '<div class="qrrp-print-note">' + escapeHtml( t( 'rebuildNote', REBUILD_NOTE_FALLBACK ) ) + '</div>'
 				: '';
-			/* 2.15.2: η σήμανση χειροκίνητης αλλαγής τυπώνεται πάντα, ανεξάρτητα από τις ρυθμίσεις. */
-			var provenanceBlock = lastProvenanceNote
-				? '<div class="qrrp-print-provenance">' + escapeHtml( lastProvenanceNote ) + '</div>'
-				: '';
 			var metaBlock = String( QRRP.printShowMeta ) !== '0'
 				? '<div class="qrrp-print-meta">' + metaHtml + '</div>'
 				: '';
@@ -3048,7 +3013,6 @@
 				'<div class="qrrp-print-info">' +
 				'<div class="qrrp-print-customer">' + escapeHtml( customer || '—' ) + '</div>' +
 				'<div class="qrrp-print-gs1">GS1: ' + escapeHtml( rawData ) + '</div>' +
-				provenanceBlock +
 				noteBlock +
 				metaBlock +
 				'</div>' +
@@ -3232,6 +3196,29 @@
 			removeNode( textarea );
 		}
 
+		/*
+		 * 2.15.7: ορατό αποτέλεσμα αποστολής κάτω από το κουμπί. kind: 'sending',
+		 * 'success', 'error' ή '' (απόκρυψη). Το ίδιο μήνυμα πάει και στο γενικό
+		 * status (live regions) χωρίς κύλιση στην κορυφή, ώστε ο χρήστης να μένει
+		 * στη φόρμα του email.
+		 */
+		function setEmailFeedback( message, kind ) {
+			if ( ! els.emailFeedback ) {
+				return;
+			}
+
+			els.emailFeedback.textContent = message || '';
+			els.emailFeedback.className = 'qrrp-email-feedback' + ( message && kind ? ' qrrp-email-feedback-' + kind : '' );
+			els.emailFeedback.hidden = ! message;
+		}
+
+		function emailOutcome( message, isError ) {
+			setEmailFeedback( message, isError ? 'error' : 'success' );
+			setStatus( message, isError, true );
+		}
+
+		var sendEmailLabel = els.sendEmail ? els.sendEmail.textContent : '';
+
 		function onSendEmail() {
 			if ( ! canSendEmail || ! els.emailInput || ! els.sendEmail ) {
 				setStatus( t( 'noEmailPermission', 'Δεν έχετε δικαίωμα αποστολής email από αυτό το εργαλείο.' ), true );
@@ -3241,7 +3228,7 @@
 			var email = els.emailInput.value.trim();
 
 			if ( ! email || ! els.emailInput.checkValidity() ) {
-				setStatus( t( 'enterValidEmail', 'Εισάγετε μία έγκυρη διεύθυνση email.' ), true );
+				emailOutcome( t( 'enterValidEmail', 'Εισάγετε μία έγκυρη διεύθυνση email.' ), true );
 				return;
 			}
 
@@ -3251,7 +3238,7 @@
 				! lastValidatedFields ||
 				! lastValidatedOutput
 			) {
-				setStatus( t( 'createFirst', 'Δημιουργήστε πρώτα το νέο GS1 DataMatrix.' ), true );
+				emailOutcome( t( 'createFirst', 'Δημιουργήστε πρώτα το νέο GS1 DataMatrix.' ), true );
 				return;
 			}
 
@@ -3261,7 +3248,7 @@
 			 */
 			if ( ! sameGs1Fields( collectFields(), lastValidatedFields ) ) {
 				invalidateGeneratedQr( false );
-				setStatus( t( 'validatedDataChanged', 'Τα επικυρωμένα GS1 δεδομένα άλλαξαν. Δημιουργήστε ξανά το GS1 DataMatrix.' ), true );
+				emailOutcome( t( 'validatedDataChanged', 'Τα επικυρωμένα GS1 δεδομένα άλλαξαν. Δημιουργήστε ξανά το GS1 DataMatrix.' ), true );
 				return;
 			}
 
@@ -3299,7 +3286,10 @@
 			}
 
 			els.sendEmail.disabled = true;
+			els.sendEmail.textContent = t( 'sendingEmailButton', 'Αποστολή…' );
+			els.sendEmail.setAttribute( 'aria-busy', 'true' );
 			setStatus( '' );
+			setEmailFeedback( t( 'sendingEmail', 'Αποστολή email…' ), 'sending' );
 			showLoader( t( 'sendingEmail', 'Αποστολή email…' ) );
 
 			var request = ajaxRequest( 'qrrp_send_email', emailPayload )
@@ -3313,7 +3303,7 @@
 					}
 
 					if ( json && json.success ) {
-						setStatus( t( 'emailSent', 'Το email στάλθηκε με επιτυχία.' ) );
+						emailOutcome( t( 'emailSentTo', 'Το email στάλθηκε στο %s.' ).replace( '%s', function () { return email; } ) );
 						return;
 					}
 
@@ -3331,7 +3321,7 @@
 						lastValidatedOutput = '';
 						setOutputActionsEnabled( false );
 
-						setStatus(
+						emailOutcome(
 							( json && json.data && json.data.message ) ||
 								t(
 								'outputStale',
@@ -3343,7 +3333,7 @@
 						return;
 					}
 
-					setStatus(
+					emailOutcome(
 						nonceErrorMessage( json ) ||
 							( json && json.data && json.data.message ) ||
 							t( 'emailFailed', 'Η αποστολή email απέτυχε.' ),
@@ -3356,11 +3346,14 @@
 				 */
 				.catch( function ( error ) {
 					if ( emailGeneration === rebuildGeneration ) {
-						setStatus( networkErrorMessage( error ), true );
+						emailOutcome( networkErrorMessage( error ), true );
 					}
 				} );
 
 			promiseFinally( request, function () {
+				els.sendEmail.textContent = sendEmailLabel;
+				els.sendEmail.removeAttribute( 'aria-busy' );
+
 				/* 2.15.7: ο loader ανήκει πλέον σε νεότερη ενέργεια (ή τον έκλεισε το reset). */
 				if ( emailGeneration !== rebuildGeneration ) {
 					return;

@@ -556,6 +556,17 @@ final class QRRP_GS1_Parser {
 		}
 
 		/*
+		 * 2.16.0: χωρίς separators, μια σάρωση που δεν έχει κάποιο πεδίο (ή που
+		 * κόπηκε) δίνει κι αυτή «πλήρη» ανάγνωση: το «10»/«17» μέσα στο SN
+		 * διαβάζεται ως νέο AI (21AB10CD → SN «AB» + επινοημένο LOT «CD»). Από το
+		 * string μόνο δεν ξεχωρίζει από κανονικό κωδικό· το σημάδι είναι το
+		 * απίθανα κοντό SN/LOT. Τότε ποτέ αυτόματα.
+		 */
+		$short_inferred = $inferred_boundaries > 0
+			? self::short_variable_fields( $fields )
+			: array();
+
+		/*
 		 * Αυτόματη αποδοχή συναγόμενων ορίων μόνο όταν η ανάγνωση είναι
 		 * αποδεδειγμένη: μία πλήρης έγκυρη ερμηνεία, ολοκληρωμένη αναζήτηση,
 		 * έγκυρο GTIN, όχι DD=00 που αλλάζει (2.15.3: μόνο στο παλιό μοντέλο)
@@ -570,6 +581,16 @@ final class QRRP_GS1_Parser {
 			&& $checks['gtin_valid']
 			&& ! $checks['exp_day_needs_review']
 			&& ! $needs_review;
+
+		/* Το μήνυμα μόνο όταν αυτό ήταν ο λόγος· αλλιώς ζητείται ήδη έλεγχος. */
+		if ( $safe_inference && array() !== $short_inferred ) {
+			$safe_inference = false;
+			$warnings[]     = sprintf(
+				/* translators: %s: comma-separated field values, e.g. SN «AB», LOT «CD». */
+				__( 'Ο κωδικός δεν περιείχε Group Separator και η πιθανότερη ανάγνωση δίνει ασυνήθιστα κοντές τιμές: %s. Αν η συσκευασία δεν έχει κάποιο από αυτά τα πεδία, ο parser μπορεί να το δημιούργησε κόβοντας άλλη τιμή. Ελέγξτε όλα τα πεδία με τη συσκευασία πριν συνεχίσετε.', 'qr-rebuilder-pro' ),
+				implode( ', ', $short_inferred )
+			);
+		}
 
 		$requires_confirmation = $truncated
 			|| $cross_check_truncated
@@ -3855,6 +3876,28 @@ final class QRRP_GS1_Parser {
 	 * Explain exactly which variable field boundary had to be inferred because
 	 * the scanner payload did not contain the required Group Separator.
 	 */
+	/**
+	 * 2.16.0: SN / LOT κάτω από το ελάχιστο μήκος αυτόματης αποδοχής, ως
+	 * «SN «AB»» για το μήνυμα. Φίλτρο qrrp_auto_inference_min_length (1–20,
+	 * προεπιλογή 4).
+	 *
+	 * @param array $fields Επιλεγμένη ανάγνωση.
+	 * @return string[]
+	 */
+	private static function short_variable_fields( $fields ) {
+		$min = (int) apply_filters( 'qrrp_auto_inference_min_length', 4 );
+		$min = max( 1, min( 20, $min ) );
+		$out = array();
+
+		foreach ( array( 'SN', 'LOT' ) as $label ) {
+			if ( self::has_field_value( $fields, $label ) && strlen( (string) $fields[ $label ] ) < $min ) {
+				$out[] = sprintf( '%s «%s»', $label, $fields[ $label ] );
+			}
+		}
+
+		return $out;
+	}
+
 	private static function add_inferred_boundary_warning( $fields, $inferred_fields, $count, &$warnings ) {
 		$labels = array_values( array_unique( array_filter( (array) $inferred_fields, 'is_string' ) ) );
 

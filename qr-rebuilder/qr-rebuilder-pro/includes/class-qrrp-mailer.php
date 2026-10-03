@@ -84,12 +84,9 @@ final class QRRP_Mailer {
 	 * @param string $raw_data      Η αυθεντική συμβολοσειρά GS1.
 	 * @param string $tool_page_url Σελίδα εργαλείου για τον σύνδεσμο.
 	 * @param array  $proven_extras Εξουσιοδοτημένα extras.
-	 * @param array  $provenance    Metadata provenance του server (provenance,
-	 *                              changed_fields, changed_fields_unknown), για
-	 *                              τη σήμανση χειροκίνητης αλλαγής (2.15.2).
 	 * @return true|WP_Error
 	 */
-	public static function send( $to_email, $fields, $customer_name = '', $print_date = '', $raw_data = '', $tool_page_url = '', $proven_extras = array(), $provenance = array() ) {
+	public static function send( $to_email, $fields, $customer_name = '', $print_date = '', $raw_data = '', $tool_page_url = '', $proven_extras = array() ) {
 		$to_email = sanitize_email( (string) $to_email );
 
 		if ( ! is_email( $to_email ) ) {
@@ -209,8 +206,7 @@ final class QRRP_Mailer {
 				$attachment_name,
 				self::resolve_tool_page_url( $tool_page_url ),
 				$rebuild_token,
-				$proven_extras,
-				self::provenance_note( is_array( $provenance ) ? $provenance : array() )
+				$proven_extras
 			);
 
 			$from_filter = static function () use ( $from_mail ) {
@@ -854,18 +850,8 @@ final class QRRP_Mailer {
 		return QRRP_Tokens::purge_all();
 	}
 
-	private static function build_html( $site_name, $fields, $customer_name, $print_date, $raw_data, $attachment_name, $tool_url = '', &$created_token = null, $proven_extras = array(), $provenance_note = '' ) {
+	private static function build_html( $site_name, $fields, $customer_name, $print_date, $raw_data, $attachment_name, $tool_url = '', &$created_token = null, $proven_extras = array() ) {
 		$rows = '';
-
-		/* 2.15.2: ορατή σήμανση όταν οι τιμές δεν προέρχονται αυτούσιες από σάρωση. */
-		$provenance_html = '';
-
-		if ( is_string( $provenance_note ) && '' !== $provenance_note ) {
-			$provenance_html = '
-			<div style="margin:0 0 16px;padding:12px 14px;border:1px solid #dba617;border-left-width:4px;border-radius:6px;background:#fcf9e8;color:#1d2327;font-size:13px;line-height:1.5">
-				<strong>' . esc_html( $provenance_note ) . '</strong>
-			</div>';
-		}
 
 		if ( '' !== $customer_name ) {
 			$rows .= self::row( __( 'Πελάτης', 'qr-rebuilder-pro' ), $customer_name );
@@ -975,7 +961,7 @@ final class QRRP_Mailer {
 			<p style="margin:0 0 20px;line-height:1.6;color:#3c434a">'
 				. esc_html__( 'Το αναδημιουργημένο GS1 DataMatrix είναι έτοιμο. Η εικόνα βρίσκεται επισυναπτόμενη στο email.', 'qr-rebuilder-pro' ) .
 			'</p>
-' . $provenance_html . '
+
 			<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e2e4e7">'
 				. $rows .
 			'</table>
@@ -994,46 +980,6 @@ final class QRRP_Mailer {
 	</div>
 </body>
 </html>';
-	}
-
-	/**
-	 * Κείμενο σήμανσης για τιμές που δεν προέρχονται αυτούσιες από σάρωση
-	 * (2.15.2), ή '' όταν δεν χρειάζεται. Μόνο από metadata του server.
-	 *
-	 * @param array $provenance provenance / changed_fields / changed_fields_unknown.
-	 * @return string
-	 */
-	public static function provenance_note( array $provenance ) {
-		$kind = isset( $provenance['provenance'] ) && is_string( $provenance['provenance'] ) ? $provenance['provenance'] : '';
-
-		/* 2.15.3: ό,τι δημιουργεί επισκέπτης είναι δήλωση, όχι αποδεδειγμένη σάρωση. */
-		if ( 'user_declared' === $kind ) {
-			return __( 'Δηλωμένο από τον χρήστη: τα στοιχεία δόθηκαν από επισκέπτη και η προέλευσή τους δεν επαληθεύεται.', 'qr-rebuilder-pro' );
-		}
-
-		if ( 'scan_unverified' === $kind ) {
-			return __( 'Μη επαληθευμένη ανάγνωση: οι τιμές επιβεβαιώθηκαν από τον χρήστη.', 'qr-rebuilder-pro' );
-		}
-
-		if ( 'manual_reconstruction' !== $kind ) {
-			return '';
-		}
-
-		$changed = array();
-
-		if ( empty( $provenance['changed_fields_unknown'] ) && isset( $provenance['changed_fields'] ) && is_array( $provenance['changed_fields'] ) ) {
-			$changed = array_values( array_intersect( array( 'PC', 'SN', 'LOT', 'EXP' ), $provenance['changed_fields'] ) );
-		}
-
-		if ( array() === $changed ) {
-			return __( 'Χειροκίνητη καταχώριση: οι τιμές δηλώθηκαν από τον χρήστη, όχι από σάρωση.', 'qr-rebuilder-pro' );
-		}
-
-		return sprintf(
-			/* translators: %s: comma-separated field labels, e.g. "SN, LOT". */
-			__( 'Χειροκίνητη αλλαγή: %s (δηλώθηκε από τον χρήστη, όχι από σάρωση).', 'qr-rebuilder-pro' ),
-			implode( ', ', $changed )
-		);
 	}
 
 	private static function row( $label, $value ) {

@@ -447,17 +447,6 @@
 	font-size: 14px;
 	overflow-wrap: anywhere;
 }
-/* 2.15.2: σήμανση χειροκίνητης αλλαγής (κείμενο 15:1 στο κίτρινο φόντο). */
-.qrrp-wrapper .qrrp-summary-provenance {
-	margin-top: 10px;
-	padding: 8px 10px;
-	border: 1px solid #dba617;
-	border-left-width: 4px;
-	border-radius: 6px;
-	background: #fcf9e8;
-	color: #1d2327;
-	font-weight: 600;
-}
 .qrrp-email-box {
 	margin-top: 20px;
 	padding: 18px;
@@ -522,11 +511,93 @@
 .qrrp-email-row .qrrp-btn-primary {
 	min-width: 150px;
 }
+/* 2.16.0: φαρμακείο χωρίς έγκριση για email. */
+.qrrp-wrapper .qrrp-email-awaiting {
+	margin: 16px 0 0;
+	padding: 10px 14px;
+	border: 1px solid #c3c4c7;
+	border-radius: 8px;
+	background: #f6f7f7;
+	color: #1d2327;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
 .qrrp-email-note {
 	margin: 10px 0 0;
 	color: var(--qrrp-muted);
 	font-size: 11px;
 	line-height: 1.5;
+}
+
+/* 2.15.7: αποτέλεσμα αποστολής email, ακριβώς κάτω από το κουμπί. */
+.qrrp-wrapper .qrrp-email-feedback {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+	margin: 12px 0 0;
+	padding: 10px 14px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.45;
+	overflow-wrap: anywhere;
+}
+
+.qrrp-wrapper .qrrp-email-feedback[hidden] {
+	display: none;
+}
+
+.qrrp-wrapper .qrrp-email-feedback::before {
+	flex: 0 0 auto;
+	font-weight: 700;
+}
+
+/* Κείμενα ≥ 4.5:1 στο φόντο τους. */
+.qrrp-wrapper .qrrp-email-feedback-success {
+	background: #edfaef;
+	border-color: #68de7c;
+	color: #0a5b1f;
+}
+
+.qrrp-wrapper .qrrp-email-feedback-success::before {
+	content: "✓";
+}
+
+.qrrp-wrapper .qrrp-email-feedback-error {
+	background: #fcf0f1;
+	border-color: #f86368;
+	color: #8a2424;
+}
+
+.qrrp-wrapper .qrrp-email-feedback-error::before {
+	content: "!";
+}
+
+.qrrp-wrapper .qrrp-email-feedback-sending {
+	background: #f6f7f7;
+	border-color: #dcdcde;
+	color: #50575e;
+	font-weight: 500;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.qrrp-wrapper .qrrp-email-feedback-success,
+	.qrrp-wrapper .qrrp-email-feedback-error {
+		animation: qrrp-email-feedback-in 0.2s ease-out;
+	}
+}
+
+@keyframes qrrp-email-feedback-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
 }
 
 .qrrp-status {

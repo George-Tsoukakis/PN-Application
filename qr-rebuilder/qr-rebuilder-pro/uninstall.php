@@ -216,12 +216,13 @@ function qrrp_uninstall_network() {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No core API deletes usermeta rows by key across all users.
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( %s, %s, %s, %s, %s )",
+			"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( %s, %s, %s, %s, %s, %s )",
 			'qrrp_pro_expires',
 			'qrrp_pro_activated_on',
 			'qrrp_manual_access',
 			'qrrp_invoices',
-			'qrrp_hide_pharmacist_warning' /* 2.15.4 */
+			'qrrp_hide_pharmacist_warning', /* 2.15.4 */
+			'qrrp_verified_pharmacist' /* 2.16.0 */
 		)
 	);
 

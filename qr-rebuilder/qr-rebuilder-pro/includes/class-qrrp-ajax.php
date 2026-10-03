@@ -123,7 +123,8 @@ final class QRRP_Ajax {
 	 *   ''                => ίδιο με το δικαίωμα του εργαλείου (ρητή επιλογή)
 	 *   'edit_posts'      => Συνεργάτες και άνω
 	 *   'manage_options'  => Μόνο διαχειριστές
-	 *   'qrrp_pharmacist' => Εγγεγραμμένοι φαρμακοποιοί
+	 *   'qrrp_pharmacist' => Εγγεγραμμένοι φαρμακοποιοί (αυτο-δήλωση)
+	 *   'qrrp_verified_pharmacist' => Εγκεκριμένοι από διαχειριστή (2.16.0, προεπιλογή)
 	 *
 	 * Η προεπιλογή έρχεται από τη σταθερά QRRP_DEFAULT_EMAIL_CAPABILITY, όχι από
 	 * literal: όταν το get_option() παίρνει δικό του default, το default του
@@ -181,6 +182,22 @@ final class QRRP_Ajax {
 
 		return current_user_can( self::configured_capability() )
 			&& current_user_can( self::email_capability() );
+	}
+
+	/**
+	 * 2.16.0: φαρμακείο (αυτο-δήλωση) που χρησιμοποιεί το εργαλείο αλλά δεν έχει
+	 * ακόμη έγκριση για email. Μόνο για το ενημερωτικό μήνυμα της φόρμας.
+	 *
+	 * @return bool
+	 */
+	public static function email_awaits_approval() {
+		if ( ! is_user_logged_in() || self::can_send_email() ) {
+			return false;
+		}
+
+		return 'qrrp_verified_pharmacist' === self::email_capability()
+			&& current_user_can( self::configured_capability() )
+			&& qrrp_user_is_pharmacist( get_current_user_id() );
 	}
 
 	private static function check_email_permissions() {
@@ -1056,7 +1073,7 @@ final class QRRP_Ajax {
 		$page_url = self::post_scalar( 'page_url' );
 		$result   = self::guarded(
 			'send_email',
-			static fn() => QRRP_Mailer::send( $to, $fields, $customer_name, $print_date, $submitted_raw, $page_url, $mail_extras, self::provenance_metadata( $verdict ) )
+			static fn() => QRRP_Mailer::send( $to, $fields, $customer_name, $print_date, $submitted_raw, $page_url, $mail_extras )
 		);
 
 		if ( is_wp_error( $result ) ) {
